@@ -1,0 +1,1593 @@
+import 'package:flutter/material.dart';
+import 'dart:math';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../import/import_tv_time_page.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
+import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
+import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
+import '../../../explore/presentation/pages/movie_details_page.dart';
+import '../../../show_details/presentation/pages/show_details_page.dart';
+import '../../../show_details/presentation/cubit/show_details_cubit.dart';
+import '../../../../core/network/tmdb_client.dart';
+import '../widgets/shows_filter_bottom_sheet.dart';
+import '../widgets/movies_filter_bottom_sheet.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import '../cubit/profile_heatmap_cubit.dart';
+import '../cubit/profile_heatmap_state.dart';
+import '../../../../core/theme/cubit/theme_cubit.dart';
+
+class HorizontalItem {
+  final int movieId;
+  final String title;
+  final String imageUrl;
+  final double voteAverage;
+  final String releaseDate;
+  final bool isFavorite;
+  final bool isMovie;
+  final bool isStopped; // ADD: true when show has status == 'STOPPED'
+  final String? addedAt;
+
+  HorizontalItem({
+    required this.movieId,
+    required this.title,
+    required this.imageUrl,
+    required this.voteAverage,
+    required this.releaseDate,
+    this.isFavorite = false,
+    this.isMovie = true,
+    this.isStopped = false,
+    this.addedAt,
+  });
+}
+
+class ProfilePage extends StatefulWidget {
+  final ValueListenable<int>? tabNotifier;
+
+  const ProfilePage({super.key, this.tabNotifier});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage>
+    with SingleTickerProviderStateMixin {
+  String _movieSortOption = 'Last Added';
+  String _movieProgressOption = 'All';
+  String _showSortOption = 'Last added';
+  String _showProgressOption = 'All';
+
+  bool _isFilteringMovies = false;
+  bool _isFilteringShows = false;
+
+  late TabController _tabController;
+  int _previousTabIndex = 0;
+  DateTime _heatmapMonth = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    1,
+  );
+  late PageController _heatmapPageController;
+  int _heatmapPageIndex = 0;
+  bool _isHeatmapExpanded = false;
+  bool _isLocalLoading = false;
+  Timer? _shimmerTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.index != _previousTabIndex) {
+        setState(() {
+          _previousTabIndex = _tabController.index;
+          _movieSortOption = 'Last Added';
+          _movieProgressOption = 'All';
+          _showSortOption = 'Last added';
+          _showProgressOption = 'All';
+        });
+      }
+    });
+    widget.tabNotifier?.addListener(_onAppTabChanged);
+    _heatmapPageController = PageController();
+
+    // Fetch heatmap watch history for current month
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      context.read<ProfileHeatmapCubit>().loadMonthActivity(
+        user.uid,
+        _heatmapMonth,
+      );
+    }
+  }
+
+  void _onAppTabChanged() {
+    if (widget.tabNotifier != null && widget.tabNotifier!.value != 3) {
+      // 3 is the index of ProfilePage in ShellNavigationPage
+      setState(() {
+        _movieSortOption = 'Last Added';
+        _movieProgressOption = 'All';
+        _showSortOption = 'Last added';
+        _showProgressOption = 'All';
+        _isHeatmapExpanded = false;
+        _isLocalLoading = false;
+        _shimmerTimer?.cancel();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _shimmerTimer?.cancel();
+    widget.tabNotifier?.removeListener(_onAppTabChanged);
+    _tabController.dispose();
+    _heatmapPageController.dispose();
+    super.dispose();
+  }
+
+  void _showSettingsMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              //import tv time button
+              ListTile(
+                leading: const Icon(Icons.import_export, color: Colors.white),
+                title: const Text(
+                  'Import TV Time',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ImportTvTimePage(),
+                    ),
+                  );
+                },
+              ),
+
+              BlocBuilder<ThemeCubit, ThemeState>(
+                builder: (context, themeState) {
+                  return SwitchListTile.adaptive(
+                    secondary: Icon(
+                      themeState.isOledDarkMode
+                          ? Icons.dark_mode
+                          : Icons.dark_mode_outlined,
+                      color: Colors.white,
+                    ),
+                    title: const Text(
+                      'OLED Dark Mode',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'True black background for battery saving and higher contrast',
+                      style: TextStyle(color: Colors.white60, fontSize: 11),
+                    ),
+                    value: themeState.isOledDarkMode,
+                    activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                    activeThumbColor: AppColors.primary,
+                    onChanged: (bool value) {
+                      HapticFeedback.lightImpact();
+                      context.read<ThemeCubit>().toggleOledDarkMode(value);
+                    },
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.settings, color: Colors.white),
+                title: const Text(
+                  'Settings',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              const Divider(color: Colors.white12),
+              ListTile(
+                leading: const Icon(Icons.logout, color: AppColors.error),
+                title: const Text(
+                  'Sign Out',
+                  style: TextStyle(color: AppColors.error),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.read<AuthCubit>().signOut();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = user?.displayName ?? 'User';
+    final photoURL = user?.photoURL;
+
+    String generateUsername(String name) {
+      if (name.isEmpty || name == 'User') return 'user_tellybinge';
+      // Strip everything except letters and numbers, then lowercase
+      String cleanName = name
+          .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
+          .toLowerCase();
+
+      // If it ends with exactly one digit (like 'mjwaghmare5'), pad it to '05'
+      if (RegExp(r'[a-z]\d$').hasMatch(cleanName)) {
+        cleanName =
+            '${cleanName.substring(0, cleanName.length - 1)}0${cleanName.substring(cleanName.length - 1)}';
+      }
+
+      return cleanName;
+    }
+
+    final username = generateUsername(displayName);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        title: Text(
+          username,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+            onPressed: _showSettingsMenu,
+          ),
+        ],
+      ),
+      body: BlocBuilder<MovieWatchlistCubit, MovieWatchlistState>(
+        builder: (context, watchlistState) {
+          return BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
+            builder: (context, showWatchlistState) {
+              List<HorizontalItem> watchedMovies = [];
+              List<HorizontalItem> displayedMovies = [];
+              List<HorizontalItem> watchedShows = [];
+              List<HorizontalItem> displayedShows = [];
+              bool isLoadingMovies = watchlistState is MovieWatchlistLoading;
+              bool isLoadingShows =
+                  showWatchlistState is TvShowWatchlistLoading;
+
+              if (watchlistState is MovieWatchlistSuccess) {
+                watchedMovies = watchlistState.movies
+                    .where((m) => m['isWatched'] as bool? ?? false)
+                    .map(
+                      (m) => HorizontalItem(
+                        movieId: m['id'] as int? ?? 0,
+                        title: m['title'] as String? ?? '',
+                        imageUrl: _getImageUrl(m['posterPath'] as String?),
+                        voteAverage:
+                            (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
+                        releaseDate: m['releaseDate'] as String? ?? '',
+                        isFavorite: m['isFavorite'] as bool? ?? false,
+                        isMovie: true,
+                      ),
+                    )
+                    .toList();
+
+                var filteredMovies = watchlistState.movies;
+
+                if (_movieProgressOption == 'Watched') {
+                  filteredMovies = filteredMovies
+                      .where((m) => m['isWatched'] as bool? ?? false)
+                      .toList();
+                } else if (_movieProgressOption == 'Not watched') {
+                  filteredMovies = filteredMovies
+                      .where((m) => !(m['isWatched'] as bool? ?? false))
+                      .toList();
+                }
+
+                displayedMovies = filteredMovies
+                    .map(
+                      (m) => HorizontalItem(
+                        movieId: m['id'] as int? ?? 0,
+                        title: m['title'] as String? ?? '',
+                        imageUrl: _getImageUrl(m['posterPath'] as String?),
+                        voteAverage:
+                            (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
+                        releaseDate: m['releaseDate'] as String? ?? '',
+                        isFavorite: m['isFavorite'] as bool? ?? false,
+                        isMovie: true,
+                        addedAt: m['addedAt'] as String?,
+                      ),
+                    )
+                    .toList();
+              }
+
+              if (isLoadingMovies) {
+                displayedMovies = List.generate(
+                  9,
+                  (index) => HorizontalItem(
+                    movieId: index,
+                    title: 'Loading Movie',
+                    imageUrl: '',
+                    voteAverage: 9.9,
+                    releaseDate: '',
+                  ),
+                );
+              }
+
+              if (showWatchlistState is TvShowWatchlistSuccess) {
+                watchedShows = showWatchlistState.shows
+                    .map(
+                      (s) => HorizontalItem(
+                        movieId: s['id'] as int? ?? 0,
+                        title: s['name'] as String? ?? '',
+                        imageUrl: _getImageUrl(s['posterPath'] as String?),
+                        voteAverage:
+                            (s['voteAverage'] as num?)?.toDouble() ?? 0.0,
+                        releaseDate: s['firstAirDate'] as String? ?? '',
+                        isFavorite: false,
+                        isMovie: false,
+                        // MODIFY: map STOPPED status from Firestore
+                        isStopped: (s['status'] as String?) == 'STOPPED',
+                        addedAt: s['addedAt'] as String?,
+                      ),
+                    )
+                    .toList();
+
+                var filteredShows = showWatchlistState.shows;
+
+                // 1. Progress Filter
+                if (_showProgressOption == 'Watching') {
+                  filteredShows = filteredShows
+                      .where((s) => s['category'] == 'WATCH_NEXT')
+                      .toList();
+                } else if (_showProgressOption == 'Haven\'t started') {
+                  filteredShows = filteredShows
+                      .where((s) => s['category'] == 'HAVENT_STARTED')
+                      .toList();
+                } else if (_showProgressOption == 'Up to date') {
+                  filteredShows = filteredShows
+                      .where((s) => s['category'] == 'UP_TO_DATE')
+                      .toList();
+                } else if (_showProgressOption == 'Finished') {
+                  filteredShows = filteredShows
+                      .where((s) => s['category'] == 'FINISHED')
+                      .toList();
+                } else if (_showProgressOption == 'Stopped') {
+                  filteredShows = filteredShows
+                      .where((s) => s['status'] == 'STOPPED')
+                      .toList();
+                }
+
+                displayedShows = filteredShows
+                    .map(
+                      (s) => HorizontalItem(
+                        movieId: s['id'] as int? ?? 0,
+                        title: s['name'] as String? ?? '',
+                        imageUrl: _getImageUrl(s['posterPath'] as String?),
+                        voteAverage:
+                            (s['voteAverage'] as num?)?.toDouble() ?? 0.0,
+                        releaseDate: s['firstAirDate'] as String? ?? '',
+                        isFavorite: false,
+                        isMovie: false,
+                        isStopped: (s['status'] as String?) == 'STOPPED',
+                        addedAt: s['addedAt'] as String?,
+                      ),
+                    )
+                    .toList();
+              }
+
+              if (isLoadingShows) {
+                displayedShows = List.generate(
+                  9,
+                  (index) => HorizontalItem(
+                    movieId: index,
+                    title: 'Loading Show',
+                    imageUrl: '',
+                    voteAverage: 9.9,
+                    releaseDate: '',
+                  ),
+                );
+              }
+
+              if (_movieSortOption == 'Alphabetical') {
+                displayedMovies.sort(
+                  (a, b) =>
+                      a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+                );
+              } else if (_movieSortOption == 'Last Added' ||
+                  _movieSortOption == 'Last Watched') {
+                displayedMovies.sort((a, b) {
+                  final dateA = _parseDate(a.addedAt ?? '');
+                  final dateB = _parseDate(b.addedAt ?? '');
+                  if (dateA == null && dateB == null) return 0;
+                  if (dateA == null) return 1;
+                  if (dateB == null) return -1;
+                  return dateB.compareTo(dateA);
+                });
+              }
+
+              if (_showSortOption == 'Alphabetical') {
+                displayedShows.sort(
+                  (a, b) =>
+                      a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+                );
+              } else if (_showSortOption == 'Last added' ||
+                  _showSortOption == 'Last watched') {
+                // Fallback Last watched to Last added
+                displayedShows.sort((a, b) {
+                  final dateA = _parseDate(a.addedAt ?? '');
+                  final dateB = _parseDate(b.addedAt ?? '');
+                  if (dateA == null && dateB == null) return 0;
+                  if (dateA == null) return 1;
+                  if (dateB == null) return -1;
+                  return dateB.compareTo(dateA);
+                });
+              }
+
+              final totalMinutes = (watchlistState is MovieWatchlistSuccess)
+                  ? watchlistState.movies
+                        .where((m) => m['isWatched'] as bool? ?? false)
+                        .map((m) => m['runtime'] as int? ?? 0)
+                        .fold<int>(0, (sum, element) => sum + element)
+                  : 0;
+
+              final totalShowMinutes =
+                  (showWatchlistState is TvShowWatchlistSuccess)
+                  ? showWatchlistState.shows
+                        .map(
+                          (s) =>
+                              (List<dynamic>.from(
+                                s['watchedEpisodes'] ?? [],
+                              )).length *
+                              45,
+                        )
+                        .fold<int>(0, (sum, element) => sum + element)
+                  : 0;
+
+              String formatTime(int mins) {
+                if (mins == 0) return '0m';
+                final d = mins ~/ (24 * 60);
+                final h = (mins % (24 * 60)) ~/ 60;
+                final m = mins % 60;
+                List<String> parts = [];
+                if (d > 0) parts.add('${d}d');
+                if (h > 0) parts.add('${h}h');
+                if (m > 0 || parts.isEmpty) parts.add('${m}m');
+                return parts.join(' ');
+              }
+
+              return NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Profile Header Info
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: 8.0,
+                            ),
+                            child: Row(
+                              children: [
+                                // Avatar with ring
+                                Container(
+                                  padding: const EdgeInsets.all(
+                                    3,
+                                  ), // Border width
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.primary,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(
+                                      2,
+                                    ), // Gap between ring and image
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: CircleAvatar(
+                                      radius: 36,
+                                      backgroundColor: Colors.grey[800],
+                                      backgroundImage: photoURL != null
+                                          ? CachedNetworkImageProvider(photoURL)
+                                          : null,
+                                      child: photoURL == null
+                                          ? Text(
+                                              displayName.isNotEmpty
+                                                  ? displayName[0].toUpperCase()
+                                                  : 'U',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 32,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.lg),
+                                // Stats
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _buildStatColumn(
+                                        '${watchedShows.length}',
+                                        'Shows added',
+                                        formatTime(totalShowMinutes),
+                                        () {
+                                          _toggleHeatmap(0);
+                                        },
+                                      ),
+                                      _buildStatColumn(
+                                        '${watchedMovies.length}',
+                                        'Movies watched',
+                                        formatTime(totalMinutes),
+                                        () {
+                                          _toggleHeatmap(1);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          AnimatedSize(
+                            alignment: Alignment.topCenter,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOut,
+                            child: _isHeatmapExpanded
+                                ? _buildHeatmapSection(context, user?.uid ?? '')
+                                : const SizedBox(
+                                    width: double.infinity,
+                                    height: 0,
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _SliverAppBarDelegate(
+                        TabBar(
+                          controller: _tabController,
+                          indicatorWeight: 2.5,
+                          indicatorColor: Colors.white,
+                          labelColor: Colors.white,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          unselectedLabelColor: Colors.white54,
+                          labelStyle: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            letterSpacing: 1.2,
+                          ),
+                          tabs: [
+                            Tab(text: 'SHOWS'),
+                            Tab(text: 'MOVIES'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ];
+                },
+                body: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    Scaffold(
+                      backgroundColor: Colors.transparent,
+                      body: Skeletonizer(
+                        enabled: isLoadingShows || _isFilteringShows,
+                        child: _buildGrid(
+                          displayedShows,
+                          'No shows matched your filter.',
+                        ),
+                      ),
+                      floatingActionButton: Builder(
+                        builder: (context) {
+                          final isShowFilterActive =
+                              _showSortOption != 'Last added' ||
+                              _showProgressOption != 'All';
+                          return Container(
+                            height: 40,
+                            decoration: isShowFilterActive
+                                ? BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.greenAccent.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  )
+                                : null,
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final result =
+                                    await showModalBottomSheet<
+                                      Map<String, String>
+                                    >(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) =>
+                                          ShowsFilterBottomSheet(
+                                            initialSort: _showSortOption,
+                                            initialProgress:
+                                                _showProgressOption,
+                                          ),
+                                    );
+                                if (result != null) {
+                                  if (!context.mounted) return;
+                                  setState(() {
+                                    _showSortOption =
+                                        result['sort'] ?? 'Last added';
+                                    _showProgressOption =
+                                        result['progress'] ?? 'All';
+                                    _isFilteringShows = true;
+                                  });
+                                  final scrollController =
+                                      PrimaryScrollController.of(context);
+                                  if (scrollController.hasClients) {
+                                    scrollController.animateTo(
+                                      0,
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      curve: Curves.easeOut,
+                                    );
+                                  }
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 300),
+                                  );
+                                  if (mounted) {
+                                    setState(() {
+                                      _isFilteringShows = false;
+                                    });
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.black,
+                                elevation: isShowFilterActive ? 0 : 4,
+                                side: isShowFilterActive
+                                    ? const BorderSide(
+                                        color: Colors.greenAccent,
+                                        width: 1.5,
+                                      )
+                                    : null,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 0,
+                                ),
+                                shape: const StadiumBorder(),
+                              ),
+                              icon: const Icon(Icons.tune, size: 20),
+                              label: const Text(
+                                'FILTERS',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      floatingActionButtonLocation:
+                          FloatingActionButtonLocation.centerFloat,
+                    ),
+                    Scaffold(
+                      backgroundColor: Colors.transparent,
+                      body: Skeletonizer(
+                        enabled: isLoadingMovies || _isFilteringMovies,
+                        child: _buildGrid(
+                          displayedMovies,
+                          'No movies matched your filter.',
+                        ),
+                      ),
+                      floatingActionButton: Builder(
+                        builder: (context) {
+                          final isMovieFilterActive =
+                              _movieSortOption != 'Last Added' ||
+                              _movieProgressOption != 'All';
+                          return Container(
+                            height: 40,
+                            decoration: isMovieFilterActive
+                                ? BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.greenAccent.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  )
+                                : null,
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final result =
+                                    await showModalBottomSheet<
+                                      Map<String, String>
+                                    >(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) =>
+                                          MoviesFilterBottomSheet(
+                                            initialSort: _movieSortOption,
+                                            initialProgress:
+                                                _movieProgressOption,
+                                          ),
+                                    );
+                                if (result != null) {
+                                  if (!context.mounted) return;
+                                  setState(() {
+                                    _movieSortOption =
+                                        result['sort'] ?? 'Last Added';
+                                    _movieProgressOption =
+                                        result['progress'] ?? 'All';
+                                    _isFilteringMovies = true;
+                                  });
+                                  final scrollController =
+                                      PrimaryScrollController.of(context);
+                                  if (scrollController.hasClients) {
+                                    scrollController.animateTo(
+                                      0,
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      curve: Curves.easeOut,
+                                    );
+                                  }
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 300),
+                                  );
+                                  if (mounted) {
+                                    setState(() {
+                                      _isFilteringMovies = false;
+                                    });
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.black,
+                                elevation: isMovieFilterActive ? 0 : 4,
+                                side: isMovieFilterActive
+                                    ? const BorderSide(
+                                        color: Colors.greenAccent,
+                                        width: 1.5,
+                                      )
+                                    : null,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 0,
+                                ),
+                                shape: const StadiumBorder(),
+                              ),
+                              icon: const Icon(Icons.tune, size: 20),
+                              label: const Text(
+                                'FILTERS',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      floatingActionButtonLocation:
+                          FloatingActionButtonLocation.centerFloat,
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatColumn(
+    String count,
+    String label,
+    String timeSpent,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            count,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
+          const SizedBox(height: 4),
+          Visibility(
+            visible: timeSpent.isNotEmpty && timeSpent != '0m',
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: Text(
+              timeSpent,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGrid(List<HorizontalItem> items, String emptyMessage) {
+    if (items.isEmpty) {
+      return Center(
+        child: Text(
+          emptyMessage,
+          style: const TextStyle(color: Colors.white54, fontSize: 14),
+        ),
+      );
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.all(2.0),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 2.0,
+        mainAxisSpacing: 2.0,
+        childAspectRatio: 2 / 3,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return GestureDetector(
+          onTap: () {
+            if (item.movieId <= 0) return;
+            if (item.isMovie) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MovieDetailsPage(movieId: item.movieId),
+                ),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BlocProvider<ShowDetailsCubit>(
+                    create: (context) => ShowDetailsCubit(
+                      tmdbClient: context.read<TmdbClient>(),
+                    ),
+                    child: ShowDetailsPage(
+                      mediaId: item.movieId,
+                      mediaType: 'tv',
+                      title: item.title,
+                    ),
+                  ),
+                ),
+              );
+            }
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              CachedNetworkImage(
+                imageUrl: item.imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (context, url) =>
+                    Container(color: AppColors.surface),
+                errorWidget: (context, url, error) => Container(
+                  color: AppColors.surface,
+                  child: const Center(
+                    child: Icon(
+                      Icons.movie_outlined,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ),
+              ),
+              if (item.isFavorite)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.favorite,
+                      color: Colors.red,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              // ADD: STOPPED badge — top-right pill matching explore tab badge style
+              if (item.isStopped)
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    child: const Text(
+                      'STOPPED',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.0,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _getImageUrl(String? path, {String size = 'w342'}) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+    return 'https://image.tmdb.org/t/p/$size$path';
+  }
+
+  DateTime? _parseDate(String dateStr) {
+    if (dateStr.isEmpty || dateStr.toUpperCase() == 'TBA') return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Widget _buildHeatmapSection(BuildContext context, String uid) {
+    return BlocBuilder<ProfileHeatmapCubit, ProfileHeatmapState>(
+      builder: (context, state) {
+        DateTime currentMonth = _heatmapMonth;
+        Map<DateTime, int> tvCounts = const {};
+        Map<DateTime, int> movieCounts = const {};
+        bool isLoading = state is ProfileHeatmapLoading;
+
+        if (state is ProfileHeatmapLoaded) {
+          currentMonth = state.selectedMonth;
+          tvCounts = state.tvCounts;
+          movieCounts = state.movieCounts;
+        }
+
+        final int daysInMonth = DateUtils.getDaysInMonth(
+          currentMonth.year,
+          currentMonth.month,
+        );
+        final DateTime firstDayOfMonth = DateTime(
+          currentMonth.year,
+          currentMonth.month,
+          1,
+        );
+        final int offset = firstDayOfMonth.weekday == 7
+            ? 0
+            : firstDayOfMonth.weekday;
+        final int totalSlots = offset + daysInMonth;
+
+        final List<Color> activeLegendColors = _heatmapPageIndex == 0
+            ? const [
+                Color(0xFF161B22),
+                Color(0xFF0E4429),
+                Color(0xFF006D32),
+                Color(0xFF26A641),
+                Color(0xFF39D353),
+              ]
+            : const [
+                Color(0xFF161B22),
+                Color(0xFF3E2D00),
+                Color(0xFF7C5A00),
+                Color(0xFFB98700),
+                Color(0xFFFFC107),
+              ];
+
+        final showShimmer = isLoading || _isLocalLoading;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 8.0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'WATCH ACTIVITY',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _isSignUpMonthOrPast(currentMonth)
+                          ? const SizedBox(width: 24)
+                          : IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: const Icon(
+                                Icons.chevron_left,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      HapticFeedback.lightImpact();
+                                      final prevMonth = currentMonth.month == 1
+                                          ? DateTime(
+                                              currentMonth.year - 1,
+                                              12,
+                                              1,
+                                            )
+                                          : DateTime(
+                                              currentMonth.year,
+                                              currentMonth.month - 1,
+                                              1,
+                                            );
+                                      setState(() {
+                                        _heatmapMonth = prevMonth;
+                                      });
+                                      context
+                                          .read<ProfileHeatmapCubit>()
+                                          .loadMonthActivity(uid, prevMonth);
+                                    },
+                            ),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat('MMMM yyyy').format(currentMonth),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _isCurrentMonthOrFuture(currentMonth)
+                          ? const SizedBox(width: 24)
+                          : IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: const Icon(
+                                Icons.chevron_right,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      HapticFeedback.lightImpact();
+                                      final nextMonth = currentMonth.month == 12
+                                          ? DateTime(
+                                              currentMonth.year + 1,
+                                              1,
+                                              1,
+                                            )
+                                          : DateTime(
+                                              currentMonth.year,
+                                              currentMonth.month + 1,
+                                              1,
+                                            );
+                                      setState(() {
+                                        _heatmapMonth = nextMonth;
+                                      });
+                                      context
+                                          .read<ProfileHeatmapCubit>()
+                                          .loadMonthActivity(uid, nextMonth);
+                                    },
+                            ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 245,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 220,
+                      child: PageView(
+                        controller: _heatmapPageController,
+                        onPageChanged: (index) {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _heatmapPageIndex = index;
+                            _isLocalLoading = true;
+                          });
+                          _shimmerTimer?.cancel();
+                          _shimmerTimer = Timer(
+                            const Duration(milliseconds: 500),
+                            () {
+                              if (mounted) {
+                                setState(() {
+                                  _isLocalLoading = false;
+                                });
+                              }
+                            },
+                          );
+                        },
+                        children: [
+                          _buildHeatmapPage(
+                            offset: offset,
+                            totalSlots: totalSlots,
+                            counts: tvCounts,
+                            currentMonth: currentMonth,
+                            isMovies: false,
+                            showShimmer: showShimmer,
+                          ),
+                          _buildHeatmapPage(
+                            offset: offset,
+                            totalSlots: totalSlots,
+                            counts: movieCounts,
+                            currentMonth: currentMonth,
+                            isMovies: true,
+                            showShimmer: showShimmer,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(2, (index) {
+                            final isActive = index == _heatmapPageIndex;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 4.0,
+                              ),
+                              width: isActive ? 8.0 : 6.0,
+                              height: isActive ? 8.0 : 6.0,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isActive ? Colors.white : Colors.white30,
+                              ),
+                            );
+                          }),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Less',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            _buildLegendSquare(activeLegendColors[0]),
+                            const SizedBox(width: 3),
+                            _buildLegendSquare(activeLegendColors[1]),
+                            const SizedBox(width: 3),
+                            _buildLegendSquare(activeLegendColors[2]),
+                            const SizedBox(width: 3),
+                            _buildLegendSquare(activeLegendColors[3]),
+                            const SizedBox(width: 3),
+                            _buildLegendSquare(activeLegendColors[4]),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'More',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeatmapPage({
+    required int offset,
+    required int totalSlots,
+    required Map<DateTime, int> counts,
+    required DateTime currentMonth,
+    required bool isMovies,
+    required bool showShimmer,
+  }) {
+    final List<Color> colorScale = isMovies
+        ? const [
+            Color(0xFF161B22),
+            Color(0xFF3E2D00),
+            Color(0xFF7C5A00),
+            Color(0xFFB98700),
+            Color(0xFFFFC107),
+          ]
+        : const [
+            Color(0xFF161B22),
+            Color(0xFF0E4429),
+            Color(0xFF006D32),
+            Color(0xFF26A641),
+            Color(0xFF39D353),
+          ];
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Text(
+            isMovies ? 'MOVIES WATCHED' : 'EPISODES WATCHED',
+            style: const TextStyle(
+              color: Colors.white54,
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+              letterSpacing: 1.1,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
+                  (day) {
+                    return Expanded(
+                      child: Center(
+                        child: Text(
+                          day,
+                          style: const TextStyle(
+                            color: Colors.white30,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ).toList(),
+              ),
+              const SizedBox(height: 8),
+              showShimmer
+                  ? _RippleShimmerGrid(totalSlots: totalSlots)
+                  : GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 7,
+                            crossAxisSpacing: 6,
+                            mainAxisSpacing: 6,
+                            childAspectRatio: 1.7,
+                          ),
+                      itemCount: totalSlots,
+                      itemBuilder: (context, index) {
+                        if (index < offset || index >= totalSlots) {
+                          return Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                            ),
+                          );
+                        }
+
+                        final int day = index - offset + 1;
+                        final DateTime date = DateTime(
+                          currentMonth.year,
+                          currentMonth.month,
+                          day,
+                        );
+                        final int count = counts[date] ?? 0;
+
+                        Color cellColor;
+                        if (count == 0) {
+                          cellColor = colorScale[0];
+                        } else if (count == 1) {
+                          cellColor = colorScale[1];
+                        } else if (count == 2) {
+                          cellColor = colorScale[2];
+                        } else if (count == 3) {
+                          cellColor = colorScale[3];
+                        } else {
+                          cellColor = colorScale[4];
+                        }
+
+                        final itemText = isMovies ? 'movie' : 'episode';
+                        final itemsText = isMovies ? 'movies' : 'episodes';
+
+                        return Tooltip(
+                          message:
+                              '$count ${count == 1 ? itemText : itemsText} watched on ${DateFormat('MMM d, yyyy').format(date)}',
+                          triggerMode: TooltipTriggerMode.tap,
+                          child: Listener(
+                            onPointerDown: (_) {
+                              HapticFeedback.lightImpact();
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: cellColor,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              padding: const EdgeInsets.only(
+                                bottom: 2.0,
+                                right: 4.0,
+                              ),
+                              alignment: Alignment.bottomRight,
+                              child: Text(
+                                '$day',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendSquare(Color color) {
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(1.5),
+      ),
+    );
+  }
+
+  bool _isCurrentMonthOrFuture(DateTime month) {
+    final now = DateTime.now();
+    final limit = DateTime(now.year, now.month, 1);
+    return month.isAtSameMomentAs(limit) || month.isAfter(limit);
+  }
+
+  bool _isSignUpMonthOrPast(DateTime month) {
+    final user = FirebaseAuth.instance.currentUser;
+    final creationTime = user?.metadata.creationTime;
+    if (creationTime == null) return false;
+
+    final limit = DateTime(creationTime.year, creationTime.month, 1);
+    return month.isAtSameMomentAs(limit) || month.isBefore(limit);
+  }
+
+  void _toggleHeatmap(int targetPage) {
+    final wasExpanded = _isHeatmapExpanded;
+    final isSamePage = _heatmapPageIndex == targetPage;
+
+    setState(() {
+      if (wasExpanded && isSamePage) {
+        _isHeatmapExpanded = false;
+        _isLocalLoading = false;
+        _shimmerTimer?.cancel();
+      } else {
+        _isHeatmapExpanded = true;
+        _isLocalLoading = true; // Trigger local shimmer
+        if (!wasExpanded) {
+          _heatmapPageController = PageController(initialPage: targetPage);
+        }
+        _heatmapPageIndex = targetPage;
+      }
+    });
+
+    if (_isHeatmapExpanded) {
+      _shimmerTimer?.cancel();
+      _shimmerTimer = Timer(const Duration(milliseconds: 700), () {
+        if (mounted) {
+          setState(() {
+            _isLocalLoading = false;
+          });
+        }
+      });
+    }
+
+    if (wasExpanded && !isSamePage) {
+      _heatmapPageController.animateToPage(
+        targetPage,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+    HapticFeedback.mediumImpact();
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar _tabBar;
+
+  _SliverAppBarDelegate(this._tabBar);
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      color: Colors.black, // Background color for TabBar
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
+  }
+}
+
+class _RippleShimmerGrid extends StatefulWidget {
+  final int totalSlots;
+  const _RippleShimmerGrid({required this.totalSlots});
+
+  @override
+  State<_RippleShimmerGrid> createState() => _RippleShimmerGridState();
+}
+
+class _RippleShimmerGridState extends State<_RippleShimmerGrid>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+        childAspectRatio: 1.7,
+      ),
+      itemCount: widget.totalSlots,
+      itemBuilder: (context, index) {
+        final row = index ~/ 7;
+        final col = index % 7;
+        final distance = (row + col) / 12.0;
+
+        return AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final progress = _controller.value;
+            final phase = (progress - distance) * 2 * pi;
+            final wave = (cos(phase) + 1.0) / 2.0;
+
+            final opacity = 0.08 + (0.22 * wave);
+            final scale = 1.0 + (0.12 * wave);
+            final translateY = -2.5 * wave;
+
+            final transform = Matrix4.translationValues(0.0, translateY, 0.0)
+              ..multiply(Matrix4.diagonal3Values(scale, scale, 1.0));
+
+            return Transform(
+              transform: transform,
+              alignment: Alignment.center,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(
+                    alpha: opacity.clamp(0.08, 0.35),
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: wave > 0.15
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.35 * wave),
+                            blurRadius: 4.5 * wave,
+                            offset: Offset(0, 2.0 * wave),
+                          ),
+                        ]
+                      : null,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}

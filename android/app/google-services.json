@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "236216751300",
+    "project_id": "tvtimeapp-replica-2026",
+    "storage_bucket": "tvtimeapp-replica-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:236216751300:android:cd25754eb50930ff3de591",
+        "android_client_info": {
+          "package_name": "com.tvtime.replica.tvtimeapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "236216751300-ve4q611qh1l3vjvuspjc44jrjp2gl2c3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tvtime.replica.tvtimeapp",
+            "certificate_hash": "cc7db42666aef7c2c28268209e122760871dd794"
+          }
+        },
+        {
+          "client_id": "236216751300-nvkb8jbs3u64as2jbgt4ad2rlhb9r6c5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLLGu6119YQBmxLwBfsfJIfu7tdeHRxM0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "236216751300-nvkb8jbs3u64as2jbgt4ad2rlhb9r6c5.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "236216751300-u1ikv8htj6gg04nl6knudi34nucacl2g.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.tvtime.replica.tvtimeapp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
