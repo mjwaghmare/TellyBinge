@@ -386,9 +386,10 @@ class TmdbClient {
     List<int>? genreIds,
     String? language,
     String? originCountry,
+    String? firstAirDateGte,
   }) async {
     final cacheKey =
-        'discover_tv_${sortBy}_${genreIds?.join(',') ?? 'none'}_${language ?? 'all'}_${originCountry ?? 'all'}_page_$page';
+        'discover_tv_${sortBy}_${genreIds?.join(',') ?? 'none'}_${language ?? 'all'}_${originCountry ?? 'all'}_${firstAirDateGte ?? 'none'}_page_$page';
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
@@ -404,6 +405,10 @@ class TmdbClient {
         'with_original_language': language,
         'with_origin_country': originCountry,
       };
+
+      if (firstAirDateGte != null) {
+        queryParams['first_air_date.gte'] = firstAirDateGte;
+      }
 
       if (genreIds != null && genreIds.isNotEmpty) {
         // Use pipe '|' for OR logic across multiple genres (native TMDB support)
@@ -439,9 +444,10 @@ class TmdbClient {
     List<int>? genreIds,
     String? language,
     String? originCountry,
+    String? primaryReleaseDateGte,
   }) async {
     final cacheKey =
-        'discover_movie_${sortBy}_${genreIds?.join(',') ?? 'none'}_${language ?? 'all'}_${originCountry ?? 'all'}_page_$page';
+        'discover_movie_${sortBy}_${genreIds?.join(',') ?? 'none'}_${language ?? 'all'}_${originCountry ?? 'all'}_${primaryReleaseDateGte ?? 'none'}_page_$page';
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
@@ -457,6 +463,10 @@ class TmdbClient {
         'with_original_language': language,
         'with_origin_country': originCountry,
       };
+
+      if (primaryReleaseDateGte != null) {
+        queryParams['primary_release_date.gte'] = primaryReleaseDateGte;
+      }
 
       if (genreIds != null && genreIds.isNotEmpty) {
         // Use pipe '|' for OR logic across multiple genres (native TMDB support)

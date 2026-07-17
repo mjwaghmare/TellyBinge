@@ -1482,9 +1482,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                               height: 36,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
+                                color: isWatched
+                                    ? Colors.green
+                                    : Colors.transparent,
                                 border: Border.all(
                                   color: isWatched
-                                      ? Colors.white70
+                                      ? Colors.green
                                       : Colors.white38,
                                   width: 2,
                                 ),

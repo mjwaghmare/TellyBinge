@@ -9,6 +9,7 @@ import '../features/dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import '../features/movies/presentation/pages/movies_page.dart';
 import '../features/movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../features/search/presentation/pages/search_page.dart';
+import '../features/search/presentation/widgets/surprise_me_sheet.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 
 import '../features/profile/presentation/cubit/profile_heatmap_cubit.dart';
@@ -102,6 +103,16 @@ class _CustomGlowBottomBar extends StatelessWidget {
 
   const _CustomGlowBottomBar({required this.currentIndex, required this.onTap});
 
+  void _showSurpriseMeSheet(BuildContext context) {
+    HapticFeedback.heavyImpact();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const SurpriseMeSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -135,6 +146,7 @@ class _CustomGlowBottomBar extends StatelessWidget {
                     'Explore',
                     Icons.search_outlined,
                     Icons.search,
+                    onLongPress: () => _showSurpriseMeSheet(context),
                   ),
                   _buildNavItem(
                     3,
@@ -155,13 +167,14 @@ class _CustomGlowBottomBar extends StatelessWidget {
     int index,
     String label,
     IconData icon,
-    IconData activeIcon,
-  ) {
+    IconData activeIcon, {
+    VoidCallback? onLongPress,
+  }) {
     final isSelected = currentIndex == index;
     return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: _LongPressHapticButton(
         onTap: () => onTap(index),
+        onLongPress: onLongPress,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -220,6 +233,93 @@ class _CustomGlowBottomBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LongPressHapticButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+
+  const _LongPressHapticButton({
+    required this.child,
+    required this.onTap,
+    this.onLongPress,
+  });
+
+  @override
+  State<_LongPressHapticButton> createState() => _LongPressHapticButtonState();
+}
+
+class _LongPressHapticButtonState extends State<_LongPressHapticButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  bool _hasTriggered = false;
+  bool _passed33 = false;
+  bool _passed66 = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+
+    _controller.addListener(() {
+      if (_controller.value >= 0.33 && !_passed33) {
+        _passed33 = true;
+        HapticFeedback.lightImpact();
+      }
+      if (_controller.value >= 0.66 && !_passed66) {
+        _passed66 = true;
+        HapticFeedback.lightImpact();
+      }
+      if (_controller.value >= 1.0 && !_hasTriggered) {
+        _hasTriggered = true;
+        HapticFeedback.heavyImpact();
+        if (widget.onLongPress != null) {
+          widget.onLongPress!();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    if (widget.onLongPress == null) return;
+    _hasTriggered = false;
+    _passed33 = false;
+    _passed66 = false;
+    _controller.forward(from: 0);
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    if (!_hasTriggered) {
+      widget.onTap();
+    }
+    _controller.stop();
+  }
+
+  void _handleTapCancel() {
+    _controller.stop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: widget.onLongPress != null ? _handleTapDown : null,
+      onTapUp: widget.onLongPress != null ? _handleTapUp : (_) => widget.onTap(),
+      onTapCancel: widget.onLongPress != null ? _handleTapCancel : null,
+      onTap: widget.onLongPress == null ? widget.onTap : null,
+      child: widget.child,
     );
   }
 }

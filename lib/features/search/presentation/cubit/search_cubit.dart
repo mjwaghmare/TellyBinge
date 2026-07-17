@@ -42,10 +42,14 @@ class SearchCubit extends Cubit<SearchState> {
     }
     emit(SearchLoading());
     try {
-      final tvShows = await tmdbClient.getTrendingTvShows();
+      final tvShows = await tmdbClient.discoverTvShowsWithFilters(
+        sortBy: 'first_air_date.desc',
+      );
       // Stagger by 100ms to prevent simultaneous socket handshakes on startup
       await Future.delayed(const Duration(milliseconds: 100));
-      final movies = await tmdbClient.getTrendingMovies();
+      final movies = await tmdbClient.discoverMoviesWithFilters(
+        sortBy: 'primary_release_date.desc',
+      );
 
       _cachedTrendingTv = tvShows;
       _cachedTrendingMovies = movies;
@@ -119,30 +123,22 @@ class SearchCubit extends Cubit<SearchState> {
         final nextPage =
             (isTvTab ? currentState.tvPage : currentState.moviesPage) + 1;
         final newResults = isTvTab
-            ? (_tvSortBy == 'trending' &&
-                      (_tvGenreIds == null || _tvGenreIds!.isEmpty) &&
-                      _tvLanguage == null
-                  ? await tmdbClient.getTrendingTvShows(page: nextPage)
-                  : await tmdbClient.discoverTvShowsWithFilters(
-                      page: nextPage,
-                      sortBy: _tvSortBy == 'trending'
-                          ? 'popularity.desc'
-                          : _tvSortBy,
-                      genreIds: _tvGenreIds,
-                      language: _tvLanguage,
-                    ))
-            : (_movieSortBy == 'trending' &&
-                      (_movieGenreIds == null || _movieGenreIds!.isEmpty) &&
-                      _movieLanguage == null
-                  ? await tmdbClient.getTrendingMovies(page: nextPage)
-                  : await tmdbClient.discoverMoviesWithFilters(
-                      page: nextPage,
-                      sortBy: _movieSortBy == 'trending'
-                          ? 'popularity.desc'
-                          : _movieSortBy,
-                      genreIds: _movieGenreIds,
-                      language: _movieLanguage,
-                    ));
+            ? await tmdbClient.discoverTvShowsWithFilters(
+                page: nextPage,
+                sortBy: _tvSortBy == 'trending'
+                    ? 'first_air_date.desc'
+                    : _tvSortBy,
+                genreIds: _tvGenreIds,
+                language: _tvLanguage,
+              )
+            : await tmdbClient.discoverMoviesWithFilters(
+                page: nextPage,
+                sortBy: _movieSortBy == 'trending'
+                    ? 'primary_release_date.desc'
+                    : _movieSortBy,
+                genreIds: _movieGenreIds,
+                language: _movieLanguage,
+              );
 
         if (newResults.isEmpty) {
           emit(

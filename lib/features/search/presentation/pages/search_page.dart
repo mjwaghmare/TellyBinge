@@ -256,7 +256,7 @@ class _SearchPageState extends State<SearchPage>
       final tmdbClient = context.read<TmdbClient>();
       final filteredShows = await tmdbClient.discoverTvShowsWithFilters(
         sortBy: _selectedSortBy == 'trending'
-            ? 'popularity.desc'
+            ? 'first_air_date.desc'
             : _selectedSortBy,
         genreIds: _selectedGenreIds.isEmpty ? null : _selectedGenreIds,
         language: _tvLanguage,
@@ -306,7 +306,7 @@ class _SearchPageState extends State<SearchPage>
       final tmdbClient = context.read<TmdbClient>();
       final filteredMovies = await tmdbClient.discoverMoviesWithFilters(
         sortBy: _selectedMovieSortBy == 'trending'
-            ? 'popularity.desc'
+            ? 'primary_release_date.desc'
             : _selectedMovieSortBy,
         genreIds: _selectedMovieGenreIds.isEmpty
             ? null
