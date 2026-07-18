@@ -107,6 +107,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           highlightElevation: 0,
+          tooltip: 'Surprise Me',
           child: Transform.scale(
             scale: 1.7,
             child: Lottie.asset(
@@ -340,9 +341,7 @@ class _LongPressHapticButtonState extends State<_LongPressHapticButton>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: widget.onLongPress != null ? _handleTapDown : null,
-      onTapUp: widget.onLongPress != null
-          ? _handleTapUp
-          : (_) => widget.onTap(),
+      onTapUp: widget.onLongPress != null ? _handleTapUp : null,
       onTapCancel: widget.onLongPress != null ? _handleTapCancel : null,
       onTap: widget.onLongPress == null ? widget.onTap : null,
       child: widget.child,
