@@ -258,7 +258,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       key: dismissibleKey,
       direction: DismissDirection.horizontal,
       confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
+        if (direction == DismissDirection.endToStart) {
           if (!isWatched && !isDummy && !_isMarkingAsWatched) {
             unawaited(_markAsWatched());
           }
@@ -279,7 +279,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       background: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
         decoration: BoxDecoration(
-          color: AppColors.success,
+          color: AppColors.error,
           borderRadius: BorderRadius.circular(6.0),
         ),
         alignment: Alignment.centerLeft,
@@ -287,14 +287,10 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: const [
-            Icon(
-              Icons.check_circle_outline_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
+            Icon(Icons.stop_circle_outlined, color: Colors.white, size: 28),
             SizedBox(width: 10),
             Text(
-              'WATCHED',
+              'STOP WATCHING',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -308,7 +304,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       secondaryBackground: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
         decoration: BoxDecoration(
-          color: AppColors.error,
+          color: AppColors.success,
           borderRadius: BorderRadius.circular(6.0),
         ),
         alignment: Alignment.centerRight,
@@ -318,7 +314,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: const [
             Text(
-              'STOP WATCHING',
+              'WATCHED',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -327,7 +323,11 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
               ),
             ),
             SizedBox(width: 10),
-            Icon(Icons.stop_circle_outlined, color: Colors.white, size: 28),
+            Icon(
+              Icons.check_circle_outline_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
           ],
         ),
       ),

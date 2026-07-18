@@ -542,7 +542,7 @@ class _MoviesPageState extends State<MoviesPage> {
             if (uid == null) return false;
 
             void executeAction() async {
-              if (direction == DismissDirection.startToEnd) {
+              if (direction == DismissDirection.endToStart) {
                 if (!isWatched) {
                   setState(() => isMarkingAsWatched = true);
                   await Future.delayed(const Duration(milliseconds: 600));
@@ -581,7 +581,7 @@ class _MoviesPageState extends State<MoviesPage> {
           background: Container(
             margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
             decoration: BoxDecoration(
-              color: AppColors.success,
+              color: AppColors.error,
               borderRadius: BorderRadius.circular(6.0),
             ),
             alignment: Alignment.centerLeft,
@@ -589,14 +589,10 @@ class _MoviesPageState extends State<MoviesPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: const [
-                Icon(
-                  Icons.check_circle_outline_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                Icon(Icons.delete_outline, color: Colors.white, size: 28),
                 SizedBox(width: 10),
                 Text(
-                  'WATCHED',
+                  'REMOVE',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -610,7 +606,7 @@ class _MoviesPageState extends State<MoviesPage> {
           secondaryBackground: Container(
             margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
             decoration: BoxDecoration(
-              color: AppColors.error,
+              color: AppColors.success,
               borderRadius: BorderRadius.circular(6.0),
             ),
             alignment: Alignment.centerRight,
@@ -620,7 +616,7 @@ class _MoviesPageState extends State<MoviesPage> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: const [
                 Text(
-                  'REMOVE',
+                  'WATCHED',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -629,7 +625,11 @@ class _MoviesPageState extends State<MoviesPage> {
                   ),
                 ),
                 SizedBox(width: 10),
-                Icon(Icons.delete_outline, color: Colors.white, size: 28),
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ],
             ),
           ),
