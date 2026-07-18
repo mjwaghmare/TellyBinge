@@ -41,6 +41,8 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
   String? _tvError;
   String? _movieError;
 
+  String? _language;
+
   final ScrollController _tvScrollController = ScrollController();
   final ScrollController _movieScrollController = ScrollController();
 
@@ -98,10 +100,28 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       List<dynamic> validResults = [];
       int retryCount = 0;
 
+      int maxPage = 250;
+      try {
+        final initial = await tmdbClient.discoverTvShowsWithFiltersPaginated(
+          page: 1,
+          sortBy: 'popularity.desc',
+          firstAirDateGte: '2020-01-01',
+          language: _language,
+        );
+        final totalPages = initial['total_pages'] as int? ?? 250;
+        maxPage = min(totalPages, 500);
+      } catch (e) {
+        maxPage = 250;
+      }
+
       while (validResults.length < 15 && retryCount < 10) {
+        if (_seenTvPages.length >= maxPage) {
+          _seenTvPages.clear();
+        }
+
         int page;
         do {
-          page = _random.nextInt(250) + 1;
+          page = _random.nextInt(maxPage) + 1;
         } while (_seenTvPages.contains(page));
 
         _seenTvPages.add(page);
@@ -113,6 +133,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           page: page,
           sortBy: 'popularity.desc',
           firstAirDateGte: '2020-01-01',
+          language: _language,
         );
 
         if (!mounted) return;
@@ -178,10 +199,28 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       List<dynamic> validResults = [];
       int retryCount = 0;
 
+      int maxPage = 250;
+      try {
+        final initial = await tmdbClient.discoverMoviesWithFiltersPaginated(
+          page: 1,
+          sortBy: 'popularity.desc',
+          primaryReleaseDateGte: '2020-01-01',
+          language: _language,
+        );
+        final totalPages = initial['total_pages'] as int? ?? 250;
+        maxPage = min(totalPages, 500);
+      } catch (e) {
+        maxPage = 250;
+      }
+
       while (validResults.length < 15 && retryCount < 10) {
+        if (_seenMoviePages.length >= maxPage) {
+          _seenMoviePages.clear();
+        }
+
         int page;
         do {
-          page = _random.nextInt(250) + 1;
+          page = _random.nextInt(maxPage) + 1;
         } while (_seenMoviePages.contains(page));
 
         _seenMoviePages.add(page);
@@ -193,6 +232,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           page: page,
           sortBy: 'popularity.desc',
           primaryReleaseDateGte: '2020-01-01',
+          language: _language,
         );
 
         if (!mounted) return;
@@ -260,6 +300,166 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     super.dispose();
   }
 
+  void _applyLanguage(String language) {
+    final langVal = language == 'all' ? null : language;
+    if (_language != langVal) {
+      setState(() {
+        _language = langVal;
+        _seenTvPages.clear();
+        _seenMoviePages.clear();
+        _tvShows.clear();
+        _movies.clear();
+      });
+      _loadTvShows();
+      _loadMovies();
+    }
+  }
+
+  void _showLanguageBottomSheet() {
+    String currentLanguage = _language ?? 'all';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 16),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Language',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLanguageTile('All', 'all', currentLanguage, (val) {
+                    setModalState(() => currentLanguage = val.toString());
+                  }),
+                  _buildLanguageTile('Hindi', 'hi', currentLanguage, (val) {
+                    setModalState(() => currentLanguage = val.toString());
+                  }),
+                  _buildLanguageTile('Marathi', 'mr', currentLanguage, (val) {
+                    setModalState(() => currentLanguage = val.toString());
+                  }),
+                  const SizedBox(height: 16),
+                  const Divider(color: Colors.white12, height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _applyLanguage('all');
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.white54),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text(
+                              'CANCEL',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _applyLanguage(currentLanguage);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text(
+                              'APPLY',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLanguageTile(
+    String title,
+    String value,
+    String groupValue,
+    ValueChanged<String?> onChanged,
+  ) {
+    final isSelected = value == groupValue;
+    return ListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 0,
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+      trailing: isSelected
+          ? Container(
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary,
+              ),
+              padding: const EdgeInsets.all(4),
+              child: const Icon(Icons.check, size: 16, color: Colors.black),
+            )
+          : Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white38, width: 1.5),
+              ),
+            ),
+      onTap: () => onChanged(value),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FractionallySizedBox(
@@ -276,13 +476,47 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Surprise Me 🎲',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      const Text(
+                        'Surprise Me 🎲',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: _showLanguageBottomSheet,
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: Text('🇮🇳', style: TextStyle(fontSize: 22)),
+                            ),
+                            if (_language != null)
+                              Positioned(
+                                top: 6,
+                                right: 2,
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: Colors.greenAccent,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFF121212),
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70),

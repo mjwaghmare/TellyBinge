@@ -379,8 +379,8 @@ class TmdbClient {
     );
   }
 
-  /// Discover TV shows with filters
-  Future<List<dynamic>> discoverTvShowsWithFilters({
+  /// Discover TV shows with filters (returns paginated data)
+  Future<Map<String, dynamic>> discoverTvShowsWithFiltersPaginated({
     int page = 1,
     String sortBy = 'first_air_date.desc',
     List<int>? genreIds,
@@ -393,7 +393,10 @@ class TmdbClient {
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
-      return _filterAnime(results);
+      return {
+        'results': _filterAnime(results),
+        'total_pages': cachedData['total_pages'] ?? 1,
+      };
     }
 
     try {
@@ -422,7 +425,10 @@ class TmdbClient {
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
-      return _filterAnime(results);
+      return {
+        'results': _filterAnime(results),
+        'total_pages': data['total_pages'] ?? 1,
+      };
     } catch (e) {
       final expiredData = await TmdbCacheManager.instance.readCache(
         cacheKey,
@@ -430,15 +436,38 @@ class TmdbClient {
       );
       if (expiredData != null && expiredData['results'] != null) {
         final results = expiredData['results'] as List<dynamic>;
-        return _filterAnime(results);
+        return {
+          'results': _filterAnime(results),
+          'total_pages': expiredData['total_pages'] ?? 1,
+        };
       }
       debugPrint('Error discovering TV shows with filters: $e');
-      return [];
+      return {'results': [], 'total_pages': 1};
     }
   }
 
-  /// Discover movies with filters
-  Future<List<dynamic>> discoverMoviesWithFilters({
+  /// Discover TV shows with filters
+  Future<List<dynamic>> discoverTvShowsWithFilters({
+    int page = 1,
+    String sortBy = 'first_air_date.desc',
+    List<int>? genreIds,
+    String? language,
+    String? originCountry,
+    String? firstAirDateGte,
+  }) async {
+    final response = await discoverTvShowsWithFiltersPaginated(
+      page: page,
+      sortBy: sortBy,
+      genreIds: genreIds,
+      language: language,
+      originCountry: originCountry,
+      firstAirDateGte: firstAirDateGte,
+    );
+    return response['results'] as List<dynamic>;
+  }
+
+  /// Discover movies with filters (returns paginated data)
+  Future<Map<String, dynamic>> discoverMoviesWithFiltersPaginated({
     int page = 1,
     String sortBy = 'primary_release_date.desc',
     List<int>? genreIds,
@@ -451,7 +480,10 @@ class TmdbClient {
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
-      return _filterAnime(results);
+      return {
+        'results': _filterAnime(results),
+        'total_pages': cachedData['total_pages'] ?? 1,
+      };
     }
 
     try {
@@ -480,7 +512,10 @@ class TmdbClient {
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
-      return _filterAnime(results);
+      return {
+        'results': _filterAnime(results),
+        'total_pages': data['total_pages'] ?? 1,
+      };
     } catch (e) {
       final expiredData = await TmdbCacheManager.instance.readCache(
         cacheKey,
@@ -488,13 +523,35 @@ class TmdbClient {
       );
       if (expiredData != null && expiredData['results'] != null) {
         final results = expiredData['results'] as List<dynamic>;
-        return _filterAnime(results);
+        return {
+          'results': _filterAnime(results),
+          'total_pages': expiredData['total_pages'] ?? 1,
+        };
       }
       debugPrint('Error discovering movies with filters: $e');
-      return [];
+      return {'results': [], 'total_pages': 1};
     }
   }
 
+  /// Discover movies with filters
+  Future<List<dynamic>> discoverMoviesWithFilters({
+    int page = 1,
+    String sortBy = 'primary_release_date.desc',
+    List<int>? genreIds,
+    String? language,
+    String? originCountry,
+    String? primaryReleaseDateGte,
+  }) async {
+    final response = await discoverMoviesWithFiltersPaginated(
+      page: page,
+      sortBy: sortBy,
+      genreIds: genreIds,
+      language: language,
+      originCountry: originCountry,
+      primaryReleaseDateGte: primaryReleaseDateGte,
+    );
+    return response['results'] as List<dynamic>;
+  }
   int _getVoteCountThreshold(String sortBy) {
     if (sortBy == 'vote_average.desc') {
       return 100;
