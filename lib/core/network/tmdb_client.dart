@@ -404,7 +404,7 @@ class TmdbClient {
       final queryParams = <String, dynamic>{
         'page': page,
         'sort_by': sortBy,
-        'vote_count.gte': _getVoteCountThreshold(sortBy),
+        'vote_count.gte': _getVoteCountThreshold(sortBy, language),
         'with_original_language': language,
         'with_origin_country': originCountry,
       };
@@ -491,7 +491,7 @@ class TmdbClient {
       final queryParams = <String, dynamic>{
         'page': page,
         'sort_by': sortBy,
-        'vote_count.gte': _getVoteCountThreshold(sortBy),
+        'vote_count.gte': _getVoteCountThreshold(sortBy, language),
         'with_original_language': language,
         'with_origin_country': originCountry,
       };
@@ -552,7 +552,10 @@ class TmdbClient {
     );
     return response['results'] as List<dynamic>;
   }
-  int _getVoteCountThreshold(String sortBy) {
+  int _getVoteCountThreshold(String sortBy, [String? language]) {
+    if (language == 'mr') {
+      return 0; // Regional content like Marathi has very few votes on TMDB
+    }
     if (sortBy == 'vote_average.desc') {
       return 100;
     } else if (sortBy == 'first_air_date.desc' ||

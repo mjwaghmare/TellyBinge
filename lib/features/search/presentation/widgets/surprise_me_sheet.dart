@@ -75,8 +75,11 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     });
 
     if (_tvScrollController.hasClients) {
-      _tvScrollController.animateTo(0.0,
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _tvScrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
 
     await Future.delayed(const Duration(milliseconds: 300));
@@ -105,7 +108,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final initial = await tmdbClient.discoverTvShowsWithFiltersPaginated(
           page: 1,
           sortBy: 'popularity.desc',
-          firstAirDateGte: '2020-01-01',
+          firstAirDateGte: _language == 'mr' ? '1990-01-01' : '2020-01-01',
           language: _language,
         );
         final totalPages = initial['total_pages'] as int? ?? 250;
@@ -132,7 +135,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final results = await tmdbClient.discoverTvShowsWithFilters(
           page: page,
           sortBy: 'popularity.desc',
-          firstAirDateGte: '2020-01-01',
+          firstAirDateGte: _language == 'mr' ? '1990-01-01' : '2000-01-01',
           language: _language,
         );
 
@@ -142,7 +145,8 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         results.removeWhere((item) => addedIds.contains(item['id']));
 
         for (var item in results) {
-          if (validResults.length < 15 && !validResults.any((e) => e['id'] == item['id'])) {
+          if (validResults.length < 15 &&
+              !validResults.any((e) => e['id'] == item['id'])) {
             validResults.add(item);
           }
         }
@@ -174,8 +178,11 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     });
 
     if (_movieScrollController.hasClients) {
-      _movieScrollController.animateTo(0.0,
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _movieScrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
 
     await Future.delayed(const Duration(milliseconds: 300));
@@ -204,7 +211,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final initial = await tmdbClient.discoverMoviesWithFiltersPaginated(
           page: 1,
           sortBy: 'popularity.desc',
-          primaryReleaseDateGte: '2020-01-01',
+          primaryReleaseDateGte: _language == 'mr'
+              ? '2000-01-01'
+              : '2020-01-01',
           language: _language,
         );
         final totalPages = initial['total_pages'] as int? ?? 250;
@@ -231,7 +240,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final results = await tmdbClient.discoverMoviesWithFilters(
           page: page,
           sortBy: 'popularity.desc',
-          primaryReleaseDateGte: '2020-01-01',
+          primaryReleaseDateGte: _language == 'mr'
+              ? '2000-01-01'
+              : '2020-01-01',
           language: _language,
         );
 
@@ -241,7 +252,8 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         results.removeWhere((item) => addedIds.contains(item['id']));
 
         for (var item in results) {
-          if (validResults.length < 15 && !validResults.any((e) => e['id'] == item['id'])) {
+          if (validResults.length < 15 &&
+              !validResults.any((e) => e['id'] == item['id'])) {
             validResults.add(item);
           }
         }
@@ -427,10 +439,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     final isSelected = value == groupValue;
     return ListTile(
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 0,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       title: Text(
         title,
         style: const TextStyle(
@@ -494,7 +503,10 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                           children: [
                             const Padding(
                               padding: EdgeInsets.all(4.0),
-                              child: Text('🇮🇳', style: TextStyle(fontSize: 22)),
+                              child: Text(
+                                '🇮🇳',
+                                style: TextStyle(fontSize: 22),
+                              ),
                             ),
                             if (_language != null)
                               Positioned(
@@ -549,7 +561,13 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                           final displayShows = _tvShows
                               .where((item) => !addedIds.contains(item['id']))
                               .toList();
-                          return _buildGrid(displayShows, _isLoadingTv, _tvError, true, _tvScrollController);
+                          return _buildGrid(
+                            displayShows,
+                            _isLoadingTv,
+                            _tvError,
+                            true,
+                            _tvScrollController,
+                          );
                         },
                       ),
                       BlocBuilder<MovieWatchlistCubit, MovieWatchlistState>(
@@ -558,7 +576,13 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                           final displayMovies = _movies
                               .where((item) => !addedIds.contains(item['id']))
                               .toList();
-                          return _buildGrid(displayMovies, _isLoadingMovies, _movieError, false, _movieScrollController);
+                          return _buildGrid(
+                            displayMovies,
+                            _isLoadingMovies,
+                            _movieError,
+                            false,
+                            _movieScrollController,
+                          );
                         },
                       ),
                     ],
@@ -617,7 +641,11 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     return _buildGridView(items, isTv, scrollController);
   }
 
-  Widget _buildGridView(List<dynamic> items, bool isTv, ScrollController scrollController) {
+  Widget _buildGridView(
+    List<dynamic> items,
+    bool isTv,
+    ScrollController scrollController,
+  ) {
     return GridView.builder(
       controller: scrollController,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
@@ -731,13 +759,13 @@ class _PremiumPulseGridState extends State<_PremiumPulseGrid>
             // Create a diagonal wave effect based on row and column index
             final int row = index ~/ 3;
             final int col = index % 3;
-            
+
             // Offset defines the wave pattern. Diagonal wave uses (row + col)
             final double offset = (row + col) * 0.4;
-            
+
             // Sine wave formula: sin(2 * pi * progress - offset)
             final double wave = sin((_controller.value * 2 * pi) - offset);
-            
+
             // Map the sine wave (-1.0 to 1.0) to an opacity range (0.2 to 0.7)
             final double opacity = 0.2 + ((wave + 1) / 2) * 0.5;
             // Map the sine wave to a scale range (0.97 to 1.03) so it pops out but doesn't touch

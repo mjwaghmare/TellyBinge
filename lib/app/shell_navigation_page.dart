@@ -13,6 +13,7 @@ import '../features/search/presentation/widgets/surprise_me_sheet.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 
 import '../features/profile/presentation/cubit/profile_heatmap_cubit.dart';
+import 'package:lottie/lottie.dart';
 
 class ShellNavigationPage extends StatefulWidget {
   const ShellNavigationPage({super.key});
@@ -85,10 +86,40 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
     });
   }
 
+  void _showSurpriseMeSheet() {
+    HapticFeedback.heavyImpact();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const SurpriseMeSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _tabNotifier.value, children: _pages),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 24.0),
+        child: FloatingActionButton(
+          onPressed: _showSurpriseMeSheet,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          highlightElevation: 0,
+          child: Transform.scale(
+            scale: 1.7,
+            child: Lottie.asset(
+              'assets/lottie/dice.json',
+              fit: BoxFit.contain,
+              animate: false,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.casino, color: Colors.black, size: 32),
+            ),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: _CustomGlowBottomBar(
         currentIndex: _tabNotifier.value,
         onTap: _onItemTapped,
@@ -101,17 +132,10 @@ class _CustomGlowBottomBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
-  const _CustomGlowBottomBar({required this.currentIndex, required this.onTap});
-
-  void _showSurpriseMeSheet(BuildContext context) {
-    HapticFeedback.heavyImpact();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const SurpriseMeSheet(),
-    );
-  }
+  const _CustomGlowBottomBar({
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -141,12 +165,12 @@ class _CustomGlowBottomBar extends StatelessWidget {
                     Icons.movie_filter_outlined,
                     Icons.movie_filter,
                   ),
+                  const SizedBox(width: 60), // Space for central FAB
                   _buildNavItem(
                     2,
                     'Explore',
                     Icons.search_outlined,
                     Icons.search,
-                    onLongPress: () => _showSurpriseMeSheet(context),
                   ),
                   _buildNavItem(
                     3,
@@ -316,7 +340,9 @@ class _LongPressHapticButtonState extends State<_LongPressHapticButton>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: widget.onLongPress != null ? _handleTapDown : null,
-      onTapUp: widget.onLongPress != null ? _handleTapUp : (_) => widget.onTap(),
+      onTapUp: widget.onLongPress != null
+          ? _handleTapUp
+          : (_) => widget.onTap(),
       onTapCancel: widget.onLongPress != null ? _handleTapCancel : null,
       onTap: widget.onLongPress == null ? widget.onTap : null,
       child: widget.child,
