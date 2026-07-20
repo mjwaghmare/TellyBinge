@@ -432,6 +432,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     }
 
     Widget buildAboutSection() {
+      final String language = (details['original_language'] as String? ?? '')
+          .toUpperCase();
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         child: Column(
@@ -440,19 +442,42 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             Row(children: [Expanded(child: _buildTrackButton(details))]),
             const Text(
               'Show info',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             AppSpacing.gapH4,
             Text(
               '${_getYear(details['first_air_date'] ?? details['release_date'])} • ${_getGenresString(details['genres'])}',
-              style: const TextStyle(color: Colors.white70, fontSize: 13.0),
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                fontSize: 13.0,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            if (language.isNotEmpty) ...[
+              AppSpacing.gapH4,
+              Row(
+                children: [
+                  Icon(
+                    Icons.language,
+                    color: Theme.of(context).disabledColor,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Language: $language',
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                      fontSize: 13.0,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             AppSpacing.gapH12,
             Row(
               children: [
@@ -461,7 +486,6 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 Text(
                   '${(voteAverage / 2).toStringAsFixed(1)}/5',
                   style: const TextStyle(
-                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 13.0,
                   ),
@@ -471,11 +495,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             AppSpacing.gapH12,
             Text(
               overview.isNotEmpty ? overview : 'No overview available.',
-              style: const TextStyle(
-                fontSize: 14.0,
-                color: Colors.white,
-                height: 1.4,
-              ),
+              style: const TextStyle(fontSize: 14.0, height: 1.4),
             ),
             AppSpacing.gapH24,
             if (trailer != null) ...[
@@ -486,15 +506,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             if (details['credits'] != null &&
                 details['credits']['cast'] != null &&
                 (details['credits']['cast'] as List).isNotEmpty) ...[
-              const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+              const Divider(height: 1, thickness: 0.5),
               AppSpacing.gapH24,
               const Text(
                 'Cast',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               AppSpacing.gapH16,
               SizedBox(
@@ -570,11 +586,6 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 pinned: true,
                 delegate: _SliverAppBarDelegate(
                   const TabBar(
-                    indicatorColor: AppColors.textPrimary,
-                    indicatorWeight: 2.5,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    labelColor: AppColors.textPrimary,
-                    unselectedLabelColor: AppColors.textTertiary,
                     tabs: [
                       Tab(text: 'ABOUT'),
                       Tab(text: 'EPISODES'),
@@ -803,30 +814,47 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   }
                 }
 
-                final bool allWatched = watchedCount == epCount && epCount > 0;
-                bool allReleased = false;
-
+                List<String> releasedEpisodesKeys = [];
                 if (epCount > 0) {
                   final totalSeasons =
                       showDetails['number_of_seasons'] as int? ?? 0;
                   if (seasonNumber < totalSeasons) {
-                    allReleased = true;
+                    for (int i = 1; i <= epCount; i++) {
+                      releasedEpisodesKeys.add('$seasonNumber-$i');
+                    }
                   } else {
                     final episodesForSeason = seasonsData[seasonNumber];
                     if (episodesForSeason != null &&
                         episodesForSeason.isNotEmpty) {
-                      final lastEp = episodesForSeason.last;
-                      final airDateStr = lastEp['air_date'] as String?;
-                      if (airDateStr != null && airDateStr.isNotEmpty) {
-                        final airDate = DateTime.tryParse(airDateStr);
-                        if (airDate != null &&
-                            airDate.isBefore(DateTime.now())) {
-                          allReleased = true;
+                      for (var ep in episodesForSeason) {
+                        final epNum = ep['episode_number'] as int? ?? 0;
+                        if (epNum > 0) {
+                          final airDateStr = ep['air_date'] as String?;
+                          if (airDateStr != null && airDateStr.isNotEmpty) {
+                            final airDate = DateTime.tryParse(airDateStr);
+                            if (airDate != null &&
+                                airDate.isBefore(DateTime.now())) {
+                              releasedEpisodesKeys.add('$seasonNumber-$epNum');
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
+
+                int watchedReleasedCount = 0;
+                for (String key in releasedEpisodesKeys) {
+                  if (watchedEpisodes.contains(key)) {
+                    watchedReleasedCount++;
+                  }
+                }
+
+                final bool hasAnyReleased = releasedEpisodesKeys.isNotEmpty;
+                final bool allReleasedWatched =
+                    hasAnyReleased &&
+                    (watchedReleasedCount == releasedEpisodesKeys.length);
+                final bool allWatched = epCount > 0 && watchedCount >= epCount;
 
                 final controller = _controllers.putIfAbsent(
                   seasonNumber,
@@ -890,10 +918,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                 fontSize: 13,
                               ),
                             ),
-                            if (allReleased) ...[
+                            if (hasAnyReleased) ...[
                               const SizedBox(width: 12),
                               GestureDetector(
                                 onTap: () {
+                                  HapticFeedback.lightImpact();
                                   if (authState is! Authenticated) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -918,22 +947,18 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                   final uid = authState.user.uid;
                                   final cubit = context
                                       .read<TvShowWatchlistCubit>();
-                                  List<String> seasonKeys = [];
-                                  for (int i = 1; i <= epCount; i++) {
-                                    seasonKeys.add('$seasonNumber-$i');
-                                  }
 
-                                  if (allWatched) {
+                                  if (allReleasedWatched) {
                                     cubit.unmarkMultipleEpisodesWatched(
                                       uid: uid,
                                       showId: widget.mediaId,
-                                      episodeKeys: seasonKeys,
+                                      episodeKeys: releasedEpisodesKeys,
                                     );
                                   } else {
                                     cubit.markMultipleEpisodesWatched(
                                       uid: uid,
                                       showId: widget.mediaId,
-                                      episodeKeys: seasonKeys,
+                                      episodeKeys: releasedEpisodesKeys,
                                     );
                                   }
                                 },
@@ -942,14 +967,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                   height: 32,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: allWatched
+                                    color: allReleasedWatched
                                         ? Colors.green
                                         : const Color(0xFFF0F0F0),
                                   ),
                                   child: Icon(
                                     Icons.check,
                                     size: 20,
-                                    color: allWatched
+                                    color: allReleasedWatched
                                         ? Colors.white
                                         : Colors.grey[400],
                                   ),
@@ -1349,6 +1374,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
                           return GestureDetector(
                             onTap: () {
+                              HapticFeedback.lightImpact();
                               if (authState is! Authenticated) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(

@@ -31,12 +31,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white, size: 28),
+          icon: Icon(Icons.close, color: Theme.of(context).textTheme.bodyLarge?.color, size: 28),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Edit profile',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         actions: [
@@ -44,7 +44,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             onPressed: () {
               Navigator.pop(context);
             },
-            child: const Text(
+            child: Text(
               'SAVE',
               style: TextStyle(
                 color: Colors.blue, 
@@ -60,7 +60,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+            Divider(color: Colors.white24, height: 1, thickness: 0.5),
             
             // Profile Photo Row
             Padding(
@@ -70,7 +70,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white12, width: 1),
+                      border: Border.all(color: Theme.of(context).dividerColor, width: 1),
                     ),
                     child: const CircleAvatar(
                       radius: 28,
@@ -90,7 +90,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ],
               ),
             ),
-            const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+            Divider(color: Colors.white24, height: 1, thickness: 0.5),
             
             // Display Name
             Padding(
@@ -98,13 +98,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Display name',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70, fontSize: 14),
                   ),
                   TextField(
                     controller: _displayNameController,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 16),
                     cursorColor: Colors.blue,
                     decoration: const InputDecoration(
                       filled: false,
@@ -119,15 +119,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ],
               ),
             ),
-            const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+            Divider(color: Colors.white24, height: 1, thickness: 0.5),
             
             // Personal Information Section
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(AppSpacing.md, 24.0, AppSpacing.md, 16.0),
               child: Text(
                 'Personal information',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -138,7 +138,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             _buildStaticField('Birth year', '1993'),
             _buildStaticField('Gender', 'Male'),
             
-            const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+            Divider(color: Colors.white24, height: 1, thickness: 0.5),
           ],
         ),
       ),
@@ -157,12 +157,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 16),
                 ),
               ],
             ),

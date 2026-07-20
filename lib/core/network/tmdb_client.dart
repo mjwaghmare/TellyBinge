@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../main.dart';
+import '../theme/app_colors.dart';
 import 'tmdb_cache_manager.dart';
 
 class TmdbClient {
@@ -9,6 +12,44 @@ class TmdbClient {
 
   /// Cached API key to avoid reading dotenv on every request
   late final String? _apiKey;
+  bool allowAdultContent = false;
+
+  static bool _isSlowNetworkWarningShowing = false;
+
+  void _showSlowNetworkWarning() {
+    if (_isSlowNetworkWarningShowing) return;
+    _isSlowNetworkWarningShowing = true;
+
+    scaffoldMessengerKey.currentState?.showMaterialBanner(
+      MaterialBanner(
+        content: const Text('Slow network connection detected...'),
+        backgroundColor: AppColors.surfaceLight,
+        contentTextStyle: const TextStyle(color: Colors.white),
+        elevation: 2,
+        actions: [
+          TextButton(
+            onPressed: () {
+              scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
+            },
+            child: const Text(
+              'DISMISS',
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // Auto-dismiss the banner after 4 seconds
+    Future.delayed(const Duration(seconds: 4), () {
+      scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
+    });
+
+    // Reset the warning flag after a longer delay (debounce)
+    Future.delayed(const Duration(seconds: 15), () {
+      _isSlowNetworkWarningShowing = false;
+    });
+  }
 
   TmdbClient({Dio? dio}) : _dio = dio ?? Dio() {
     _apiKey = dotenv.env['TMDB_API_KEY'];
@@ -28,6 +69,7 @@ class TmdbClient {
         onRequest: (options, handler) {
           options.queryParameters['api_key'] = _apiKey;
           options.queryParameters['language'] = 'en-US'; // Default language
+          options.queryParameters['include_adult'] = allowAdultContent;
 
           // Removed fake User-Agent to prevent Cloudflare blocks
           return handler.next(options);
@@ -54,41 +96,50 @@ class TmdbClient {
     Map<String, dynamic>? queryParameters,
     int maxRetries = 3,
   }) async {
-    for (int retry = 0; retry < maxRetries; retry++) {
-      try {
-        return await _dio.get(path, queryParameters: queryParameters);
-      } on DioException catch (e) {
-        // Don't retry on client errors (4xx) except 429 (Rate Limit)
-        if (e.response != null) {
-          final statusCode = e.response?.statusCode ?? 500;
-          if (statusCode >= 400 && statusCode < 500 && statusCode != 429) {
-            rethrow;
+    final slowNetworkTimer = Timer(
+      const Duration(seconds: 5),
+      _showSlowNetworkWarning,
+    );
+
+    try {
+      for (int retry = 0; retry < maxRetries; retry++) {
+        try {
+          return await _dio.get(path, queryParameters: queryParameters);
+        } on DioException catch (e) {
+          // Don't retry on client errors (4xx) except 429 (Rate Limit)
+          if (e.response != null) {
+            final statusCode = e.response?.statusCode ?? 500;
+            if (statusCode >= 400 && statusCode < 500 && statusCode != 429) {
+              rethrow;
+            }
           }
+
+          if (retry == maxRetries - 1) rethrow;
+
+          // Always delay before retry — use shorter delay for connection resets
+          final errorString = e.toString();
+          final isConnectionReset =
+              errorString.contains('Connection reset by peer') ||
+              errorString.contains('SocketException') ||
+              errorString.contains('errno = 54');
+          final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
+          await Future.delayed(Duration(milliseconds: delayMs));
+        } catch (e) {
+          if (retry == maxRetries - 1) rethrow;
+
+          final errorString = e.toString();
+          final isConnectionReset =
+              errorString.contains('Connection reset by peer') ||
+              errorString.contains('SocketException') ||
+              errorString.contains('errno = 54');
+          final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
+          await Future.delayed(Duration(milliseconds: delayMs));
         }
-
-        if (retry == maxRetries - 1) rethrow;
-
-        // Always delay before retry — use shorter delay for connection resets
-        final errorString = e.toString();
-        final isConnectionReset =
-            errorString.contains('Connection reset by peer') ||
-            errorString.contains('SocketException') ||
-            errorString.contains('errno = 54');
-        final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
-        await Future.delayed(Duration(milliseconds: delayMs));
-      } catch (e) {
-        if (retry == maxRetries - 1) rethrow;
-
-        final errorString = e.toString();
-        final isConnectionReset =
-            errorString.contains('Connection reset by peer') ||
-            errorString.contains('SocketException') ||
-            errorString.contains('errno = 54');
-        final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
-        await Future.delayed(Duration(milliseconds: delayMs));
       }
+      throw Exception('Unreachable');
+    } finally {
+      slowNetworkTimer.cancel();
     }
-    throw Exception('Unreachable');
   }
 
   /// Search movies, TV shows, and people
@@ -99,7 +150,7 @@ class TmdbClient {
         queryParameters: {'query': query, 'page': page},
       );
       final results = response.data['results'] as List<dynamic>? ?? [];
-      return _filterAnime(results);
+      return _filterContent(results);
     } catch (e) {
       throw Exception('Failed to search TMDb: $e');
     }
@@ -113,7 +164,7 @@ class TmdbClient {
         queryParameters: {'query': query, 'page': page},
       );
       final results = response.data['results'] as List<dynamic>? ?? [];
-      return _filterAnime(results);
+      return _filterContent(results);
     } catch (e) {
       debugPrint('Error searching TV shows: $e');
       return [];
@@ -146,7 +197,7 @@ class TmdbClient {
         queryParameters: {'query': query, 'page': page},
       );
       final results = response.data['results'] as List<dynamic>? ?? [];
-      return _filterAnime(results);
+      return _filterContent(results);
     } catch (e) {
       debugPrint('Error searching movies: $e');
       return [];
@@ -299,7 +350,7 @@ class TmdbClient {
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
-      return _filterAnime(results);
+      return _filterContent(results);
     }
 
     try {
@@ -310,7 +361,7 @@ class TmdbClient {
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
-      return _filterAnime(results);
+      return _filterContent(results);
     } catch (e) {
       final expiredData = await TmdbCacheManager.instance.readCache(
         cacheKey,
@@ -330,7 +381,7 @@ class TmdbClient {
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
-      return _filterAnime(results);
+      return _filterContent(results);
     }
 
     try {
@@ -341,7 +392,7 @@ class TmdbClient {
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
-      return _filterAnime(results);
+      return _filterContent(results);
     } catch (e) {
       final expiredData = await TmdbCacheManager.instance.readCache(
         cacheKey,
@@ -394,7 +445,7 @@ class TmdbClient {
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
       return {
-        'results': _filterAnime(results),
+        'results': _filterContent(results),
         'total_pages': cachedData['total_pages'] ?? 1,
       };
     }
@@ -426,7 +477,7 @@ class TmdbClient {
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
       return {
-        'results': _filterAnime(results),
+        'results': _filterContent(results),
         'total_pages': data['total_pages'] ?? 1,
       };
     } catch (e) {
@@ -437,7 +488,7 @@ class TmdbClient {
       if (expiredData != null && expiredData['results'] != null) {
         final results = expiredData['results'] as List<dynamic>;
         return {
-          'results': _filterAnime(results),
+          'results': _filterContent(results),
           'total_pages': expiredData['total_pages'] ?? 1,
         };
       }
@@ -481,7 +532,7 @@ class TmdbClient {
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
       return {
-        'results': _filterAnime(results),
+        'results': _filterContent(results),
         'total_pages': cachedData['total_pages'] ?? 1,
       };
     }
@@ -513,7 +564,7 @@ class TmdbClient {
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
       return {
-        'results': _filterAnime(results),
+        'results': _filterContent(results),
         'total_pages': data['total_pages'] ?? 1,
       };
     } catch (e) {
@@ -524,7 +575,7 @@ class TmdbClient {
       if (expiredData != null && expiredData['results'] != null) {
         final results = expiredData['results'] as List<dynamic>;
         return {
-          'results': _filterAnime(results),
+          'results': _filterContent(results),
           'total_pages': expiredData['total_pages'] ?? 1,
         };
       }
@@ -552,6 +603,7 @@ class TmdbClient {
     );
     return response['results'] as List<dynamic>;
   }
+
   int _getVoteCountThreshold(String sortBy, [String? language]) {
     if (language == 'mr') {
       return 0; // Regional content like Marathi has very few votes on TMDB
@@ -567,11 +619,17 @@ class TmdbClient {
     return 0;
   }
 
-  /// Central helper to filter out Anime from TMDB results.
-  /// We identify anime as having original_language 'ja' and genre 16 (Animation).
-  List<dynamic> _filterAnime(List<dynamic> results) {
+  /// Central helper to filter out unwanted content like Anime and Adult content from TMDB results.
+  List<dynamic> _filterContent(List<dynamic> results) {
     return results.where((item) {
       if (item is! Map<String, dynamic>) return true;
+
+      // 1. Adult Content Filter
+      if (!allowAdultContent && item['adult'] == true) {
+        return false;
+      }
+
+      // 2. Anime Filter
       final originalLanguage = item['original_language'] as String?;
       final genreIds = (item['genre_ids'] as List<dynamic>?)?.cast<int>() ?? [];
 
@@ -579,6 +637,7 @@ class TmdbClient {
       if (originalLanguage == 'ja' && genreIds.contains(16)) {
         return false;
       }
+
       return true;
     }).toList();
   }

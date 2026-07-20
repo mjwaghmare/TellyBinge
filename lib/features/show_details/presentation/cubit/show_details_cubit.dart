@@ -39,6 +39,13 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
           );
           final firstSeasonNum = firstActualSeason['season_number'] as int? ?? 1;
           await loadSeasonEpisodes(id, firstSeasonNum);
+
+          // Prefetch the last season's episodes so the "Mark As Watched" button
+          // logic can properly evaluate if all episodes are released.
+          final totalSeasons = details['number_of_seasons'] as int? ?? 0;
+          if (totalSeasons > firstSeasonNum) {
+            await loadSeasonEpisodes(id, totalSeasons);
+          }
         }
       }
     } catch (e) {

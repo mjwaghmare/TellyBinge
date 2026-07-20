@@ -27,33 +27,45 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
     _selectedProgress = widget.initialProgress;
   }
 
-  final List<String> _sortOptions = ['Last added', 'Last watched', 'Alphabetical'];
+  final List<String> _sortOptions = [
+    'Last added',
+    'Last watched',
+    'Alphabetical',
+  ];
   final List<String> _progressOptions = [
     'All',
     'Watching',
     "Haven't started",
     'Up to date',
     'Finished',
-    'Stopped'
+    'Stopped',
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFF1E1E1E), // Dark grey background matching the screenshot
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return FractionallySizedBox(
+      heightFactor: 0.6,
+      child: Material(
+        color:
+            Theme.of(context).bottomSheetTheme.backgroundColor ??
+            (Theme.of(context).brightness == Brightness.light
+                ? Colors.white
+                : const Color(
+                    0xFF1E1E1E,
+                  )), // Dark grey background matching the screenshot
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             const SizedBox(height: AppSpacing.md),
             // Sort by Section
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Text(
                 'Sort by',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -80,15 +92,23 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                           vertical: 10.0,
                         ),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : const Color(0xFFCCCCCC),
+                          color: isSelected
+                              ? AppColors.primary
+                              : (Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.grey.shade300
+                                    : const Color(0xFFCCCCCC)),
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: Text(
                           option,
                           style: TextStyle(
-                            color: Colors.black, // Dark text for both yellow and grey
+                            color: Colors
+                                .black, // Dark text for both yellow and grey
                             fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                           ),
                         ),
                       ),
@@ -97,32 +117,32 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                 }).toList(),
               ),
             ),
-            
+
             const SizedBox(height: AppSpacing.md),
-            const Divider(color: Colors.white12, height: 1),
+            Divider(color: Theme.of(context).dividerColor, height: 1),
             const SizedBox(height: AppSpacing.md),
-            
+
             // Progress Section
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Text(
                 'Progress',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            
+
             // Progress List
             Flexible(
               child: ListView.separated(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 itemCount: _progressOptions.length,
-                separatorBuilder: (context, index) => const Divider(
-                  color: Colors.white12,
+                separatorBuilder: (context, index) => Divider(
+                  color: Theme.of(context).dividerColor,
                   height: 1,
                   indent: AppSpacing.md,
                   endIndent: AppSpacing.md,
@@ -130,26 +150,29 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                 itemBuilder: (context, index) {
                   final option = _progressOptions[index];
                   final isSelected = _selectedProgress == option;
-                  
+
                   return ListTile(
                     dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 0),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: 0,
+                    ),
                     title: Text(
                       option,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
                     trailing: isSelected
                         ? Container(
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppColors.primary,
                             ),
                             padding: const EdgeInsets.all(4),
-                            child: const Icon(
+                            child: Icon(
                               Icons.check,
                               size: 16,
                               color: Colors.black,
@@ -161,7 +184,11 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white38,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.black38
+                                    : Colors.white38,
                                 width: 1.5,
                               ),
                             ),
@@ -175,9 +202,9 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                 },
               ),
             ),
-            
+
             // Bottom Action Bar
-            const Divider(color: Colors.white12, height: 1),
+            Divider(color: Theme.of(context).dividerColor, height: 1),
             SafeArea(
               top: false,
               child: Padding(
@@ -197,16 +224,19 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                           });
                         },
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.white54),
+                          side: BorderSide(color: Colors.white54),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
+                        child: Text(
                           'RESET',
                           style: TextStyle(
-                            color: Colors.white70,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                ? Colors.black87
+                                : Colors.white70,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),
@@ -229,7 +259,7 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
+                        child: Text(
                           'APPLY',
                           style: TextStyle(
                             color: Colors.black,
@@ -244,6 +274,7 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
               ),
             ),
           ],
+        ),
       ),
     );
   }

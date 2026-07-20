@@ -97,13 +97,13 @@ class NotificationsPage extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Notifications',
           style: TextStyle(
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontSize: 18.0,
             fontWeight: FontWeight.bold,
           ),
@@ -113,8 +113,8 @@ class NotificationsPage extends StatelessWidget {
       body: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         itemCount: _notifications.length,
-        separatorBuilder: (context, index) => const Divider(
-          color: Colors.white12,
+        separatorBuilder: (context, index) => Divider(
+          color: Theme.of(context).dividerColor,
           height: 1,
           thickness: 0.5,
         ),
@@ -132,21 +132,21 @@ class NotificationsPage extends StatelessWidget {
             ),
             title: RichText(
               text: TextSpan(
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontSize: 14.0,
                   height: 1.3,
                 ),
                 children: [
                   TextSpan(
                     text: '${item.username} ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   TextSpan(text: '${item.actionText} '),
                   if (item.subtitleDetail != null)
                     TextSpan(
                       text: item.subtitleDetail,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                 ],
               ),
@@ -155,8 +155,8 @@ class NotificationsPage extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4.0),
               child: Text(
                 item.time,
-                style: const TextStyle(
-                  color: AppColors.textTertiary,
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                   fontSize: 12.0,
                 ),
               ),

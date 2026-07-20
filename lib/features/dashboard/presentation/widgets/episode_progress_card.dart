@@ -94,7 +94,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       isScrollControlled: true,
       builder: (sheetContext) {
         return Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Color(0xFF1C1C1E),
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
@@ -118,14 +118,14 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   color: AppColors.error.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.stop_circle_outlined,
                   color: AppColors.error,
                   size: 28,
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Stop Watching?',
                 style: TextStyle(
                   color: Colors.white,
@@ -137,7 +137,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Color(0xFFAAAAAA),
                     fontSize: 13,
                     height: 1.5,
@@ -145,7 +145,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   children: [
                     TextSpan(
                       text: showName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
@@ -181,7 +181,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
+                  child: Text(
                     'STOP WATCHING',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -197,7 +197,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                 height: 44,
                 child: TextButton(
                   onPressed: () => Navigator.pop(sheetContext),
-                  child: const Text(
+                  child: Text(
                     'Cancel',
                     style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
                   ),
@@ -210,17 +210,22 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
     );
   }
 
-  Widget _buildPillBadge(String label, bool isYellow) {
+  Widget _buildPillBadge(BuildContext context, String label, bool isYellow) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
       decoration: BoxDecoration(
-        color: isYellow ? AppColors.primary : Colors.white,
+        color: isYellow
+            ? AppColors.primary
+            : (isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.08)),
         borderRadius: BorderRadius.circular(4.0),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.black,
+        style: TextStyle(
+          color: isYellow
+              ? Colors.black
+              : (isDark ? Colors.white : Colors.black87),
           fontSize: 8.0,
           fontWeight: FontWeight.bold,
         ),
@@ -375,7 +380,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
             borderRadius: BorderRadius.circular(6.0),
           ),
           child: _isMarkingAsWatched
-              ? const Center(
+              ? Center(
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation(Color(0xFF6B8E23)),
@@ -385,26 +390,36 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.zero,
-                      child: CachedNetworkImage(
-                        imageUrl: imageUrl,
-                        width: 100,
-                        height: cardHeight,
-                        fit: BoxFit.cover,
-                        errorWidget: (context, url, error) => Container(
-                          width: 100,
-                          height: cardHeight,
-                          color: AppColors.surfaceLight,
-                          child: const Icon(
-                            Icons.tv,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                        placeholder: (context, url) => Container(
-                          width: 100,
-                          height: cardHeight,
-                          color: AppColors.surfaceLight,
-                        ),
-                      ),
+                      child: imageUrl.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              width: 100,
+                              height: cardHeight,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) => Container(
+                                width: 100,
+                                height: cardHeight,
+                                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                                child: Icon(
+                                  Icons.tv,
+                                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                                ),
+                              ),
+                              placeholder: (context, url) => Container(
+                                width: 100,
+                                height: cardHeight,
+                                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                              ),
+                            )
+                          : Container(
+                              width: 100,
+                              height: cardHeight,
+                              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                              child: Icon(
+                                Icons.tv,
+                                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                              ),
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -430,7 +445,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                 border: isDummy
                                     ? null
                                     : Border.all(
-                                        color: Colors.white,
+                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.black12,
                                         width: 1.0,
                                       ),
                                 borderRadius: BorderRadius.circular(16.0),
@@ -443,8 +458,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                       showTitle,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                                         fontSize: 9.0,
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.0,
@@ -453,9 +468,9 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                   ),
                                   if (!isDummy) const SizedBox(width: 4),
                                   if (!isDummy)
-                                    const Icon(
+                                    Icon(
                                       Icons.chevron_right,
-                                      color: Colors.white,
+                                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black54,
                                       size: 14,
                                     ),
                                 ],
@@ -467,8 +482,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                 children: [
                                   TextSpan(
                                     text: show.episodeCode,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
                                       fontSize: 14.0,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.5,
@@ -477,8 +492,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                   if (show.extraCount != null && !isWatched)
                                     TextSpan(
                                       text: ' ${show.extraCount}',
-                                      style: const TextStyle(
-                                        color: AppColors.textSecondary,
+                                      style: TextStyle(
+                                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : Colors.black54,
                                         fontSize: 11.0,
                                       ),
                                     ),
@@ -491,8 +506,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                   : 'TBA',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
+                              style: TextStyle(
+                                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : Colors.black54,
                                 fontSize: 11.0,
                               ),
                             ),
@@ -502,10 +517,10 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   if (show.isPremiere)
-                                    _buildPillBadge('PREMIERE', false),
+                                    _buildPillBadge(context, 'PREMIERE', false),
                                   if (show.isNew) ...[
                                     const SizedBox(width: 4),
-                                    _buildPillBadge('NEW', true),
+                                    _buildPillBadge(context, 'NEW', true),
                                   ],
                                 ],
                               ),
@@ -533,28 +548,24 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isWatched
-                                    ? AppColors.textPrimary
-                                    : Colors
-                                          .white, // Match screenshot (white background)
+                                    ? AppColors.success
+                                    : (Theme.of(context).brightness == Brightness.light ? Colors.transparent : Colors.white),
                                 border: isWatched
-                                    ? Border.all(
-                                        color: AppColors.textPrimary,
-                                        width: 2,
-                                      )
+                                    ? null
                                     : Border.all(
-                                        color: AppColors.surfaceLight,
+                                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[400]! : Colors.transparent,
                                         width: 1.5,
                                       ),
                               ),
                               child: isWatched
-                                  ? const Icon(
+                                  ? Icon(
                                       Icons.check,
-                                      color: Colors.black,
+                                      color: Colors.white,
                                       size: 24,
                                     )
-                                  : const Icon(
+                                  : Icon(
                                       Icons.check,
-                                      color: AppColors.textTertiary,
+                                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                                       size: 24,
                                     ),
                             ),

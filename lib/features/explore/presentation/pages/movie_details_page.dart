@@ -13,8 +13,10 @@ import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
+import '../cubit/movie_details_cubit.dart';
+import '../cubit/movie_details_state.dart';
 
-class MovieDetailsPage extends StatefulWidget {
+class MovieDetailsPage extends StatelessWidget {
   final int movieId;
   final bool fromRecommendation;
 
@@ -25,122 +27,36 @@ class MovieDetailsPage extends StatefulWidget {
   });
 
   @override
-  State<MovieDetailsPage> createState() => _MovieDetailsPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider<MovieDetailsCubit>(
+      create: (context) => MovieDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+      child: MovieDetailsView(
+        movieId: movieId,
+        fromRecommendation: fromRecommendation,
+      ),
+    );
+  }
 }
 
-class _MovieDetailsPageState extends State<MovieDetailsPage> {
-  Map<String, dynamic>? _movieData;
-  List<dynamic> _cast = [];
-  bool _isLoading = true;
-  String? _error;
+class MovieDetailsView extends StatefulWidget {
+  final int movieId;
+  final bool fromRecommendation;
 
-  // Recommendation list state variables
-  List<dynamic> _collectionParts = [];
-  String _collectionSectionTitle = 'Franchise';
-  List<dynamic> _similarMovies = [];
+  const MovieDetailsView({
+    super.key,
+    required this.movieId,
+    this.fromRecommendation = false,
+  });
 
+  @override
+  State<MovieDetailsView> createState() => _MovieDetailsViewState();
+}
+
+class _MovieDetailsViewState extends State<MovieDetailsView> {
   @override
   void initState() {
     super.initState();
-    _fetchMovieData();
-  }
-
-  Future<void> _fetchMovieData() async {
-    final tmdbClient = context.read<TmdbClient>();
-
-    // Retry up to 3 times to handle flaky network connections
-    for (int attempt = 1; attempt <= 3; attempt++) {
-      try {
-        final movieDetails = await tmdbClient.getMovieDetails(widget.movieId);
-        // Stagger by 100ms to avoid concurrent connection resets
-        await Future.delayed(const Duration(milliseconds: 100));
-        final movieCredits = await tmdbClient.getMovieCredits(widget.movieId);
-
-        if (!mounted) return;
-        
-        final belongsToCollection = movieDetails['belongs_to_collection'];
-        final List<dynamic> collectionParts = [];
-        String collectionSectionTitle = 'Franchise';
-        if (belongsToCollection != null && belongsToCollection['id'] != null) {
-          final collectionId = belongsToCollection['id'] as int;
-          try {
-            final collectionDetails = await tmdbClient.getCollectionDetails(
-              collectionId,
-            );
-            final parts = collectionDetails['parts'] as List<dynamic>? ?? [];
-            collectionParts.addAll(
-              parts.where((item) => item['id'] != widget.movieId),
-            );
-            final collectionName =
-                belongsToCollection['name'] as String? ?? 'Franchise';
-            collectionSectionTitle = 'More from $collectionName';
-          } catch (e) {
-            debugPrint('Failed to load collection details: $e');
-          }
-        }
-
-        // Always fetch similar movies
-        List<dynamic> similarMovies = [];
-        try {
-          similarMovies = await tmdbClient.getSimilarMovies(widget.movieId);
-        } catch (e) {
-          debugPrint('Failed to load similar movies: $e');
-        }
-
-        // Sort collection parts by release date descending (latest first)
-        collectionParts.sort((a, b) {
-          final aDateStr = a['release_date'] as String? ?? '';
-          final bDateStr = b['release_date'] as String? ?? '';
-          if (aDateStr.isEmpty) return 1;
-          if (bDateStr.isEmpty) return -1;
-          try {
-            final aDate = DateTime.parse(aDateStr);
-            final bDate = DateTime.parse(bDateStr);
-            return bDate.compareTo(aDate);
-          } catch (_) {
-            return 0;
-          }
-        });
-
-        // Sort similar movies by release date descending (latest first)
-        similarMovies.sort((a, b) {
-          final aDateStr = a['release_date'] as String? ?? '';
-          final bDateStr = b['release_date'] as String? ?? '';
-          if (aDateStr.isEmpty) return 1;
-          if (bDateStr.isEmpty) return -1;
-          try {
-            final aDate = DateTime.parse(aDateStr);
-            final bDate = DateTime.parse(bDateStr);
-            return bDate.compareTo(aDate);
-          } catch (_) {
-            return 0;
-          }
-        });
-
-        if (!mounted) return;
-        setState(() {
-          _movieData = movieDetails;
-          _cast = (movieCredits['cast'] as List<dynamic>? ?? [])
-              .take(10)
-              .toList();
-          _collectionParts = collectionParts;
-          _similarMovies = similarMovies;
-          _isLoading = false;
-          _collectionSectionTitle = collectionSectionTitle;
-        });
-        return; // Success, exit
-      } catch (e) {
-        if (attempt < 3) {
-          await Future.delayed(const Duration(seconds: 1));
-          continue; // Retry
-        }
-        if (!mounted) return;
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
+    context.read<MovieDetailsCubit>().loadMovieDetails(widget.movieId);
   }
 
   Map<String, dynamic> _dummyMovieData() {
@@ -270,92 +186,100 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    if (_error != null && _movieData == null) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          leading: IconButton(
-            icon: const Icon(
-              Icons.keyboard_arrow_down,
-              size: 32,
-              color: Colors.white,
+    return BlocBuilder<MovieDetailsCubit, MovieDetailsState>(
+      builder: (context, state) {
+        final bool isLoading = state is MovieDetailsInitial || state is MovieDetailsLoading;
+        final String? error = state is MovieDetailsError ? state.message : null;
+
+        if (error != null && state is! MovieDetailsSuccess) {
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: AppBar(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 32,
+                  color: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/error_devices.png',
-                  width: 160,
-                  height: 160,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Failed to load movie details',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _error ?? '',
-                  style: const TextStyle(
-                    color: AppColors.textTertiary,
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _isLoading = true;
-                      _error = null;
-                    });
-                    _fetchMovieData();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/error_devices.png',
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.contain,
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 12,
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Failed to load movie details',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  child: const Text(
-                    'RETRY',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+                    const SizedBox(height: 8),
+                    Text(
+                      error,
+                      style: const TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<MovieDetailsCubit>().loadMovieDetails(widget.movieId);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        'RETRY',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      );
-    }
+          );
+        }
+
+        final movieData = state is MovieDetailsSuccess ? state.movieDetails : null;
+        final castData = state is MovieDetailsSuccess ? (state.movieCredits['cast'] as List<dynamic>? ?? []).take(10).toList() : [];
+        final collectionParts = state is MovieDetailsSuccess ? state.collectionParts : [];
+        final collectionSectionTitle = state is MovieDetailsSuccess ? state.collectionSectionTitle : 'Franchise';
+        final similarMovies = state is MovieDetailsSuccess ? state.similarMovies : [];
 
     final authState = context.read<AuthCubit>().state;
     final String? uid = authState is Authenticated ? authState.user.uid : null;
 
-    final movie = _isLoading ? _dummyMovieData() : _movieData!;
-    final cast = _isLoading ? _dummyCastList() : _cast;
+    final movie = isLoading ? _dummyMovieData() : movieData!;
+    final cast = isLoading ? _dummyCastList() : castData;
     final title = movie['title'] as String? ?? 'Unknown';
     final backdropPath = movie['backdrop_path'] as String?;
     final releaseDate = movie['release_date'] as String?;
@@ -366,7 +290,7 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
     final runtime = _formatRuntime(movie['runtime'] as int?);
     final released = _isReleased(releaseDate);
 
-    final videos = _isLoading
+    final videos = isLoading
         ? <dynamic>[]
         : (movie['videos']?['results'] as List<dynamic>? ?? []);
     final youtubeTrailers = videos
@@ -416,9 +340,9 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
         }
 
         // Show all collection parts regardless of watchlist status
-        final visibleCollectionParts = _collectionParts.take(5).toList();
+        final visibleCollectionParts = collectionParts.take(5).toList();
 
-        final visibleSimilarMovies = _similarMovies
+        final visibleSimilarMovies = similarMovies
             .where((item) {
               final rawId = item['id'];
               int? id;
@@ -433,45 +357,59 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
             .take(5)
             .toList();
 
+        final double bottomPadding = MediaQuery.paddingOf(context).bottom;
+        final double buttonHeight = 50.0;
+        final double verticalMargin = 12.0;
+        final double horizontalMargin = 16.0;
+        final double totalContainerHeight = buttonHeight + verticalMargin + verticalMargin + bottomPadding;
+
         return Skeletonizer(
-          enabled: _isLoading,
+          enabled: isLoading,
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             bottomNavigationBar: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              height: (_isLoading || isAdded) ? 0.0 : kToolbarHeight,
+              height: (isLoading || isAdded) ? 0.0 : totalContainerHeight,
               curve: Curves.easeInOut,
               child: SingleChildScrollView(
                 physics: const NeverScrollableScrollPhysics(),
-                child: InkWell(
-                  onTap: () {
-                    if (uid != null) {
-                      HapticFeedback.mediumImpact();
-                      context.read<MovieWatchlistCubit>().addMovie(
-                        uid: uid,
-                        movieId: widget.movieId,
-                        title: title,
-                        posterPath: movie['poster_path'],
-                        backdropPath: movie['backdrop_path'],
-                        releaseDate: releaseDate,
-                        runtime: movie['runtime'] as int? ?? 0,
-                        voteAverage: voteAverage,
-                        genres: genres,
-                      );
-                    }
-                  },
-                  child: Container(
-                    height: kToolbarHeight,
-                    color: Colors.yellow,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: horizontalMargin,
+                    right: horizontalMargin,
+                    top: verticalMargin,
+                    bottom: verticalMargin + bottomPadding,
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (uid != null) {
+                        HapticFeedback.mediumImpact();
+                        context.read<MovieWatchlistCubit>().addMovie(
+                          uid: uid,
+                          movieId: widget.movieId,
+                          title: title,
+                          posterPath: movie['poster_path'],
+                          backdropPath: movie['backdrop_path'],
+                          releaseDate: releaseDate,
+                          runtime: movie['runtime'] as int? ?? 0,
+                          voteAverage: voteAverage,
+                          genres: genres,
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.textOnPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 14.0),
+                    ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add, color: Colors.black, size: 22),
+                        Icon(Icons.add, size: 22),
                         SizedBox(width: 8),
                         Text(
                           'ADD MOVIE',
                           style: TextStyle(
-                            color: Colors.black,
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.0,
@@ -841,7 +779,7 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           Text(
-                            _collectionSectionTitle,
+                            collectionSectionTitle,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -968,6 +906,8 @@ class _MovieDetailsPageState extends State<MovieDetailsPage> {
             ),
           ),
         );
+      },
+    );
       },
     );
   }

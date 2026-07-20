@@ -25,6 +25,8 @@ class ShellNavigationPage extends StatefulWidget {
 class _ShellNavigationPageState extends State<ShellNavigationPage> {
   final ValueNotifier<int> _tabNotifier = ValueNotifier<int>(0);
   final ValueNotifier<int> _exploreSubTabNotifier = ValueNotifier<int>(0);
+  final GlobalKey<DashboardPageState> _dashboardKey = GlobalKey<DashboardPageState>();
+  final GlobalKey<MoviesPageState> _moviesKey = GlobalKey<MoviesPageState>();
   late final List<Widget> _pages;
 
   @override
@@ -40,6 +42,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
 
     _pages = [
       DashboardPage(
+        key: _dashboardKey,
         onNavigateToExplore: () {
           setState(() {
             _tabNotifier.value =
@@ -50,6 +53,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
         },
       ),
       MoviesPage(
+        key: _moviesKey,
         onNavigateToExplore: () {
           setState(() {
             _tabNotifier.value =
@@ -78,12 +82,18 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
   }
 
   void _onItemTapped(int index) {
-    if (_tabNotifier.value != index) {
+    if (_tabNotifier.value == index) {
+      if (index == 0) {
+        _dashboardKey.currentState?.scrollToTop();
+      } else if (index == 1) {
+        _moviesKey.currentState?.scrollToTop();
+      }
+    } else {
       HapticFeedback.lightImpact();
+      setState(() {
+        _tabNotifier.value = index;
+      });
     }
-    setState(() {
-      _tabNotifier.value = index;
-    });
   }
 
   void _showSurpriseMeSheet() {
@@ -133,10 +143,7 @@ class _CustomGlowBottomBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
-  const _CustomGlowBottomBar({
-    required this.currentIndex,
-    required this.onTap,
-  });
+  const _CustomGlowBottomBar({required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

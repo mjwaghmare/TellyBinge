@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../domain/repositories/movie_watchlist_repository.dart';
 import 'movie_watchlist_state.dart';
 
@@ -111,6 +112,14 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
         isWatched: isWatched,
         isFavorite: isFavorite,
       );
+      
+      // Schedule notification
+      await NotificationService().scheduleBasedOnSettings(
+        id: movieId,
+        title: 'Upcoming Release: $title',
+        body: '$title is releasing soon!',
+        releaseDateStr: releaseDate,
+      );
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.addMovie: $e');
     }
@@ -157,6 +166,9 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
         uid: uid,
         movieId: movieId,
       );
+      
+      // Cancel scheduled notification if it exists
+      await NotificationService().cancelNotification(movieId);
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.removeMovie: $e');
     }

@@ -15,12 +15,30 @@ class MoviesPage extends StatefulWidget {
   const MoviesPage({super.key, this.onNavigateToExplore});
 
   @override
-  State<MoviesPage> createState() => _MoviesPageState();
+  State<MoviesPage> createState() => MoviesPageState();
 }
 
-class _MoviesPageState extends State<MoviesPage> {
+class MoviesPageState extends State<MoviesPage> {
+  final ScrollController watchlistScrollController = ScrollController();
+  final ScrollController upcomingScrollController = ScrollController();
   final GlobalKey _watchNextKey = GlobalKey();
   bool _isGridView = false;
+
+  @override
+  void dispose() {
+    watchlistScrollController.dispose();
+    upcomingScrollController.dispose();
+    super.dispose();
+  }
+
+  void scrollToTop() {
+    if (watchlistScrollController.hasClients) {
+      watchlistScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
+    if (upcomingScrollController.hasClients) {
+      upcomingScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
+  }
 
   String _getImageUrl(String? path, {String size = 'w500'}) {
     if (path == null || path.isEmpty) return '';
@@ -153,16 +171,6 @@ class _MoviesPageState extends State<MoviesPage> {
               elevation: 0,
               toolbarHeight: 0, // Hide main toolbar for clean tab view
               bottom: const TabBar(
-                indicatorColor: AppColors.textPrimary,
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicatorWeight: 2.5,
-                labelColor: AppColors.textPrimary,
-                unselectedLabelColor: AppColors.textTertiary,
-                labelStyle: TextStyle(
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
                 tabs: [
                   Tab(text: 'WATCH LIST'),
                   Tab(text: 'UPCOMING'),
@@ -198,12 +206,14 @@ class _MoviesPageState extends State<MoviesPage> {
         height: 30,
         width: 30,
         decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.grey[200]
+              : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(6.0),
         ),
         child: Icon(
           _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
-          color: AppColors.textSecondary,
+          color: Theme.of(context).iconTheme.color ?? AppColors.textSecondary,
           size: 18,
         ),
       ),
@@ -245,6 +255,7 @@ class _MoviesPageState extends State<MoviesPage> {
     return Skeletonizer(
       enabled: isLoading,
       child: CustomScrollView(
+        controller: watchlistScrollController,
         physics: isLoading ? const NeverScrollableScrollPhysics() : null,
         center: _watchNextKey,
         slivers: [
@@ -363,6 +374,7 @@ class _MoviesPageState extends State<MoviesPage> {
     return Skeletonizer(
       enabled: isLoading,
       child: CustomScrollView(
+        controller: upcomingScrollController,
         physics: isLoading ? const NeverScrollableScrollPhysics() : null,
         slivers: [
           const SliverPadding(padding: EdgeInsets.only(top: 8.0)),
@@ -423,17 +435,21 @@ class _MoviesPageState extends State<MoviesPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.movie_filter_outlined,
               size: 64,
-              color: AppColors.textTertiary,
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Colors.grey[500]
+                  : AppColors.textTertiary,
             ),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color:
+                    Theme.of(context).textTheme.bodyMedium?.color ??
+                    AppColors.textSecondary,
                 fontSize: 14.0,
                 height: 1.4,
               ),
@@ -451,7 +467,7 @@ class _MoviesPageState extends State<MoviesPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'ADD MOVIES',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
@@ -471,16 +487,22 @@ class _MoviesPageState extends State<MoviesPage> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 12.0),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14.0,
+                vertical: 6.0,
+              ),
               decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
+                color: Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey[200]
+                    : AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(20.0),
               ),
               child: Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
                   fontSize: 10.0,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
@@ -504,13 +526,17 @@ class _MoviesPageState extends State<MoviesPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.grey[200]
+            : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20.0),
       ),
       child: Text(
         title,
-        style: const TextStyle(
-          color: AppColors.textSecondary,
+        style: TextStyle(
+          color: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
           fontSize: 10.0,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.0,
@@ -691,7 +717,11 @@ class _MoviesPageState extends State<MoviesPage> {
                             errorWidget: (context, url, error) => Container(
                               width: 100,
                               height: 96.0,
-                              color: AppColors.surfaceLight,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey[200]
+                                  : AppColors.surfaceLight,
                               child: const Skeleton.ignore(
                                 child: Icon(
                                   Icons.movie_outlined,
@@ -702,8 +732,12 @@ class _MoviesPageState extends State<MoviesPage> {
                             placeholder: (context, url) => Container(
                               width: 100,
                               height: 96.0,
-                              color: AppColors.surfaceLight,
-                              child: const Center(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey[200]
+                                  : AppColors.surfaceLight,
+                              child: Center(
                                 child: SizedBox(
                                   width: 20,
                                   height: 20,
@@ -735,8 +769,10 @@ class _MoviesPageState extends State<MoviesPage> {
                                   title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppColors.textPrimary,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).textTheme.bodyLarge?.color,
                                     fontSize: 15.0,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -746,7 +782,7 @@ class _MoviesPageState extends State<MoviesPage> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     if (voteAverage > 0.0) ...[
-                                      const Icon(
+                                      Icon(
                                         Icons.star,
                                         color: AppColors.primary,
                                         size: 13,
@@ -754,17 +790,23 @@ class _MoviesPageState extends State<MoviesPage> {
                                       const SizedBox(width: 4),
                                       Text(
                                         voteAverage.toStringAsFixed(1),
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium?.color,
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                       if (runtime != null && runtime > 0)
-                                        const Text(
+                                        Text(
                                           ' • ',
                                           style: TextStyle(
-                                            color: AppColors.textTertiary,
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.color
+                                                ?.withValues(alpha: 0.6),
                                             fontSize: 11.5,
                                           ),
                                         ),
@@ -772,8 +814,10 @@ class _MoviesPageState extends State<MoviesPage> {
                                     if (runtime != null && runtime > 0)
                                       Text(
                                         _formatRuntime(runtime),
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium?.color,
                                           fontSize: 11.5,
                                         ),
                                       ),
@@ -783,8 +827,12 @@ class _MoviesPageState extends State<MoviesPage> {
                                   const SizedBox(height: 3),
                                   Text(
                                     _formatReleaseDate(releaseDate),
-                                    style: const TextStyle(
-                                      color: AppColors.textTertiary,
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.color
+                                          ?.withValues(alpha: 0.6),
                                       fontSize: 11.5,
                                     ),
                                   ),
@@ -795,8 +843,12 @@ class _MoviesPageState extends State<MoviesPage> {
                                     genres,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: AppColors.textTertiary,
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.color
+                                          ?.withValues(alpha: 0.6),
                                       fontSize: 11.5,
                                     ),
                                   ),
@@ -837,7 +889,20 @@ class _MoviesPageState extends State<MoviesPage> {
                                 shape: BoxShape.circle,
                                 color: isWatched
                                     ? AppColors.success
-                                    : Colors.white,
+                                    : (Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Colors.transparent
+                                          : Colors.white),
+                                border: isWatched
+                                    ? null
+                                    : Border.all(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.grey[400]!
+                                            : Colors.transparent,
+                                        width: 1.5,
+                                      ),
                               ),
                               child: Center(
                                 child: Icon(
@@ -845,7 +910,10 @@ class _MoviesPageState extends State<MoviesPage> {
                                   size: 20,
                                   color: isWatched
                                       ? Colors.white
-                                      : AppColors.textTertiary,
+                                      : (Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.grey[500]
+                                            : AppColors.textTertiary),
                                 ),
                               ),
                             ),
@@ -919,8 +987,10 @@ class _MoviesPageState extends State<MoviesPage> {
                       placeholder: (context, url) => Container(
                         width: 130,
                         height: 96.0,
-                        color: AppColors.surfaceLight,
-                        child: const Center(
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? Colors.grey[200]
+                            : AppColors.surfaceLight,
+                        child: Center(
                           child: SizedBox(
                             width: 20,
                             height: 20,
@@ -948,8 +1018,8 @@ class _MoviesPageState extends State<MoviesPage> {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 15.0,
                         fontWeight: FontWeight.bold,
                       ),
@@ -959,25 +1029,27 @@ class _MoviesPageState extends State<MoviesPage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         if (voteAverage > 0.0) ...[
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.primary,
-                            size: 13,
-                          ),
+                          Icon(Icons.star, color: AppColors.primary, size: 13),
                           const SizedBox(width: 4),
                           Text(
                             voteAverage.toStringAsFixed(1),
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
                               fontSize: 11.5,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           if (runtime != null && runtime > 0)
-                            const Text(
+                            Text(
                               ' • ',
                               style: TextStyle(
-                                color: AppColors.textTertiary,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.color
+                                    ?.withValues(alpha: 0.6),
                                 fontSize: 11.5,
                               ),
                             ),
@@ -985,8 +1057,10 @@ class _MoviesPageState extends State<MoviesPage> {
                         if (runtime != null && runtime > 0)
                           Text(
                             _formatRuntime(runtime),
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
                               fontSize: 11.5,
                             ),
                           ),
@@ -996,8 +1070,10 @@ class _MoviesPageState extends State<MoviesPage> {
                       const SizedBox(height: 3),
                       Text(
                         _formatReleaseDate(releaseDate),
-                        style: const TextStyle(
-                          color: AppColors.textTertiary,
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                           fontSize: 11.5,
                         ),
                       ),
@@ -1008,8 +1084,10 @@ class _MoviesPageState extends State<MoviesPage> {
                         genres,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textTertiary,
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                           fontSize: 11.5,
                         ),
                       ),
@@ -1025,11 +1103,11 @@ class _MoviesPageState extends State<MoviesPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   if (isTBA) ...[
-                    const Text(
+                    Text(
                       'TBA',
                       textAlign: TextAlign.right,
                       style: TextStyle(
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 18.0,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.0,
@@ -1039,8 +1117,8 @@ class _MoviesPageState extends State<MoviesPage> {
                     Text(
                       daysLeft,
                       textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 24.0,
                         fontWeight: FontWeight.bold,
                         height: 1.0,
@@ -1050,8 +1128,10 @@ class _MoviesPageState extends State<MoviesPage> {
                     Text(
                       daysLeft == '1' ? 'DAY' : 'DAYS',
                       textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        color: AppColors.textTertiary,
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                         fontSize: 10.0,
                         letterSpacing: 1.0,
                       ),
@@ -1060,15 +1140,27 @@ class _MoviesPageState extends State<MoviesPage> {
                     Container(
                       width: 36,
                       height: 36,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white,
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? Colors.transparent
+                            : Colors.white,
+                        border: Border.all(
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                              ? Colors.grey[400]!
+                              : Colors.transparent,
+                          width: 1.5,
+                        ),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.check,
                           size: 20,
-                          color: AppColors.textTertiary,
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                              ? Colors.grey[500]
+                              : AppColors.textTertiary,
                         ),
                       ),
                     ),
@@ -1129,8 +1221,10 @@ class _MoviesPageState extends State<MoviesPage> {
                     imageUrl: _getImageUrl(posterPath),
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
-                      color: AppColors.surfaceLight,
-                      child: const Center(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.grey[200]
+                          : AppColors.surfaceLight,
+                      child: Center(
                         child: SizedBox(
                           width: 20,
                           height: 20,
@@ -1144,16 +1238,22 @@ class _MoviesPageState extends State<MoviesPage> {
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      color: AppColors.surfaceLight,
-                      child: const Icon(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.grey[200]
+                          : AppColors.surfaceLight,
+                      child: Icon(
                         Icons.movie_outlined,
-                        color: AppColors.textTertiary,
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? Colors.grey[500]
+                            : AppColors.textTertiary,
                       ),
                     ),
                   )
                 : Container(
-                    color: AppColors.surfaceLight,
-                    child: const Icon(
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.grey[200]
+                        : AppColors.surfaceLight,
+                    child: Icon(
                       Icons.movie_creation_outlined,
                       color: AppColors.textTertiary,
                     ),
@@ -1220,7 +1320,7 @@ class _MoviesPageState extends State<MoviesPage> {
                         children: [
                           Text(
                             dayStr,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
@@ -1236,7 +1336,7 @@ class _MoviesPageState extends State<MoviesPage> {
                           ),
                           Text(
                             monthStr,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -1259,7 +1359,7 @@ class _MoviesPageState extends State<MoviesPage> {
                         children: [
                           Text(
                             '$daysLeft',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
@@ -1275,7 +1375,7 @@ class _MoviesPageState extends State<MoviesPage> {
                           ),
                           Text(
                             daysLeft == 1 ? 'DAY' : 'DAYS',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -1307,7 +1407,7 @@ class _MoviesPageState extends State<MoviesPage> {
       width: 130,
       height: 96.0,
       color: const Color(0xFF1E88E5).withValues(alpha: 0.85),
-      child: const Center(
+      child: Center(
         child: Skeleton.ignore(
           child: Icon(
             Icons.movie_creation_outlined,

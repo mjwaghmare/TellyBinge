@@ -12,17 +12,22 @@ class UpcomingEpisodeCard extends StatelessWidget {
 
   const UpcomingEpisodeCard({super.key, required this.enrichedShow});
 
-  Widget _buildPillBadge(String label, bool isYellow) {
+  Widget _buildPillBadge(BuildContext context, String label, bool isYellow) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isYellow
+            ? AppColors.primary
+            : (isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.08)),
         borderRadius: BorderRadius.circular(4.0),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.black,
+        style: TextStyle(
+          color: isYellow
+              ? Colors.black
+              : (isDark ? Colors.white : Colors.black87),
           fontSize: 8.0,
           fontWeight: FontWeight.bold,
         ),
@@ -30,7 +35,7 @@ class UpcomingEpisodeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRightSide() {
+  Widget _buildRightSide(BuildContext context) {
     final daysLeft = enrichedShow.upcomingDaysLeft;
     final networkName = enrichedShow.upcomingNetworkName;
 
@@ -40,8 +45,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
         children: [
           Text(
             '$daysLeft',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
               height: 1.0,
@@ -50,8 +55,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             daysLeft == 1 ? 'DAY' : 'DAYS',
-            style: const TextStyle(
-              color: AppColors.textTertiary,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
               fontSize: 10.0,
               letterSpacing: 1.0,
             ),
@@ -66,8 +71,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             networkName,
-            style: const TextStyle(
-              color: AppColors.textTertiary,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
               fontSize: 11.0,
             ),
           ),
@@ -141,23 +146,30 @@ class UpcomingEpisodeCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.zero,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                width: 130,
-                height: cardHeight,
-                fit: BoxFit.cover,
-                errorWidget: (context, url, error) => Container(
-                  width: 130,
-                  height: cardHeight,
-                  color: AppColors.surfaceLight,
-                  child: const Icon(Icons.tv, color: AppColors.textTertiary),
-                ),
-                placeholder: (context, url) => Container(
-                  width: 130,
-                  height: cardHeight,
-                  color: AppColors.surfaceLight,
-                ),
-              ),
+              child: imageUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      width: 130,
+                      height: cardHeight,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Container(
+                        width: 130,
+                        height: cardHeight,
+                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                        child: Icon(Icons.tv, color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary),
+                      ),
+                      placeholder: (context, url) => Container(
+                        width: 130,
+                        height: cardHeight,
+                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                      ),
+                    )
+                  : Container(
+                      width: 130,
+                      height: cardHeight,
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                      child: Icon(Icons.tv, color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -181,7 +193,7 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         border: isDummy
                             ? null
-                            : Border.all(color: Colors.white, width: 1.0),
+                            : Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.black12, width: 1.0),
                         borderRadius: BorderRadius.circular(16.0),
                       ),
                       child: Row(
@@ -192,8 +204,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
                               showTitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                                 fontSize: 9.0,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.0,
@@ -202,9 +214,9 @@ class UpcomingEpisodeCard extends StatelessWidget {
                           ),
                           if (!isDummy) const SizedBox(width: 4),
                           if (!isDummy)
-                            const Icon(
+                            Icon(
                               Icons.chevron_right,
-                              color: Colors.white,
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black54,
                               size: 14,
                             ),
                         ],
@@ -213,8 +225,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       show.upcomingEpisodeCode,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 14.0,
                         fontWeight: FontWeight.bold,
                       ),
@@ -224,8 +236,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       show.upcomingEpisodeTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : Colors.black54,
                         fontSize: 11.0,
                       ),
                     ),
@@ -234,11 +246,11 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       Row(
                         children: [
                           if (show.upcomingIsPremiere)
-                            _buildPillBadge('PREMIERE', false),
+                            _buildPillBadge(context, 'PREMIERE', false),
                           if (show.upcomingIsPremiere && show.upcomingIsNew)
                             const SizedBox(width: 6),
                           if (show.upcomingIsNew)
-                            _buildPillBadge('LATEST', false),
+                            _buildPillBadge(context, 'LATEST', false),
                         ],
                       ),
                     ],
@@ -248,7 +260,7 @@ class UpcomingEpisodeCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
-              child: _buildRightSide(),
+              child: _buildRightSide(context),
             ),
           ],
         ),

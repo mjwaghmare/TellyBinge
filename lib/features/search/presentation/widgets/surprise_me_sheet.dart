@@ -331,7 +331,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     String currentLanguage = _language ?? 'all';
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : const Color(0xFF1E1E1E)),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -344,12 +344,12 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 16),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       'Language',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -366,7 +366,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                     setModalState(() => currentLanguage = val.toString());
                   }),
                   const SizedBox(height: 16),
-                  const Divider(color: Colors.white12, height: 1),
+                  Divider(color: Theme.of(context).dividerColor, height: 1),
                   Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
@@ -378,16 +378,16 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                               _applyLanguage('all');
                             },
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.white54),
+                              side: BorderSide(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
-                            child: const Text(
+                            child: Text(
                               'CANCEL',
                               style: TextStyle(
-                                color: Colors.white70,
+                                color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
                               ),
@@ -408,7 +408,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
-                            child: const Text(
+                            child: Text(
                               'APPLY',
                               style: TextStyle(
                                 color: Colors.black,
@@ -442,27 +442,27 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       title: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyLarge?.color,
           fontSize: 15,
           fontWeight: FontWeight.w400,
         ),
       ),
       trailing: isSelected
           ? Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primary,
               ),
               padding: const EdgeInsets.all(4),
-              child: const Icon(Icons.check, size: 16, color: Colors.black),
+              child: Icon(Icons.check, size: 16, color: Colors.black),
             )
           : Container(
               width: 24,
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white38, width: 1.5),
+                border: Border.all(color: Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white38, width: 1.5),
               ),
             ),
       onTap: () => onChanged(value),
@@ -474,8 +474,8 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     return FractionallySizedBox(
       heightFactor: 0.92,
       child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF121212),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade100 : const Color(0xFF121212),
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -487,10 +487,10 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 children: [
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Surprise Me 🎲',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
@@ -501,7 +501,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                         icon: Stack(
                           clipBehavior: Clip.none,
                           children: [
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.all(4.0),
                               child: Text(
                                 '🇮🇳',
@@ -519,7 +519,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                                     color: Colors.greenAccent,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: const Color(0xFF121212),
+                                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade100 : const Color(0xFF121212),
                                       width: 2,
                                     ),
                                   ),
@@ -531,7 +531,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70),
+                    icon: Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -542,7 +542,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               controller: _tabController,
               indicatorColor: AppColors.primary,
               labelColor: AppColors.primary,
-              unselectedLabelColor: Colors.white54,
+              unselectedLabelColor: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54,
               tabs: const [
                 Tab(text: 'SHOWS'),
                 Tab(text: 'MOVIES'),
@@ -617,11 +617,11 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(error, style: const TextStyle(color: Colors.white54)),
+            Text(error, style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _shuffleCurrentTab,
-              child: const Text('Try Again'),
+              child: Text('Try Again'),
             ),
           ],
         ),
@@ -633,8 +633,8 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     }
 
     if (items.isEmpty) {
-      return const Center(
-        child: Text('Nothing found.', style: TextStyle(color: Colors.white54)),
+      return Center(
+        child: Text('Nothing found.', style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54)),
       );
     }
 
@@ -693,7 +693,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           },
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2E),
+              color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : const Color(0xFF2C2C2E),
               borderRadius: BorderRadius.circular(8),
             ),
             clipBehavior: Clip.antiAlias,
@@ -702,11 +702,11 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                     imageUrl: 'https://image.tmdb.org/t/p/w342$posterPath',
                     fit: BoxFit.cover,
                     placeholder: (context, url) =>
-                        Container(color: const Color(0xFF2C2C2E)),
+                        Container(color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : const Color(0xFF2C2C2E)),
                     errorWidget: (context, url, error) =>
-                        const Icon(Icons.broken_image, color: Colors.white24),
+                        Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24),
                   )
-                : const Icon(Icons.movie, color: Colors.white24, size: 40),
+                : Icon(Icons.movie, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24, size: 40),
           ),
         );
       },
@@ -777,7 +777,7 @@ class _PremiumPulseGridState extends State<_PremiumPulseGrid>
                 opacity: opacity,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3A3A3C), // Sleek metallic grey
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade300 : const Color(0xFF3A3A3C), // Sleek metallic grey
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),

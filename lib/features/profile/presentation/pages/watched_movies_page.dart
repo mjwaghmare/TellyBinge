@@ -23,14 +23,14 @@ class WatchedMoviesPage extends StatelessWidget {
         elevation: 0,
         title: Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontSize: 18.0,
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).textTheme.bodyLarge?.color, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -61,26 +61,26 @@ class WatchedMoviesPage extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8.0),
                     child: Container(
-                      color: AppColors.surfaceLight,
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[300] : AppColors.surfaceLight,
                       width: double.infinity,
                       child: movie.imageUrl.isNotEmpty
                           ? CachedNetworkImage(
                               imageUrl: movie.imageUrl,
                               fit: BoxFit.cover,
                               errorWidget: (context, url, error) =>
-                                  const Center(
+                                  Center(
                                     child: Icon(
                                       Icons.movie_creation_outlined,
                                       size: 32,
-                                      color: AppColors.textTertiary,
+                                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                                     ),
                                   ),
                             )
-                          : const Center(
+                          : Center(
                               child: Icon(
                                 Icons.movie_creation_outlined,
                                 size: 32,
-                                color: AppColors.textTertiary,
+                                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                               ),
                             ),
                     ),
@@ -92,8 +92,8 @@ class WatchedMoviesPage extends StatelessWidget {
                   movie.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -103,39 +103,39 @@ class WatchedMoviesPage extends StatelessWidget {
                 Row(
                   children: [
                     if (movie.voteAverage > 0.0) ...[
-                      const Icon(Icons.star, color: AppColors.primary, size: 10.0),
+                      Icon(Icons.star, color: AppColors.primary, size: 10.0),
                       const SizedBox(width: 3),
                       Text(
                         movie.voteAverage.toStringAsFixed(1),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10.0,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                         ),
                       ),
                       if (_getYear(movie.releaseDate).isNotEmpty) ...[
                         const SizedBox(width: 4),
-                        const Text(
+                        Text(
                           '•',
                           style: TextStyle(
                             fontSize: 10.0,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           _getYear(movie.releaseDate),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10.0,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ] else if (_getYear(movie.releaseDate).isNotEmpty) ...[
                       Text(
                         _getYear(movie.releaseDate),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10.0,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                         ),
                       ),
                     ],

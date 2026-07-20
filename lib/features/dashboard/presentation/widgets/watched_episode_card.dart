@@ -94,11 +94,11 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                         imageUrl: imageUrl,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
-                          color: AppColors.surfaceLight,
+                          color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
                         ),
                         errorWidget: (context, url, error) => Container(
-                          color: AppColors.surfaceLight,
-                          child: const Icon(Icons.tv, color: AppColors.textTertiary),
+                          color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                          child: Icon(Icons.tv, color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary),
                         ),
                       )
                     : Container(color: AppColors.surfaceLight),
@@ -118,7 +118,7 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 1.0),
+                        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.black12, width: 1.0),
                         borderRadius: BorderRadius.circular(16.0),
                       ),
                       child: Row(
@@ -129,8 +129,8 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                               showName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                                 fontSize: 9.0,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.0,
@@ -138,10 +138,10 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right,
                             size: 14,
-                            color: Colors.white,
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black54,
                           ),
                         ],
                       ),
@@ -151,8 +151,8 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                     // Episode Code
                     Text(
                       displayCode,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 14.0,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
@@ -162,8 +162,8 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                     // Episode Title
                     Text(
                       episodeTitle.isNotEmpty ? episodeTitle : 'TBA',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : Colors.black54,
                         fontSize: 11.0,
                       ),
                       maxLines: 1,
@@ -197,7 +197,7 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                               color: Colors.white,
                             ),
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.check,
                             color: Colors.white,
                             size: 24,

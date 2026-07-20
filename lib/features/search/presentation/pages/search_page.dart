@@ -411,16 +411,6 @@ class _SearchPageState extends State<SearchPage>
             0, // Hide main toolbar for clean view, matching dashboard
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.textPrimary,
-          indicatorSize: TabBarIndicatorSize.tab,
-          indicatorWeight: 2.5,
-          labelColor: AppColors.textPrimary,
-          unselectedLabelColor: AppColors.textTertiary,
-          labelStyle: const TextStyle(
-            fontSize: 14.0,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.0,
-          ),
           tabs: const [
             Tab(text: 'SHOWS'),
             Tab(text: 'MOVIES'),
@@ -487,14 +477,11 @@ class _SearchPageState extends State<SearchPage>
                   isTv: isTv,
                 );
               },
-              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.black,
                 hintText: isTv ? 'Search shows...' : 'Search movies...',
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search,
-                  color: AppColors.textTertiary,
+                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                 ),
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: controller,
@@ -504,9 +491,9 @@ class _SearchPageState extends State<SearchPage>
                       children: [
                         if (value.text.isNotEmpty)
                           IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.clear,
-                              color: AppColors.textTertiary,
+                              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                             ),
                             onPressed: () {
                               controller.clear();
@@ -574,7 +561,7 @@ class _SearchPageState extends State<SearchPage>
     String currentLanguage = (isTv ? _tvLanguage : _movieLanguage) ?? 'all';
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : const Color(0xFF1E1E1E)),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -586,12 +573,12 @@ class _SearchPageState extends State<SearchPage>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: AppSpacing.md),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                   child: Text(
                     'Language',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -608,7 +595,7 @@ class _SearchPageState extends State<SearchPage>
                   setModalState(() => currentLanguage = val.toString());
                 }),
                 const SizedBox(height: AppSpacing.md),
-                const Divider(color: Colors.white12, height: 1),
+                Divider(color: Theme.of(context).dividerColor, height: 1),
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   child: Row(
@@ -620,16 +607,16 @@ class _SearchPageState extends State<SearchPage>
                             _applyLanguage(isTv, 'all', searchText);
                           },
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.white54),
+                            side: BorderSide(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                          child: const Text(
+                          child: Text(
                             'CANCEL',
                             style: TextStyle(
-                              color: Colors.white70,
+                              color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
                             ),
@@ -650,7 +637,7 @@ class _SearchPageState extends State<SearchPage>
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                          child: const Text(
+                          child: Text(
                             'APPLY',
                             style: TextStyle(
                               color: Colors.black,
@@ -686,27 +673,27 @@ class _SearchPageState extends State<SearchPage>
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyLarge?.color,
           fontSize: 15,
           fontWeight: FontWeight.w400,
         ),
       ),
       trailing: isSelected
           ? Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primary,
               ),
               padding: const EdgeInsets.all(4),
-              child: const Icon(Icons.check, size: 16, color: Colors.black),
+              child: Icon(Icons.check, size: 16, color: Colors.black),
             )
           : Container(
               width: 24,
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white38, width: 1.5),
+                border: Border.all(color: Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white38, width: 1.5),
               ),
             ),
       onTap: () => onChanged(value),
@@ -795,7 +782,7 @@ class _SearchPageState extends State<SearchPage>
               Text(
                 'Error loading data: ${state.message}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.error),
+                style: TextStyle(color: AppColors.error),
               ),
               const SizedBox(height: AppSpacing.md),
               ElevatedButton(
@@ -811,7 +798,7 @@ class _SearchPageState extends State<SearchPage>
                     vertical: 12,
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'RETRY',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
@@ -922,7 +909,7 @@ class _SearchPageState extends State<SearchPage>
               Text(
                 'Error loading data: ${state.message}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.error),
+                style: TextStyle(color: AppColors.error),
               ),
               const SizedBox(height: AppSpacing.md),
               ElevatedButton(
@@ -938,7 +925,7 @@ class _SearchPageState extends State<SearchPage>
                     vertical: 12,
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'RETRY',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
@@ -1013,13 +1000,13 @@ class _SearchPageState extends State<SearchPage>
     bool hasReachedMax = false,
   }) {
     if (items.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.xl),
           child: Text(
             'No results found.\nTry searching for something else.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textTertiary, fontSize: 16.0),
+            style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary, fontSize: 16.0),
           ),
         ),
       );
@@ -1074,14 +1061,14 @@ class _SearchPageState extends State<SearchPage>
                           fit: StackFit.expand,
                           children: [
                             Container(
-                              color: AppColors.surfaceLight,
+                              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
                               width: double.infinity,
                               child: posterPath != null && posterPath.isNotEmpty
                                   ? CachedNetworkImage(
                                       imageUrl: _getImageUrl(posterPath),
                                       fit: BoxFit.cover,
                                       placeholder: (context, url) =>
-                                          const Center(
+                                          Center(
                                             child: SizedBox(
                                               width: 20,
                                               height: 20,
@@ -1091,19 +1078,19 @@ class _SearchPageState extends State<SearchPage>
                                             ),
                                           ),
                                       errorWidget: (context, url, error) =>
-                                          const Skeleton.ignore(
+                                          Skeleton.ignore(
                                             child: Icon(
                                               Icons.movie_creation_outlined,
                                               size: 32,
-                                              color: AppColors.textTertiary,
+                                              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                                             ),
                                           ),
                                     )
-                                  : const Skeleton.ignore(
+                                  : Skeleton.ignore(
                                       child: Icon(
                                         Icons.movie_creation_outlined,
                                         size: 32,
-                                        color: AppColors.textTertiary,
+                                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                                       ),
                                     ),
                             ),
@@ -1120,8 +1107,8 @@ class _SearchPageState extends State<SearchPage>
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1131,7 +1118,7 @@ class _SearchPageState extends State<SearchPage>
                     Row(
                       children: [
                         if (voteAverage > 0.0) ...[
-                          const Icon(
+                          Icon(
                             Icons.star,
                             color: AppColors.primary,
                             size: 10.0,
@@ -1139,35 +1126,35 @@ class _SearchPageState extends State<SearchPage>
                           const SizedBox(width: 3),
                           Text(
                             voteAverage.toStringAsFixed(1),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10.0,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                             ),
                           ),
                           if (year.isNotEmpty) ...[
                             const SizedBox(width: 4),
-                            const Text(
+                            Text(
                               '•',
                               style: TextStyle(
                                 fontSize: 10.0,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                               ),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               year,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 10.0,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                               ),
                             ),
                           ],
                         ] else if (year.isNotEmpty) ...[
                           Text(
                             year,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10.0,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -1193,10 +1180,10 @@ class _SearchPageState extends State<SearchPage>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'Failed to load more data.',
                   style: TextStyle(
-                    color: AppColors.textTertiary,
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                     fontSize: 14.0,
                   ),
                 ),
@@ -1210,7 +1197,7 @@ class _SearchPageState extends State<SearchPage>
                       vertical: 8.0,
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Retry',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -1228,8 +1215,8 @@ class _SearchPageState extends State<SearchPage>
               defaultType == 'tv'
                   ? 'No more shows to load'
                   : 'No more movies to load',
-              style: const TextStyle(
-                color: AppColors.textTertiary,
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                 fontSize: 14.0,
                 fontWeight: FontWeight.w500,
               ),
@@ -1360,8 +1347,8 @@ class _TvShowStatusOverlayState extends State<TvShowStatusOverlay> {
         ),
         child: Text(
           _pillText,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontSize: 9.0,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.5,
@@ -1415,9 +1402,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     return FractionallySizedBox(
       heightFactor: 0.6,
       child: Material(
-        color: const Color(
-          0xFF1E1E1E,
-        ), // Dark grey background matching the screenshot
+        color: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : const Color(0xFF1E1E1E)), // Dark grey background matching the screenshot
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1425,12 +1410,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
           children: [
             const SizedBox(height: AppSpacing.md),
             // Sort by Section
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Text(
                 'Sort by',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1461,7 +1446,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
-                              : const Color(0xFFCCCCCC),
+                              : (Theme.of(context).brightness == Brightness.light ? Colors.grey.shade300 : const Color(0xFFCCCCCC)),
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: Text(
@@ -1483,16 +1468,16 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
             ),
 
             const SizedBox(height: AppSpacing.md),
-            const Divider(color: Colors.white12, height: 1),
+            Divider(color: Theme.of(context).dividerColor, height: 1),
             const SizedBox(height: AppSpacing.md),
 
             // Genres Section
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Text(
                 'Genres',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1505,8 +1490,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: ListView.separated(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 itemCount: widget.genres.length,
-                separatorBuilder: (context, index) => const Divider(
-                  color: Colors.white12,
+                separatorBuilder: (context, index) => Divider(
+                  color: Theme.of(context).dividerColor,
                   height: 1,
                   indent: AppSpacing.md,
                   endIndent: AppSpacing.md,
@@ -1525,20 +1510,20 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     ),
                     title: Text(
                       optionName,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
                     trailing: isSelected
                         ? Container(
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppColors.primary,
                             ),
                             padding: const EdgeInsets.all(4),
-                            child: const Icon(
+                            child: Icon(
                               Icons.check,
                               size: 16,
                               color: Colors.black,
@@ -1550,7 +1535,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white38,
+                                color: Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white38,
                                 width: 1.5,
                               ),
                             ),
@@ -1570,7 +1555,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
             ),
 
             // Bottom Action Bar
-            const Divider(color: Colors.white12, height: 1),
+            Divider(color: Theme.of(context).dividerColor, height: 1),
             SafeArea(
               top: false,
               child: Padding(
@@ -1588,16 +1573,16 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           Navigator.pop(context);
                         },
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.white54),
+                          side: BorderSide(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
+                        child: Text(
                           'RESET',
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),
@@ -1618,7 +1603,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
+                        child: Text(
                           'APPLY',
                           style: TextStyle(
                             color: Colors.black,

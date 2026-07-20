@@ -9,7 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
-import '../../../import/import_tv_time_page.dart';
+
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
@@ -24,7 +24,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../cubit/profile_heatmap_cubit.dart';
 import '../cubit/profile_heatmap_state.dart';
-import '../../../../core/theme/cubit/theme_cubit.dart';
+import 'settings_page.dart';
 
 class HorizontalItem {
   final int movieId;
@@ -137,7 +137,7 @@ class _ProfilePageState extends State<ProfilePage>
   void _showSettingsMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
       ),
@@ -146,69 +146,26 @@ class _ProfilePageState extends State<ProfilePage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              //import tv time button
+
               ListTile(
-                leading: const Icon(Icons.import_export, color: Colors.white),
-                title: const Text(
-                  'Import TV Time',
-                  style: TextStyle(color: Colors.white),
+                leading: Icon(Icons.settings),
+                title: Text(
+                  'Settings',
                 ),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ImportTvTimePage(),
+                      builder: (context) => const SettingsPage(),
                     ),
                   );
                 },
               ),
-
-              BlocBuilder<ThemeCubit, ThemeState>(
-                builder: (context, themeState) {
-                  return SwitchListTile.adaptive(
-                    secondary: Icon(
-                      themeState.isOledDarkMode
-                          ? Icons.dark_mode
-                          : Icons.dark_mode_outlined,
-                      color: Colors.white,
-                    ),
-                    title: const Text(
-                      'OLED Dark Mode',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'True black background for battery saving and higher contrast',
-                      style: TextStyle(color: Colors.white60, fontSize: 11),
-                    ),
-                    value: themeState.isOledDarkMode,
-                    activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-                    activeThumbColor: AppColors.primary,
-                    onChanged: (bool value) {
-                      HapticFeedback.lightImpact();
-                      context.read<ThemeCubit>().toggleOledDarkMode(value);
-                    },
-                  );
-                },
-              ),
-
+              Divider(color: Theme.of(context).dividerColor),
               ListTile(
-                leading: const Icon(Icons.settings, color: Colors.white),
-                title: const Text(
-                  'Settings',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              const Divider(color: Colors.white12),
-              ListTile(
-                leading: const Icon(Icons.logout, color: AppColors.error),
-                title: const Text(
+                leading: Icon(Icons.logout, color: AppColors.error),
+                title: Text(
                   'Sign Out',
                   style: TextStyle(color: AppColors.error),
                 ),
@@ -255,15 +212,15 @@ class _ProfilePageState extends State<ProfilePage>
         elevation: 0,
         title: Text(
           username,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+            icon: Icon(Icons.menu, color: Theme.of(context).textTheme.bodyLarge?.color, size: 28),
             onPressed: _showSettingsMenu,
           ),
         ],
@@ -361,26 +318,35 @@ class _ProfilePageState extends State<ProfilePage>
                 var filteredShows = showWatchlistState.shows;
 
                 // 1. Progress Filter
-                if (_showProgressOption == 'Watching') {
-                  filteredShows = filteredShows
-                      .where((s) => s['category'] == 'WATCH_NEXT')
-                      .toList();
-                } else if (_showProgressOption == 'Haven\'t started') {
-                  filteredShows = filteredShows
-                      .where((s) => s['category'] == 'HAVENT_STARTED')
-                      .toList();
-                } else if (_showProgressOption == 'Up to date') {
-                  filteredShows = filteredShows
-                      .where((s) => s['category'] == 'UP_TO_DATE')
-                      .toList();
-                } else if (_showProgressOption == 'Finished') {
-                  filteredShows = filteredShows
-                      .where((s) => s['category'] == 'FINISHED')
-                      .toList();
-                } else if (_showProgressOption == 'Stopped') {
+                if (_showProgressOption == 'Stopped') {
                   filteredShows = filteredShows
                       .where((s) => s['status'] == 'STOPPED')
                       .toList();
+                } else {
+                  if (_showProgressOption != 'All') {
+                    // Exclude stopped shows from specific categories
+                    filteredShows = filteredShows
+                        .where((s) => s['status'] != 'STOPPED')
+                        .toList();
+                  }
+
+                  if (_showProgressOption == 'Watching') {
+                    filteredShows = filteredShows
+                        .where((s) => s['category'] == 'WATCH_NEXT')
+                        .toList();
+                  } else if (_showProgressOption == 'Haven\'t started') {
+                    filteredShows = filteredShows
+                        .where((s) => s['category'] == 'HAVENT_STARTED')
+                        .toList();
+                  } else if (_showProgressOption == 'Up to date') {
+                    filteredShows = filteredShows
+                        .where((s) => s['category'] == 'UP_TO_DATE')
+                        .toList();
+                  } else if (_showProgressOption == 'Finished') {
+                    filteredShows = filteredShows
+                        .where((s) => s['category'] == 'FINISHED')
+                        .toList();
+                  }
                 }
 
                 displayedShows = filteredShows
@@ -501,7 +467,7 @@ class _ProfilePageState extends State<ProfilePage>
                                   padding: const EdgeInsets.all(
                                     3,
                                   ), // Border width
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: AppColors.primary,
                                   ),
@@ -509,7 +475,7 @@ class _ProfilePageState extends State<ProfilePage>
                                     padding: const EdgeInsets.all(
                                       2,
                                     ), // Gap between ring and image
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: Colors.black,
                                       shape: BoxShape.circle,
                                     ),
@@ -524,8 +490,8 @@ class _ProfilePageState extends State<ProfilePage>
                                               displayName.isNotEmpty
                                                   ? displayName[0].toUpperCase()
                                                   : 'U',
-                                              style: const TextStyle(
-                                                color: Colors.white,
+                                              style: TextStyle(
+                                                color: Theme.of(context).textTheme.bodyLarge?.color,
                                                 fontSize: 32,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -582,17 +548,7 @@ class _ProfilePageState extends State<ProfilePage>
                       delegate: _SliverAppBarDelegate(
                         TabBar(
                           controller: _tabController,
-                          indicatorWeight: 2.5,
-                          indicatorColor: Colors.white,
-                          labelColor: Colors.white,
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          unselectedLabelColor: Colors.white54,
-                          labelStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            letterSpacing: 1.2,
-                          ),
-                          tabs: [
+                          tabs: const [
                             Tab(text: 'SHOWS'),
                             Tab(text: 'MOVIES'),
                           ],
@@ -619,6 +575,7 @@ class _ProfilePageState extends State<ProfilePage>
                               _showSortOption != 'Last added' ||
                               _showProgressOption != 'All';
                           return Container(
+                            margin: const EdgeInsets.only(bottom: 24),
                             height: 40,
                             decoration: isShowFilterActive
                                 ? BoxDecoration(
@@ -685,7 +642,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 foregroundColor: Colors.black,
                                 elevation: isShowFilterActive ? 0 : 4,
                                 side: isShowFilterActive
-                                    ? const BorderSide(
+                                    ? BorderSide(
                                         color: Colors.greenAccent,
                                         width: 1.5,
                                       )
@@ -696,8 +653,8 @@ class _ProfilePageState extends State<ProfilePage>
                                 ),
                                 shape: const StadiumBorder(),
                               ),
-                              icon: const Icon(Icons.tune, size: 20),
-                              label: const Text(
+                              icon: Icon(Icons.tune, size: 20),
+                              label: Text(
                                 'FILTERS',
                                 style: TextStyle(
                                   fontSize: 13,
@@ -726,6 +683,7 @@ class _ProfilePageState extends State<ProfilePage>
                               _movieSortOption != 'Last Added' ||
                               _movieProgressOption != 'All';
                           return Container(
+                            margin: const EdgeInsets.only(bottom: 24),
                             height: 40,
                             decoration: isMovieFilterActive
                                 ? BoxDecoration(
@@ -792,7 +750,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 foregroundColor: Colors.black,
                                 elevation: isMovieFilterActive ? 0 : 4,
                                 side: isMovieFilterActive
-                                    ? const BorderSide(
+                                    ? BorderSide(
                                         color: Colors.greenAccent,
                                         width: 1.5,
                                       )
@@ -803,8 +761,8 @@ class _ProfilePageState extends State<ProfilePage>
                                 ),
                                 shape: const StadiumBorder(),
                               ),
-                              icon: const Icon(Icons.tune, size: 20),
-                              label: const Text(
+                              icon: Icon(Icons.tune, size: 20),
+                              label: Text(
                                 'FILTERS',
                                 style: TextStyle(
                                   fontSize: 13,
@@ -841,8 +799,7 @@ class _ProfilePageState extends State<ProfilePage>
         children: [
           Text(
             count,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -850,7 +807,7 @@ class _ProfilePageState extends State<ProfilePage>
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+            style: TextStyle(fontSize: 13),
           ),
           const SizedBox(height: 4),
           Visibility(
@@ -860,8 +817,8 @@ class _ProfilePageState extends State<ProfilePage>
             maintainState: true,
             child: Text(
               timeSpent,
-              style: const TextStyle(
-                color: Colors.white54,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -877,7 +834,7 @@ class _ProfilePageState extends State<ProfilePage>
       return Center(
         child: Text(
           emptyMessage,
-          style: const TextStyle(color: Colors.white54, fontSize: 14),
+          style: TextStyle(color: Theme.of(context).disabledColor, fontSize: 14),
         ),
       );
     }
@@ -929,11 +886,11 @@ class _ProfilePageState extends State<ProfilePage>
                 placeholder: (context, url) =>
                     Container(color: AppColors.surface),
                 errorWidget: (context, url, error) => Container(
-                  color: AppColors.surface,
-                  child: const Center(
+                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surface,
+                  child: Center(
                     child: Icon(
                       Icons.movie_outlined,
-                      color: AppColors.textTertiary,
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                     ),
                   ),
                 ),
@@ -944,11 +901,11 @@ class _ProfilePageState extends State<ProfilePage>
                   right: 4,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Colors.black54,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.favorite,
                       color: Colors.red,
                       size: 16,
@@ -969,10 +926,10 @@ class _ProfilePageState extends State<ProfilePage>
                       color: AppColors.primary.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(4.0),
                     ),
-                    child: const Text(
+                    child: Text(
                       'STOPPED',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 9.0,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.5,
@@ -1031,15 +988,15 @@ class _ProfilePageState extends State<ProfilePage>
         final int totalSlots = offset + daysInMonth;
 
         final List<Color> activeLegendColors = _heatmapPageIndex == 0
-            ? const [
-                Color(0xFF161B22),
+            ? [
+                Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
                 Color(0xFF0E4429),
                 Color(0xFF006D32),
                 Color(0xFF26A641),
                 Color(0xFF39D353),
               ]
-            : const [
-                Color(0xFF161B22),
+            : [
+                Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
                 Color(0xFF3E2D00),
                 Color(0xFF7C5A00),
                 Color(0xFFB98700),
@@ -1059,10 +1016,10 @@ class _ProfilePageState extends State<ProfilePage>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'WATCH ACTIVITY',
                     style: TextStyle(
-                      color: Colors.white70,
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       letterSpacing: 1.2,
@@ -1076,9 +1033,9 @@ class _ProfilePageState extends State<ProfilePage>
                           : IconButton(
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.chevron_left,
-                                color: Colors.white,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                                 size: 24,
                               ),
                               onPressed: isLoading
@@ -1107,8 +1064,8 @@ class _ProfilePageState extends State<ProfilePage>
                       const SizedBox(width: 8),
                       Text(
                         DateFormat('MMMM yyyy').format(currentMonth),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1119,9 +1076,9 @@ class _ProfilePageState extends State<ProfilePage>
                           : IconButton(
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.chevron_right,
-                                color: Colors.white,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                                 size: 24,
                               ),
                               onPressed: isLoading
@@ -1216,7 +1173,7 @@ class _ProfilePageState extends State<ProfilePage>
                               height: isActive ? 8.0 : 6.0,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isActive ? Colors.white : Colors.white30,
+                                color: isActive ? (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white) : (Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white30),
                               ),
                             );
                           }),
@@ -1224,10 +1181,10 @@ class _ProfilePageState extends State<ProfilePage>
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
+                            Text(
                               'Less',
                               style: TextStyle(
-                                color: Colors.white54,
+                                color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54,
                                 fontSize: 11,
                               ),
                             ),
@@ -1242,10 +1199,10 @@ class _ProfilePageState extends State<ProfilePage>
                             const SizedBox(width: 3),
                             _buildLegendSquare(activeLegendColors[4]),
                             const SizedBox(width: 4),
-                            const Text(
+                            Text(
                               'More',
                               style: TextStyle(
-                                color: Colors.white54,
+                                color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54,
                                 fontSize: 11,
                               ),
                             ),
@@ -1272,15 +1229,15 @@ class _ProfilePageState extends State<ProfilePage>
     required bool showShimmer,
   }) {
     final List<Color> colorScale = isMovies
-        ? const [
-            Color(0xFF161B22),
+        ? [
+            Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
             Color(0xFF3E2D00),
             Color(0xFF7C5A00),
             Color(0xFFB98700),
             Color(0xFFFFC107),
           ]
-        : const [
-            Color(0xFF161B22),
+        : [
+            Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
             Color(0xFF0E4429),
             Color(0xFF006D32),
             Color(0xFF26A641),
@@ -1294,8 +1251,8 @@ class _ProfilePageState extends State<ProfilePage>
         Center(
           child: Text(
             isMovies ? 'MOVIES WATCHED' : 'EPISODES WATCHED',
-            style: const TextStyle(
-              color: Colors.white54,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54,
               fontWeight: FontWeight.bold,
               fontSize: 11,
               letterSpacing: 1.1,
@@ -1315,8 +1272,8 @@ class _ProfilePageState extends State<ProfilePage>
                       child: Center(
                         child: Text(
                           day,
-                          style: const TextStyle(
-                            color: Colors.white30,
+                          style: TextStyle(
+                            color: Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white30,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1343,7 +1300,7 @@ class _ProfilePageState extends State<ProfilePage>
                       itemBuilder: (context, index) {
                         if (index < offset || index >= totalSlots) {
                           return Container(
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: Colors.transparent,
                             ),
                           );
@@ -1393,8 +1350,8 @@ class _ProfilePageState extends State<ProfilePage>
                               alignment: Alignment.bottomRight,
                               child: Text(
                                 '$day',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1431,7 +1388,7 @@ class _ProfilePageState extends State<ProfilePage>
   bool _isSignUpMonthOrPast(DateTime month) {
     final user = FirebaseAuth.instance.currentUser;
     final creationTime = user?.metadata.creationTime;
-    if (creationTime == null) return false;
+    if (creationTime == null) return true;
 
     final limit = DateTime(creationTime.year, creationTime.month, 1);
     return month.isAtSameMomentAs(limit) || month.isBefore(limit);
@@ -1495,14 +1452,14 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     return Container(
-      color: Colors.black, // Background color for TabBar
+      color: Theme.of(context).scaffoldBackgroundColor, // Background color for TabBar
       child: _tabBar,
     );
   }
 
   @override
   bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
+    return true;
   }
 }
 

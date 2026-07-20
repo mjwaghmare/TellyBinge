@@ -24,11 +24,13 @@ class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key, this.onNavigateToExplore});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  State<DashboardPage> createState() => DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class DashboardPageState extends State<DashboardPage> {
   final GlobalKey _watchNextKey = GlobalKey();
+  final ScrollController watchlistScrollController = ScrollController();
+  final ScrollController upcomingScrollController = ScrollController();
   bool _isGridView = false;
   late WatchlistEnrichmentCubit _enrichmentCubit;
   late WatchHistoryCubit _watchHistoryCubit;
@@ -44,9 +46,20 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   void dispose() {
+    watchlistScrollController.dispose();
+    upcomingScrollController.dispose();
     _enrichmentCubit.close();
     _watchHistoryCubit.close();
     super.dispose();
+  }
+
+  void scrollToTop() {
+    if (watchlistScrollController.hasClients) {
+      watchlistScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
+    if (upcomingScrollController.hasClients) {
+      upcomingScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
   }
 
   @override
@@ -58,16 +71,6 @@ class _DashboardPageState extends State<DashboardPage> {
           elevation: 0,
           toolbarHeight: 0,
           bottom: const TabBar(
-            indicatorColor: AppColors.textPrimary,
-            indicatorSize: TabBarIndicatorSize.tab,
-            indicatorWeight: 2.5,
-            labelColor: AppColors.textPrimary,
-            unselectedLabelColor: AppColors.textTertiary,
-            labelStyle: TextStyle(
-              fontSize: 14.0,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
             tabs: [
               Tab(text: 'WATCH LIST'),
               Tab(text: 'UPCOMING'),
@@ -77,10 +80,9 @@ class _DashboardPageState extends State<DashboardPage> {
         body: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, authState) {
             if (authState is! Authenticated) {
-              return const Center(
+              return Center(
                 child: Text(
                   'Please log in to see your watchlist',
-                  style: TextStyle(color: Colors.white),
                 ),
               );
             }
@@ -102,7 +104,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   return Center(
                     child: Text(
                       'Error: ${watchlistState.message}',
-                      style: const TextStyle(color: Colors.red),
+                      style: TextStyle(color: Colors.red),
                     ),
                   );
                 } else if (watchlistState is TvShowWatchlistSuccess) {
@@ -136,8 +138,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   );
                 }
-                return const Center(
-                  child: Text('No data', style: TextStyle(color: Colors.white)),
+                return Center(
+                  child: Text('No data'),
                 );
               },
             );
@@ -301,6 +303,7 @@ class _DashboardPageState extends State<DashboardPage> {
             }
 
             return CustomScrollView(
+              controller: watchlistScrollController,
               center: _watchNextKey,
               slivers: [
                 if (history.isNotEmpty)
@@ -548,6 +551,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return Stack(
       children: [
         CustomScrollView(
+          controller: upcomingScrollController,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.only(top: 8.0, bottom: 24.0),
@@ -569,17 +573,17 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.tv_outlined,
               size: 64,
-              color: AppColors.textTertiary,
+              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
             ),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                 fontSize: 14.0,
                 height: 1.4,
               ),
@@ -597,7 +601,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'ADD SHOWS',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
@@ -624,12 +628,12 @@ class _DashboardPageState extends State<DashboardPage> {
           height: 30,
           width: 30,
           decoration: BoxDecoration(
-            color: AppColors.surfaceLight,
+            color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(6.0),
           ),
           child: Icon(
             _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
-            color: AppColors.textSecondary,
+            color: Theme.of(context).iconTheme.color ?? AppColors.textSecondary,
             size: 18,
           ),
         ),
@@ -648,13 +652,13 @@ class _DashboardPageState extends State<DashboardPage> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
               decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
+                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(20.0),
               ),
               child: Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
                   fontSize: 10.0,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
@@ -674,13 +678,13 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
           decoration: BoxDecoration(
-            color: AppColors.surfaceLight,
+            color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(20.0),
           ),
           child: Text(
             title,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
               fontSize: 10.0,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.0,
@@ -758,8 +762,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     imageUrl: 'https://image.tmdb.org/t/p/w500$posterPath',
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
-                      color: AppColors.surfaceLight,
-                      child: const Center(
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                      child: Center(
                         child: SizedBox(
                           width: 20,
                           height: 20,
@@ -773,18 +777,18 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      color: AppColors.surfaceLight,
-                      child: const Icon(
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                      child: Icon(
                         Icons.tv_outlined,
-                        color: AppColors.textTertiary,
+                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                       ),
                     ),
                   )
                 : Container(
-                    color: AppColors.surfaceLight,
-                    child: const Icon(
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                    child: Icon(
                       Icons.tv_outlined,
-                      color: AppColors.textTertiary,
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                     ),
                   ),
             if (showProgress && totalEpisodes > 0) ...[
@@ -814,7 +818,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   child: Text(
                     '$watchedCount/$totalEpisodes',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -865,7 +869,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       children: [
                         Text(
                           '$daysLeft',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.w900,
@@ -881,7 +885,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         Text(
                           daysLeft == 1 ? 'DAY' : 'DAYS',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
