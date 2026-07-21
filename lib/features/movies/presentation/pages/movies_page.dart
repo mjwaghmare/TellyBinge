@@ -22,7 +22,7 @@ class MoviesPageState extends State<MoviesPage> {
   final ScrollController watchlistScrollController = ScrollController();
   final ScrollController upcomingScrollController = ScrollController();
   final GlobalKey _watchNextKey = GlobalKey();
-  bool _isGridView = false;
+  bool _isGridView = true;
 
   @override
   void dispose() {
