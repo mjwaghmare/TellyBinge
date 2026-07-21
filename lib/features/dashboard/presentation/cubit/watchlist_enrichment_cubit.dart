@@ -461,9 +461,6 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
       // Mark as enriched to prevent redundant fetches
       _enrichedShowIds.add(showId);
       _watchedEpisodesHash[showId] = _computeWatchedHash(watchedEpisodes);
-
-      debugPrint(
-          'WatchlistEnrichmentCubit: Enriched show $showId → $category');
     } catch (e) {
       debugPrint(
           'WatchlistEnrichmentCubit: Error enriching show $showId: $e');

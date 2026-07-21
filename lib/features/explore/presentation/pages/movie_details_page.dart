@@ -196,6 +196,13 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         final String? error = state is MovieDetailsError ? state.message : null;
 
         if (error != null && state is! MovieDetailsSuccess) {
+          String userFriendlyError = 'An unexpected error occurred. Please try again.';
+          if (error.contains('404')) {
+            userFriendlyError = 'This movie could not be found or may have been removed.';
+          } else if (error.contains('SocketException') || error.contains('DioException')) {
+            userFriendlyError = 'Please check your internet connection and try again.';
+          }
+
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
@@ -211,36 +218,38 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             ),
             body: Center(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(32.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
                       'assets/images/error_devices.png',
-                      width: 160,
-                      height: 160,
+                      width: 140,
+                      height: 140,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
                     const Text(
-                      'Failed to load movie details',
+                      'Oops! Something went wrong',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Text(
-                      error,
+                      userFriendlyError,
                       style: const TextStyle(
                         color: AppColors.textTertiary,
-                        fontSize: 14,
+                        fontSize: 15,
+                        height: 1.4,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: () {
                         context.read<MovieDetailsCubit>().loadMovieDetails(

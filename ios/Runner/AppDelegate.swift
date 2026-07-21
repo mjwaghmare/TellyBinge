@@ -2,6 +2,7 @@ import Flutter
 import UIKit
 import flutter_local_notifications
 import workmanager_apple
+import home_widget
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -16,6 +17,9 @@ import workmanager_apple
         GeneratedPluginRegistrant.register(with: registry)
     }
     FlutterLocalNotificationsPlugin.setPluginRegistrantCallback { (registry) in
+        GeneratedPluginRegistrant.register(with: registry)
+    }
+    HomeWidgetPlugin.setPluginRegistrantCallback { registry in
         GeneratedPluginRegistrant.register(with: registry)
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

@@ -2,6 +2,7 @@ import WidgetKit
 import SwiftUI
 import AppIntents
 import home_widget
+import os.log
 
 // MARK: - Models
 struct UpNextItem: Codable, Hashable {
@@ -42,41 +43,121 @@ struct MarkAsWatchedIntent: AppIntent {
     }
 }
 
+// MARK: - Constants & Logging
+enum WidgetConstants {
+    static let appGroup = "group.tvtimeapp.widget"
+    static let widgetKind = "UpNextWidget"
+    static let backgroundColor = Color(red: 32/255, green: 32/255, blue: 34/255)
+}
+
+private let widgetLogger = Logger(subsystem: "tvtimeapp.widget", category: "UpNextWidget")
+
+// MARK: - Image loading
+enum PosterImageLoader {
+    /// Widget timeline providers get a tight execution budget — keep this
+    /// well under iOS's kill threshold for widget extensions.
+    private static let requestTimeout: TimeInterval = 4
+
+    /// Simple on-disk cache inside the shared app group container so repeat
+    /// timeline reloads don't re-download the same poster every time.
+    private static var cacheDirectory: URL? {
+        FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: WidgetConstants.appGroup)?
+            .appendingPathComponent("poster_cache", isDirectory: true)
+    }
+
+    private static func cacheFileURL(for remoteURL: URL) -> URL? {
+        guard let dir = cacheDirectory else { return nil }
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let filename = remoteURL.absoluteString
+            .addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? UUID().uuidString
+        return dir.appendingPathComponent(filename)
+    }
+
+    static func loadData(from urlString: String) async -> Data? {
+        guard let url = URL(string: urlString) else {
+            widgetLogger.error("Invalid poster URL: \(urlString)")
+            return nil
+        }
+
+        // Local file (already-downloaded path), not a network fetch.
+        if url.isFileURL {
+            return try? Data(contentsOf: url)
+        }
+
+        // Serve from cache if present — avoids network entirely on repeat reloads.
+        if let cacheURL = cacheFileURL(for: url),
+           let cached = try? Data(contentsOf: cacheURL) {
+            return cached
+        }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = requestTimeout
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {
+                widgetLogger.error("Poster fetch non-200 for \(url.absoluteString)")
+                return nil
+            }
+            if let cacheURL = cacheFileURL(for: url) {
+                try? data.write(to: cacheURL)
+            }
+            return data
+        } catch {
+            widgetLogger.error("Poster fetch failed for \(url.absoluteString): \(error.localizedDescription)")
+            return nil
+        }
+    }
+}
+
 // MARK: - Provider
+let previewItems: [UpNextItem] = [
+    UpNextItem(showId: 1, showName: "House of the Dragon", header: "NEXT SEASON", episodeTitle: "S3, E1", episodeDetails: "1h6m · Salt and Sea...", localPosterPath: nil, episodeKey: "S3E1"),
+    UpNextItem(showId: 2, showName: "The Boys", header: "UPCOMING", episodeTitle: "S4, E8", episodeDetails: "1h · Season Finale", localPosterPath: nil, episodeKey: "S4E8"),
+    UpNextItem(showId: 3, showName: "Severance", header: "NEXT SEASON", episodeTitle: "S2, E1", episodeDetails: "50m", localPosterPath: nil, episodeKey: "S2E1")
+]
+
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
-        let dummy1 = UpNextItem(showId: 1, showName: "House of the Dragon", header: "NEXT SEASON", episodeTitle: "S3, E1", episodeDetails: "1h6m · Salt and Sea...", localPosterPath: nil, episodeKey: "S3E1")
-        let dummy2 = UpNextItem(showId: 2, showName: "The Boys", header: "UPCOMING", episodeTitle: "S4, E8", episodeDetails: "1h · Season Finale", localPosterPath: nil, episodeKey: "S4E8")
-        let dummy3 = UpNextItem(showId: 3, showName: "Severance", header: "NEXT SEASON", episodeTitle: "S2, E1", episodeDetails: "50m", localPosterPath: nil, episodeKey: "S2E1")
-        return SimpleEntry(date: Date(), items: [dummy1, dummy2, dummy3])
+        SimpleEntry(date: Date(), items: previewItems)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let dummy1 = UpNextItem(showId: 1, showName: "House of the Dragon", header: "NEXT SEASON", episodeTitle: "S3, E1", episodeDetails: "1h6m · Salt and Sea...", localPosterPath: nil, episodeKey: "S3E1")
-        let dummy2 = UpNextItem(showId: 2, showName: "The Boys", header: "UPCOMING", episodeTitle: "S4, E8", episodeDetails: "1h · Season Finale", localPosterPath: nil, episodeKey: "S4E8")
-        let dummy3 = UpNextItem(showId: 3, showName: "Severance", header: "NEXT SEASON", episodeTitle: "S2, E1", episodeDetails: "50m", localPosterPath: nil, episodeKey: "S2E1")
-        completion(SimpleEntry(date: Date(), items: [dummy1, dummy2, dummy3]))
+        completion(SimpleEntry(date: Date(), items: previewItems))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        let userDefaults = UserDefaults(suiteName: "group.tvtimeapp.widget")
-        let jsonString = userDefaults?.string(forKey: "up_next_items") ?? "[]"
-        
-        var items: [UpNextItem] = []
-        if let data = jsonString.data(using: .utf8) {
-            items = (try? JSONDecoder().decode([UpNextItem].self, from: data)) ?? []
-        }
-        
-        // Fetch images
-        for i in 0..<items.count {
-            if let urlString = items[i].localPosterPath, let url = URL(string: urlString) {
-                items[i].imageData = try? Data(contentsOf: url)
+        Task {
+            let userDefaults = UserDefaults(suiteName: WidgetConstants.appGroup)
+            let jsonString = userDefaults?.string(forKey: "up_next_items") ?? "[]"
+
+            var items: [UpNextItem] = []
+            if let data = jsonString.data(using: .utf8) {
+                do {
+                    items = try JSONDecoder().decode([UpNextItem].self, from: data)
+                } catch {
+                    widgetLogger.error("Failed to decode up_next_items: \(error.localizedDescription)")
+                }
             }
+
+            // Fetch all posters concurrently instead of blocking serially.
+            await withTaskGroup(of: (Int, Data?).self) { group in
+                for (index, item) in items.enumerated() {
+                    guard let path = item.localPosterPath else { continue }
+                    group.addTask {
+                        (index, await PosterImageLoader.loadData(from: path))
+                    }
+                }
+                for await (index, data) in group {
+                    items[index].imageData = data
+                }
+            }
+
+            let entry = SimpleEntry(date: Date(), items: items)
+            let timeline = Timeline(entries: [entry], policy: .atEnd)
+            completion(timeline)
         }
-        
-        let entry = SimpleEntry(date: Date(), items: items)
-        let timeline = Timeline(entries: [entry], policy: .atEnd)
-        completion(timeline)
     }
 }
 

@@ -222,34 +222,16 @@ class AuthGate extends StatelessWidget {
           return Scaffold(
             body: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFFFC107), // Amber 500
-                    Color(0xFFFFEB3B), // Yellow 500
-                  ],
+                color: Color(0xFF0D0D0D),
+                image: DecorationImage(
+                  image: AssetImage('assets/splash_background.jpg'),
+                  fit: BoxFit.cover,
                 ),
               ),
               child: Stack(
                 children: [
                   Center(
                     child: Hero(tag: 'app_logo', child: Image.asset('assets/images/logo.png', width: 160, height: 160)),
-                  ),
-                  const Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: 30.0),
-                      child: Text(
-                        'Made with ❤️ by MWStudio',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 14.0,
-                          fontWeight: FontWeight.w700,
-                          // fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),

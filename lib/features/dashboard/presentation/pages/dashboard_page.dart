@@ -18,7 +18,7 @@ import '../widgets/episode_progress_card.dart';
 import '../widgets/watched_episode_card.dart';
 import '../widgets/upcoming_episode_card.dart';
 import '../models/enriched_show.dart';
-
+import '../../../../core/services/widget_service.dart';
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onNavigateToExplore;
   const DashboardPage({super.key, this.onNavigateToExplore});
@@ -93,6 +93,9 @@ class DashboardPageState extends State<DashboardPage> {
                 if (state is TvShowWatchlistSuccess) {
                   // Trigger background enrichment — does NOT block the UI.
                   _enrichmentCubit.enrichShows(state.shows, uid);
+                  
+                  // Keep Home Screen widget in sync with latest data
+                  WidgetService.syncWatchlistDataToWidget(state.shows);
                 }
               },
               builder: (context, watchlistState) {

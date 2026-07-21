@@ -229,10 +229,6 @@ class _SearchPageState extends State<SearchPage>
   }
 
   Future<void> _applyFiltersToTrending() async {
-    debugPrint(
-      'Applying TV filters - sortBy: $_selectedSortBy, genreIds: $_selectedGenreIds',
-    );
-
     setState(() {
       _isFetchingTvFilters = true;
     });
@@ -244,7 +240,6 @@ class _SearchPageState extends State<SearchPage>
     final hasActive = _hasActiveFilters || _tvLanguage != null;
     if (!hasActive) {
       if (!mounted) return;
-      debugPrint('No active TV filters, loading trending');
       context.read<SearchCubit>().resetTvTrending();
       setState(() {
         _isFetchingTvFilters = false;
@@ -262,8 +257,6 @@ class _SearchPageState extends State<SearchPage>
         language: _tvLanguage,
       );
 
-      debugPrint('Filtered shows count: ${filteredShows.length}');
-
       if (!mounted) return;
       // Update the search cubit with filtered results
       context.read<SearchCubit>().updateTrendingTv(filteredShows);
@@ -279,10 +272,6 @@ class _SearchPageState extends State<SearchPage>
   }
 
   Future<void> _applyMovieFiltersToTrending() async {
-    debugPrint(
-      'Applying Movie filters - sortBy: $_selectedMovieSortBy, genreIds: $_selectedMovieGenreIds',
-    );
-
     setState(() {
       _isFetchingMovieFilters = true;
     });
@@ -294,7 +283,6 @@ class _SearchPageState extends State<SearchPage>
     final hasActive = _hasActiveMovieFilters || _movieLanguage != null;
     if (!hasActive) {
       if (!mounted) return;
-      debugPrint('No active movie filters, loading trending');
       context.read<SearchCubit>().resetMoviesTrending();
       setState(() {
         _isFetchingMovieFilters = false;
@@ -313,8 +301,6 @@ class _SearchPageState extends State<SearchPage>
             : _selectedMovieGenreIds,
         language: _movieLanguage,
       );
-
-      debugPrint('Filtered movies count: ${filteredMovies.length}');
 
       if (!mounted) return;
       // Update the search cubit with filtered results
