@@ -128,36 +128,17 @@ struct Provider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        Task {
-            let userDefaults = UserDefaults(suiteName: WidgetConstants.appGroup)
-            let jsonString = userDefaults?.string(forKey: "up_next_items") ?? "[]"
+        let userDefaults = UserDefaults(suiteName: WidgetConstants.appGroup)
+        let jsonString = userDefaults?.string(forKey: "up_next_items") ?? "[]"
 
-            var items: [UpNextItem] = []
-            if let data = jsonString.data(using: .utf8) {
-                do {
-                    items = try JSONDecoder().decode([UpNextItem].self, from: data)
-                } catch {
-                    widgetLogger.error("Failed to decode up_next_items: \(error.localizedDescription)")
-                }
-            }
-
-            // Fetch all posters concurrently instead of blocking serially.
-            await withTaskGroup(of: (Int, Data?).self) { group in
-                for (index, item) in items.enumerated() {
-                    guard let path = item.localPosterPath else { continue }
-                    group.addTask {
-                        (index, await PosterImageLoader.loadData(from: path))
-                    }
-                }
-                for await (index, data) in group {
-                    items[index].imageData = data
-                }
-            }
-
-            let entry = SimpleEntry(date: Date(), items: items)
-            let timeline = Timeline(entries: [entry], policy: .atEnd)
-            completion(timeline)
+        var items: [UpNextItem] = []
+        if let data = jsonString.data(using: .utf8) {
+            items = (try? JSONDecoder().decode([UpNextItem].self, from: data)) ?? []
         }
+
+        let entry = SimpleEntry(date: Date(), items: items)
+        let timeline = Timeline(entries: [entry], policy: .atEnd)
+        completion(timeline)
     }
 }
 
@@ -207,6 +188,17 @@ struct ItemRow: View {
                     Image(uiImage: uiImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
+                } else if let path = item.localPosterPath, let url = URL(string: path) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        default:
+                            Rectangle().fill(Color.gray.opacity(0.3))
+                        }
+                    }
                 } else {
                     Rectangle().fill(Color.gray.opacity(0.3))
                 }
