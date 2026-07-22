@@ -239,17 +239,21 @@ struct ItemRow: View {
                         Circle()
                             .stroke(Color.blue, lineWidth: 2)
                             .frame(width: 26, height: 26)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .padding(.top, 24)
+                    .frame(width: 44, height: 44)
+                    .padding(.top, 16)
                 } else {
                     // Fallback for iOS 16
                     Link(destination: URL(string: "tvtimeapp://show/\(item.showId)")!) {
                         Circle()
                             .stroke(Color.blue, lineWidth: 2)
                             .frame(width: 26, height: 26)
+                            .contentShape(Rectangle())
                     }
-                    .padding(.top, 24)
+                    .frame(width: 44, height: 44)
+                    .padding(.top, 16)
                 }
             }
         }

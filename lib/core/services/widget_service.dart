@@ -138,8 +138,8 @@ class WidgetService {
 
     for (var show in watchNext) {
       if (widgetItems.length >= 3) break;
-      final int targetSeason = (show.rawShowData['targetSeason'] as num?)?.toInt() ?? 0;
-      final int targetEpisode = (show.rawShowData['targetEpisode'] as num?)?.toInt() ?? 0;
+      final int targetSeason = show.targetSeason;
+      final int targetEpisode = show.targetEpisode;
       final String firestoreKey = '$targetSeason-$targetEpisode';
       widgetItems.add({
         'showId': show.rawShowData['id'] as int,
