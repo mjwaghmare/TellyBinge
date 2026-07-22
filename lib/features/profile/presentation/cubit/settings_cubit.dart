@@ -12,7 +12,7 @@ class SettingsState extends Equatable {
 
   const SettingsState({
     this.allowAdultContent = false,
-    this.notificationsEnabled = true,
+    this.notificationsEnabled = false,
     this.notify1HourBefore = false,
     this.notify1DayBefore = true,
   });
@@ -57,7 +57,7 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   void _loadSettings() {
     final allowAdult = prefs.getBool(_adultContentKey) ?? false;
-    final notificationsEnabled = prefs.getBool(_notificationsEnabledKey) ?? true;
+    final notificationsEnabled = prefs.getBool(_notificationsEnabledKey) ?? false;
     final notify1HourBefore = prefs.getBool(_notify1HourBeforeKey) ?? false;
     final notify1DayBefore = prefs.getBool(_notify1DayBeforeKey) ?? true;
     

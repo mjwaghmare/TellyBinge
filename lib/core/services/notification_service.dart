@@ -19,9 +19,9 @@ class NotificationService {
 
     final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-            requestAlertPermission: true,
-            requestBadgePermission: true,
-            requestSoundPermission: true);
+            requestAlertPermission: false,
+            requestBadgePermission: false,
+            requestSoundPermission: false);
 
     final InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -29,7 +29,6 @@ class NotificationService {
     );
 
     await _notificationsPlugin.initialize(settings: initializationSettings);
-    await requestPermissions();
   }
 
   Future<void> requestPermissions() async {
