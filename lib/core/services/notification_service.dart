@@ -95,6 +95,10 @@ class NotificationService {
     await _notificationsPlugin.cancel(id: id * 10 + 2);
   }
 
+  Future<void> cancelAllNotifications() async {
+    await _notificationsPlugin.cancelAll();
+  }
+
   Future<void> scheduleBasedOnSettings({
     required int id,
     required String title,

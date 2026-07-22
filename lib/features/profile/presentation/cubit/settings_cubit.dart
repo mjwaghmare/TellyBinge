@@ -81,6 +81,8 @@ class SettingsCubit extends Cubit<SettingsState> {
     emit(state.copyWith(notificationsEnabled: value));
     if (value) {
       await NotificationService().requestPermissions();
+    } else {
+      await NotificationService().cancelAllNotifications();
     }
   }
 
