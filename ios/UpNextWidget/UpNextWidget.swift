@@ -39,9 +39,6 @@ struct MarkAsWatchedIntent: AppIntent {
         if let url = URL(string: urlString) {
             await HomeWidgetBackgroundWorker.run(url: url, appGroup: "group.tvtimeapp.widget")
         }
-        // Give background Dart isolate 500ms to finish optimistic UserDefaults write
-        try? await Task.sleep(nanoseconds: 500_000_000)
-        WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
 }
