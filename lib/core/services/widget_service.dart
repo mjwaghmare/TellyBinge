@@ -305,16 +305,53 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
         .timeout(WidgetService._backgroundOpTimeout);
 
     if (showDoc.exists) {
-      final tmdbClient = TmdbClient();
-      enrichmentCubit = WatchlistEnrichmentCubit(tmdbClient: tmdbClient);
-      await enrichmentCubit
-          .enrichShows([showDoc.data()!], uid)
-          .timeout(WidgetService._backgroundOpTimeout);
-    }
+      final showMap = Map<String, dynamic>.from(showDoc.data()!);
+      final watchedList = List<String>.from(showMap['watchedEpisodes'] ?? []);
+      if (!watchedList.contains(episodeKey)) {
+        watchedList.add(episodeKey);
+        showMap['watchedEpisodes'] = watchedList;
+      }
 
-    // immediate: true — background isolate may be torn down right after this
-    // callback returns, so the normal debounced write would never run.
-    await WidgetService.syncWatchlistToWidget(uid, immediate: true);
+      // Optimistically advance targetEpisode for instant widget update
+      int tSeason = (showMap['targetSeason'] as num?)?.toInt() ?? 1;
+      int tEpisode = (showMap['targetEpisode'] as num?)?.toInt() ?? 1;
+      while (watchedList.contains('$tSeason-$tEpisode')) {
+        tEpisode++;
+      }
+      showMap['targetSeason'] = tSeason;
+      showMap['targetEpisode'] = tEpisode;
+      showMap['nextEpisodeCode'] =
+          'S${tSeason.toString().padLeft(2, '0')} | E${tEpisode.toString().padLeft(2, '0')}';
+      showMap['nextEpisodeTitle'] = 'Episode $tEpisode';
+
+      final allShowsSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('shows')
+          .orderBy('addedAt', descending: true)
+          .get()
+          .timeout(WidgetService._backgroundOpTimeout);
+
+      final allShows = allShowsSnapshot.docs.map((doc) {
+        if (doc.id == showId.toString()) {
+          return showMap;
+        }
+        return doc.data();
+      }).toList();
+
+      // Immediate widget sync with optimistic data
+      await WidgetService.syncWatchlistDataToWidget(allShows, immediate: true);
+
+      // Async TMDB enrichment
+      try {
+        final tmdbClient = TmdbClient();
+        enrichmentCubit = WatchlistEnrichmentCubit(tmdbClient: tmdbClient);
+        await enrichmentCubit
+            .enrichShows([showMap], uid)
+            .timeout(WidgetService._backgroundOpTimeout);
+        await WidgetService.syncWatchlistToWidget(uid, immediate: true);
+      } catch (_) {}
+    }
   } catch (e) {
     log('Error in background interactive widget callback: $e');
   } finally {

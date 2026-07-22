@@ -53,6 +53,12 @@ class EnrichedShow {
   factory EnrichedShow.fromShowData(Map<String, dynamic> data) {
     final watchedEpisodes = List<String>.from(data['watchedEpisodes'] ?? []);
 
+    int targetSeason = (data['targetSeason'] as num?)?.toInt() ?? 1;
+    int targetEpisode = (data['targetEpisode'] as num?)?.toInt() ?? 1;
+    while (watchedEpisodes.contains('$targetSeason-$targetEpisode')) {
+      targetEpisode++;
+    }
+
     // Derive category from stored field, or fall back to watchedEpisodes
     final String category = data['category'] as String? ??
         (watchedEpisodes.isEmpty ? 'HAVENT_STARTED' : 'WATCH_NEXT');
@@ -60,12 +66,16 @@ class EnrichedShow {
     final bool isUpToDate = category == 'UP_TO_DATE';
 
     // Read pre-computed display fields with defaults
-    final String episodeCode = data['nextEpisodeCode'] as String? ??
-        (isUpToDate ? 'Up to date' : '');
+    String episodeCode = data['nextEpisodeCode'] as String? ?? '';
+    final String storedCode = 'S${targetSeason.toString().padLeft(2, '0')} | E${(targetEpisode - 1).toString().padLeft(2, '0')}';
+    if (episodeCode.isEmpty || episodeCode == storedCode) {
+      episodeCode = 'S${targetSeason.toString().padLeft(2, '0')} | E${targetEpisode.toString().padLeft(2, '0')}';
+    }
+    if (isUpToDate) {
+      episodeCode = 'Up to date';
+    }
     final String episodeTitle = data['nextEpisodeTitle'] as String? ??
         (isUpToDate ? 'Waiting for new episodes' : '');
-    final int targetSeason = (data['targetSeason'] as num?)?.toInt() ?? 0;
-    final int targetEpisode = (data['targetEpisode'] as num?)?.toInt() ?? 0;
     final int totalEpisodes = (data['totalEpisodes'] as num?)?.toInt() ?? 0;
     final String? extraCount = data['extraCount'] as String?;
     final bool isPremiere = data['isPremiere'] as bool? ?? false;
