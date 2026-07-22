@@ -35,6 +35,7 @@ struct MarkAsWatchedIntent: AppIntent {
     }
     
     func perform() async throws -> some IntentResult {
+        widgetLogger.notice("👉 [Widget Tap] MarkAsWatchedIntent triggered for showId: \(showId), episodeKey: \(episodeKey)")
         let urlString = "tvtimeapp://mark_watched?showId=\(showId)&episodeKey=\(episodeKey)"
         if let url = URL(string: urlString) {
             await HomeWidgetBackgroundWorker.run(url: url, appGroup: "group.tvtimeapp.widget")

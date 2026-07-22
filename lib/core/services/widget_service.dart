@@ -230,9 +230,7 @@ class WidgetService {
 
 @pragma('vm:entry-point')
 Future<void> interactiveWidgetCallback(Uri? uri) async {
-  // Verify against home_widget 0.9.3 source whether its background dispatcher
-  // already calls this before invoking the registered callback. If it does,
-  // this is a safe no-op; if it doesn't, this is required.
+  log('🚀 [Background Isolate] Interactive widget callback received with URI: $uri');
   WidgetsFlutterBinding.ensureInitialized();
 
   if (uri == null) return;
@@ -252,6 +250,8 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     log('Background callback: invalid showId "$showIdStr"');
     return;
   }
+
+  log('📌 [Background Isolate] Processing mark-as-watched for showId: $showId, episodeKey: $episodeKey');
 
   WatchlistEnrichmentCubit? enrichmentCubit;
 
