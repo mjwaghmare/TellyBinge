@@ -315,6 +315,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         final voteAverage = (movie['vote_average'] as num?)?.toDouble() ?? 0.0;
         final voteCount = movie['vote_count'] as int? ?? 0;
         final runtime = _formatRuntime(movie['runtime'] as int?);
+        final language = (movie['original_language'] as String? ?? '').toUpperCase();
         final released = _isReleased(releaseDate);
 
         final videos = isLoading
@@ -736,6 +737,26 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 ),
                               ],
                             ),
+                            if (language.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.language,
+                                    color: Colors.white54,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Language: $language',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: AppSpacing.md),
                             if (overview.isNotEmpty)
                               Text(
