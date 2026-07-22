@@ -19,9 +19,9 @@ class NotificationService {
 
     final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-            requestAlertPermission: false,
-            requestBadgePermission: false,
-            requestSoundPermission: false);
+            requestAlertPermission: true,
+            requestBadgePermission: true,
+            requestSoundPermission: true);
 
     final InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -29,6 +29,7 @@ class NotificationService {
     );
 
     await _notificationsPlugin.initialize(settings: initializationSettings);
+    await requestPermissions();
   }
 
   Future<void> requestPermissions() async {
@@ -103,37 +104,43 @@ class NotificationService {
     if (releaseDateStr == null || releaseDateStr.isEmpty) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final notificationsEnabled = prefs.getBool('notifications_enabled') ?? false;
+    final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
     if (!notificationsEnabled) return;
 
-    final releaseDate = DateTime.tryParse(releaseDateStr);
-    if (releaseDate == null) return;
+    final rawDate = DateTime.tryParse(releaseDateStr);
+    if (rawDate == null) return;
 
-    final notify1HourBefore = prefs.getBool('notify_1_hour_before') ?? false;
+    // If string is YYYY-MM-DD format (no time specified), set to 9:00 AM local time
+    DateTime releaseDate;
+    if (releaseDateStr.length <= 10) {
+      releaseDate = DateTime(rawDate.year, rawDate.month, rawDate.day, 9, 0);
+    } else {
+      releaseDate = rawDate;
+    }
+
     final notify1DayBefore = prefs.getBool('notify_1_day_before') ?? true;
 
-    if (notify1HourBefore) {
-      final scheduledDate = releaseDate.subtract(const Duration(hours: 1));
-      if (scheduledDate.isAfter(DateTime.now())) {
+    // 1. Notification 1 Day Before at 9:00 AM
+    if (notify1DayBefore) {
+      final oneDayBeforeDate = releaseDate.subtract(const Duration(days: 1));
+      if (oneDayBeforeDate.isAfter(DateTime.now())) {
         await scheduleReleaseNotification(
           id: id * 10 + 1,
-          title: title,
-          body: body,
-          scheduledDate: scheduledDate,
+          title: '$title (Tomorrow)',
+          body: body.replaceAll('airing soon', 'airing tomorrow'),
+          scheduledDate: oneDayBeforeDate,
         );
       }
     }
 
-    if (notify1DayBefore) {
-      final scheduledDate = releaseDate.subtract(const Duration(hours: 24));
-      if (scheduledDate.isAfter(DateTime.now())) {
-        await scheduleReleaseNotification(
-          id: id * 10 + 2,
-          title: title,
-          body: body,
-          scheduledDate: scheduledDate,
-        );
-      }
+    // 2. Notification on Release Day at 9:00 AM (or exact time)
+    if (releaseDate.isAfter(DateTime.now())) {
+      await scheduleReleaseNotification(
+        id: id * 10 + 2,
+        title: '$title (Today)',
+        body: body.replaceAll('airing soon', 'airing today'),
+        scheduledDate: releaseDate,
+      );
     }
   }
 }
