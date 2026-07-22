@@ -43,10 +43,6 @@ struct MarkAsWatchedIntent: AppIntent {
     }
 }
 
-@available(iOS 17.0, *)
-@available(iOSApplicationExtension, unavailable)
-extension MarkAsWatchedIntent: ForegroundContinuableIntent {}
-
 // MARK: - Constants & Logging
 enum WidgetConstants {
     static let appGroup = "group.tvtimeapp.widget"
@@ -187,15 +183,9 @@ struct UpNextWidgetEntryView : View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                GeometryReader { geometry in
-                    let itemCount = CGFloat(entry.items.count)
-                    let itemHeight = geometry.size.height / max(itemCount, 1)
-                    
-                    VStack(spacing: 0) {
-                        ForEach(Array(entry.items.enumerated()), id: \.offset) { index, item in
-                            ItemRow(item: item)
-                                .frame(height: itemHeight)
-                        }
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(entry.items, id: \.showId) { item in
+                        ItemRow(item: item)
                     }
                 }
             }
