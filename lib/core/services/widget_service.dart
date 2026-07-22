@@ -268,10 +268,11 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     String? uid = user?.uid;
     if (uid == null || uid.isEmpty) {
       try {
-        uid = await FirebaseAuth.instance
+        final u = await FirebaseAuth.instance
             .authStateChanges()
             .first
             .timeout(const Duration(seconds: 2));
+        uid = u?.uid;
       } catch (_) {}
     }
     if (uid == null || uid.isEmpty) {
