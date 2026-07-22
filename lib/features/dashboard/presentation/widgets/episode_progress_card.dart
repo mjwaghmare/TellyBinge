@@ -30,16 +30,26 @@ class EpisodeProgressCard extends StatefulWidget {
 class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
   bool _isMarkingAsWatched = false;
   bool _hasFiredSlideHaptic = false;
+  String? _lastMarkedEpisodeCode;
+  Timer? _markingSafetyTimer;
+
+  @override
+  void dispose() {
+    _markingSafetyTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(EpisodeProgressCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If the show data changes (e.g., from the cloud function updating the watchlist status),
-    // reset the marking state so the loader goes away.
-    if (widget.enrichedShow != oldWidget.enrichedShow) {
-      if (_isMarkingAsWatched) {
+    if (_isMarkingAsWatched) {
+      final hasAdvanced = widget.enrichedShow.episodeCode != _lastMarkedEpisodeCode ||
+          widget.enrichedShow.isUpToDate;
+      if (hasAdvanced) {
+        _markingSafetyTimer?.cancel();
         setState(() {
           _isMarkingAsWatched = false;
+          _lastMarkedEpisodeCode = null;
         });
       }
     }
@@ -54,13 +64,20 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       return;
     }
 
+    _lastMarkedEpisodeCode = show.episodeCode;
     setState(() {
       _isMarkingAsWatched = true;
     });
 
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    if (!mounted) return;
+    _markingSafetyTimer?.cancel();
+    _markingSafetyTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted && _isMarkingAsWatched) {
+        setState(() {
+          _isMarkingAsWatched = false;
+          _lastMarkedEpisodeCode = null;
+        });
+      }
+    });
 
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
@@ -77,7 +94,6 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
         showPoster: show.rawShowData['posterPath']?.toString(),
         episodeTitle: show.episodeTitle,
       );
-      // Let the cubit trigger a refresh which will recreate this widget
     }
   }
 
