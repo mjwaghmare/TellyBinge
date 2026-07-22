@@ -144,7 +144,7 @@ class WidgetService {
       widgetItems.add({
         'showId': show.rawShowData['id'] as int,
         'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
-        'header': show.isPremiere ? 'PREMIERE' : (show.isNew ? 'NEW EPISODE' : 'UP NEXT'),
+        'header': show.isPremiere ? 'PREMIERE' : (show.isNew ? 'NEW EPISODE' : 'WATCH NEXT'),
         'episodeTitle': show.episodeCode,
         'episodeDetails': show.episodeTitle,
         'posterPath': show.rawShowData['posterPath'] as String?,

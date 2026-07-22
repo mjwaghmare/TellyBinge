@@ -19,8 +19,10 @@ import home_widget
     FlutterLocalNotificationsPlugin.setPluginRegistrantCallback { (registry) in
         GeneratedPluginRegistrant.register(with: registry)
     }
-    HomeWidgetPlugin.setPluginRegistrantCallback { registry in
-        GeneratedPluginRegistrant.register(with: registry)
+    if #available(iOS 17.0, *) {
+        HomeWidgetBackgroundWorker.setPluginRegistrantCallback { registry in
+            GeneratedPluginRegistrant.register(with: registry)
+        }
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

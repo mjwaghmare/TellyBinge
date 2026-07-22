@@ -43,6 +43,10 @@ struct MarkAsWatchedIntent: AppIntent {
     }
 }
 
+@available(iOS 17.0, *)
+@available(iOSApplicationExtension, unavailable)
+extension MarkAsWatchedIntent: ForegroundContinuableIntent {}
+
 // MARK: - Constants & Logging
 enum WidgetConstants {
     static let appGroup = "group.tvtimeapp.widget"
@@ -174,7 +178,7 @@ struct UpNextWidgetEntryView : View {
         VStack(spacing: 0) {
             if entry.items.isEmpty {
                 VStack {
-                    Text("Up Next")
+                    Text("Watch Next")
                         .font(.headline)
                         .foregroundColor(.white)
                     Text("No shows to watch.")
@@ -285,7 +289,7 @@ struct UpNextWidget: Widget {
                     .background(Color(red: 32/255, green: 32/255, blue: 34/255))
             }
         }
-        .configurationDisplayName("Up Next")
+        .configurationDisplayName("Watch Next")
         .description("Shows your next episodes to watch.")
         .supportedFamilies([.systemLarge]) // Force system large as requested
         .contentMarginsDisabled()

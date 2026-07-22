@@ -78,7 +78,7 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
       widgetItems.add({
         'showId': show['id'] as int,
         'showName': show['name'] as String,
-        'header': show['isPremiere'] == true ? 'PREMIERE' : (show['isNewEpisode'] == true ? 'NEW EPISODE' : 'UP NEXT'),
+        'header': show['isPremiere'] == true ? 'PREMIERE' : (show['isNewEpisode'] == true ? 'NEW EPISODE' : 'WATCH NEXT'),
         'episodeTitle': show['nextEpisodeCode'] as String,
         'episodeDetails': show['nextEpisodeTitle'] as String,
         'posterPath': show['posterPath'] as String?,
