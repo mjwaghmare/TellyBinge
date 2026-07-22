@@ -67,6 +67,31 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
         show['upcomingEpisodeCode'] != 'TBA'
     ).toList();
 
+    DateTime? getReleaseDate(Map<String, dynamic> show) {
+      final dateStr = (show['firstAirDate'] ??
+              show['first_air_date'] ??
+              show['releaseDate'] ??
+              show['release_date']) as String?;
+      if (dateStr == null || dateStr.isEmpty) return null;
+      return DateTime.tryParse(dateStr);
+    }
+
+    watchNext.sort((a, b) {
+      final aDate = getReleaseDate(a);
+      final bDate = getReleaseDate(b);
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+
+    haventStarted.sort((a, b) {
+      final aDate = getReleaseDate(a);
+      final bDate = getReleaseDate(b);
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+
     final List<Map<String, dynamic>> widgetItems = [];
 
     // Fill from Watch Next first

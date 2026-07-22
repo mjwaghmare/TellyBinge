@@ -132,6 +132,31 @@ class WidgetService {
       }
     }
 
+    DateTime? getReleaseDate(EnrichedShow show) {
+      final dateStr = (show.rawShowData['firstAirDate'] ??
+              show.rawShowData['first_air_date'] ??
+              show.rawShowData['releaseDate'] ??
+              show.rawShowData['release_date']) as String?;
+      if (dateStr == null || dateStr.isEmpty) return null;
+      return DateTime.tryParse(dateStr);
+    }
+
+    watchNext.sort((a, b) {
+      final aDate = getReleaseDate(a);
+      final bDate = getReleaseDate(b);
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+
+    haventStarted.sort((a, b) {
+      final aDate = getReleaseDate(a);
+      final bDate = getReleaseDate(b);
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+
     upcoming.sort((a, b) => a.upcomingAirDate!.compareTo(b.upcomingAirDate!));
 
     final List<Map<String, dynamic>> widgetItems = [];

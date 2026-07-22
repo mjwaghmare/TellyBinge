@@ -116,8 +116,16 @@ class MoviesPageState extends State<MoviesPage> {
         if (state is MovieWatchlistSuccess) {
           final now = DateTime.now();
 
+          String getMovieReleaseDate(Map<String, dynamic> movie) {
+            return (movie['releaseDate'] ??
+                    movie['release_date'] ??
+                    movie['firstAirDate'] ??
+                    movie['first_air_date']) as String? ??
+                '';
+          }
+
           for (final movie in state.movies) {
-            final releaseDateStr = movie['releaseDate'] as String? ?? '';
+            final releaseDateStr = getMovieReleaseDate(movie);
             bool released = false;
             if (releaseDateStr.isNotEmpty) {
               try {
@@ -135,8 +143,8 @@ class MoviesPageState extends State<MoviesPage> {
 
           // Sort watchlist by release date descending (newest released first)
           watchlist.sort((a, b) {
-            final aStr = a['releaseDate'] as String? ?? '';
-            final bStr = b['releaseDate'] as String? ?? '';
+            final aStr = getMovieReleaseDate(a);
+            final bStr = getMovieReleaseDate(b);
             if (aStr.isEmpty) return 1;
             if (bStr.isEmpty) return -1;
             try {
@@ -150,8 +158,8 @@ class MoviesPageState extends State<MoviesPage> {
 
           // Sort upcoming by release date ascending (soonest to release first)
           upcoming.sort((a, b) {
-            final aStr = a['releaseDate'] as String? ?? '';
-            final bStr = b['releaseDate'] as String? ?? '';
+            final aStr = getMovieReleaseDate(a);
+            final bStr = getMovieReleaseDate(b);
             if (aStr.isEmpty) return 1;
             if (bStr.isEmpty) return -1;
             try {

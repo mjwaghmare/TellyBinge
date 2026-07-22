@@ -286,6 +286,31 @@ class DashboardPageState extends State<DashboardPage> {
       }
     }
 
+    DateTime? getReleaseDate(EnrichedShow show) {
+      final dateStr = (show.rawShowData['firstAirDate'] ??
+              show.rawShowData['first_air_date'] ??
+              show.rawShowData['releaseDate'] ??
+              show.rawShowData['release_date']) as String?;
+      if (dateStr == null || dateStr.isEmpty) return null;
+      return DateTime.tryParse(dateStr);
+    }
+
+    watchNext.sort((a, b) {
+      final aDate = getReleaseDate(a);
+      final bDate = getReleaseDate(b);
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+
+    haventStarted.sort((a, b) {
+      final aDate = getReleaseDate(a);
+      final bDate = getReleaseDate(b);
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+
     if (watchNext.isEmpty && haventStarted.isEmpty) {
       // NOTE: We still want to show empty state if history is empty too,
       // but if history has items, we shouldn't show the empty state.
