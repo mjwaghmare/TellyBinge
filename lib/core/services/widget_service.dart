@@ -265,13 +265,20 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     }
 
     var user = FirebaseAuth.instance.currentUser;
-    user ??= await FirebaseAuth.instance
-        .authStateChanges()
-        .first
-        .timeout(WidgetService._backgroundOpTimeout);
+    String? uid = user?.uid;
+    if (uid == null || uid.isEmpty) {
+      try {
+        uid = await FirebaseAuth.instance
+            .authStateChanges()
+            .first
+            .timeout(const Duration(seconds: 2));
+      } catch (_) {}
+    }
+    if (uid == null || uid.isEmpty) {
+      uid = await HomeWidget.getWidgetData<String>('current_uid');
+    }
 
-    final uid = user?.uid;
-    if (uid == null) {
+    if (uid == null || uid.isEmpty) {
       log('Background callback: no authenticated user, aborting mark-as-watched for show $showId');
       return;
     }

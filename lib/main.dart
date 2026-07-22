@@ -211,6 +211,7 @@ class AuthGate extends StatelessWidget {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         if (state is Authenticated) {
+          HomeWidget.saveWidgetData<String>('current_uid', state.user.uid);
           return const ShellNavigationPage();
         } else if (state is Unauthenticated || state is AuthLoginLoading) {
           return const LoginPage();

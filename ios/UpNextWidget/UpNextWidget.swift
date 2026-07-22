@@ -39,6 +39,7 @@ struct MarkAsWatchedIntent: AppIntent {
         if let url = URL(string: urlString) {
             await HomeWidgetBackgroundWorker.run(url: url, appGroup: "group.tvtimeapp.widget")
         }
+        WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
 }
