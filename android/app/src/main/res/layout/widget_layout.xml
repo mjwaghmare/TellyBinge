@@ -25,7 +25,7 @@
         android:padding="8dp"
         android:src="@drawable/ic_check_circle"
         android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Mark as Watched"
+        android:contentDescription="@string/widget_mark_as_watched"
         android:visibility="gone" />
 
     <LinearLayout
@@ -42,7 +42,7 @@
             android:id="@+id/widget_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="WATCH NEXT"
+            android:text="@string/widget_watch_next"
             android:textColor="#999999"
             android:textSize="10sp"
             android:textStyle="bold" />

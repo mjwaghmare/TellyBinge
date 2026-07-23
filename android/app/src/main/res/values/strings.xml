@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">TellyBinge</string>
     <string name="widget_description">Shows your next episodes to watch.</string>
+    <string name="widget_watch_next">WATCH NEXT</string>
+    <string name="widget_mark_as_watched">Mark as Watched</string>
 </resources>
