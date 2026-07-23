@@ -56,7 +56,7 @@ class UpNextWidgetProvider : HomeWidgetProvider() {
             }
 
             // Fallback to legacy preferences if showName is blank/missing or showId is missing/zero
-            if (showName.isNullOrBlank() || showId == null || showId == 0) {
+            if (showName.isNullOrBlank() || showName == "null" || showId == null || showId <= 0) {
                 showName = widgetData.getString("up_next_show_name", "No shows to watch")
                 episodeTitle = widgetData.getString("up_next_episode", "Check the app for updates")
                 posterPath = widgetData.getString("up_next_poster_path", null)
