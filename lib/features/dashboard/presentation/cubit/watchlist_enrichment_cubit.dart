@@ -67,13 +67,17 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
   /// - Skips shows already enriched this session with same watchedEpisodes
   /// - Processes in batches of 3 to avoid file descriptor exhaustion
   Future<void> enrichShows(
-      List<Map<String, dynamic>> rawShows, String uid) async {
+    List<Map<String, dynamic>> rawShows,
+    String uid, {
+    bool force = false,
+  }) async {
     if (rawShows.isEmpty) return;
 
     final showsToEnrich = <Map<String, dynamic>>[];
 
     for (var raw in rawShows) {
-      final showId = raw['id'] as int;
+      final showId = raw['id'] as int?;
+      if (showId == null) continue;
       if (showId == -1) continue;
       if ((raw['status'] as String?) == 'STOPPED') continue;
 
@@ -87,19 +91,19 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
       final currentHash = _computeWatchedHash(watchedEpisodes);
       final previousHash = _watchedEpisodesHash[showId];
 
-      // Skip if already enriched this session with same watchedEpisodes
-      if (_enrichedShowIds.contains(showId) && previousHash == currentHash) {
-        continue;
-      }
+      if (!force) {
+        // Skip if already enriched this session with same watchedEpisodes
+        if (_enrichedShowIds.contains(showId) && previousHash == currentHash) {
+          continue;
+        }
 
-      // Skip if enriched recently AND watchedEpisodes hasn't changed
-      // (for cross-session staleness — first app open of the day)
-      if (_isRecentlyEnriched(raw) && previousHash == null) {
-        // First time seeing this show in this session, but Firebase says
-        // it was enriched recently. Trust the stored data.
-        _enrichedShowIds.add(showId);
-        _watchedEpisodesHash[showId] = currentHash;
-        continue;
+        // Skip if enriched recently AND watchedEpisodes hasn't changed
+        // (for cross-session staleness — first app open of the day)
+        if (_isRecentlyEnriched(raw) && previousHash == currentHash) {
+          _enrichedShowIds.add(showId);
+          _watchedEpisodesHash[showId] = currentHash;
+          continue;
+        }
       }
 
       showsToEnrich.add(raw);

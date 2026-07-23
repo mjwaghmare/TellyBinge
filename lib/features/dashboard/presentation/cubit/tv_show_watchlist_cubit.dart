@@ -97,8 +97,10 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
     // Fill from Watch Next first
     for (var show in watchNext) {
       if (widgetItems.length >= 3) break;
-      final int targetSeason = (show['targetSeason'] as num?)?.toInt() ?? 0;
-      final int targetEpisode = (show['targetEpisode'] as num?)?.toInt() ?? 0;
+      final int rawTargetSeason = (show['targetSeason'] as num?)?.toInt() ?? 0;
+      final int rawTargetEpisode = (show['targetEpisode'] as num?)?.toInt() ?? 0;
+      final int targetSeason = rawTargetSeason > 0 ? rawTargetSeason : 1;
+      final int targetEpisode = rawTargetEpisode > 0 ? rawTargetEpisode : 1;
       final String firestoreKey = '$targetSeason-$targetEpisode';
       widgetItems.add({
         'showId': show['id'] as int,

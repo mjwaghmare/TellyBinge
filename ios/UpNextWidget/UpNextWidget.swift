@@ -35,10 +35,13 @@ struct MarkAsWatchedIntent: AppIntent {
     }
     
     func perform() async throws -> some IntentResult {
-        widgetLogger.notice("👉 [Widget Tap] MarkAsWatchedIntent triggered for showId: \(showId), episodeKey: \(episodeKey)")
-        let urlString = "tvtimeapp://mark_watched?showId=\(showId)&episodeKey=\(episodeKey)"
+        let rawShowId = String(showId)
+        widgetLogger.notice("👉 [Widget Tap] MarkAsWatchedIntent triggered for showId: \(rawShowId, privacy: .public), episodeKey: \(episodeKey, privacy: .public)")
+        let urlString = "tvtimeapp://mark_watched?showId=\(rawShowId)&episodeKey=\(episodeKey)"
         if let url = URL(string: urlString) {
-            await HomeWidgetBackgroundWorker.run(url: url, appGroup: "group.tvtimeapp.widget")
+            Task {
+                await HomeWidgetBackgroundWorker.run(url: url, appGroup: "group.tvtimeapp.widget")
+            }
         }
         return .result()
     }
@@ -137,9 +140,25 @@ struct Provider: TimelineProvider {
             items = (try? JSONDecoder().decode([UpNextItem].self, from: data)) ?? []
         }
 
-        let entry = SimpleEntry(date: Date(), items: items)
-        let timeline = Timeline(entries: [entry], policy: .atEnd)
-        completion(timeline)
+        // Pre-load poster images so they render immediately in the widget.
+        // AsyncImage is unreliable in widget extensions due to limited runtime.
+        Task {
+            var loadedItems = items
+            for i in loadedItems.indices {
+                if let posterPath = loadedItems[i].localPosterPath {
+                    loadedItems[i].imageData = await PosterImageLoader.loadData(from: posterPath)
+                }
+            }
+
+            let entry = SimpleEntry(date: Date(), items: loadedItems)
+
+            // Refresh at midnight so countdown text ("In 3 days") stays accurate
+            let tomorrow = Calendar.current.startOfDay(
+                for: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+            )
+            let timeline = Timeline(entries: [entry], policy: .after(tomorrow))
+            completion(timeline)
+        }
     }
 }
 
@@ -150,6 +169,7 @@ struct SimpleEntry: TimelineEntry {
 
 // MARK: - Views
 struct UpNextWidgetEntryView : View {
+    @Environment(\.widgetFamily) var family
     var entry: Provider.Entry
 
     var body: some View {
@@ -164,15 +184,21 @@ struct UpNextWidgetEntryView : View {
                         .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if family == .systemMedium {
+                // Medium: show first item in a compact horizontal layout
+                if let item = entry.items.first {
+                    MediumItemRow(item: item)
+                }
             } else {
+                // Large: show up to 3 items
                 VStack(alignment: .leading, spacing: 12) {
-                    ForEach(entry.items, id: \.showId) { item in
+                    ForEach(entry.items.prefix(3), id: \.showId) { item in
                         ItemRow(item: item)
                     }
                 }
             }
         }
-        .padding(20)
+        .padding(family == .systemMedium ? 16 : 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(URL(string: "tvtimeapp://"))
     }
@@ -262,6 +288,77 @@ struct ItemRow: View {
     }
 }
 
+// MARK: - Medium Widget Row
+struct MediumItemRow: View {
+    let item: UpNextItem
+    
+    var body: some View {
+        HStack(spacing: 14) {
+            // Poster
+            Group {
+                if let data = item.imageData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Rectangle().fill(Color.gray.opacity(0.3))
+                }
+            }
+            .frame(width: 65, height: 95)
+            .cornerRadius(12)
+            .clipped()
+            
+            // Details
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.header)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(Color(white: 0.6))
+                    .textCase(.uppercase)
+                
+                Text(item.showName)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                
+                Text(item.episodeTitle)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                
+                Text(item.episodeDetails)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color(white: 0.6))
+                    .lineLimit(1)
+            }
+            
+            Spacer(minLength: 4)
+            
+            // Mark As Watched Button
+            if !item.episodeKey.isEmpty {
+                if #available(iOS 17.0, *) {
+                    Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
+                        Circle()
+                            .stroke(Color.blue, lineWidth: 2)
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .frame(width: 44, height: 44)
+                } else {
+                    Link(destination: URL(string: "tvtimeapp://show/\(item.showId)")!) {
+                        Circle()
+                            .stroke(Color.blue, lineWidth: 2)
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .frame(width: 44, height: 44)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
 @main
 struct UpNextWidget: Widget {
     let kind: String = "UpNextWidget"
@@ -278,7 +375,7 @@ struct UpNextWidget: Widget {
         }
         .configurationDisplayName("Watch Next")
         .description("Shows your next episodes to watch.")
-        .supportedFamilies([.systemLarge]) // Force system large as requested
+        .supportedFamilies([.systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }
 }

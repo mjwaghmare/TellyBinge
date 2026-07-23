@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:firebase_core/firebase_core.dart';
+import '../../firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../features/dashboard/data/repositories/tv_watchlist_repository_impl.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -245,7 +246,8 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     return;
   }
 
-  final showId = int.tryParse(showIdStr);
+  final cleanShowIdStr = showIdStr.replaceAll(',', '').replaceAll(' ', '');
+  final showId = int.tryParse(cleanShowIdStr);
   if (showId == null) {
     log('Background callback: invalid showId "$showIdStr"');
     return;
@@ -257,11 +259,19 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
 
   try {
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp().timeout(WidgetService._backgroundOpTimeout);
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      ).timeout(WidgetService._backgroundOpTimeout);
     }
 
-    if (!dotenv.isInitialized) {
-      await dotenv.load(fileName: '.env').timeout(WidgetService._backgroundOpTimeout);
+    bool dotenvAvailable = dotenv.isInitialized;
+    if (!dotenvAvailable) {
+      try {
+        await dotenv.load(fileName: '.env').timeout(WidgetService._backgroundOpTimeout);
+        dotenvAvailable = true;
+      } catch (e) {
+        log('Background callback: dotenv unavailable in headless isolate, skipping TMDB enrichment: $e');
+      }
     }
 
     var user = FirebaseAuth.instance.currentUser;
@@ -342,15 +352,19 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
       // Immediate widget sync with optimistic data
       await WidgetService.syncWatchlistDataToWidget(allShows, immediate: true);
 
-      // Async TMDB enrichment
-      try {
-        final tmdbClient = TmdbClient();
-        enrichmentCubit = WatchlistEnrichmentCubit(tmdbClient: tmdbClient);
-        await enrichmentCubit
-            .enrichShows([showMap], uid)
-            .timeout(WidgetService._backgroundOpTimeout);
-        await WidgetService.syncWatchlistToWidget(uid, immediate: true);
-      } catch (_) {}
+      // Async TMDB enrichment — only if dotenv loaded (API key available)
+      if (dotenvAvailable) {
+        try {
+          final tmdbClient = TmdbClient();
+          enrichmentCubit = WatchlistEnrichmentCubit(tmdbClient: tmdbClient);
+          await enrichmentCubit
+              .enrichShows([showMap], uid, force: true)
+              .timeout(WidgetService._backgroundOpTimeout);
+          await WidgetService.syncWatchlistToWidget(uid, immediate: true);
+        } catch (e) {
+          log('Background callback: TMDB enrichment failed: $e');
+        }
+      }
     }
   } catch (e) {
     log('Error in background interactive widget callback: $e');

@@ -99,7 +99,6 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     HomeWidget.setAppGroupId(WidgetService.iOSGroupId);
-    HomeWidget.registerInteractivityCallback(interactiveWidgetCallback);
   }
 
   @override
