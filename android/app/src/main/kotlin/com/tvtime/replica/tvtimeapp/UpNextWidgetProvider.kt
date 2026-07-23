@@ -40,27 +40,23 @@ class UpNextWidgetProvider : HomeWidgetProvider() {
                 val jsonArray = JSONArray(jsonString)
                 if (jsonArray.length() > 0) {
                     val firstItem = jsonArray.getJSONObject(0)
-                    val rawShowId = firstItem.optInt("showId", 0)
-                    val rawShowName = firstItem.optString("showName", null)
-                    if (rawShowId > 0 && !rawShowName.isNullOrBlank()) {
-                        showId = rawShowId
-                        showName = rawShowName
-                        header = firstItem.optString("header", null)
-                        episodeTitle = firstItem.optString("episodeTitle", null)
-                        episodeDetails = firstItem.optString("episodeDetails", null)
-                        posterPath = firstItem.optString("localPosterPath", null)
-                        if (posterPath.isNullOrEmpty()) {
-                            posterPath = firstItem.optString("posterPath", null)
-                        }
-                        episodeKey = firstItem.optString("episodeKey", null)
+                    showId = firstItem.optInt("showId", 0)
+                    showName = firstItem.optString("showName", null)
+                    header = firstItem.optString("header", null)
+                    episodeTitle = firstItem.optString("episodeTitle", null)
+                    episodeDetails = firstItem.optString("episodeDetails", null)
+                    posterPath = firstItem.optString("localPosterPath", null)
+                    if (posterPath.isNullOrEmpty()) {
+                        posterPath = firstItem.optString("posterPath", null)
                     }
+                    episodeKey = firstItem.optString("episodeKey", null)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
 
-            // Fallback to legacy preferences if showName is blank or missing
-            if (showName.isNullOrBlank()) {
+            // Fallback to legacy preferences if showName is blank/missing or showId is missing/zero
+            if (showName.isNullOrBlank() || showId == null || showId == 0) {
                 showName = widgetData.getString("up_next_show_name", "No shows to watch")
                 episodeTitle = widgetData.getString("up_next_episode", "Check the app for updates")
                 posterPath = widgetData.getString("up_next_poster_path", null)
