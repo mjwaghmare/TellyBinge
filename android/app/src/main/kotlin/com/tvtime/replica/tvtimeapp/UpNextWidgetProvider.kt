@@ -40,26 +40,31 @@ class UpNextWidgetProvider : HomeWidgetProvider() {
                 val jsonArray = JSONArray(jsonString)
                 if (jsonArray.length() > 0) {
                     val firstItem = jsonArray.getJSONObject(0)
-                    showId = firstItem.optInt("showId")
-                    showName = firstItem.optString("showName")
-                    header = firstItem.optString("header")
-                    episodeTitle = firstItem.optString("episodeTitle")
-                    episodeDetails = firstItem.optString("episodeDetails")
-                    posterPath = firstItem.optString("localPosterPath")
-                    if (posterPath.isNullOrEmpty()) {
-                        posterPath = firstItem.optString("posterPath")
+                    val rawShowId = firstItem.optInt("showId", 0)
+                    val rawShowName = firstItem.optString("showName", null)
+                    if (rawShowId > 0 && !rawShowName.isNullOrBlank()) {
+                        showId = rawShowId
+                        showName = rawShowName
+                        header = firstItem.optString("header", null)
+                        episodeTitle = firstItem.optString("episodeTitle", null)
+                        episodeDetails = firstItem.optString("episodeDetails", null)
+                        posterPath = firstItem.optString("localPosterPath", null)
+                        if (posterPath.isNullOrEmpty()) {
+                            posterPath = firstItem.optString("posterPath", null)
+                        }
+                        episodeKey = firstItem.optString("episodeKey", null)
                     }
-                    episodeKey = firstItem.optString("episodeKey")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
 
-            // Legacy fallback if jsonArray was empty
-            if (showName == null) {
+            // Fallback to legacy preferences if showName is blank or missing
+            if (showName.isNullOrBlank()) {
                 showName = widgetData.getString("up_next_show_name", "No shows to watch")
                 episodeTitle = widgetData.getString("up_next_episode", "Check the app for updates")
                 posterPath = widgetData.getString("up_next_poster_path", null)
+                showId = null
             }
 
             val views = RemoteViews(context.packageName, R.layout.widget_layout).apply {
@@ -69,7 +74,7 @@ class UpNextWidgetProvider : HomeWidgetProvider() {
                 setTextViewText(R.id.widget_details, episodeDetails ?: "")
 
                 // Mark as Watched button setup
-                if (showId != null && !episodeKey.isNullOrEmpty()) {
+                if (showId != null && showId > 0 && !episodeKey.isNullOrEmpty()) {
                     setViewVisibility(R.id.widget_mark_watched, View.VISIBLE)
                     val markUri = Uri.parse("tvtimeapp://mark_watched?showId=$showId&episodeKey=$episodeKey")
                     val markPendingIntent = HomeWidgetBackgroundIntent.getBroadcast(
@@ -82,7 +87,7 @@ class UpNextWidgetProvider : HomeWidgetProvider() {
                 }
 
                 // Root click intent to open app/show details
-                val rootUri = if (showId != null) {
+                val rootUri = if (showId != null && showId > 0) {
                     Uri.parse("tvtimeapp://show/$showId")
                 } else {
                     Uri.parse("tvtimeapp://")
