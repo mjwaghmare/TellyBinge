@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -18,15 +19,12 @@ class WatchTrailerButton extends StatelessWidget {
     }
   }
 
-  void _showTrailerBottomSheet(BuildContext context, String videoKey) {
+  void _showTrailerBottomSheet(BuildContext context, Map<String, dynamic> trailer) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.black,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => _TrailerBottomSheet(videoKey: videoKey),
+      backgroundColor: Colors.transparent,
+      builder: (context) => _TrailerBottomSheet(trailer: trailer),
     );
   }
 
@@ -35,7 +33,7 @@ class WatchTrailerButton extends StatelessWidget {
     return InkWell(
       onTap: () async {
         if (trailer['site'] == 'YouTube') {
-          _showTrailerBottomSheet(context, trailer['key'] as String);
+          _showTrailerBottomSheet(context, trailer);
         } else {
           String urlStr = '';
           if (trailer['site'] == 'Vimeo') {
@@ -137,8 +135,8 @@ class WatchTrailerButton extends StatelessWidget {
 }
 
 class _TrailerBottomSheet extends StatefulWidget {
-  final String videoKey;
-  const _TrailerBottomSheet({required this.videoKey});
+  final Map<String, dynamic> trailer;
+  const _TrailerBottomSheet({required this.trailer});
 
   @override
   State<_TrailerBottomSheet> createState() => _TrailerBottomSheetState();
@@ -146,49 +144,215 @@ class _TrailerBottomSheet extends StatefulWidget {
 
 class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
   late YoutubePlayerController _controller;
+  late DraggableScrollableController _dragController;
+  double? _minExtent;
+  bool _isClosing = false;
+  bool _dragStartedAtMax = false;
+  bool _isVideoPlaying = true; // Auto-play is enabled by default
+  static const double _maxExtent = 0.9;
 
   @override
   void initState() {
     super.initState();
+    _dragController = DraggableScrollableController();
+    _dragController.addListener(_onDragChanged);
+
+    final videoKey = widget.trailer['key'] as String;
     _controller = YoutubePlayerController.fromVideoId(
-      videoId: widget.videoKey,
+      videoId: videoKey,
       autoPlay: true,
       params: const YoutubePlayerParams(
         showControls: true,
-        showFullscreenButton: true,
+        showFullscreenButton: false,
         mute: false,
       ),
     );
   }
 
+  void _onDragChanged() {
+    if (!_dragController.isAttached || _isClosing || _minExtent == null) return;
+    
+    final size = _dragController.size;
+    final minExtent = _minExtent!;
+
+    // Dismiss the sheet when dragged below minExtent - 0.05, but only if the drag started from minExtent
+    if (!_dragStartedAtMax && size < minExtent - 0.05) {
+      _isClosing = true;
+      Navigator.of(context).pop();
+      return;
+    }
+
+    // Check if the sheet is stable (close to minExtent or _maxExtent)
+    final bool isNearMin = (size - minExtent).abs() < 0.005;
+    final bool isNearMax = (size - _maxExtent).abs() < 0.005;
+
+    if (isNearMin || isNearMax) {
+      if (!_isVideoPlaying) {
+        _isVideoPlaying = true;
+        _controller.playVideo();
+      }
+    } else {
+      if (_isVideoPlaying) {
+        _isVideoPlaying = false;
+        _controller.pauseVideo();
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _dragController.removeListener(_onDragChanged);
+    _dragController.dispose();
     _controller.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            height: 4,
-            width: 40,
-            decoration: BoxDecoration(
-              color: Colors.white30,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          YoutubePlayer(controller: _controller, aspectRatio: 16 / 9),
-          const SafeArea(child: SizedBox(height: 16)),
-        ],
-      ),
-    );
-  }
+    final screenSize = MediaQuery.of(context).size;
+    final screenW = screenSize.width;
+    final screenH = screenSize.height;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    const double handleHeight = 40.0; // 24px top padding + 4px handle + 12px bottom padding
+    const double topMargin = 16.0; // Margin between drag handle and video player
+    const double bottomPaddingValue = 24.0; // Same as top handle padding
+    final double playerH = screenW * 9 / 16;
+    final double initialHeight = handleHeight + topMargin + playerH + bottomPaddingValue + bottomPadding;
+
+    _minExtent ??= (initialHeight / screenH).clamp(0.15, 0.85);
+    final double minExtent = _minExtent!;
+    // Allow dragging down below minExtent to trigger the dismissal listener
+    final double minChildSize = (minExtent - 0.1).clamp(0.05, 0.85);
+
+    return Listener(
+      onPointerDown: (event) {
+        if (_dragController.isAttached) {
+          _dragStartedAtMax = _dragController.size >= _maxExtent - 0.02;
+        }
+      },
+      onPointerUp: (event) {
+        _dragStartedAtMax = false;
+      },
+      onPointerCancel: (event) {
+        _dragStartedAtMax = false;
+      },
+      child: DraggableScrollableSheet(
+        controller: _dragController,
+        initialChildSize: minExtent,
+        minChildSize: minChildSize,
+        maxChildSize: _maxExtent,
+        expand: false,
+        snap: true,
+        snapSizes: [minExtent, _maxExtent],
+        builder: (context, scrollController) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final double currentSheetHeight = constraints.maxHeight;
+            final double extent = currentSheetHeight / screenH;
+
+            final double t = ((extent - minExtent) / (_maxExtent - minExtent)).clamp(0.0, 1.0);
+
+            // Determine target dimensions and rotation based on physical device orientation
+            final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+            final double angle = isLandscape ? 0.0 : t * (math.pi / 2);
+
+            final double playerW0 = screenW;
+            final double playerH0 = screenW * 9 / 16;
+
+            final double playerW1;
+            final double playerH1;
+
+            if (isLandscape) {
+              // In physical landscape mode, fit to screen width and height cleanly without rotation
+              playerW1 = math.min(screenW - 32.0, (screenH - handleHeight - topMargin - bottomPaddingValue - bottomPadding) * 16 / 9);
+              playerH1 = playerW1 * 9 / 16;
+            } else {
+              // In portrait mode, rotate to landscape on drag up
+              playerW1 = math.min(screenH * _maxExtent - (handleHeight + topMargin + bottomPaddingValue), screenW * 16 / 9);
+              playerH1 = playerW1 * 9 / 16;
+            }
+
+            // Interpolate current layout width and height
+            final double currentLayoutW = playerW0 + t * (playerW1 - playerW0);
+            final double currentLayoutH = playerH0 + t * (playerH1 - playerH0);
+
+            // Interpolate position relative to sheet top
+            final double currentCenterSheet;
+            if (isLandscape) {
+              // Centered below the handle in landscape mode
+              currentCenterSheet = handleHeight + topMargin + currentLayoutH / 2;
+            } else {
+              // Anchored position below the handle: keep top at handleHeight + topMargin in portrait mode
+              currentCenterSheet = handleHeight + topMargin + (playerH0 + t * (playerW1 - playerH0)) / 2;
+            }
+
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(16.0),
+                ),
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                clipBehavior: Clip.none, // Allow rotated player to render outside scroll viewport without clipping during transition
+                child: SizedBox(
+                  height: currentSheetHeight,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned.fill(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.only(top: 24, bottom: 12),
+                          child: Container(
+                            height: 4,
+                            width: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white30,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: screenW / 2 - currentLayoutW / 2,
+                        top: currentCenterSheet - currentLayoutH / 2,
+                        width: currentLayoutW,
+                        height: currentLayoutH,
+                        child: Transform.rotate(
+                          angle: angle,
+                          alignment: Alignment.center,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: YoutubePlayer(
+                              controller: _controller,
+                              aspectRatio: currentLayoutW / currentLayoutH,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ),
+  );
+}
 }
