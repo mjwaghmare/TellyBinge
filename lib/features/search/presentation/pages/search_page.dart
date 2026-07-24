@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
@@ -38,58 +39,53 @@ class _SearchPageState extends State<SearchPage>
 
   // Filter state for TV shows
   String _selectedSortBy = 'trending';
-  List<int> _selectedGenreIds = [];
   String? _tvLanguage;
+  String? _selectedYear;
   bool _hasActiveFilters = false;
   bool _isFetchingTvFilters = false;
 
-  static const List<Map<String, dynamic>> _tvGenres = [
-    {'id': 10759, 'name': 'Action & Adventure'},
-    {'id': 16, 'name': 'Animation'},
-    {'id': 35, 'name': 'Comedy'},
-    {'id': 80, 'name': 'Crime'},
-    {'id': 99, 'name': 'Documentary'},
-    {'id': 18, 'name': 'Drama'},
-    {'id': 10751, 'name': 'Family'},
-    {'id': 10762, 'name': 'Kids'},
-    {'id': 9648, 'name': 'Mystery'},
-    {'id': 10763, 'name': 'News'},
-    {'id': 10764, 'name': 'Reality'},
-    {'id': 10765, 'name': 'Sci-Fi & Fantasy'},
-    {'id': 10766, 'name': 'Soap'},
-    {'id': 10767, 'name': 'Talk'},
-    {'id': 10768, 'name': 'War & Politics'},
-    {'id': 37, 'name': 'Western'},
-  ];
-
   // Filter state - Movies
   String _selectedMovieSortBy = 'trending';
-  List<int> _selectedMovieGenreIds = [];
   String? _movieLanguage;
+  String? _selectedMovieYear;
   bool _hasActiveMovieFilters = false;
   bool _isFetchingMovieFilters = false;
 
-  static const List<Map<String, dynamic>> _movieGenres = [
-    {'id': 28, 'name': 'Action'},
-    {'id': 12, 'name': 'Adventure'},
-    {'id': 16, 'name': 'Animation'},
-    {'id': 35, 'name': 'Comedy'},
-    {'id': 80, 'name': 'Crime'},
-    {'id': 99, 'name': 'Documentary'},
-    {'id': 18, 'name': 'Drama'},
-    {'id': 10751, 'name': 'Family'},
-    {'id': 14, 'name': 'Fantasy'},
-    {'id': 36, 'name': 'History'},
-    {'id': 27, 'name': 'Horror'},
-    {'id': 10402, 'name': 'Music'},
-    {'id': 9648, 'name': 'Mystery'},
-    {'id': 10749, 'name': 'Romance'},
-    {'id': 878, 'name': 'Science Fiction'},
-    {'id': 10770, 'name': 'TV Movie'},
-    {'id': 53, 'name': 'Thriller'},
-    {'id': 10752, 'name': 'War'},
-    {'id': 37, 'name': 'Western'},
-  ];
+  final ValueNotifier<bool> _isSearchBarVisible = ValueNotifier<bool>(true);
+  Timer? _searchBarTimer;
+
+  // Pagination throttle — prevents _onScroll comparison running every 16ms
+  bool _isPaginating = false;
+  Timer? _paginationCooldown;
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    // Only process vertical scrolls — ignore TabBarView horizontal swipes
+    if (notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+
+    if (notification is UserScrollNotification) {
+      if (notification.direction == ScrollDirection.reverse) {
+        if (_isSearchBarVisible.value) {
+          _isSearchBarVisible.value = false;
+        }
+        _searchBarTimer?.cancel();
+      } else if (notification.direction == ScrollDirection.forward) {
+        if (!_isSearchBarVisible.value) {
+          _isSearchBarVisible.value = true;
+        }
+        _searchBarTimer?.cancel();
+      }
+    } else if (notification is ScrollEndNotification) {
+      _searchBarTimer?.cancel();
+      _searchBarTimer = Timer(const Duration(milliseconds: 1500), () {
+        if (mounted && !_isSearchBarVisible.value) {
+          _isSearchBarVisible.value = true;
+        }
+      });
+    }
+    return false;
+  }
 
   void _handleSubTabChange() {
     if (widget.subTabNotifier != null &&
@@ -106,7 +102,9 @@ class _SearchPageState extends State<SearchPage>
         _showsSearchController.text.isNotEmpty ||
         _moviesSearchController.text.isNotEmpty ||
         _tvLanguage != null ||
-        _movieLanguage != null) {
+        _movieLanguage != null ||
+        _selectedYear != null ||
+        _selectedMovieYear != null) {
       needsRefresh = true;
     }
 
@@ -114,15 +112,15 @@ class _SearchPageState extends State<SearchPage>
       setState(() {
         // TV
         _selectedSortBy = 'trending';
-        _selectedGenreIds = [];
         _tvLanguage = null;
+        _selectedYear = null;
         _hasActiveFilters = false;
         _showsSearchController.clear();
 
         // Movies
         _selectedMovieSortBy = 'trending';
-        _selectedMovieGenreIds = [];
         _movieLanguage = null;
+        _selectedMovieYear = null;
         _hasActiveMovieFilters = false;
         _moviesSearchController.clear();
       });
@@ -163,57 +161,45 @@ class _SearchPageState extends State<SearchPage>
         return;
       }
 
-      // 2. Once transition commits/completes
       final isTv = _tabController.index == 0;
       final activeController = isTv
           ? _showsSearchController
           : _moviesSearchController;
-      final currentState = context.read<SearchCubit>().state;
 
-      // MODIFY: Ensure tab switching only triggers search when query has at least 3 characters
       final trimmedQuery = activeController.text.trim();
       if (trimmedQuery.length >= 3) {
+        final currentState = context.read<SearchCubit>().state;
         bool shouldSearch = true;
         if (currentState is SearchResultsSuccess) {
           if (currentState.isTv == isTv && currentState.query == trimmedQuery) {
             shouldSearch = false;
           }
         }
-
         if (shouldSearch) {
           context.read<SearchCubit>().executeSearch(trimmedQuery, isTv: isTv);
         } else {
-          // Correct search results are already in memory, no need to refresh or shimmer
           setState(() {
             _isTabChanging = false;
           });
           return;
         }
       } else {
-        // Wants trending data (either empty or less than 3 characters)
-        if (currentState is SearchTrendingSuccess) {
-          // Trending data is already loaded for both tabs, no need to refresh or shimmer
-          setState(() {
-            _isTabChanging = false;
-          });
-          return;
-        } else {
-          _loadTrendingWithFilters();
-        }
+        _loadTrendingWithFilters();
       }
 
-      // Hold shimmer for 300ms to let images load smoothly
+      _tabTransitionTimer?.cancel();
       _tabTransitionTimer = Timer(const Duration(milliseconds: 300), () {
-        if (mounted) {
-          setState(() {
-            _isTabChanging = false;
-          });
-        }
+        if (!mounted) return;
+        setState(() {
+          _isTabChanging = false;
+        });
       });
     });
 
-    // Load trending shows & movies on startup
-    _loadTrendingWithFilters();
+    // Ensure trending is fetched on initial load if empty
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTrendingWithFilters();
+    });
 
     _showsScrollController.addListener(() => _onScroll(true));
     _moviesScrollController.addListener(() => _onScroll(false));
@@ -237,7 +223,9 @@ class _SearchPageState extends State<SearchPage>
       _showsScrollController.jumpTo(0);
     }
 
-    final hasActive = _hasActiveFilters || _tvLanguage != null;
+    final hasActiveExtra = _tvLanguage != null || _selectedYear != null;
+    final hasActive = _hasActiveFilters || hasActiveExtra;
+
     if (!hasActive) {
       if (!mounted) return;
       context.read<SearchCubit>().resetTvTrending();
@@ -247,15 +235,29 @@ class _SearchPageState extends State<SearchPage>
       return;
     }
 
+    // Immediately clear previous TV results so skeleton loader shows fresh state
+    context.read<SearchCubit>().clearTrendingTvResults();
+
     try {
       final tmdbClient = context.read<TmdbClient>();
-      final filteredShows = await tmdbClient.discoverTvShowsWithFilters(
-        sortBy: _selectedSortBy == 'trending'
-            ? 'first_air_date.desc'
-            : _selectedSortBy,
-        genreIds: _selectedGenreIds.isEmpty ? null : _selectedGenreIds,
-        language: _tvLanguage,
-      );
+      List<dynamic> filteredShows = [];
+
+      if (_selectedSortBy == 'airing_today' && !hasActiveExtra) {
+        filteredShows = await tmdbClient.getAiringTodayTvShows();
+      } else if (_selectedSortBy == 'upcoming' && !hasActiveExtra) {
+        filteredShows = await tmdbClient.getUpcomingTvShows();
+      } else {
+        final effectiveSortBy = (_selectedSortBy == 'trending' || _selectedSortBy == 'popularity.desc')
+            ? 'popularity.desc'
+            : (_selectedSortBy == 'airing_today' || _selectedSortBy == 'upcoming'
+                ? 'first_air_date.desc'
+                : _selectedSortBy);
+        filteredShows = await tmdbClient.discoverTvShowsWithFilters(
+          sortBy: effectiveSortBy,
+          language: _tvLanguage,
+          year: _selectedYear,
+        );
+      }
 
       if (!mounted) return;
       // Update the search cubit with filtered results
@@ -280,7 +282,9 @@ class _SearchPageState extends State<SearchPage>
       _moviesScrollController.jumpTo(0);
     }
 
-    final hasActive = _hasActiveMovieFilters || _movieLanguage != null;
+    final hasActiveMovieExtra = _movieLanguage != null || _selectedMovieYear != null;
+    final hasActive = _hasActiveMovieFilters || hasActiveMovieExtra;
+
     if (!hasActive) {
       if (!mounted) return;
       context.read<SearchCubit>().resetMoviesTrending();
@@ -290,17 +294,29 @@ class _SearchPageState extends State<SearchPage>
       return;
     }
 
+    // Immediately clear previous Movie results so skeleton loader shows fresh state
+    context.read<SearchCubit>().clearTrendingMovieResults();
+
     try {
       final tmdbClient = context.read<TmdbClient>();
-      final filteredMovies = await tmdbClient.discoverMoviesWithFilters(
-        sortBy: _selectedMovieSortBy == 'trending'
-            ? 'primary_release_date.desc'
-            : _selectedMovieSortBy,
-        genreIds: _selectedMovieGenreIds.isEmpty
-            ? null
-            : _selectedMovieGenreIds,
-        language: _movieLanguage,
-      );
+      List<dynamic> filteredMovies = [];
+
+      if (_selectedMovieSortBy == 'now_playing' && !hasActiveMovieExtra) {
+        filteredMovies = await tmdbClient.getNowPlayingMovies();
+      } else if (_selectedMovieSortBy == 'upcoming' && !hasActiveMovieExtra) {
+        filteredMovies = await tmdbClient.getUpcomingMovies();
+      } else {
+        final effectiveSortBy = (_selectedMovieSortBy == 'trending' || _selectedMovieSortBy == 'popularity.desc')
+            ? 'popularity.desc'
+            : (_selectedMovieSortBy == 'now_playing' || _selectedMovieSortBy == 'upcoming'
+                ? 'primary_release_date.desc'
+                : _selectedMovieSortBy);
+        filteredMovies = await tmdbClient.discoverMoviesWithFilters(
+          sortBy: effectiveSortBy,
+          language: _movieLanguage,
+          year: _selectedMovieYear,
+        );
+      }
 
       if (!mounted) return;
       // Update the search cubit with filtered results
@@ -319,41 +335,42 @@ class _SearchPageState extends State<SearchPage>
   void _showFilterBottomSheet(bool isTv) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => _FilterBottomSheet(
         isTv: isTv,
         selectedSortBy: isTv ? _selectedSortBy : _selectedMovieSortBy,
-        selectedGenreIds: isTv ? _selectedGenreIds : _selectedMovieGenreIds,
-        genres: isTv ? _tvGenres : _movieGenres,
-        onApply: (sortBy, genreIds) {
+        selectedYear: isTv ? _selectedYear : _selectedMovieYear,
+        onApply: (sortBy, year) {
           setState(() {
             if (isTv) {
               _selectedSortBy = sortBy;
-              _selectedGenreIds = genreIds;
-              _hasActiveFilters = sortBy != 'trending' || genreIds.isNotEmpty;
+              _selectedYear = year;
+              _hasActiveFilters =
+                  _selectedSortBy != 'trending' || _selectedYear != null;
             } else {
               _selectedMovieSortBy = sortBy;
-              _selectedMovieGenreIds = genreIds;
+              _selectedMovieYear = year;
               _hasActiveMovieFilters =
-                  sortBy != 'trending' || genreIds.isNotEmpty;
+                  _selectedMovieSortBy != 'trending' ||
+                  _selectedMovieYear != null;
             }
           });
 
           if (isTv) {
-            // Update cubit with filter state for pagination
+            // Update cubit with TV filter state for pagination
             context.read<SearchCubit>().setTvFilters(
               sortBy: sortBy,
-              genreIds: genreIds.isEmpty ? null : genreIds,
               language: _tvLanguage,
+              year: year,
             );
             _applyFiltersToTrending();
           } else {
             // Update cubit with movie filter state for pagination
             context.read<SearchCubit>().setMovieFilters(
               sortBy: sortBy,
-              genreIds: genreIds.isEmpty ? null : genreIds,
               language: _movieLanguage,
+              year: year,
             );
             _applyMovieFiltersToTrending();
           }
@@ -363,15 +380,28 @@ class _SearchPageState extends State<SearchPage>
   }
 
   void _onScroll(bool isTv) {
+    // Throttle: skip if a pagination request is already in-flight
+    if (_isPaginating) return;
+
     final controller = isTv ? _showsScrollController : _moviesScrollController;
+    if (!controller.hasClients) return;
     if (controller.position.pixels >=
         controller.position.maxScrollExtent - 200) {
+      _isPaginating = true;
       context.read<SearchCubit>().loadMore(isTv);
+      // Reset after 300 ms so we can trigger again once the load settles
+      _paginationCooldown?.cancel();
+      _paginationCooldown = Timer(const Duration(milliseconds: 300), () {
+        _isPaginating = false;
+      });
     }
   }
 
   @override
   void dispose() {
+    _searchBarTimer?.cancel();
+    _paginationCooldown?.cancel();
+    _isSearchBarVisible.dispose();
     widget.subTabNotifier?.removeListener(_handleSubTabChange);
     widget.mainTabNotifier?.removeListener(_handleMainTabChange);
     _showsSearchController.dispose();
@@ -426,120 +456,152 @@ class _SearchPageState extends State<SearchPage>
   }
 
   Widget _buildShowsTab(SearchState state, TvShowWatchlistState tvState) {
-    return Column(
-      children: [
-        _buildSearchBar(_showsSearchController, isTv: true),
-        Expanded(child: _buildShowsContent(state, tvState)),
-      ],
+    return NotificationListener<ScrollNotification>(
+      onNotification: _handleScrollNotification,
+      child: Column(
+        children: [
+          _buildSearchBar(_showsSearchController, isTv: true),
+          Expanded(child: _buildShowsContent(state, tvState)),
+        ],
+      ),
     );
   }
 
   Widget _buildMoviesTab(SearchState state, MovieWatchlistState movieState) {
-    return Column(
-      children: [
-        _buildSearchBar(_moviesSearchController, isTv: false),
-        Expanded(child: _buildMoviesContent(state, movieState)),
-      ],
+    return NotificationListener<ScrollNotification>(
+      onNotification: _handleScrollNotification,
+      child: Column(
+        children: [
+          _buildSearchBar(_moviesSearchController, isTv: false),
+          Expanded(child: _buildMoviesContent(state, movieState)),
+        ],
+      ),
     );
   }
 
-  Widget _buildSearchBar(
+   Widget _buildSearchBar(
     TextEditingController controller, {
     required bool isTv,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: (val) {
-                context.read<SearchCubit>().onSearchTextChanged(
-                  val,
-                  isTv: isTv,
-                );
-              },
-              decoration: InputDecoration(
-                hintText: isTv ? 'Search shows...' : 'Search movies...',
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
-                ),
-                suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: controller,
-                  builder: (context, value, child) {
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (value.text.isNotEmpty)
-                          IconButton(
-                            icon: Icon(
-                              Icons.clear,
+    return ValueListenableBuilder<bool>(
+      valueListenable: _isSearchBarVisible,
+      builder: (context, isVisible, child) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeInOutCubic,
+          height: isVisible ? 68.0 : 0.0,
+          clipBehavior: Clip.hardEdge,
+          decoration: const BoxDecoration(),
+          child: AnimatedSlide(
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeInOutCubic,
+            offset: isVisible ? Offset.zero : const Offset(0, -1.0),
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 250),
+              opacity: isVisible ? 1.0 : 0.0,
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: AppSpacing.md,
+                    right: AppSpacing.md,
+                    top: AppSpacing.xs,
+                    bottom: AppSpacing.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controller,
+                          onChanged: (val) {
+                            context.read<SearchCubit>().onSearchTextChanged(
+                              val,
+                              isTv: isTv,
+                            );
+                          },
+                          decoration: InputDecoration(
+                            hintText: isTv ? 'Search shows...' : 'Search movies...',
+                            prefixIcon: Icon(
+                              Icons.search,
                               color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                             ),
-                            onPressed: () {
-                              controller.clear();
-                              context.read<SearchCubit>().onSearchTextChanged(
-                                '',
-                                isTv: isTv,
-                              );
-                            },
+                            suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: controller,
+                              builder: (context, value, child) {
+                                return Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (value.text.isNotEmpty)
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.clear,
+                                          color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                                        ),
+                                        onPressed: () {
+                                          controller.clear();
+                                          context.read<SearchCubit>().onSearchTextChanged(
+                                            '',
+                                            isTv: isTv,
+                                          );
+                                        },
+                                      ),
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.tune,
+                                        color:
+                                            (isTv
+                                                ? _hasActiveFilters
+                                                : _hasActiveMovieFilters)
+                                            ? AppColors.primary
+                                            : AppColors.textTertiary,
+                                      ),
+                                      onPressed: () => _showFilterBottomSheet(isTv),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.tune,
-                            color:
-                                (isTv
-                                    ? _hasActiveFilters
-                                    : _hasActiveMovieFilters)
-                                ? AppColors.primary
-                                : AppColors.textTertiary,
-                          ),
-                          onPressed: () => _showFilterBottomSheet(isTv),
                         ),
-                      ],
-                    );
-                  },
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      IconButton(
+                        onPressed: () => _showLanguageBottomSheet(isTv, controller.text),
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: Text('🇮🇳', style: TextStyle(fontSize: 22)),
+                            ),
+                            if (isTv ? _tvLanguage != null : _movieLanguage != null)
+                              Positioned(
+                                top: 6,
+                                right: 2,
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: Colors.greenAccent,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Theme.of(context).scaffoldBackgroundColor,
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          IconButton(
-            onPressed: () => _showLanguageBottomSheet(isTv, controller.text),
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(4.0),
-                  child: Text('🇮🇳', style: TextStyle(fontSize: 22)),
-                ),
-                if (isTv ? _tvLanguage != null : _movieLanguage != null)
-                  Positioned(
-                    top: 6,
-                    right: 2,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: Colors.greenAccent,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -699,8 +761,8 @@ class _SearchPageState extends State<SearchPage>
     if (isTv) {
       context.read<SearchCubit>().setTvFilters(
         sortBy: _selectedSortBy,
-        genreIds: _selectedGenreIds,
         language: _tvLanguage,
+        year: _selectedYear,
       );
       if (searchText.trim().isNotEmpty) {
         context.read<SearchCubit>().onSearchTextChanged(searchText, isTv: true);
@@ -710,8 +772,8 @@ class _SearchPageState extends State<SearchPage>
     } else {
       context.read<SearchCubit>().setMovieFilters(
         sortBy: _selectedMovieSortBy,
-        genreIds: _selectedMovieGenreIds,
         language: _movieLanguage,
+        year: _selectedMovieYear,
       );
       if (searchText.trim().isNotEmpty) {
         context.read<SearchCubit>().onSearchTextChanged(
@@ -1023,13 +1085,18 @@ class _SearchPageState extends State<SearchPage>
               final String mediaType = item['media_type'] ?? defaultType;
               final String? dateStr =
                   item['release_date'] ?? item['first_air_date'];
-              String year = '';
+              String formattedDate = '';
               if (dateStr != null && dateStr.isNotEmpty) {
                 try {
-                  year = DateTime.parse(dateStr).year.toString();
+                  final dt = DateTime.parse(dateStr);
+                  const months = [
+                    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+                    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
+                  ];
+                  formattedDate = '${months[dt.month - 1]}, ${dt.year}';
                 } catch (_) {
                   if (dateStr.length >= 4) {
-                    year = dateStr.substring(0, 4);
+                    formattedDate = dateStr.substring(0, 4);
                   }
                 }
               }
@@ -1100,7 +1167,7 @@ class _SearchPageState extends State<SearchPage>
                       ),
                     ),
                     const SizedBox(height: 2),
-                    // Rating & Year row
+                    // Rating & Release Date row
                     Row(
                       children: [
                         if (voteAverage > 0.0) ...[
@@ -1117,7 +1184,7 @@ class _SearchPageState extends State<SearchPage>
                               color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                             ),
                           ),
-                          if (year.isNotEmpty) ...[
+                          if (formattedDate.isNotEmpty) ...[
                             const SizedBox(width: 4),
                             Text(
                               '•',
@@ -1127,20 +1194,28 @@ class _SearchPageState extends State<SearchPage>
                               ),
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              year,
+                            Expanded(
+                              child: Text(
+                                formattedDate,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 10.0,
+                                  color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ] else if (formattedDate.isNotEmpty) ...[
+                          Expanded(
+                            child: Text(
+                              formattedDate,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 10.0,
                                 color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                               ),
-                            ),
-                          ],
-                        ] else if (year.isNotEmpty) ...[
-                          Text(
-                            year,
-                            style: TextStyle(
-                              fontSize: 10.0,
-                              color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -1216,22 +1291,8 @@ class _SearchPageState extends State<SearchPage>
     if (mediaType == 'movie') {
       Navigator.push(
         context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              MovieDetailsPage(movieId: mediaId),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(0.0, 1.0);
-            const end = Offset.zero;
-            const curve = Curves.easeInOut;
-            var tween = Tween(
-              begin: begin,
-              end: end,
-            ).chain(CurveTween(curve: curve));
-            return SlideTransition(
-              position: animation.drive(tween),
-              child: child,
-            );
-          },
+        CupertinoPageRoute(
+          builder: (context) => MovieDetailsPage(movieId: mediaId),
         ),
       );
     } else {
@@ -1348,15 +1409,16 @@ class _TvShowStatusOverlayState extends State<TvShowStatusOverlay> {
 class _FilterBottomSheet extends StatefulWidget {
   final bool isTv;
   final String selectedSortBy;
-  final List<int> selectedGenreIds;
-  final List<dynamic> genres;
-  final Function(String sortBy, List<int> genreIds) onApply;
+  final String? selectedYear;
+  final Function(
+    String sortBy,
+    String? year,
+  ) onApply;
 
   const _FilterBottomSheet({
     required this.isTv,
     required this.selectedSortBy,
-    required this.selectedGenreIds,
-    required this.genres,
+    this.selectedYear,
     required this.onApply,
   });
 
@@ -1366,244 +1428,291 @@ class _FilterBottomSheet extends StatefulWidget {
 
 class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   late String _currentSortBy;
-  late List<int> _currentGenreIds;
+  String? _currentYear;
   late Map<String, String> _sortOptions;
+
+  static const List<Map<String, String?>> _yearOptions = [
+    {'label': 'Any Year', 'value': null},
+    {'label': '2026', 'value': '2026'},
+    {'label': '2025', 'value': '2025'},
+    {'label': '2024', 'value': '2024'},
+    {'label': '2023', 'value': '2023'},
+    {'label': '2022', 'value': '2022'},
+    {'label': '2020s', 'value': '2020s'},
+    {'label': '2010s', 'value': '2010s'},
+    {'label': '2000s', 'value': '2000s'},
+    {'label': '1990s', 'value': '1990s'},
+  ];
 
   @override
   void initState() {
     super.initState();
     _currentSortBy = widget.selectedSortBy;
-    _currentGenreIds = List.from(widget.selectedGenreIds);
-    _sortOptions = {
-      'Trending': 'trending',
-      'Latest': widget.isTv
-          ? 'first_air_date.desc'
-          : 'primary_release_date.desc',
-      'Popular': 'popularity.desc',
-    };
+    _currentYear = widget.selectedYear;
+
+    _sortOptions = widget.isTv
+        ? {
+            'Trending': 'trending',
+            'Latest': 'first_air_date.desc',
+            'Popular': 'popularity.desc',
+            'Airing Today': 'airing_today',
+            'Upcoming': 'upcoming',
+          }
+        : {
+            'Trending': 'trending',
+            'Latest': 'primary_release_date.desc',
+            'Popular': 'popularity.desc',
+            'In Theaters': 'now_playing',
+            'Upcoming': 'upcoming',
+          };
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 8.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyLarge?.color,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChipWrap({
+    required List<Map<String, String?>> options,
+    required String? selectedValue,
+    required Function(String? val) onSelected,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Wrap(
+        spacing: 8.0,
+        runSpacing: 8.0,
+        children: options.map((opt) {
+          final label = opt['label']!;
+          final value = opt['value'];
+          final isSelected = selectedValue == value;
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
+          return InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => onSelected(value),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 9.0,
+              ),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark
+                        ? const Color(0xFF2A2A2A)
+                        : Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary
+                      : (isDark ? Colors.white12 : Colors.black12),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected
+                      ? Colors.black
+                      : (isDark ? Colors.white : Colors.black87),
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      heightFactor: 0.6,
-      child: Material(
-        color: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : const Color(0xFF1E1E1E)), // Dark grey background matching the screenshot
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: AppSpacing.md),
-            // Sort by Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Text(
-                'Sort by',
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasActiveFilter = _currentSortBy != 'trending' || _currentYear != null;
+
+    return Material(
+      color: Theme.of(context).bottomSheetTheme.backgroundColor ??
+          (isDark ? const Color(0xFF181818) : Colors.white),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 10),
+              // Drag Handle
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.black26,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Row(
-                children: _sortOptions.entries.map((entry) {
-                  final label = entry.key;
-                  final value = entry.value;
-                  final isSelected = _currentSortBy == value;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: GestureDetector(
+              const SizedBox(height: 12),
+
+              // Title Header & Reset Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Filter & Sort',
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.titleLarge?.color,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (hasActiveFilter)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentSortBy = 'trending';
+                            _currentYear = null;
+                          });
+                          widget.onApply('trending', null);
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Divider(color: Theme.of(context).dividerColor, height: 1),
+
+              const SizedBox(height: 8),
+              // Sort by Section
+              _buildSectionHeader('Sort by'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: _sortOptions.entries.map((entry) {
+                    final label = entry.key;
+                    final value = entry.value;
+                    final isSelected = _currentSortBy == value;
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(20),
                       onTap: () {
                         setState(() {
                           _currentSortBy = value;
                         });
                       },
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
-                          vertical: 10.0,
+                          vertical: 9.0,
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
-                              : (Theme.of(context).brightness == Brightness.light ? Colors.grey.shade300 : const Color(0xFFCCCCCC)),
-                          borderRadius: BorderRadius.circular(24),
+                              : (isDark
+                                  ? const Color(0xFF2A2A2A)
+                                  : Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primary
+                                : (isDark ? Colors.white12 : Colors.black12),
+                            width: 1,
+                          ),
                         ),
                         child: Text(
                           label,
                           style: TextStyle(
-                            color: Colors
-                                .black, // Dark text for both yellow and grey
-                            fontSize: 14,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w500,
+                            color: isSelected
+                                ? Colors.black
+                                : (isDark ? Colors.white : Colors.black87),
+                            fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.md),
-            Divider(color: Theme.of(context).dividerColor, height: 1),
-            const SizedBox(height: AppSpacing.md),
-
-            // Genres Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Text(
-                'Genres',
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                    );
+                  }).toList(),
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
 
-            // Genres List
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                itemCount: widget.genres.length,
-                separatorBuilder: (context, index) => Divider(
-                  color: Theme.of(context).dividerColor,
-                  height: 1,
-                  indent: AppSpacing.md,
-                  endIndent: AppSpacing.md,
-                ),
-                itemBuilder: (context, index) {
-                  final genre = widget.genres[index];
-                  final optionId = genre['id'] as int;
-                  final optionName = genre['name'] as String;
-                  final isSelected = _currentGenreIds.contains(optionId);
-
-                  return ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: 0,
-                    ),
-                    title: Text(
-                      optionName,
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    trailing: isSelected
-                        ? Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.primary,
-                            ),
-                            padding: const EdgeInsets.all(4),
-                            child: Icon(
-                              Icons.check,
-                              size: 16,
-                              color: Colors.black,
-                            ),
-                          )
-                        : Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white38,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                    onTap: () {
-                      setState(() {
-                        if (isSelected) {
-                          _currentGenreIds.remove(optionId);
-                        } else {
-                          _currentGenreIds.add(optionId);
-                        }
-                      });
-                    },
-                  );
+              const SizedBox(height: 16),
+              // Release Year Section
+              _buildSectionHeader('Release Year'),
+              _buildChipWrap(
+                options: _yearOptions,
+                selectedValue: _currentYear,
+                onSelected: (val) {
+                  setState(() {
+                    _currentYear = _currentYear == val ? null : val;
+                  });
                 },
               ),
-            ),
 
-            // Bottom Action Bar
-            Divider(color: Theme.of(context).dividerColor, height: 1),
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            _currentSortBy = 'trending';
-                            _currentGenreIds.clear();
-                          });
-                          widget.onApply('trending', []);
-                          Navigator.pop(context);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: Text(
-                          'RESET',
-                          style: TextStyle(
-                            color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
+              const SizedBox(height: 24),
+              // Apply Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      widget.onApply(
+                        _currentSortBy,
+                        _currentYear,
+                      );
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          widget.onApply(_currentSortBy, _currentGenreIds);
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: Text(
-                          'APPLY',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
+                    child: const Text(
+                      'APPLY FILTERS',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.1,
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );

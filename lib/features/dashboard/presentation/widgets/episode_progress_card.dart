@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -358,32 +359,17 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
           final showId = show.rawShowData['id'];
           Navigator.push(
             context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  BlocProvider<ShowDetailsCubit>(
-                    create: (context) => ShowDetailsCubit(
-                      tmdbClient: context.read<TmdbClient>(),
-                    ),
-                    child: ShowDetailsPage(
-                      mediaId: showId,
-                      mediaType: 'tv',
-                      title: show.rawShowData['name'] ?? '',
-                    ),
-                  ),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
-                    const begin = Offset(0.0, 1.0);
-                    const end = Offset.zero;
-                    const curve = Curves.easeInOut;
-                    var tween = Tween(
-                      begin: begin,
-                      end: end,
-                    ).chain(CurveTween(curve: curve));
-                    return SlideTransition(
-                      position: animation.drive(tween),
-                      child: child,
-                    );
-                  },
+            CupertinoPageRoute(
+              builder: (context) => BlocProvider<ShowDetailsCubit>(
+                create: (context) => ShowDetailsCubit(
+                  tmdbClient: context.read<TmdbClient>(),
+                ),
+                child: ShowDetailsPage(
+                  mediaId: showId,
+                  mediaType: 'tv',
+                  title: show.rawShowData['name'] ?? '',
+                ),
+              ),
             ),
           );
         },

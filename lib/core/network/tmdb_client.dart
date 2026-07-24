@@ -406,6 +406,106 @@ class TmdbClient {
     }
   }
 
+  /// Fetch Airing Today TV shows
+  Future<List<dynamic>> getAiringTodayTvShows({int page = 1}) async {
+    final cacheKey = 'airing_today_tv_page_$page';
+    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null && cachedData['results'] != null) {
+      return _filterContent(cachedData['results'] as List<dynamic>);
+    }
+    try {
+      final response = await _getWithRetry('/tv/airing_today', queryParameters: {'page': page});
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      return _filterContent(data['results'] as List<dynamic>? ?? []);
+    } catch (e) {
+      final expiredData = await TmdbCacheManager.instance.readCache(
+        cacheKey,
+        maxAge: const Duration(days: 7),
+      );
+      if (expiredData != null && expiredData['results'] != null) {
+        return _filterContent(expiredData['results'] as List<dynamic>);
+      }
+      debugPrint('Error fetching Airing Today TV shows: $e');
+      return [];
+    }
+  }
+
+  /// Fetch Now Playing Movies
+  Future<List<dynamic>> getNowPlayingMovies({int page = 1}) async {
+    final cacheKey = 'now_playing_movie_page_$page';
+    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null && cachedData['results'] != null) {
+      return _filterContent(cachedData['results'] as List<dynamic>);
+    }
+    try {
+      final response = await _getWithRetry('/movie/now_playing', queryParameters: {'page': page});
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      return _filterContent(data['results'] as List<dynamic>? ?? []);
+    } catch (e) {
+      final expiredData = await TmdbCacheManager.instance.readCache(
+        cacheKey,
+        maxAge: const Duration(days: 7),
+      );
+      if (expiredData != null && expiredData['results'] != null) {
+        return _filterContent(expiredData['results'] as List<dynamic>);
+      }
+      debugPrint('Error fetching Now Playing movies: $e');
+      return [];
+    }
+  }
+
+  /// Fetch Upcoming TV shows (On the air)
+  Future<List<dynamic>> getUpcomingTvShows({int page = 1}) async {
+    final cacheKey = 'upcoming_tv_page_$page';
+    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null && cachedData['results'] != null) {
+      return _filterContent(cachedData['results'] as List<dynamic>);
+    }
+    try {
+      final response = await _getWithRetry('/tv/on_the_air', queryParameters: {'page': page});
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      return _filterContent(data['results'] as List<dynamic>? ?? []);
+    } catch (e) {
+      final expiredData = await TmdbCacheManager.instance.readCache(
+        cacheKey,
+        maxAge: const Duration(days: 7),
+      );
+      if (expiredData != null && expiredData['results'] != null) {
+        return _filterContent(expiredData['results'] as List<dynamic>);
+      }
+      debugPrint('Error fetching Upcoming TV shows: $e');
+      return [];
+    }
+  }
+
+  /// Fetch Upcoming Movies
+  Future<List<dynamic>> getUpcomingMovies({int page = 1}) async {
+    final cacheKey = 'upcoming_movie_page_$page';
+    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null && cachedData['results'] != null) {
+      return _filterContent(cachedData['results'] as List<dynamic>);
+    }
+    try {
+      final response = await _getWithRetry('/movie/upcoming', queryParameters: {'page': page});
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      return _filterContent(data['results'] as List<dynamic>? ?? []);
+    } catch (e) {
+      final expiredData = await TmdbCacheManager.instance.readCache(
+        cacheKey,
+        maxAge: const Duration(days: 7),
+      );
+      if (expiredData != null && expiredData['results'] != null) {
+        return _filterContent(expiredData['results'] as List<dynamic>);
+      }
+      debugPrint('Error fetching Upcoming movies: $e');
+      return [];
+    }
+  }
+
   /// Discover TV shows with sorting (delegates to filter method)
   Future<List<dynamic>> discoverTvShows({
     int page = 1,
@@ -438,9 +538,14 @@ class TmdbClient {
     String? language,
     String? originCountry,
     String? firstAirDateGte,
+    String? year,
+    String? watchProviderId,
   }) async {
+    final sortedGenres = (genreIds != null && genreIds.isNotEmpty)
+        ? (List<int>.from(genreIds)..sort()).join(',')
+        : 'none';
     final cacheKey =
-        'discover_tv_${sortBy}_${genreIds?.join(',') ?? 'none'}_${language ?? 'all'}_${originCountry ?? 'all'}_${firstAirDateGte ?? 'none'}_page_$page';
+        'v3_discover_tv_${sortBy}_${sortedGenres}_${language ?? 'all'}_${originCountry ?? 'all'}_${year ?? 'all'}_${watchProviderId ?? 'all'}_page_$page';
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
@@ -451,17 +556,42 @@ class TmdbClient {
     }
 
     try {
+      final bool hasSpecificFilters = year != null || originCountry != null || (watchProviderId != null && watchProviderId.isNotEmpty);
+      final int voteThreshold = hasSpecificFilters ? 0 : _getVoteCountThreshold(sortBy, language);
+
       // Build query params
       final queryParams = <String, dynamic>{
         'page': page,
         'sort_by': sortBy,
-        'vote_count.gte': _getVoteCountThreshold(sortBy, language),
+        'vote_count.gte': voteThreshold,
         'with_original_language': language,
         'with_origin_country': originCountry,
       };
 
-      if (firstAirDateGte != null) {
+      if (year != null && year.isNotEmpty) {
+        if (year.endsWith('s')) {
+          final startYear = int.tryParse(year.replaceAll('s', '')) ?? 2020;
+          queryParams['first_air_date.gte'] = '$startYear-01-01';
+          queryParams['first_air_date.lte'] = '${startYear + 9}-12-31';
+        } else {
+          final yInt = int.tryParse(year);
+          if (yInt != null) {
+            queryParams['first_air_date_year'] = yInt;
+          }
+          queryParams['first_air_date.gte'] = '$year-01-01';
+          queryParams['first_air_date.lte'] = '$year-12-31';
+        }
+      } else if (firstAirDateGte != null) {
         queryParams['first_air_date.gte'] = firstAirDateGte;
+      } else if (sortBy == 'first_air_date.desc') {
+        final todayStr = DateTime.now().toIso8601String().split('T').first;
+        queryParams['first_air_date.lte'] = todayStr;
+      }
+
+      if (watchProviderId != null && watchProviderId.isNotEmpty) {
+        queryParams['with_watch_providers'] = watchProviderId;
+        queryParams['watch_region'] = 'US';
+        queryParams['with_watch_monetization_types'] = 'flatrate|free|ads|rent|buy';
       }
 
       if (genreIds != null && genreIds.isNotEmpty) {
@@ -505,6 +635,8 @@ class TmdbClient {
     String? language,
     String? originCountry,
     String? firstAirDateGte,
+    String? year,
+    String? watchProviderId,
   }) async {
     final response = await discoverTvShowsWithFiltersPaginated(
       page: page,
@@ -513,6 +645,8 @@ class TmdbClient {
       language: language,
       originCountry: originCountry,
       firstAirDateGte: firstAirDateGte,
+      year: year,
+      watchProviderId: watchProviderId,
     );
     return response['results'] as List<dynamic>;
   }
@@ -525,9 +659,14 @@ class TmdbClient {
     String? language,
     String? originCountry,
     String? primaryReleaseDateGte,
+    String? year,
+    String? watchProviderId,
   }) async {
+    final sortedGenres = (genreIds != null && genreIds.isNotEmpty)
+        ? (List<int>.from(genreIds)..sort()).join(',')
+        : 'none';
     final cacheKey =
-        'discover_movie_${sortBy}_${genreIds?.join(',') ?? 'none'}_${language ?? 'all'}_${originCountry ?? 'all'}_${primaryReleaseDateGte ?? 'none'}_page_$page';
+        'v3_discover_movie_${sortBy}_${sortedGenres}_${language ?? 'all'}_${originCountry ?? 'all'}_${year ?? 'all'}_${watchProviderId ?? 'all'}_page_$page';
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
@@ -538,17 +677,42 @@ class TmdbClient {
     }
 
     try {
+      final bool hasSpecificFilters = year != null || originCountry != null || (watchProviderId != null && watchProviderId.isNotEmpty);
+      final int voteThreshold = hasSpecificFilters ? 0 : _getVoteCountThreshold(sortBy, language);
+
       // Build query params
       final queryParams = <String, dynamic>{
         'page': page,
         'sort_by': sortBy,
-        'vote_count.gte': _getVoteCountThreshold(sortBy, language),
+        'vote_count.gte': voteThreshold,
         'with_original_language': language,
         'with_origin_country': originCountry,
       };
 
-      if (primaryReleaseDateGte != null) {
+      if (year != null && year.isNotEmpty) {
+        if (year.endsWith('s')) {
+          final startYear = int.tryParse(year.replaceAll('s', '')) ?? 2020;
+          queryParams['primary_release_date.gte'] = '$startYear-01-01';
+          queryParams['primary_release_date.lte'] = '${startYear + 9}-12-31';
+        } else {
+          final yInt = int.tryParse(year);
+          if (yInt != null) {
+            queryParams['primary_release_year'] = yInt;
+          }
+          queryParams['primary_release_date.gte'] = '$year-01-01';
+          queryParams['primary_release_date.lte'] = '$year-12-31';
+        }
+      } else if (primaryReleaseDateGte != null) {
         queryParams['primary_release_date.gte'] = primaryReleaseDateGte;
+      } else if (sortBy == 'primary_release_date.desc') {
+        final todayStr = DateTime.now().toIso8601String().split('T').first;
+        queryParams['primary_release_date.lte'] = todayStr;
+      }
+
+      if (watchProviderId != null && watchProviderId.isNotEmpty) {
+        queryParams['with_watch_providers'] = watchProviderId;
+        queryParams['watch_region'] = 'US';
+        queryParams['with_watch_monetization_types'] = 'flatrate|free|ads|rent|buy';
       }
 
       if (genreIds != null && genreIds.isNotEmpty) {
@@ -592,6 +756,8 @@ class TmdbClient {
     String? language,
     String? originCountry,
     String? primaryReleaseDateGte,
+    String? year,
+    String? watchProviderId,
   }) async {
     final response = await discoverMoviesWithFiltersPaginated(
       page: page,
@@ -600,6 +766,8 @@ class TmdbClient {
       language: language,
       originCountry: originCountry,
       primaryReleaseDateGte: primaryReleaseDateGte,
+      year: year,
+      watchProviderId: watchProviderId,
     );
     return response['results'] as List<dynamic>;
   }

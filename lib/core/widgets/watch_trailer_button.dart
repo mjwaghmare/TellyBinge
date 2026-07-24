@@ -147,7 +147,7 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
   late DraggableScrollableController _dragController;
   double? _minExtent;
   bool _isClosing = false;
-  bool _dragStartedAtMax = false;
+  bool _dragStartedAtMin = true;
   bool _isVideoPlaying = true; // Auto-play is enabled by default
   static const double _maxExtent = 0.9;
 
@@ -176,7 +176,7 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
     final minExtent = _minExtent!;
 
     // Dismiss the sheet when dragged below minExtent - 0.05, but only if the drag started from minExtent
-    if (!_dragStartedAtMax && size < minExtent - 0.05) {
+    if (_dragStartedAtMin && size < minExtent - 0.05) {
       _isClosing = true;
       Navigator.of(context).pop();
       return;
@@ -228,14 +228,8 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
     return Listener(
       onPointerDown: (event) {
         if (_dragController.isAttached) {
-          _dragStartedAtMax = _dragController.size >= _maxExtent - 0.02;
+          _dragStartedAtMin = (_dragController.size - minExtent).abs() < 0.05;
         }
-      },
-      onPointerUp: (event) {
-        _dragStartedAtMax = false;
-      },
-      onPointerCancel: (event) {
-        _dragStartedAtMax = false;
       },
       child: DraggableScrollableSheet(
         controller: _dragController,

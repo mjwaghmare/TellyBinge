@@ -209,8 +209,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               leading: IconButton(
                 icon: const Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 32,
+                  Icons.arrow_back_ios_new,
+                  size: 22,
                   color: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(context),
@@ -392,9 +392,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             final double totalContainerHeight =
                 buttonHeight + verticalMargin + verticalMargin + bottomPadding;
 
-            return Skeletonizer(
-              enabled: isLoading,
-              child: Scaffold(
+            return Scaffold(
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 bottomNavigationBar: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
@@ -450,24 +448,20 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                     ),
                   ),
                 ),
-                body: CustomScrollView(
-                  slivers: [
-                    SliverAppBar(
-                      backgroundColor: Theme.of(
-                        context,
-                      ).scaffoldBackgroundColor,
-                      expandedHeight: 300.0,
-                      pinned: true,
-                      leading: Skeleton.ignore(
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.keyboard_arrow_down,
-                            size: 32,
-                            color: Colors.white,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ),
+                body: Stack(
+                  children: [
+                    Skeletonizer(
+                      enabled: isLoading,
+                      child: CustomScrollView(
+                        slivers: [
+                          SliverAppBar(
+                            automaticallyImplyLeading: false,
+                            leading: const SizedBox.shrink(),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).scaffoldBackgroundColor,
+                            expandedHeight: 300.0,
+                            pinned: true,
                       actions: [
                         if (isAdded && uid != null)
                           IconButton(
@@ -641,6 +635,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       inactiveBgColor: Colors.grey.withValues(
                                         alpha: 0.3,
                                       ),
+                                      size: 28.0,
+                                      iconSize: 16.0,
                                     ),
                                   ),
                                   if (released) const SizedBox(width: 12),
@@ -690,6 +686,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       inactiveBgColor: Colors.grey.withValues(
                                         alpha: 0.3,
                                       ),
+                                      size: 28.0,
+                                      iconSize: 16.0,
                                     ),
                                   ),
                               ],
@@ -974,12 +972,35 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   ],
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
-  }
+              Positioned(
+                      top: MediaQuery.paddingOf(context).top + 6,
+                      left: 16,
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
 
   List<Widget> _buildStars(double rating) {
     final List<Widget> stars = [];
@@ -1121,23 +1142,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
       onTap: () {
         Navigator.push(
           context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
+          CupertinoPageRoute(
+            builder: (context) =>
                 MovieDetailsPage(movieId: movieId, fromRecommendation: true),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(0.0, 1.0);
-                  const end = Offset.zero;
-                  const curve = Curves.easeInOut;
-                  var tween = Tween(
-                    begin: begin,
-                    end: end,
-                  ).chain(CurveTween(curve: curve));
-                  return SlideTransition(
-                    position: animation.drive(tween),
-                    child: child,
-                  );
-                },
           ),
         );
       },

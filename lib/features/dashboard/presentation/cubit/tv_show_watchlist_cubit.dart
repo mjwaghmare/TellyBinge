@@ -281,6 +281,22 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
     }
   }
 
+  Future<void> toggleFavorite({
+    required String uid,
+    required int showId,
+    required bool isFavorite,
+  }) async {
+    try {
+      await tvWatchlistRepository.toggleFavorite(
+        uid: uid,
+        showId: showId,
+        isFavorite: isFavorite,
+      );
+    } catch (e) {
+      debugPrint('Error in TvShowWatchlistCubit.toggleFavorite: $e');
+    }
+  }
+
   @override
   Future<void> close() {
     _watchlistSubscription?.cancel();

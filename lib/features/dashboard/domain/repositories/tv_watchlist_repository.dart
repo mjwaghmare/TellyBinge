@@ -40,4 +40,9 @@ abstract class TvWatchlistRepository {
     required int showId,
     required List<String> episodeKeys,
   });
+  Future<void> toggleFavorite({
+    required String uid,
+    required int showId,
+    required bool isFavorite,
+  });
 }

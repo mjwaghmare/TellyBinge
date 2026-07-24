@@ -9,6 +9,8 @@ class ActionCircleButton extends StatelessWidget {
   final Color inactiveIconColor;
   final Color activeBgColor;
   final Color inactiveBgColor;
+  final double size;
+  final double iconSize;
 
   const ActionCircleButton({
     super.key,
@@ -20,6 +22,8 @@ class ActionCircleButton extends StatelessWidget {
     required this.inactiveIconColor,
     required this.activeBgColor,
     required this.inactiveBgColor,
+    this.size = 36.0,
+    this.iconSize = 20.0,
   });
 
   @override
@@ -28,8 +32,8 @@ class ActionCircleButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 36,
-        height: 36,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: isActive ? activeBgColor : inactiveBgColor,
           shape: BoxShape.circle,
@@ -37,7 +41,7 @@ class ActionCircleButton extends StatelessWidget {
         child: Icon(
           isActive ? activeIcon : inactiveIcon,
           color: isActive ? activeIconColor : inactiveIconColor,
-          size: 20,
+          size: iconSize,
         ),
       ),
     );

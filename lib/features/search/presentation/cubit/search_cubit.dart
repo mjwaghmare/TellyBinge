@@ -12,13 +12,13 @@ class SearchCubit extends Cubit<SearchState> {
   List<dynamic>? _cachedTrendingMovies;
 
   String _tvSortBy = 'trending';
-  List<int>? _tvGenreIds;
   String? _tvLanguage;
+  String? _tvYear;
 
   // Filter state for Movies
   String _movieSortBy = 'trending';
-  List<int>? _movieGenreIds;
   String? _movieLanguage;
+  String? _movieYear;
 
   SearchCubit({required this.tmdbClient}) : super(SearchInitial());
 
@@ -42,14 +42,10 @@ class SearchCubit extends Cubit<SearchState> {
     }
     emit(SearchLoading());
     try {
-      final tvShows = await tmdbClient.discoverTvShowsWithFilters(
-        sortBy: 'first_air_date.desc',
-      );
+      final tvShows = await tmdbClient.getTrendingTvShows();
       // Stagger by 100ms to prevent simultaneous socket handshakes on startup
       await Future.delayed(const Duration(milliseconds: 100));
-      final movies = await tmdbClient.discoverMoviesWithFilters(
-        sortBy: 'primary_release_date.desc',
-      );
+      final movies = await tmdbClient.getTrendingMovies();
 
       _cachedTrendingTv = tvShows;
       _cachedTrendingMovies = movies;
@@ -122,23 +118,53 @@ class SearchCubit extends Cubit<SearchState> {
       try {
         final nextPage =
             (isTvTab ? currentState.tvPage : currentState.moviesPage) + 1;
-        final newResults = isTvTab
-            ? await tmdbClient.discoverTvShowsWithFilters(
-                page: nextPage,
-                sortBy: _tvSortBy == 'trending'
+
+        final bool tvNoFilters = _tvLanguage == null && _tvYear == null;
+        final bool movieNoFilters = _movieLanguage == null && _movieYear == null;
+
+        List<dynamic> newResults = [];
+
+        if (isTvTab) {
+          if (_tvSortBy == 'trending' && tvNoFilters) {
+            newResults = await tmdbClient.getTrendingTvShows(page: nextPage);
+          } else if (_tvSortBy == 'airing_today' && tvNoFilters) {
+            newResults = await tmdbClient.getAiringTodayTvShows(page: nextPage);
+          } else if (_tvSortBy == 'upcoming' && tvNoFilters) {
+            newResults = await tmdbClient.getUpcomingTvShows(page: nextPage);
+          } else {
+            final effectiveSortBy = (_tvSortBy == 'trending' || _tvSortBy == 'popularity.desc')
+                ? 'popularity.desc'
+                : (_tvSortBy == 'airing_today' || _tvSortBy == 'upcoming'
                     ? 'first_air_date.desc'
-                    : _tvSortBy,
-                genreIds: _tvGenreIds,
-                language: _tvLanguage,
-              )
-            : await tmdbClient.discoverMoviesWithFilters(
-                page: nextPage,
-                sortBy: _movieSortBy == 'trending'
+                    : _tvSortBy);
+            newResults = await tmdbClient.discoverTvShowsWithFilters(
+              page: nextPage,
+              sortBy: effectiveSortBy,
+              language: _tvLanguage,
+              year: _tvYear,
+            );
+          }
+        } else {
+          if (_movieSortBy == 'trending' && movieNoFilters) {
+            newResults = await tmdbClient.getTrendingMovies(page: nextPage);
+          } else if (_movieSortBy == 'now_playing' && movieNoFilters) {
+            newResults = await tmdbClient.getNowPlayingMovies(page: nextPage);
+          } else if (_movieSortBy == 'upcoming' && movieNoFilters) {
+            newResults = await tmdbClient.getUpcomingMovies(page: nextPage);
+          } else {
+            final effectiveSortBy = (_movieSortBy == 'trending' || _movieSortBy == 'popularity.desc')
+                ? 'popularity.desc'
+                : (_movieSortBy == 'now_playing' || _movieSortBy == 'upcoming'
                     ? 'primary_release_date.desc'
-                    : _movieSortBy,
-                genreIds: _movieGenreIds,
-                language: _movieLanguage,
-              );
+                    : _movieSortBy);
+            newResults = await tmdbClient.discoverMoviesWithFilters(
+              page: nextPage,
+              sortBy: effectiveSortBy,
+              language: _movieLanguage,
+              year: _movieYear,
+            );
+          }
+        }
 
         if (newResults.isEmpty) {
           emit(
@@ -369,35 +395,61 @@ class SearchCubit extends Cubit<SearchState> {
     }
   }
 
+  void clearTrendingTvResults() {
+    final currentState = state;
+    if (currentState is SearchTrendingSuccess) {
+      emit(
+        currentState.copyWith(
+          trendingTv: [],
+          tvPage: 1,
+          tvHasReachedMax: false,
+        ),
+      );
+    }
+  }
+
+  void clearTrendingMovieResults() {
+    final currentState = state;
+    if (currentState is SearchTrendingSuccess) {
+      emit(
+        currentState.copyWith(
+          trendingMovies: [],
+          moviesPage: 1,
+          moviesHasReachedMax: false,
+        ),
+      );
+    }
+  }
+
   void setTvFilters({
     String sortBy = 'trending',
-    List<int>? genreIds,
     String? language,
+    String? year,
   }) {
     _tvSortBy = sortBy;
-    _tvGenreIds = genreIds;
     _tvLanguage = language;
+    _tvYear = year;
   }
 
   void setMovieFilters({
     String sortBy = 'trending',
-    List<int>? genreIds,
     String? language,
+    String? year,
   }) {
     _movieSortBy = sortBy;
-    _movieGenreIds = genreIds;
     _movieLanguage = language;
+    _movieYear = year;
   }
 
   void clearTvFilters() {
     _tvSortBy = 'trending';
-    _tvGenreIds = null;
     _tvLanguage = null;
+    _tvYear = null;
   }
 
   void clearMovieFilters() {
     _movieSortBy = 'trending';
-    _movieGenreIds = null;
     _movieLanguage = null;
+    _movieYear = null;
   }
 }

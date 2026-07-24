@@ -177,4 +177,18 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
       'watchedEpisodes': FieldValue.arrayRemove(episodeKeys),
     });
   }
+
+  @override
+  Future<void> toggleFavorite({
+    required String uid,
+    required int showId,
+    required bool isFavorite,
+  }) async {
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('shows')
+        .doc(showId.toString())
+        .update({'isFavorite': isFavorite});
+  }
 }

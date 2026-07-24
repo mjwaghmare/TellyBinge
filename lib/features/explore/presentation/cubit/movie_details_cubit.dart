@@ -13,10 +13,15 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
     // Retry up to 3 times to handle flaky network connections
     for (int attempt = 1; attempt <= 3; attempt++) {
       try {
-        final movieDetails = await tmdbClient.getMovieDetails(movieId);
-        // Stagger by 100ms to avoid concurrent connection resets
-        await Future.delayed(const Duration(milliseconds: 100));
-        final movieCredits = await tmdbClient.getMovieCredits(movieId);
+        // Fetch main details and credits in parallel
+        final primaryResults = await Future.wait([
+          tmdbClient.getMovieDetails(movieId),
+          tmdbClient.getMovieCredits(movieId).catchError(
+                (_) => <String, dynamic>{'cast': [], 'crew': []},
+              ),
+        ]);
+        final movieDetails = primaryResults[0];
+        final movieCredits = primaryResults[1];
 
         final belongsToCollection = movieDetails['belongs_to_collection'];
         final List<dynamic> collectionParts = [];

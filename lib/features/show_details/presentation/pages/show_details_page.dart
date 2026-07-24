@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -15,6 +16,7 @@ import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
+import '../../../../core/widgets/action_circle_button.dart';
 
 class ShowDetailsPage extends StatefulWidget {
   final int mediaId;
@@ -149,108 +151,185 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     );
   }
 
+  Map<String, dynamic> _dummyShowDetails() {
+    return {
+      'name': widget.title.isNotEmpty ? widget.title : 'Loading TV Show Title',
+      'backdrop_path': null,
+      'poster_path': null,
+      'overview':
+          'This is a placeholder overview for the show details page while the data is loading from the network.',
+      'vote_average': 8.5,
+      'number_of_seasons': 3,
+      'status': 'Returning Series',
+      'networks': [
+        {'name': 'Network'}
+      ],
+      'genres': [
+        {'name': 'Drama'},
+        {'name': 'Action'}
+      ],
+      'seasons': [
+        {'season_number': 1, 'name': 'Season 1', 'episode_count': 10}
+      ],
+      'credits': {
+        'cast': List.generate(
+          5,
+          (index) => {
+            'id': index + 100,
+            'name': 'Actor Name',
+            'character': 'Character Name',
+            'profile_path': null,
+          },
+        ),
+      },
+      'similar': {
+        'results': List.generate(
+          4,
+          (index) => {
+            'id': index + 1000,
+            'name': 'Similar Show',
+            'poster_path': null,
+            'vote_average': 8.0,
+          },
+        ),
+      },
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: BlocBuilder<ShowDetailsCubit, ShowDetailsState>(
-        builder: (context, state) {
-          if (state is ShowDetailsLoading) {
-            return Scaffold(
+    return BlocBuilder<ShowDetailsCubit, ShowDetailsState>(
+      builder: (context, state) {
+        final bool isLoading =
+            state is ShowDetailsInitial || state is ShowDetailsLoading;
+        final String? error =
+            state is ShowDetailsError ? state.message : null;
+
+        if (error != null && state is! ShowDetailsSuccess) {
+          String userFriendlyError =
+              'An unexpected error occurred. Please try again.';
+          if (error.contains('404')) {
+            userFriendlyError =
+                'This TV show could not be found or may have been removed.';
+          } else if (error.contains('SocketException') ||
+              error.contains('DioException')) {
+            userFriendlyError =
+                'Please check your internet connection and try again.';
+          }
+
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: AppBar(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              title: Text(widget.title),
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/error_devices.png',
+                      width: 140,
+                      height: 140,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 32),
+                    const Text(
+                      'Oops! Something went wrong',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      userFriendlyError,
+                      style: const TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 15,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton(
+                      onPressed: () => context
+                          .read<ShowDetailsCubit>()
+                          .loadDetails(widget.mediaId, widget.mediaType),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        'RETRY',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            );
-          } else if (state is ShowDetailsError) {
-            final error = state.message;
-            String userFriendlyError = 'An unexpected error occurred. Please try again.';
-            if (error.contains('404')) {
-              userFriendlyError = 'This TV show could not be found or may have been removed.';
-            } else if (error.contains('SocketException') || error.contains('DioException')) {
-              userFriendlyError = 'Please check your internet connection and try again.';
-            }
+            ),
+          );
+        }
 
-            return Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              appBar: AppBar(
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                title: Text(widget.title),
+        final details = isLoading
+            ? _dummyShowDetails()
+            : (state as ShowDetailsSuccess).details;
+        final mediaType = isLoading
+            ? widget.mediaType
+            : (state as ShowDetailsSuccess).mediaType;
+        final seasonsData = isLoading
+            ? <int, List<dynamic>>{}
+            : (state as ShowDetailsSuccess).seasonsData;
+
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: Stack(
+            children: [
+              Skeletonizer(
+                enabled: isLoading,
+                child: _buildDetailsView(details, mediaType, seasonsData),
               ),
-              body: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/images/error_devices.png',
-                        width: 140,
-                        height: 140,
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(height: 32),
-                      const Text(
-                        'Oops! Something went wrong',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        userFriendlyError,
-                        style: const TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 15,
-                          height: 1.4,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 32),
-                      ElevatedButton(
-                        onPressed: () => context
-                            .read<ShowDetailsCubit>()
-                            .loadDetails(widget.mediaId, widget.mediaType),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 12,
-                          ),
-                        ),
-                        child: const Text(
-                          'RETRY',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ),
-                    ],
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 6,
+                left: 16,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
               ),
-            );
-          } else if (state is ShowDetailsSuccess) {
-            return _buildDetailsView(
-              state.details,
-              state.mediaType,
-              state.seasonsData,
-            );
-          }
-          return const SizedBox.shrink();
-        },
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -287,6 +366,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
     Widget buildSliverAppBar() {
       return SliverAppBar(
+        automaticallyImplyLeading: false,
+        leading: const SizedBox.shrink(),
         expandedHeight: 300.0,
         pinned: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -407,30 +488,84 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         ],
                       ),
                     ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.yellow,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            height: 16,
-                            width: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${(voteAverage * 10).toInt()}%',
-                          style: const TextStyle(
-                            color: Colors.yellow,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.0,
-                          ),
-                        ),
-                      ],
+                    BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
+                      builder: (context, watchState) {
+                        bool isFavorite = false;
+                        bool isAdded = false;
+                        if (watchState is TvShowWatchlistSuccess) {
+                          for (var s in watchState.shows) {
+                            if (s['id'] == widget.mediaId) {
+                              isAdded = true;
+                              isFavorite = s['isFavorite'] as bool? ?? false;
+                              break;
+                            }
+                          }
+                        }
+                        final authState = context.read<AuthCubit>().state;
+                        final uid = authState is Authenticated ? authState.user.uid : null;
+
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (uid != null) ...[
+                              ActionCircleButton(
+                                isActive: isFavorite,
+                                onTap: () {
+                                  HapticFeedback.mediumImpact();
+                                  if (isAdded) {
+                                    context.read<TvShowWatchlistCubit>().toggleFavorite(
+                                          uid: uid,
+                                          showId: widget.mediaId,
+                                          isFavorite: !isFavorite,
+                                        );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Add show to watchlist first'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                activeIcon: Icons.favorite,
+                                inactiveIcon: Icons.favorite_border,
+                                activeIconColor: Colors.red,
+                                inactiveIconColor: Colors.white,
+                                activeBgColor: Colors.grey.withValues(alpha: 0.3),
+                                inactiveBgColor: Colors.grey.withValues(alpha: 0.3),
+                                size: 28.0,
+                                iconSize: 16.0,
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.yellow,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                  child: Image.asset(
+                                    'assets/images/logo.png',
+                                    height: 16,
+                                    width: 16,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '${(voteAverage * 10).toInt()}%',
+                                  style: const TextStyle(
+                                    color: Colors.yellow,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -540,7 +675,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     final character = actor['character'] as String? ?? '';
                     final profilePath = actor['profile_path'] as String?;
                     return _buildCastCard(
-                      personId: actor['id'] as int,
+                      personId: (actor['id'] as num?)?.toInt() ?? 0,
                       imageUrl: _getImageUrl(profilePath, size: 'w185'),
                       realName: actorName,
                       characterName: character.toUpperCase(),
@@ -632,7 +767,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     final seasons = details['seasons'] as List<dynamic>? ?? [];
 
     for (var season in seasons) {
-      final sNum = season['season_number'] as int;
+      final sNum = (season['season_number'] as num?)?.toInt() ?? 1;
       if (sNum == 0) continue; // Skip specials
       if (sNum > targetSeason) continue;
 

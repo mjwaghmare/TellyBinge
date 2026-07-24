@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/cupertino.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -82,6 +84,10 @@ class _ProfilePageState extends State<ProfilePage>
   bool _isLocalLoading = false;
   Timer? _shimmerTimer;
 
+  // Local FAB visibility — driven by NotificationListener inside NestedScrollView body
+  final ValueNotifier<bool> _isFabVisible = ValueNotifier<bool>(true);
+  Timer? _fabTimer;
+
   @override
   void initState() {
     super.initState();
@@ -128,6 +134,8 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   void dispose() {
     _shimmerTimer?.cancel();
+    _fabTimer?.cancel();
+    _isFabVisible.dispose();
     widget.tabNotifier?.removeListener(_onAppTabChanged);
     _tabController.dispose();
     _heatmapPageController.dispose();
@@ -306,7 +314,7 @@ class _ProfilePageState extends State<ProfilePage>
                         voteAverage:
                             (s['voteAverage'] as num?)?.toDouble() ?? 0.0,
                         releaseDate: s['firstAirDate'] as String? ?? '',
-                        isFavorite: false,
+                        isFavorite: s['isFavorite'] as bool? ?? false,
                         isMovie: false,
                         // MODIFY: map STOPPED status from Firestore
                         isStopped: (s['status'] as String?) == 'STOPPED',
@@ -358,7 +366,7 @@ class _ProfilePageState extends State<ProfilePage>
                         voteAverage:
                             (s['voteAverage'] as num?)?.toDouble() ?? 0.0,
                         releaseDate: s['firstAirDate'] as String? ?? '',
-                        isFavorite: false,
+                        isFavorite: s['isFavorite'] as bool? ?? false,
                         isMovie: false,
                         isStopped: (s['status'] as String?) == 'STOPPED',
                         addedAt: s['addedAt'] as String?,
@@ -557,9 +565,30 @@ class _ProfilePageState extends State<ProfilePage>
                     ),
                   ];
                 },
-                body: TabBarView(
-                  controller: _tabController,
-                  children: [
+                body: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification.metrics.axis != Axis.vertical) {
+                      return false;
+                    }
+                    if (notification is UserScrollNotification) {
+                      if (notification.direction == ScrollDirection.reverse) {
+                        if (_isFabVisible.value) _isFabVisible.value = false;
+                        _fabTimer?.cancel();
+                      } else if (notification.direction == ScrollDirection.forward) {
+                        if (!_isFabVisible.value) _isFabVisible.value = true;
+                        _fabTimer?.cancel();
+                      }
+                    } else if (notification is ScrollEndNotification) {
+                      _fabTimer?.cancel();
+                      _fabTimer = Timer(const Duration(milliseconds: 1500), () {
+                        if (mounted) _isFabVisible.value = true;
+                      });
+                    }
+                    return false;
+                  },
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
                     Scaffold(
                       backgroundColor: Colors.transparent,
                       body: Skeletonizer(
@@ -574,8 +603,8 @@ class _ProfilePageState extends State<ProfilePage>
                           final isShowFilterActive =
                               _showSortOption != 'Last added' ||
                               _showProgressOption != 'All';
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 24),
+                          final fabWidget = Container(
+                            margin: const EdgeInsets.only(bottom: 100),
                             height: 40,
                             decoration: isShowFilterActive
                                 ? BoxDecoration(
@@ -663,6 +692,19 @@ class _ProfilePageState extends State<ProfilePage>
                               ),
                             ),
                           );
+                          return ValueListenableBuilder<bool>(
+                            valueListenable: _isFabVisible,
+                            builder: (context, isVisible, _) {
+                              return AnimatedSlide(
+                                duration: const Duration(milliseconds: 320),
+                                curve: Curves.easeInOutCubic,
+                                offset: isVisible
+                                    ? Offset.zero
+                                    : const Offset(0, 3.0),
+                                child: fabWidget,
+                              );
+                            },
+                          );
                         },
                       ),
                       floatingActionButtonLocation:
@@ -682,8 +724,8 @@ class _ProfilePageState extends State<ProfilePage>
                           final isMovieFilterActive =
                               _movieSortOption != 'Last Added' ||
                               _movieProgressOption != 'All';
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 24),
+                          final fabWidget = Container(
+                            margin: const EdgeInsets.only(bottom: 100),
                             height: 40,
                             decoration: isMovieFilterActive
                                 ? BoxDecoration(
@@ -771,12 +813,26 @@ class _ProfilePageState extends State<ProfilePage>
                               ),
                             ),
                           );
+                          return ValueListenableBuilder<bool>(
+                            valueListenable: _isFabVisible,
+                            builder: (context, isVisible, _) {
+                              return AnimatedSlide(
+                                duration: const Duration(milliseconds: 320),
+                                curve: Curves.easeInOutCubic,
+                                offset: isVisible
+                                    ? Offset.zero
+                                    : const Offset(0, 3.0),
+                                child: fabWidget,
+                              );
+                            },
+                          );
                         },
                       ),
                       floatingActionButtonLocation:
                           FloatingActionButtonLocation.centerFloat,
                     ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -849,37 +905,88 @@ class _ProfilePageState extends State<ProfilePage>
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return GestureDetector(
-          onTap: () {
-            if (item.movieId <= 0) return;
-            if (item.isMovie) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MovieDetailsPage(movieId: item.movieId),
-                ),
-              );
-            } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => BlocProvider<ShowDetailsCubit>(
-                    create: (context) => ShowDetailsCubit(
-                      tmdbClient: context.read<TmdbClient>(),
-                    ),
-                    child: ShowDetailsPage(
-                      mediaId: item.movieId,
-                      mediaType: 'tv',
-                      title: item.title,
+        return CupertinoContextMenu(
+          actions: <Widget>[
+            CupertinoContextMenuAction(
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                Navigator.pop(context);
+                final uid = FirebaseAuth.instance.currentUser?.uid;
+                if (uid != null) {
+                  if (item.isMovie) {
+                    context.read<MovieWatchlistCubit>().toggleFavorite(
+                          uid: uid,
+                          movieId: item.movieId,
+                          isFavorite: !item.isFavorite,
+                        );
+                  } else {
+                    context.read<TvShowWatchlistCubit>().toggleFavorite(
+                          uid: uid,
+                          showId: item.movieId,
+                          isFavorite: !item.isFavorite,
+                        );
+                  }
+                }
+              },
+              child: Text(item.isFavorite ? 'Remove from Favorites' : 'Mark as Favorite'),
+            ),
+            CupertinoContextMenuAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                Navigator.pop(context);
+                final uid = FirebaseAuth.instance.currentUser?.uid;
+                if (uid != null) {
+                  if (item.isMovie) {
+                    context.read<MovieWatchlistCubit>().removeMovie(
+                          uid: uid,
+                          movieId: item.movieId,
+                        );
+                  } else {
+                    context.read<TvShowWatchlistCubit>().removeShow(
+                          uid: uid,
+                          showId: item.movieId,
+                        );
+                  }
+                }
+              },
+              child: const Text('Remove'),
+            ),
+          ],
+          child: GestureDetector(
+            onTap: () {
+              if (item.movieId <= 0) return;
+              if (item.isMovie) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MovieDetailsPage(movieId: item.movieId),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BlocProvider<ShowDetailsCubit>(
+                      create: (context) => ShowDetailsCubit(
+                        tmdbClient: context.read<TmdbClient>(),
+                      ),
+                      child: ShowDetailsPage(
+                        mediaId: item.movieId,
+                        mediaType: 'tv',
+                        title: item.title,
+                      ),
                     ),
                   ),
-                ),
-              );
-            }
-          },
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
+                );
+              }
+            },
+            child: SizedBox(
+              width: 150,
+              height: 225,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
               CachedNetworkImage(
                 imageUrl: item.imageUrl,
                 fit: BoxFit.cover,
@@ -939,6 +1046,8 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
             ],
           ),
+         ),
+        ),
         );
       },
     );
