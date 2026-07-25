@@ -145,7 +145,9 @@ class _ProfilePageState extends State<ProfilePage>
   void _showSettingsMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surface,
+      backgroundColor: Theme.of(context).brightness == Brightness.light
+          ? Colors.grey[200]
+          : AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
       ),
@@ -154,12 +156,9 @@ class _ProfilePageState extends State<ProfilePage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-
               ListTile(
                 leading: Icon(Icons.settings),
-                title: Text(
-                  'Settings',
-                ),
+                title: Text('Settings'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -228,7 +227,11 @@ class _ProfilePageState extends State<ProfilePage>
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.menu, color: Theme.of(context).textTheme.bodyLarge?.color, size: 28),
+            icon: Icon(
+              Icons.menu,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+              size: 28,
+            ),
             onPressed: _showSettingsMenu,
           ),
         ],
@@ -499,7 +502,9 @@ class _ProfilePageState extends State<ProfilePage>
                                                   ? displayName[0].toUpperCase()
                                                   : 'U',
                                               style: TextStyle(
-                                                color: Theme.of(context).textTheme.bodyLarge?.color,
+                                                color: Theme.of(
+                                                  context,
+                                                ).textTheme.bodyLarge?.color,
                                                 fontSize: 32,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -574,13 +579,14 @@ class _ProfilePageState extends State<ProfilePage>
                       if (notification.direction == ScrollDirection.reverse) {
                         if (_isFabVisible.value) _isFabVisible.value = false;
                         _fabTimer?.cancel();
-                      } else if (notification.direction == ScrollDirection.forward) {
+                      } else if (notification.direction ==
+                          ScrollDirection.forward) {
                         if (!_isFabVisible.value) _isFabVisible.value = true;
                         _fabTimer?.cancel();
                       }
                     } else if (notification is ScrollEndNotification) {
                       _fabTimer?.cancel();
-                      _fabTimer = Timer(const Duration(milliseconds: 1500), () {
+                      _fabTimer = Timer(const Duration(milliseconds: 800), () {
                         if (mounted) _isFabVisible.value = true;
                       });
                     }
@@ -589,248 +595,248 @@ class _ProfilePageState extends State<ProfilePage>
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                    Scaffold(
-                      backgroundColor: Colors.transparent,
-                      body: Skeletonizer(
-                        enabled: isLoadingShows || _isFilteringShows,
-                        child: _buildGrid(
-                          displayedShows,
-                          'No shows matched your filter.',
+                      Scaffold(
+                        backgroundColor: Colors.transparent,
+                        body: Skeletonizer(
+                          enabled: isLoadingShows || _isFilteringShows,
+                          child: _buildGrid(
+                            displayedShows,
+                            'No shows matched your filter.',
+                          ),
                         ),
-                      ),
-                      floatingActionButton: Builder(
-                        builder: (context) {
-                          final isShowFilterActive =
-                              _showSortOption != 'Last added' ||
-                              _showProgressOption != 'All';
-                          final fabWidget = Container(
-                            margin: const EdgeInsets.only(bottom: 100),
-                            height: 40,
-                            decoration: isShowFilterActive
-                                ? BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.greenAccent.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
-                                  )
-                                : null,
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                final result =
-                                    await showModalBottomSheet<
-                                      Map<String, String>
-                                    >(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) =>
-                                          ShowsFilterBottomSheet(
-                                            initialSort: _showSortOption,
-                                            initialProgress:
-                                                _showProgressOption,
+                        floatingActionButton: Builder(
+                          builder: (context) {
+                            final isShowFilterActive =
+                                _showSortOption != 'Last added' ||
+                                _showProgressOption != 'All';
+                            final fabWidget = Container(
+                              margin: const EdgeInsets.only(bottom: 100),
+                              height: 40,
+                              decoration: isShowFilterActive
+                                  ? BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.greenAccent.withValues(
+                                            alpha: 0.5,
                                           ),
-                                    );
-                                if (result != null) {
-                                  if (!context.mounted) return;
-                                  setState(() {
-                                    _showSortOption =
-                                        result['sort'] ?? 'Last added';
-                                    _showProgressOption =
-                                        result['progress'] ?? 'All';
-                                    _isFilteringShows = true;
-                                  });
-                                  final scrollController =
-                                      PrimaryScrollController.of(context);
-                                  if (scrollController.hasClients) {
-                                    scrollController.animateTo(
-                                      0,
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      curve: Curves.easeOut,
-                                    );
-                                  }
-                                  await Future.delayed(
-                                    const Duration(milliseconds: 300),
-                                  );
-                                  if (mounted) {
+                                          blurRadius: 8,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
+                                    )
+                                  : null,
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  final result =
+                                      await showModalBottomSheet<
+                                        Map<String, String>
+                                      >(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (context) =>
+                                            ShowsFilterBottomSheet(
+                                              initialSort: _showSortOption,
+                                              initialProgress:
+                                                  _showProgressOption,
+                                            ),
+                                      );
+                                  if (result != null) {
+                                    if (!context.mounted) return;
                                     setState(() {
-                                      _isFilteringShows = false;
+                                      _showSortOption =
+                                          result['sort'] ?? 'Last added';
+                                      _showProgressOption =
+                                          result['progress'] ?? 'All';
+                                      _isFilteringShows = true;
                                     });
+                                    final scrollController =
+                                        PrimaryScrollController.of(context);
+                                    if (scrollController.hasClients) {
+                                      scrollController.animateTo(
+                                        0,
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
+                                        curve: Curves.easeOut,
+                                      );
+                                    }
+                                    await Future.delayed(
+                                      const Duration(milliseconds: 300),
+                                    );
+                                    if (mounted) {
+                                      setState(() {
+                                        _isFilteringShows = false;
+                                      });
+                                    }
                                   }
-                                }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.black,
+                                  elevation: isShowFilterActive ? 0 : 4,
+                                  side: isShowFilterActive
+                                      ? BorderSide(
+                                          color: Colors.greenAccent,
+                                          width: 1.5,
+                                        )
+                                      : null,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 0,
+                                  ),
+                                  shape: const StadiumBorder(),
+                                ),
+                                icon: Icon(Icons.tune, size: 20),
+                                label: Text(
+                                  'FILTERS',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ),
+                            );
+                            return ValueListenableBuilder<bool>(
+                              valueListenable: _isFabVisible,
+                              builder: (context, isVisible, _) {
+                                return AnimatedSlide(
+                                  duration: const Duration(milliseconds: 320),
+                                  curve: Curves.easeInOutCubic,
+                                  offset: isVisible
+                                      ? Offset.zero
+                                      : const Offset(0, 3.0),
+                                  child: fabWidget,
+                                );
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.black,
-                                elevation: isShowFilterActive ? 0 : 4,
-                                side: isShowFilterActive
-                                    ? BorderSide(
-                                        color: Colors.greenAccent,
-                                        width: 1.5,
-                                      )
-                                    : null,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 0,
-                                ),
-                                shape: const StadiumBorder(),
-                              ),
-                              icon: Icon(Icons.tune, size: 20),
-                              label: Text(
-                                'FILTERS',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                            ),
-                          );
-                          return ValueListenableBuilder<bool>(
-                            valueListenable: _isFabVisible,
-                            builder: (context, isVisible, _) {
-                              return AnimatedSlide(
-                                duration: const Duration(milliseconds: 320),
-                                curve: Curves.easeInOutCubic,
-                                offset: isVisible
-                                    ? Offset.zero
-                                    : const Offset(0, 3.0),
-                                child: fabWidget,
-                              );
-                            },
-                          );
-                        },
-                      ),
-                      floatingActionButtonLocation:
-                          FloatingActionButtonLocation.centerFloat,
-                    ),
-                    Scaffold(
-                      backgroundColor: Colors.transparent,
-                      body: Skeletonizer(
-                        enabled: isLoadingMovies || _isFilteringMovies,
-                        child: _buildGrid(
-                          displayedMovies,
-                          'No movies matched your filter.',
+                            );
+                          },
                         ),
+                        floatingActionButtonLocation:
+                            FloatingActionButtonLocation.centerFloat,
                       ),
-                      floatingActionButton: Builder(
-                        builder: (context) {
-                          final isMovieFilterActive =
-                              _movieSortOption != 'Last Added' ||
-                              _movieProgressOption != 'All';
-                          final fabWidget = Container(
-                            margin: const EdgeInsets.only(bottom: 100),
-                            height: 40,
-                            decoration: isMovieFilterActive
-                                ? BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.greenAccent.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
-                                  )
-                                : null,
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                final result =
-                                    await showModalBottomSheet<
-                                      Map<String, String>
-                                    >(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) =>
-                                          MoviesFilterBottomSheet(
-                                            initialSort: _movieSortOption,
-                                            initialProgress:
-                                                _movieProgressOption,
+                      Scaffold(
+                        backgroundColor: Colors.transparent,
+                        body: Skeletonizer(
+                          enabled: isLoadingMovies || _isFilteringMovies,
+                          child: _buildGrid(
+                            displayedMovies,
+                            'No movies matched your filter.',
+                          ),
+                        ),
+                        floatingActionButton: Builder(
+                          builder: (context) {
+                            final isMovieFilterActive =
+                                _movieSortOption != 'Last Added' ||
+                                _movieProgressOption != 'All';
+                            final fabWidget = Container(
+                              margin: const EdgeInsets.only(bottom: 100),
+                              height: 40,
+                              decoration: isMovieFilterActive
+                                  ? BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.greenAccent.withValues(
+                                            alpha: 0.5,
                                           ),
-                                    );
-                                if (result != null) {
-                                  if (!context.mounted) return;
-                                  setState(() {
-                                    _movieSortOption =
-                                        result['sort'] ?? 'Last Added';
-                                    _movieProgressOption =
-                                        result['progress'] ?? 'All';
-                                    _isFilteringMovies = true;
-                                  });
-                                  final scrollController =
-                                      PrimaryScrollController.of(context);
-                                  if (scrollController.hasClients) {
-                                    scrollController.animateTo(
-                                      0,
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      curve: Curves.easeOut,
-                                    );
-                                  }
-                                  await Future.delayed(
-                                    const Duration(milliseconds: 300),
-                                  );
-                                  if (mounted) {
+                                          blurRadius: 8,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
+                                    )
+                                  : null,
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  final result =
+                                      await showModalBottomSheet<
+                                        Map<String, String>
+                                      >(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (context) =>
+                                            MoviesFilterBottomSheet(
+                                              initialSort: _movieSortOption,
+                                              initialProgress:
+                                                  _movieProgressOption,
+                                            ),
+                                      );
+                                  if (result != null) {
+                                    if (!context.mounted) return;
                                     setState(() {
-                                      _isFilteringMovies = false;
+                                      _movieSortOption =
+                                          result['sort'] ?? 'Last Added';
+                                      _movieProgressOption =
+                                          result['progress'] ?? 'All';
+                                      _isFilteringMovies = true;
                                     });
+                                    final scrollController =
+                                        PrimaryScrollController.of(context);
+                                    if (scrollController.hasClients) {
+                                      scrollController.animateTo(
+                                        0,
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
+                                        curve: Curves.easeOut,
+                                      );
+                                    }
+                                    await Future.delayed(
+                                      const Duration(milliseconds: 300),
+                                    );
+                                    if (mounted) {
+                                      setState(() {
+                                        _isFilteringMovies = false;
+                                      });
+                                    }
                                   }
-                                }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.black,
+                                  elevation: isMovieFilterActive ? 0 : 4,
+                                  side: isMovieFilterActive
+                                      ? BorderSide(
+                                          color: Colors.greenAccent,
+                                          width: 1.5,
+                                        )
+                                      : null,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 0,
+                                  ),
+                                  shape: const StadiumBorder(),
+                                ),
+                                icon: Icon(Icons.tune, size: 20),
+                                label: Text(
+                                  'FILTERS',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ),
+                            );
+                            return ValueListenableBuilder<bool>(
+                              valueListenable: _isFabVisible,
+                              builder: (context, isVisible, _) {
+                                return AnimatedSlide(
+                                  duration: const Duration(milliseconds: 320),
+                                  curve: Curves.easeInOutCubic,
+                                  offset: isVisible
+                                      ? Offset.zero
+                                      : const Offset(0, 3.0),
+                                  child: fabWidget,
+                                );
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.black,
-                                elevation: isMovieFilterActive ? 0 : 4,
-                                side: isMovieFilterActive
-                                    ? BorderSide(
-                                        color: Colors.greenAccent,
-                                        width: 1.5,
-                                      )
-                                    : null,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 0,
-                                ),
-                                shape: const StadiumBorder(),
-                              ),
-                              icon: Icon(Icons.tune, size: 20),
-                              label: Text(
-                                'FILTERS',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                            ),
-                          );
-                          return ValueListenableBuilder<bool>(
-                            valueListenable: _isFabVisible,
-                            builder: (context, isVisible, _) {
-                              return AnimatedSlide(
-                                duration: const Duration(milliseconds: 320),
-                                curve: Curves.easeInOutCubic,
-                                offset: isVisible
-                                    ? Offset.zero
-                                    : const Offset(0, 3.0),
-                                child: fabWidget,
-                              );
-                            },
-                          );
-                        },
+                            );
+                          },
+                        ),
+                        floatingActionButtonLocation:
+                            FloatingActionButtonLocation.centerFloat,
                       ),
-                      floatingActionButtonLocation:
-                          FloatingActionButtonLocation.centerFloat,
-                    ),
                     ],
                   ),
                 ),
@@ -855,16 +861,10 @@ class _ProfilePageState extends State<ProfilePage>
         children: [
           Text(
             count,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(fontSize: 13),
-          ),
+          Text(label, style: TextStyle(fontSize: 13)),
           const SizedBox(height: 4),
           Visibility(
             visible: timeSpent.isNotEmpty && timeSpent != '0m',
@@ -874,7 +874,9 @@ class _ProfilePageState extends State<ProfilePage>
             child: Text(
               timeSpent,
               style: TextStyle(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -890,7 +892,10 @@ class _ProfilePageState extends State<ProfilePage>
       return Center(
         child: Text(
           emptyMessage,
-          style: TextStyle(color: Theme.of(context).disabledColor, fontSize: 14),
+          style: TextStyle(
+            color: Theme.of(context).disabledColor,
+            fontSize: 14,
+          ),
         ),
       );
     }
@@ -915,20 +920,22 @@ class _ProfilePageState extends State<ProfilePage>
                 if (uid != null) {
                   if (item.isMovie) {
                     context.read<MovieWatchlistCubit>().toggleFavorite(
-                          uid: uid,
-                          movieId: item.movieId,
-                          isFavorite: !item.isFavorite,
-                        );
+                      uid: uid,
+                      movieId: item.movieId,
+                      isFavorite: !item.isFavorite,
+                    );
                   } else {
                     context.read<TvShowWatchlistCubit>().toggleFavorite(
-                          uid: uid,
-                          showId: item.movieId,
-                          isFavorite: !item.isFavorite,
-                        );
+                      uid: uid,
+                      showId: item.movieId,
+                      isFavorite: !item.isFavorite,
+                    );
                   }
                 }
               },
-              child: Text(item.isFavorite ? 'Remove from Favorites' : 'Mark as Favorite'),
+              child: Text(
+                item.isFavorite ? 'Remove from Favorites' : 'Mark as Favorite',
+              ),
             ),
             CupertinoContextMenuAction(
               isDestructiveAction: true,
@@ -939,14 +946,14 @@ class _ProfilePageState extends State<ProfilePage>
                 if (uid != null) {
                   if (item.isMovie) {
                     context.read<MovieWatchlistCubit>().removeMovie(
-                          uid: uid,
-                          movieId: item.movieId,
-                        );
+                      uid: uid,
+                      movieId: item.movieId,
+                    );
                   } else {
                     context.read<TvShowWatchlistCubit>().removeShow(
-                          uid: uid,
-                          showId: item.movieId,
-                        );
+                      uid: uid,
+                      showId: item.movieId,
+                    );
                   }
                 }
               },
@@ -960,7 +967,8 @@ class _ProfilePageState extends State<ProfilePage>
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MovieDetailsPage(movieId: item.movieId),
+                    builder: (context) =>
+                        MovieDetailsPage(movieId: item.movieId),
                   ),
                 );
               } else {
@@ -987,67 +995,72 @@ class _ProfilePageState extends State<ProfilePage>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-              CachedNetworkImage(
-                imageUrl: item.imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    Container(color: AppColors.surface),
-                errorWidget: (context, url, error) => Container(
-                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surface,
-                  child: Center(
-                    child: Icon(
-                      Icons.movie_outlined,
-                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
-                    ),
-                  ),
-                ),
-              ),
-              if (item.isFavorite)
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.favorite,
-                      color: Colors.red,
-                      size: 16,
-                    ),
-                  ),
-                ),
-              // ADD: STOPPED badge — top-right pill matching explore tab badge style
-              if (item.isStopped)
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(4.0),
-                    ),
-                    child: Text(
-                      'STOPPED',
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 9.0,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
+                  CachedNetworkImage(
+                    imageUrl: item.imageUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) =>
+                        Container(color: AppColors.surface),
+                    errorWidget: (context, url, error) => Container(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.grey[200]
+                          : AppColors.surface,
+                      child: Center(
+                        child: Icon(
+                          Icons.movie_outlined,
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                              ? Colors.grey[500]
+                              : AppColors.textTertiary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+                  if (item.isFavorite)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.favorite,
+                          color: Colors.red,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  // ADD: STOPPED badge — top-right pill matching explore tab badge style
+                  if (item.isStopped)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(4.0),
+                        ),
+                        child: Text(
+                          'STOPPED',
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            fontSize: 9.0,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-         ),
-        ),
         );
       },
     );
@@ -1098,14 +1111,18 @@ class _ProfilePageState extends State<ProfilePage>
 
         final List<Color> activeLegendColors = _heatmapPageIndex == 0
             ? [
-                Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
+                Theme.of(context).brightness == Brightness.light
+                    ? Color(0xFFEBEDF0)
+                    : Color(0xFF161B22),
                 Color(0xFF0E4429),
                 Color(0xFF006D32),
                 Color(0xFF26A641),
                 Color(0xFF39D353),
               ]
             : [
-                Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
+                Theme.of(context).brightness == Brightness.light
+                    ? Color(0xFFEBEDF0)
+                    : Color(0xFF161B22),
                 Color(0xFF3E2D00),
                 Color(0xFF7C5A00),
                 Color(0xFFB98700),
@@ -1128,7 +1145,9 @@ class _ProfilePageState extends State<ProfilePage>
                   Text(
                     'WATCH ACTIVITY',
                     style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70,
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.black87
+                          : Colors.white70,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       letterSpacing: 1.2,
@@ -1144,7 +1163,9 @@ class _ProfilePageState extends State<ProfilePage>
                               constraints: const BoxConstraints(),
                               icon: Icon(
                                 Icons.chevron_left,
-                                color: Theme.of(context).textTheme.bodyLarge?.color,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyLarge?.color,
                                 size: 24,
                               ),
                               onPressed: isLoading
@@ -1187,7 +1208,9 @@ class _ProfilePageState extends State<ProfilePage>
                               constraints: const BoxConstraints(),
                               icon: Icon(
                                 Icons.chevron_right,
-                                color: Theme.of(context).textTheme.bodyLarge?.color,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyLarge?.color,
                                 size: 24,
                               ),
                               onPressed: isLoading
@@ -1282,7 +1305,15 @@ class _ProfilePageState extends State<ProfilePage>
                               height: isActive ? 8.0 : 6.0,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isActive ? (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white) : (Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white30),
+                                color: isActive
+                                    ? (Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.color ??
+                                          Colors.white)
+                                    : (Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Colors.black38
+                                          : Colors.white30),
                               ),
                             );
                           }),
@@ -1293,7 +1324,11 @@ class _ProfilePageState extends State<ProfilePage>
                             Text(
                               'Less',
                               style: TextStyle(
-                                color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.black54
+                                    : Colors.white54,
                                 fontSize: 11,
                               ),
                             ),
@@ -1311,7 +1346,11 @@ class _ProfilePageState extends State<ProfilePage>
                             Text(
                               'More',
                               style: TextStyle(
-                                color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.black54
+                                    : Colors.white54,
                                 fontSize: 11,
                               ),
                             ),
@@ -1339,14 +1378,18 @@ class _ProfilePageState extends State<ProfilePage>
   }) {
     final List<Color> colorScale = isMovies
         ? [
-            Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
+            Theme.of(context).brightness == Brightness.light
+                ? Color(0xFFEBEDF0)
+                : Color(0xFF161B22),
             Color(0xFF3E2D00),
             Color(0xFF7C5A00),
             Color(0xFFB98700),
             Color(0xFFFFC107),
           ]
         : [
-            Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
+            Theme.of(context).brightness == Brightness.light
+                ? Color(0xFFEBEDF0)
+                : Color(0xFF161B22),
             Color(0xFF0E4429),
             Color(0xFF006D32),
             Color(0xFF26A641),
@@ -1361,7 +1404,9 @@ class _ProfilePageState extends State<ProfilePage>
           child: Text(
             isMovies ? 'MOVIES WATCHED' : 'EPISODES WATCHED',
             style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54,
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Colors.black54
+                  : Colors.white54,
               fontWeight: FontWeight.bold,
               fontSize: 11,
               letterSpacing: 1.1,
@@ -1382,7 +1427,10 @@ class _ProfilePageState extends State<ProfilePage>
                         child: Text(
                           day,
                           style: TextStyle(
-                            color: Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white30,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                ? Colors.black38
+                                : Colors.white30,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1460,7 +1508,9 @@ class _ProfilePageState extends State<ProfilePage>
                               child: Text(
                                 '$day',
                                 style: TextStyle(
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1561,7 +1611,9 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor, // Background color for TabBar
+      color: Theme.of(
+        context,
+      ).scaffoldBackgroundColor, // Background color for TabBar
       child: _tabBar,
     );
   }

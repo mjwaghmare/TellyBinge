@@ -27,7 +27,8 @@ class ShellNavigationPage extends StatefulWidget {
 class _ShellNavigationPageState extends State<ShellNavigationPage> {
   final ValueNotifier<int> _tabNotifier = ValueNotifier<int>(0);
   final ValueNotifier<int> _exploreSubTabNotifier = ValueNotifier<int>(0);
-  final GlobalKey<DashboardPageState> _dashboardKey = GlobalKey<DashboardPageState>();
+  final GlobalKey<DashboardPageState> _dashboardKey =
+      GlobalKey<DashboardPageState>();
   final GlobalKey<MoviesPageState> _moviesKey = GlobalKey<MoviesPageState>();
   late final List<Widget> _pages;
 
@@ -98,7 +99,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
       }
     } else if (notification is ScrollEndNotification) {
       _bnbTimer?.cancel();
-      _bnbTimer = Timer(const Duration(milliseconds: 1500), () {
+      _bnbTimer = Timer(const Duration(milliseconds: 800), () {
         if (mounted && !_isBnbVisible.value) {
           _isBnbVisible.value = true;
         }
@@ -154,7 +155,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
         valueListenable: _isBnbVisible,
         builder: (context, isVisible, child) {
           return AnimatedSlide(
-            duration: const Duration(milliseconds: 320),
+            duration: const Duration(milliseconds: 220),
             curve: Curves.easeInOutCubic,
             offset: isVisible ? Offset.zero : const Offset(0, 2.0),
             child: FloatingActionButton(
@@ -182,7 +183,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
         valueListenable: _isBnbVisible,
         builder: (context, isVisible, child) {
           return AnimatedSlide(
-            duration: const Duration(milliseconds: 320),
+            duration: const Duration(milliseconds: 220),
             curve: Curves.easeInOutCubic,
             offset: isVisible ? Offset.zero : const Offset(0, 1.0),
             child: _CustomGlowBottomBar(

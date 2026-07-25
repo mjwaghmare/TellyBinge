@@ -1481,6 +1481,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           color: AppColors.textSecondary,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        airDate,
+                        style: const TextStyle(
+                          fontSize: 11.0,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
                     ],
                   ),
                 ),

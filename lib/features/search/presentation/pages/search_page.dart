@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
@@ -51,41 +50,9 @@ class _SearchPageState extends State<SearchPage>
   bool _hasActiveMovieFilters = false;
   bool _isFetchingMovieFilters = false;
 
-  final ValueNotifier<bool> _isSearchBarVisible = ValueNotifier<bool>(true);
-  Timer? _searchBarTimer;
-
   // Pagination throttle — prevents _onScroll comparison running every 16ms
   bool _isPaginating = false;
   Timer? _paginationCooldown;
-
-  bool _handleScrollNotification(ScrollNotification notification) {
-    // Only process vertical scrolls — ignore TabBarView horizontal swipes
-    if (notification.metrics.axis != Axis.vertical) {
-      return false;
-    }
-
-    if (notification is UserScrollNotification) {
-      if (notification.direction == ScrollDirection.reverse) {
-        if (_isSearchBarVisible.value) {
-          _isSearchBarVisible.value = false;
-        }
-        _searchBarTimer?.cancel();
-      } else if (notification.direction == ScrollDirection.forward) {
-        if (!_isSearchBarVisible.value) {
-          _isSearchBarVisible.value = true;
-        }
-        _searchBarTimer?.cancel();
-      }
-    } else if (notification is ScrollEndNotification) {
-      _searchBarTimer?.cancel();
-      _searchBarTimer = Timer(const Duration(milliseconds: 1500), () {
-        if (mounted && !_isSearchBarVisible.value) {
-          _isSearchBarVisible.value = true;
-        }
-      });
-    }
-    return false;
-  }
 
   void _handleSubTabChange() {
     if (widget.subTabNotifier != null &&
@@ -399,9 +366,7 @@ class _SearchPageState extends State<SearchPage>
 
   @override
   void dispose() {
-    _searchBarTimer?.cancel();
     _paginationCooldown?.cancel();
-    _isSearchBarVisible.dispose();
     widget.subTabNotifier?.removeListener(_handleSubTabChange);
     widget.mainTabNotifier?.removeListener(_handleMainTabChange);
     _showsSearchController.dispose();
@@ -456,152 +421,122 @@ class _SearchPageState extends State<SearchPage>
   }
 
   Widget _buildShowsTab(SearchState state, TvShowWatchlistState tvState) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: _handleScrollNotification,
-      child: Column(
-        children: [
-          _buildSearchBar(_showsSearchController, isTv: true),
-          Expanded(child: _buildShowsContent(state, tvState)),
-        ],
-      ),
+    return Column(
+      children: [
+        _buildSearchBar(_showsSearchController, isTv: true),
+        Expanded(child: _buildShowsContent(state, tvState)),
+      ],
     );
   }
 
   Widget _buildMoviesTab(SearchState state, MovieWatchlistState movieState) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: _handleScrollNotification,
-      child: Column(
-        children: [
-          _buildSearchBar(_moviesSearchController, isTv: false),
-          Expanded(child: _buildMoviesContent(state, movieState)),
-        ],
-      ),
+    return Column(
+      children: [
+        _buildSearchBar(_moviesSearchController, isTv: false),
+        Expanded(child: _buildMoviesContent(state, movieState)),
+      ],
     );
   }
 
-   Widget _buildSearchBar(
+  Widget _buildSearchBar(
     TextEditingController controller, {
     required bool isTv,
   }) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: _isSearchBarVisible,
-      builder: (context, isVisible, child) {
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 320),
-          curve: Curves.easeInOutCubic,
-          height: isVisible ? 68.0 : 0.0,
-          clipBehavior: Clip.hardEdge,
-          decoration: const BoxDecoration(),
-          child: AnimatedSlide(
-            duration: const Duration(milliseconds: 320),
-            curve: Curves.easeInOutCubic,
-            offset: isVisible ? Offset.zero : const Offset(0, -1.0),
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 250),
-              opacity: isVisible ? 1.0 : 0.0,
-              child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: AppSpacing.md,
-                    right: AppSpacing.md,
-                    top: AppSpacing.xs,
-                    bottom: AppSpacing.md,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          onChanged: (val) {
-                            context.read<SearchCubit>().onSearchTextChanged(
-                              val,
-                              isTv: isTv,
-                            );
-                          },
-                          decoration: InputDecoration(
-                            hintText: isTv ? 'Search shows...' : 'Search movies...',
-                            prefixIcon: Icon(
-                              Icons.search,
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.md,
+        right: AppSpacing.md,
+        top: AppSpacing.xs,
+        bottom: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              onChanged: (val) {
+                context.read<SearchCubit>().onSearchTextChanged(
+                  val,
+                  isTv: isTv,
+                );
+              },
+              decoration: InputDecoration(
+                hintText: isTv ? 'Search shows...' : 'Search movies...',
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                ),
+                suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: controller,
+                  builder: (context, value, child) {
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (value.text.isNotEmpty)
+                          IconButton(
+                            icon: Icon(
+                              Icons.clear,
                               color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
                             ),
-                            suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                              valueListenable: controller,
-                              builder: (context, value, child) {
-                                return Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (value.text.isNotEmpty)
-                                      IconButton(
-                                        icon: Icon(
-                                          Icons.clear,
-                                          color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
-                                        ),
-                                        onPressed: () {
-                                          controller.clear();
-                                          context.read<SearchCubit>().onSearchTextChanged(
-                                            '',
-                                            isTv: isTv,
-                                          );
-                                        },
-                                      ),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.tune,
-                                        color:
-                                            (isTv
-                                                ? _hasActiveFilters
-                                                : _hasActiveMovieFilters)
-                                            ? AppColors.primary
-                                            : AppColors.textTertiary,
-                                      ),
-                                      onPressed: () => _showFilterBottomSheet(isTv),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
+                            onPressed: () {
+                              controller.clear();
+                              context.read<SearchCubit>().onSearchTextChanged(
+                                '',
+                                isTv: isTv,
+                              );
+                            },
                           ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.tune,
+                            color:
+                                (isTv
+                                    ? _hasActiveFilters
+                                    : _hasActiveMovieFilters)
+                                ? AppColors.primary
+                                : AppColors.textTertiary,
+                          ),
+                          onPressed: () => _showFilterBottomSheet(isTv),
                         ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      IconButton(
-                        onPressed: () => _showLanguageBottomSheet(isTv, controller.text),
-                        icon: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            const Padding(
-                              padding: EdgeInsets.all(4.0),
-                              child: Text('🇮🇳', style: TextStyle(fontSize: 22)),
-                            ),
-                            if (isTv ? _tvLanguage != null : _movieLanguage != null)
-                              Positioned(
-                                top: 6,
-                                right: 2,
-                                child: Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: Colors.greenAccent,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Theme.of(context).scaffoldBackgroundColor,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
           ),
-        );
-      },
+          const SizedBox(width: AppSpacing.sm),
+          IconButton(
+            onPressed: () => _showLanguageBottomSheet(isTv, controller.text),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: Text('🇮🇳', style: TextStyle(fontSize: 22)),
+                ),
+                if (isTv ? _tvLanguage != null : _movieLanguage != null)
+                  Positioned(
+                    top: 6,
+                    right: 2,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Colors.greenAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

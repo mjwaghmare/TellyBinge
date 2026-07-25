@@ -2,8 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../../main.dart';
-import '../theme/app_colors.dart';
+import '../widgets/app_banner.dart';
 import 'tmdb_cache_manager.dart';
 
 class TmdbClient {
@@ -14,41 +13,8 @@ class TmdbClient {
   late final String? _apiKey;
   bool allowAdultContent = false;
 
-  static bool _isSlowNetworkWarningShowing = false;
-
   void _showSlowNetworkWarning() {
-    if (_isSlowNetworkWarningShowing) return;
-    _isSlowNetworkWarningShowing = true;
-
-    scaffoldMessengerKey.currentState?.showMaterialBanner(
-      MaterialBanner(
-        content: const Text('Slow network connection detected...'),
-        backgroundColor: AppColors.surfaceLight,
-        contentTextStyle: const TextStyle(color: Colors.white),
-        elevation: 2,
-        actions: [
-          TextButton(
-            onPressed: () {
-              scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
-            },
-            child: const Text(
-              'DISMISS',
-              style: TextStyle(color: AppColors.primary),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    // Auto-dismiss the banner after 4 seconds
-    Future.delayed(const Duration(seconds: 4), () {
-      scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
-    });
-
-    // Reset the warning flag after a longer delay (debounce)
-    Future.delayed(const Duration(seconds: 15), () {
-      _isSlowNetworkWarningShowing = false;
-    });
+    AppBanner.showSlowNetworkBanner();
   }
 
   TmdbClient({Dio? dio}) : _dio = dio ?? Dio() {
@@ -82,6 +48,13 @@ class TmdbClient {
           if (!isConnectionReset) {
             debugPrint('TmdbClient Error: ${e.message}');
           }
+
+          if (e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.connectionTimeout ||
+              e.error.toString().contains('SocketException')) {
+            AppBanner.showOfflineBanner();
+          }
+
           return handler.next(e);
         },
       ),
