@@ -62,6 +62,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
   @override
   void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    _controllers.clear();
     _scrollController.dispose();
     _isCollapsed.dispose();
     super.dispose();
@@ -1372,9 +1376,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: List.generate(episodes.length, (index) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: episodes.length,
+      itemBuilder: (context, index) {
         final ep = episodes[index];
         final int epNum = ep['episode_number'] as int? ?? (index + 1);
         final String name = ep['name'] ?? 'Episode $epNum';
@@ -1718,7 +1724,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             ),
           ),
         );
-      }),
+      },
     );
   }
 
