@@ -68,10 +68,10 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           }
         });
       },
-      minimumShakeCount: 2,
-      shakeSlopTimeMS: 500,
-      shakeCountResetTime: 3000,
-      shakeThresholdGravity: 3.5,
+      minimumShakeCount: 1,
+      shakeSlopTimeMS: 400,
+      shakeCountResetTime: 2500,
+      shakeThresholdGravity: 2.0,
     );
 
     _loadTvShows();
