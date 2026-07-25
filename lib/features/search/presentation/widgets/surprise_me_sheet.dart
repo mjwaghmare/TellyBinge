@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shake/shake.dart';
 
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -45,12 +47,25 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
 
   final ScrollController _tvScrollController = ScrollController();
   final ScrollController _movieScrollController = ScrollController();
+  ShakeDetector? _shakeDetector;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabChange);
+
+    _shakeDetector = ShakeDetector.autoStart(
+      onPhoneShake: (_) {
+        if (!mounted || _isCurrentTabLoading) return;
+        HapticFeedback.heavyImpact();
+        _shuffleCurrentTab();
+      },
+      minimumShakeCount: 1,
+      shakeSlopTimeMS: 500,
+      shakeCountResetTime: 3000,
+      shakeThresholdGravity: 2.7,
+    );
 
     _loadTvShows();
     _loadMovies();
@@ -306,6 +321,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
 
   @override
   void dispose() {
+    _shakeDetector?.stopListening();
     _tabController.dispose();
     _tvScrollController.dispose();
     _movieScrollController.dispose();
