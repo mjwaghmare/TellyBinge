@@ -48,6 +48,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
   final ScrollController _tvScrollController = ScrollController();
   final ScrollController _movieScrollController = ScrollController();
   ShakeDetector? _shakeDetector;
+  bool _isShakeProcessing = false;
 
   @override
   void initState() {
@@ -57,14 +58,20 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
 
     _shakeDetector = ShakeDetector.autoStart(
       onPhoneShake: (_) {
-        if (!mounted || _isCurrentTabLoading) return;
+        if (!mounted || _isCurrentTabLoading || _isShakeProcessing) return;
+        _isShakeProcessing = true;
         HapticFeedback.heavyImpact();
         _shuffleCurrentTab();
+        Timer(const Duration(milliseconds: 1500), () {
+          if (mounted) {
+            _isShakeProcessing = false;
+          }
+        });
       },
-      minimumShakeCount: 1,
+      minimumShakeCount: 2,
       shakeSlopTimeMS: 500,
       shakeCountResetTime: 3000,
-      shakeThresholdGravity: 2.7,
+      shakeThresholdGravity: 3.5,
     );
 
     _loadTvShows();
