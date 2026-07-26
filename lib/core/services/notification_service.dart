@@ -18,11 +18,16 @@ class NotificationService {
       tz.setLocalLocation(tz.getLocation(timeZoneName));
     } catch (_) {
       final Duration offset = DateTime.now().timeZoneOffset;
+      final timeZone = tz.TimeZone(
+        offset,
+        isDst: false,
+        abbreviation: timeZoneName,
+      );
       final location = tz.Location(
         timeZoneName,
-        [offset.inMilliseconds],
         [0],
-        [],
+        [0],
+        [timeZone],
       );
       tz.setLocalLocation(location);
     }
