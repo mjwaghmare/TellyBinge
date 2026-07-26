@@ -68,8 +68,10 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
 
       emit(currentState.copyWith(seasonsData: updatedSeasonsData));
     } catch (e) {
-      // Log error but preserve state
-      // We can also emit a transient error if needed, but keeping the current screen visible is safer
+      // Set to empty list on error so the loader stops spinning endlessly
+      final updatedSeasonsData = Map<int, List<dynamic>>.from(currentState.seasonsData);
+      updatedSeasonsData[seasonNumber] = [];
+      emit(currentState.copyWith(seasonsData: updatedSeasonsData));
     }
   }
 }

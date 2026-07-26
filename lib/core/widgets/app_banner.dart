@@ -7,6 +7,7 @@ class AppBanner {
   AppBanner._();
 
   static bool _isBannerShowing = false;
+  static Timer? _autoDismissTimer;
 
   /// Show banner when device is offline
   static void showOfflineBanner({
@@ -65,18 +66,16 @@ class AppBanner {
     );
 
     // Auto-dismiss after specified duration
-    Timer(autoDismissDuration, () {
+    _autoDismissTimer?.cancel();
+    _autoDismissTimer = Timer(autoDismissDuration, () {
       hideBanner();
-    });
-
-    // Debounce reset flag
-    Timer(const Duration(seconds: 30), () {
-      _isBannerShowing = false;
     });
   }
 
   /// Explicitly hide current material banner
   static void hideBanner() {
     scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
+    _isBannerShowing = false;
+    _autoDismissTimer?.cancel();
   }
 }

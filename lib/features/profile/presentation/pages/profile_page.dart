@@ -40,6 +40,8 @@ class HorizontalItem {
   final bool isStopped; 
   final String? addedAt;
   final String? watchedAt;
+  final int watchedCount;
+  final int totalEpisodes;
 
   HorizontalItem({
     required this.movieId,
@@ -53,6 +55,8 @@ class HorizontalItem {
     this.isStopped = false,
     this.addedAt,
     this.watchedAt,
+    this.watchedCount = 0,
+    this.totalEpisodes = 0,
   });
 }
 
@@ -330,6 +334,8 @@ class _ProfilePageState extends State<ProfilePage>
                         isMovie: false,
                         isStopped: (s['status'] as String?) == 'STOPPED',
                         addedAt: s['addedAt'] as String?,
+                        watchedCount: (s['watchedEpisodes'] as List?)?.length ?? 0,
+                        totalEpisodes: (s['totalEpisodes'] as num?)?.toInt() ?? 0,
                       ),
                     )
                     .toList();
@@ -383,6 +389,8 @@ class _ProfilePageState extends State<ProfilePage>
                         isStopped: (s['status'] as String?) == 'STOPPED',
                         addedAt: s['addedAt'] as String?,
                         watchedAt: s['watchedAt'] as String?,
+                        watchedCount: (s['watchedEpisodes'] as List?)?.length ?? 0,
+                        totalEpisodes: (s['totalEpisodes'] as num?)?.toInt() ?? 0,
                       ),
                     )
                     .toList();
@@ -1065,23 +1073,60 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
                     ),
-                  if (item.isWatched)
+                  // ADD: Watched Eye Icon for Movies
+                  if (item.isMovie && item.isWatched)
                     Positioned(
-                      top: 4,
-                      left: 4,
+                      top: 8,
+                      left: 8,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.8),
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 14,
+                          Icons.remove_red_eye,
+                          color: Colors.green,
+                          size: 16,
                         ),
                       ),
                     ),
+                  // ADD: Progress Indicator for TV Shows
+                  if (!item.isMovie && item.totalEpisodes > 0) ...[
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: LinearProgressIndicator(
+                        value: (item.watchedCount / item.totalEpisodes).clamp(0.0, 1.0),
+                        minHeight: 6.0,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${item.watchedCount}/${item.totalEpisodes}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   // ADD: STOPPED badge — top-right pill matching explore tab badge style
                   if (item.isStopped)
                     Positioned(

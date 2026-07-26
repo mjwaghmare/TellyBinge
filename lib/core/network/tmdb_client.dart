@@ -69,9 +69,13 @@ class TmdbClient {
       const Duration(seconds: 20),
       _showSlowNetworkWarning,
     );
+    final overallDeadline = DateTime.now().add(const Duration(seconds: 45));
 
     try {
       for (int retry = 0; retry < maxRetries; retry++) {
+        if (retry > 0 && DateTime.now().isAfter(overallDeadline)) {
+          throw TimeoutException('Overall request deadline exceeded across retries');
+        }
         try {
           return await _dio.get(path, queryParameters: queryParameters);
         } on DioException catch (e) {
