@@ -1001,6 +1001,10 @@ class _SearchPageState extends State<SearchPage>
       );
     }
 
+    final bool hasFooter = isLoadingMore ||
+        (hasLoadMoreError && onRetry != null) ||
+        (hasReachedMax && items.isNotEmpty);
+
     return Column(
       children: [
         Expanded(
@@ -1008,11 +1012,11 @@ class _SearchPageState extends State<SearchPage>
             controller: controller,
             physics: physics,
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               12.0,
               12.0,
               12.0,
-              AppSpacing.bottomTabPadding,
+              hasFooter ? 12.0 : AppSpacing.bottomTabPadding,
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
