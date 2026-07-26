@@ -314,7 +314,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         final overview = movie['overview'] as String? ?? '';
         final voteAverage = (movie['vote_average'] as num?)?.toDouble() ?? 0.0;
         final voteCount = (movie['vote_count'] as num?)?.toInt() ?? 0;
-        final runtime = _formatRuntime((movie['runtime'] as num?)?.toInt());
+        final runtimeMinutes = (movie['runtime'] as num?)?.toInt() ?? 0;
+        final runtime = _formatRuntime(runtimeMinutes);
         final language = (movie['original_language'] as String? ?? '').toUpperCase();
         final released = _isReleased(releaseDate);
 
@@ -418,7 +419,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                               posterPath: movie['poster_path'],
                               backdropPath: movie['backdrop_path'],
                               releaseDate: releaseDate,
-                              runtime: (movie['runtime'] as num?)?.toInt() ?? 0,
+                              runtime: runtimeMinutes,
                               voteAverage: voteAverage,
                               genres: genres,
                             );
@@ -616,9 +617,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                                     movie['backdrop_path']
                                                         as String?,
                                                 releaseDate: releaseDate,
-                                                runtime:
-                                                    movie['runtime'] as int? ??
-                                                    0,
+                                                runtime: runtimeMinutes,
                                                 voteAverage: voteAverage,
                                                 genres: genres,
                                                 isFavorite: true,
@@ -669,9 +668,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                                     movie['backdrop_path']
                                                         as String?,
                                                 releaseDate: releaseDate,
-                                                runtime:
-                                                    movie['runtime'] as int? ??
-                                                    0,
+                                                runtime: runtimeMinutes,
                                                 voteAverage: voteAverage,
                                                 genres: genres,
                                                 isWatched: true,
