@@ -1164,7 +1164,7 @@ class MoviesPageState extends State<MoviesPage> {
     bool isUpcoming = false,
   }) {
     final posterPath = item['posterPath'] as String?;
-    final movieId = item['id'] as int;
+    final movieId = (item['id'] as num?)?.toInt() ?? 0;
 
     return GestureDetector(
       onTap: () {
