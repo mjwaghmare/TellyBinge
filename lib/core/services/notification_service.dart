@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -13,23 +14,12 @@ class NotificationService {
 
   Future<void> initialize() async {
     tz.initializeTimeZones();
-    final String timeZoneName = DateTime.now().timeZoneName;
     try {
+      final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
+      final String timeZoneName = timeZoneInfo.identifier;
       tz.setLocalLocation(tz.getLocation(timeZoneName));
     } catch (_) {
-      final Duration offset = DateTime.now().timeZoneOffset;
-      final timeZone = tz.TimeZone(
-        offset,
-        isDst: false,
-        abbreviation: timeZoneName,
-      );
-      final location = tz.Location(
-        timeZoneName,
-        [0],
-        [0],
-        [timeZone],
-      );
-      tz.setLocalLocation(location);
+      // Fallback: preserve existing initialized location if platform timezone lookup fails
     }
 
     const AndroidInitializationSettings initializationSettingsAndroid =
