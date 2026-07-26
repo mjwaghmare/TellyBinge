@@ -146,7 +146,9 @@ class NotificationService {
       await scheduleReleaseNotification(
         id: id * 10 + 1,
         title: '$title (Today)',
-        body: body.replaceAll('airing soon', 'airing today'),
+        body: body
+            .replaceAll('airing soon', 'airing today')
+            .replaceAll('releasing soon', 'releasing today'),
         scheduledDate: releaseDate,
       );
     }
@@ -158,7 +160,9 @@ class NotificationService {
         await scheduleReleaseNotification(
           id: id * 10 + 2,
           title: '$title (In 1 Hour)',
-          body: body.replaceAll('airing soon', 'airing in 1 hour'),
+          body: body
+              .replaceAll('airing soon', 'airing in 1 hour')
+              .replaceAll('releasing soon', 'releasing in 1 hour'),
           scheduledDate: oneHourBeforeDate,
         );
       }
