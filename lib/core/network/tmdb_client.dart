@@ -73,12 +73,35 @@ class TmdbClient {
 
     try {
       for (int retry = 0; retry < maxRetries; retry++) {
-        if (retry > 0 && DateTime.now().isAfter(overallDeadline)) {
+        Duration remaining = overallDeadline.difference(DateTime.now());
+        if (remaining.isNegative || remaining == Duration.zero) {
           throw TimeoutException('Overall request deadline exceeded across retries');
         }
+
+        bool timerFired = false;
+        final cancelToken = CancelToken();
+        final timer = Timer(remaining, () {
+          timerFired = true;
+          cancelToken.cancel('Deadline exceeded');
+        });
+
         try {
-          return await _dio.get(path, queryParameters: queryParameters);
+          final response = await _dio.get(
+            path,
+            queryParameters: queryParameters,
+            cancelToken: cancelToken,
+          );
+          timer.cancel();
+          if (timerFired || DateTime.now().isAfter(overallDeadline)) {
+            throw TimeoutException('Overall request deadline exceeded across retries');
+          }
+          return response;
         } on DioException catch (e) {
+          timer.cancel();
+          if (CancelToken.isCancel(e)) {
+            throw TimeoutException('Overall request deadline exceeded across retries');
+          }
+
           // Don't retry on client errors (4xx) except 429 (Rate Limit)
           if (e.response != null) {
             final statusCode = e.response?.statusCode ?? 500;
@@ -96,8 +119,21 @@ class TmdbClient {
               errorString.contains('SocketException') ||
               errorString.contains('errno = 54');
           final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
-          await Future.delayed(Duration(milliseconds: delayMs));
+
+          remaining = overallDeadline.difference(DateTime.now());
+          if (remaining.isNegative || remaining == Duration.zero) {
+            throw TimeoutException('Overall request deadline exceeded across retries');
+          }
+
+          final desiredDelay = Duration(milliseconds: delayMs);
+          final actualDelay = desiredDelay > remaining ? remaining : desiredDelay;
+          await Future.delayed(actualDelay);
+
+          if (DateTime.now().isAfter(overallDeadline)) {
+            throw TimeoutException('Overall request deadline exceeded across retries');
+          }
         } catch (e) {
+          timer.cancel();
           if (retry == maxRetries - 1) rethrow;
 
           final errorString = e.toString();
@@ -106,7 +142,19 @@ class TmdbClient {
               errorString.contains('SocketException') ||
               errorString.contains('errno = 54');
           final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
-          await Future.delayed(Duration(milliseconds: delayMs));
+
+          remaining = overallDeadline.difference(DateTime.now());
+          if (remaining.isNegative || remaining == Duration.zero) {
+            throw TimeoutException('Overall request deadline exceeded across retries');
+          }
+
+          final desiredDelay = Duration(milliseconds: delayMs);
+          final actualDelay = desiredDelay > remaining ? remaining : desiredDelay;
+          await Future.delayed(actualDelay);
+
+          if (DateTime.now().isAfter(overallDeadline)) {
+            throw TimeoutException('Overall request deadline exceeded across retries');
+          }
         }
       }
       throw Exception('Unreachable');

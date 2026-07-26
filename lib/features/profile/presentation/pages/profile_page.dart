@@ -321,23 +321,7 @@ class _ProfilePageState extends State<ProfilePage>
 
               if (showWatchlistState is TvShowWatchlistSuccess) {
                 watchedShows = showWatchlistState.shows
-                    .map(
-                      (s) => HorizontalItem(
-                        movieId: (s['id'] as num?)?.toInt() ?? 0,
-                        title: s['name'] as String? ?? '',
-                        imageUrl: _getImageUrl(s['posterPath'] as String?),
-                        voteAverage:
-                            (s['voteAverage'] as num?)?.toDouble() ?? 0.0,
-                        releaseDate: s['firstAirDate'] as String? ?? '',
-                        isFavorite: s['isFavorite'] as bool? ?? false,
-                        isWatched: (s['watchedEpisodes'] as List?)?.isNotEmpty ?? false,
-                        isMovie: false,
-                        isStopped: (s['status'] as String?) == 'STOPPED',
-                        addedAt: s['addedAt'] as String?,
-                        watchedCount: (s['watchedEpisodes'] as List?)?.length ?? 0,
-                        totalEpisodes: (s['totalEpisodes'] as num?)?.toInt() ?? 0,
-                      ),
-                    )
+                    .map((s) => _showToHorizontalItem(s))
                     .toList();
 
                 var filteredShows = showWatchlistState.shows;
@@ -375,24 +359,7 @@ class _ProfilePageState extends State<ProfilePage>
                 }
 
                 displayedShows = filteredShows
-                    .map(
-                      (s) => HorizontalItem(
-                        movieId: (s['id'] as num?)?.toInt() ?? 0,
-                        title: s['name'] as String? ?? '',
-                        imageUrl: _getImageUrl(s['posterPath'] as String?),
-                        voteAverage:
-                            (s['voteAverage'] as num?)?.toDouble() ?? 0.0,
-                        releaseDate: s['firstAirDate'] as String? ?? '',
-                        isFavorite: s['isFavorite'] as bool? ?? false,
-                        isWatched: (s['watchedEpisodes'] as List?)?.isNotEmpty ?? false,
-                        isMovie: false,
-                        isStopped: (s['status'] as String?) == 'STOPPED',
-                        addedAt: s['addedAt'] as String?,
-                        watchedAt: s['watchedAt'] as String?,
-                        watchedCount: (s['watchedEpisodes'] as List?)?.length ?? 0,
-                        totalEpisodes: (s['totalEpisodes'] as num?)?.toInt() ?? 0,
-                      ),
-                    )
+                    .map((s) => _showToHorizontalItem(s, watchedAt: s['watchedAt'] as String?))
                     .toList();
               }
 
@@ -1073,8 +1040,8 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
                     ),
-                  // ADD: Watched Eye Icon for Movies
-                  if (item.isMovie && item.isWatched)
+                  // ADD: Watched Eye Icon for Movies and TV Shows with unknown totalEpisodes
+                  if (item.isWatched && (item.isMovie || item.totalEpisodes == 0))
                     Positioned(
                       top: 8,
                       left: 8,
@@ -1117,7 +1084,7 @@ class _ProfilePageState extends State<ProfilePage>
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          '${item.watchedCount}/${item.totalEpisodes}',
+                          '${item.watchedCount.clamp(0, item.totalEpisodes)}/${item.totalEpisodes}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
@@ -1165,6 +1132,24 @@ class _ProfilePageState extends State<ProfilePage>
     if (path == null || path.isEmpty) return '';
     if (path.startsWith('http')) return path;
     return 'https://image.tmdb.org/t/p/$size$path';
+  }
+
+  HorizontalItem _showToHorizontalItem(Map<String, dynamic> s, {String? watchedAt}) {
+    return HorizontalItem(
+      movieId: (s['id'] as num?)?.toInt() ?? 0,
+      title: s['name'] as String? ?? '',
+      imageUrl: _getImageUrl(s['posterPath'] as String?),
+      voteAverage: (s['voteAverage'] as num?)?.toDouble() ?? 0.0,
+      releaseDate: s['firstAirDate'] as String? ?? '',
+      isFavorite: s['isFavorite'] as bool? ?? false,
+      isWatched: (s['watchedEpisodes'] as List?)?.isNotEmpty ?? false,
+      isMovie: false,
+      isStopped: (s['status'] as String?) == 'STOPPED',
+      addedAt: s['addedAt'] as String?,
+      watchedAt: watchedAt,
+      watchedCount: (s['watchedEpisodes'] as List?)?.length ?? 0,
+      totalEpisodes: (s['totalEpisodes'] as num?)?.toInt() ?? 0,
+    );
   }
 
   DateTime? _parseDate(String dateStr) {

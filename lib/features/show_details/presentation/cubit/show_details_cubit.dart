@@ -4,11 +4,13 @@ import 'show_details_state.dart';
 
 class ShowDetailsCubit extends Cubit<ShowDetailsState> {
   final TmdbClient tmdbClient;
+  int _loadGeneration = 0;
 
   ShowDetailsCubit({required this.tmdbClient})
       : super(ShowDetailsInitial());
 
   Future<void> loadDetails(int id, String mediaType) async {
+    _loadGeneration++;
     emit(ShowDetailsLoading());
     try {
       if (mediaType == 'movie') {
@@ -53,6 +55,7 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
   }
 
   Future<void> loadSeasonEpisodes(int tvId, int seasonNumber) async {
+    final capturedGeneration = _loadGeneration;
     final currentState = state;
     if (currentState is! ShowDetailsSuccess) return;
 
@@ -63,15 +66,21 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
       final seasonDetails = await tmdbClient.getTvSeasonDetails(tvId, seasonNumber);
       final episodes = seasonDetails['episodes'] as List<dynamic>? ?? [];
 
-      final updatedSeasonsData = Map<int, List<dynamic>>.from(currentState.seasonsData);
+      final latestState = state;
+      if (latestState is! ShowDetailsSuccess || _loadGeneration != capturedGeneration) return;
+
+      final updatedSeasonsData = Map<int, List<dynamic>>.from(latestState.seasonsData);
       updatedSeasonsData[seasonNumber] = episodes;
 
-      emit(currentState.copyWith(seasonsData: updatedSeasonsData));
+      emit(latestState.copyWith(seasonsData: updatedSeasonsData));
     } catch (e) {
+      final latestState = state;
+      if (latestState is! ShowDetailsSuccess || _loadGeneration != capturedGeneration) return;
+
       // Set to empty list on error so the loader stops spinning endlessly
-      final updatedSeasonsData = Map<int, List<dynamic>>.from(currentState.seasonsData);
+      final updatedSeasonsData = Map<int, List<dynamic>>.from(latestState.seasonsData);
       updatedSeasonsData[seasonNumber] = [];
-      emit(currentState.copyWith(seasonsData: updatedSeasonsData));
+      emit(latestState.copyWith(seasonsData: updatedSeasonsData));
     }
   }
 }
