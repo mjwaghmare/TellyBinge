@@ -98,7 +98,13 @@ class LoginPage extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (isLoading)
-                          const CircularProgressIndicator.adaptive()
+                          const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator.adaptive(
+                              strokeWidth: 2,
+                            ),
+                          )
                         else ...[
                           // Google Icon Asset
                           Image.asset(
