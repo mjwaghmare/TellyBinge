@@ -1552,6 +1552,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
                               return GestureDetector(
                                 onTap: () async {
+                                  if (isLoadingThisEp) return;
                                   HapticFeedback.lightImpact();
                                   if (authState is! Authenticated) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1609,32 +1610,34 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                             ),
                                             actions: [
                                               TextButton(
-                                                onPressed: () {
+                                                onPressed: () async {
                                                   Navigator.pop(ctx);
+                                                  if (!mounted) return;
                                                   setState(() {
                                                     _loadingEpisodeKeys.add(episodeKey);
                                                   });
-                                                  cubit.toggleEpisodeWatched(
-                                                    uid: uid,
-                                                    showId: widget.mediaId,
-                                                    episodeKey: episodeKey,
-                                                    isWatched: true,
-                                                    showName: details['name']
-                                                        ?.toString(),
-                                                    showPoster:
-                                                        details['poster_path']
-                                                            ?.toString(),
-                                                    episodeTitle:
-                                                        ep['name']?.toString() ??
-                                                        'Episode ${ep['episode_number']}',
-                                                  );
-                                                  Future.delayed(const Duration(milliseconds: 1500), () {
+                                                  try {
+                                                    await cubit.toggleEpisodeWatched(
+                                                      uid: uid,
+                                                      showId: widget.mediaId,
+                                                      episodeKey: episodeKey,
+                                                      isWatched: true,
+                                                      showName: details['name']
+                                                          ?.toString(),
+                                                      showPoster:
+                                                          details['poster_path']
+                                                              ?.toString(),
+                                                      episodeTitle:
+                                                          ep['name']?.toString() ??
+                                                          'Episode ${ep['episode_number']}',
+                                                    );
+                                                  } finally {
                                                     if (mounted) {
                                                       setState(() {
                                                         _loadingEpisodeKeys.remove(episodeKey);
                                                       });
                                                     }
-                                                  });
+                                                  }
                                                 },
                                                 child: const Text(
                                                   'No, just this one',
@@ -1644,8 +1647,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                 ),
                                               ),
                                               TextButton(
-                                                onPressed: () {
+                                                onPressed: () async {
                                                   Navigator.pop(ctx);
+                                                  if (!mounted) return;
                                                   final allToMark = [
                                                     ...unwatchedPrev,
                                                     episodeKey,
@@ -1653,18 +1657,19 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                   setState(() {
                                                     _loadingEpisodeKeys.addAll(allToMark);
                                                   });
-                                                  cubit.markMultipleEpisodesWatched(
-                                                    uid: uid,
-                                                    showId: widget.mediaId,
-                                                    episodeKeys: allToMark,
-                                                  );
-                                                  Future.delayed(const Duration(milliseconds: 1500), () {
+                                                  try {
+                                                    await cubit.markMultipleEpisodesWatched(
+                                                      uid: uid,
+                                                      showId: widget.mediaId,
+                                                      episodeKeys: allToMark,
+                                                    );
+                                                  } finally {
                                                     if (mounted) {
                                                       setState(() {
                                                         _loadingEpisodeKeys.removeAll(allToMark);
                                                       });
                                                     }
-                                                  });
+                                                  }
                                                 },
                                                 child: const Text(
                                                   'Yes, mark all',
@@ -1693,25 +1698,25 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                     _loadingEpisodeKeys.add(episodeKey);
                                   });
 
-                                  cubit.toggleEpisodeWatched(
-                                    uid: uid,
-                                    showId: widget.mediaId,
-                                    episodeKey: episodeKey,
-                                    isWatched: !isWatched,
-                                    showName: details?['name']?.toString(),
-                                    showPoster: details?['poster_path']?.toString(),
-                                    episodeTitle:
-                                        ep['name']?.toString() ??
-                                        'Episode ${ep['episode_number']}',
-                                  );
-
-                                  Future.delayed(const Duration(milliseconds: 1500), () {
+                                  try {
+                                    await cubit.toggleEpisodeWatched(
+                                      uid: uid,
+                                      showId: widget.mediaId,
+                                      episodeKey: episodeKey,
+                                      isWatched: !isWatched,
+                                      showName: details?['name']?.toString(),
+                                      showPoster: details?['poster_path']?.toString(),
+                                      episodeTitle:
+                                          ep['name']?.toString() ??
+                                          'Episode ${ep['episode_number']}',
+                                    );
+                                  } finally {
                                     if (mounted) {
                                       setState(() {
                                         _loadingEpisodeKeys.remove(episodeKey);
                                       });
                                     }
-                                  });
+                                  }
                                 },
                                 child: Container(
                                   width: 36,
