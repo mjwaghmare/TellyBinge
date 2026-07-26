@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
@@ -190,7 +191,7 @@ class DashboardPageState extends State<DashboardPage> {
             children: [
               ListView(
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(top: 8.0, bottom: 24.0),
+                padding: const EdgeInsets.only(top: 8.0, bottom: AppSpacing.bottomTabPadding),
                 children: [
                   _buildCenteredHeaderRow('WATCH NEXT'),
                   ...dummyShows
@@ -230,7 +231,7 @@ class DashboardPageState extends State<DashboardPage> {
             children: [
               ListView(
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(top: 8.0, bottom: 24.0),
+                padding: const EdgeInsets.only(top: 8.0, bottom: AppSpacing.bottomTabPadding),
                 children: [
                   _buildCenteredHeaderRow('TOMORROW'),
                   ...dummyShows
@@ -457,6 +458,9 @@ class DashboardPageState extends State<DashboardPage> {
                       ),
                     ],
                   ),
+                const SliverPadding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
+                ),
               ],
             );
           },
@@ -583,7 +587,7 @@ class DashboardPageState extends State<DashboardPage> {
           controller: upcomingScrollController,
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.only(top: 8.0, bottom: 24.0),
+              padding: const EdgeInsets.only(top: 8.0, bottom: AppSpacing.bottomTabPadding),
               sliver: SliverMainAxisGroup(slivers: slivers),
             ),
           ],
@@ -598,7 +602,7 @@ class DashboardPageState extends State<DashboardPage> {
   Widget _buildEmptyState(String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.fromLTRB(32.0, 32.0, 32.0, AppSpacing.bottomTabPadding),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -781,9 +785,9 @@ class DashboardPageState extends State<DashboardPage> {
                         child: SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
+                          child: CircularProgressIndicator.adaptive(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(
+                            valueColor: const AlwaysStoppedAnimation(
                               AppColors.primary,
                             ),
                           ),
@@ -928,7 +932,6 @@ class DashboardPageState extends State<DashboardPage> {
 
 class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
-  bool _wasPinned = false;
 
   _StickyHeaderDelegate({required this.child});
 
@@ -944,11 +947,6 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final isPinned = shrinkOffset > 0;
-    if (isPinned && !_wasPinned) {
-      HapticFeedback.lightImpact();
-    }
-    _wasPinned = isPinned;
     return SizedBox.expand(child: child);
   }
 

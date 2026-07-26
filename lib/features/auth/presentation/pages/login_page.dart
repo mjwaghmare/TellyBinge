@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -69,7 +68,7 @@ class LoginPage extends StatelessWidget {
                 builder: (context, state) {
                   if (state is AuthLoading) {
                     return const Center(
-                      child: CircularProgressIndicator(
+                      child: CircularProgressIndicator.adaptive(
                         valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
                     );
@@ -99,7 +98,7 @@ class LoginPage extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (isLoading)
-                          const CupertinoActivityIndicator()
+                          const CircularProgressIndicator.adaptive()
                         else ...[
                           // Google Icon Asset
                           Image.asset(

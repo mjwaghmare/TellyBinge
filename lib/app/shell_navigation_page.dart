@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/theme/app_colors.dart';
@@ -77,43 +75,10 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
     ];
   }
 
-  final ValueNotifier<bool> _isBnbVisible = ValueNotifier<bool>(true);
-  Timer? _bnbTimer;
-
-  bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification.depth == 0 || notification.metrics.axis != Axis.vertical) {
-      return false;
-    }
-
-    if (notification is UserScrollNotification) {
-      if (notification.direction == ScrollDirection.reverse) {
-        if (_isBnbVisible.value) {
-          _isBnbVisible.value = false;
-        }
-        _bnbTimer?.cancel();
-      } else if (notification.direction == ScrollDirection.forward) {
-        if (!_isBnbVisible.value) {
-          _isBnbVisible.value = true;
-        }
-        _bnbTimer?.cancel();
-      }
-    } else if (notification is ScrollEndNotification) {
-      _bnbTimer?.cancel();
-      _bnbTimer = Timer(const Duration(milliseconds: 800), () {
-        if (mounted && !_isBnbVisible.value) {
-          _isBnbVisible.value = true;
-        }
-      });
-    }
-    return false;
-  }
-
   @override
   void dispose() {
     _tabNotifier.dispose();
     _exploreSubTabNotifier.dispose();
-    _isBnbVisible.dispose();
-    _bnbTimer?.cancel();
     super.dispose();
   }
 
@@ -147,51 +112,28 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
     return Scaffold(
       extendBody: true,
       resizeToAvoidBottomInset: false,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _handleScrollNotification,
-        child: IndexedStack(index: _tabNotifier.value, children: _pages),
-      ),
-      floatingActionButton: ValueListenableBuilder<bool>(
-        valueListenable: _isBnbVisible,
-        builder: (context, isVisible, child) {
-          return AnimatedSlide(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeInOutCubic,
-            offset: isVisible ? Offset.zero : const Offset(0, 2.0),
-            child: FloatingActionButton(
-              onPressed: _showSurpriseMeSheet,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              highlightElevation: 0,
-              tooltip: 'Surprise Me',
-              child: Transform.scale(
-                scale: 1.7,
-                child: Lottie.asset(
-                  'assets/lottie/dice.json',
-                  fit: BoxFit.contain,
-                  animate: false,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.casino, color: Colors.black, size: 32),
-                ),
-              ),
-            ),
-          );
-        },
+      body: IndexedStack(index: _tabNotifier.value, children: _pages),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showSurpriseMeSheet,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        highlightElevation: 0,
+        tooltip: 'Surprise Me',
+        child: Transform.scale(
+          scale: 1.7,
+          child: Lottie.asset(
+            'assets/lottie/dice.json',
+            fit: BoxFit.contain,
+            animate: false,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.casino, color: Colors.black, size: 32),
+          ),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: ValueListenableBuilder<bool>(
-        valueListenable: _isBnbVisible,
-        builder: (context, isVisible, child) {
-          return AnimatedSlide(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeInOutCubic,
-            offset: isVisible ? Offset.zero : const Offset(0, 1.0),
-            child: _CustomGlowBottomBar(
-              currentIndex: _tabNotifier.value,
-              onTap: _onItemTapped,
-            ),
-          );
-        },
+      bottomNavigationBar: _CustomGlowBottomBar(
+        currentIndex: _tabNotifier.value,
+        onTap: _onItemTapped,
       ),
     );
   }

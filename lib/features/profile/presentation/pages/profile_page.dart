@@ -253,7 +253,7 @@ class _ProfilePageState extends State<ProfilePage>
                     .where((m) => m['isWatched'] as bool? ?? false)
                     .map(
                       (m) => HorizontalItem(
-                        movieId: m['id'] as int? ?? 0,
+                        movieId: (m['id'] as num?)?.toInt() ?? 0,
                         title: m['title'] as String? ?? '',
                         imageUrl: _getImageUrl(m['posterPath'] as String?),
                         voteAverage:
@@ -280,7 +280,7 @@ class _ProfilePageState extends State<ProfilePage>
                 displayedMovies = filteredMovies
                     .map(
                       (m) => HorizontalItem(
-                        movieId: m['id'] as int? ?? 0,
+                        movieId: (m['id'] as num?)?.toInt() ?? 0,
                         title: m['title'] as String? ?? '',
                         imageUrl: _getImageUrl(m['posterPath'] as String?),
                         voteAverage:
@@ -311,7 +311,7 @@ class _ProfilePageState extends State<ProfilePage>
                 watchedShows = showWatchlistState.shows
                     .map(
                       (s) => HorizontalItem(
-                        movieId: s['id'] as int? ?? 0,
+                        movieId: (s['id'] as num?)?.toInt() ?? 0,
                         title: s['name'] as String? ?? '',
                         imageUrl: _getImageUrl(s['posterPath'] as String?),
                         voteAverage:
@@ -363,7 +363,7 @@ class _ProfilePageState extends State<ProfilePage>
                 displayedShows = filteredShows
                     .map(
                       (s) => HorizontalItem(
-                        movieId: s['id'] as int? ?? 0,
+                        movieId: (s['id'] as num?)?.toInt() ?? 0,
                         title: s['name'] as String? ?? '',
                         imageUrl: _getImageUrl(s['posterPath'] as String?),
                         voteAverage:
@@ -429,7 +429,7 @@ class _ProfilePageState extends State<ProfilePage>
               final totalMinutes = (watchlistState is MovieWatchlistSuccess)
                   ? watchlistState.movies
                         .where((m) => m['isWatched'] as bool? ?? false)
-                        .map((m) => m['runtime'] as int? ?? 0)
+                        .map((m) => (m['runtime'] as num?)?.toInt() ?? 0)
                         .fold<int>(0, (sum, element) => sum + element)
                   : 0;
 
@@ -890,17 +890,25 @@ class _ProfilePageState extends State<ProfilePage>
   Widget _buildGrid(List<HorizontalItem> items, String emptyMessage) {
     if (items.isEmpty) {
       return Center(
-        child: Text(
-          emptyMessage,
-          style: TextStyle(
-            color: Theme.of(context).disabledColor,
-            fontSize: 14,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
+          child: Text(
+            emptyMessage,
+            style: TextStyle(
+              color: Theme.of(context).disabledColor,
+              fontSize: 14,
+            ),
           ),
         ),
       );
     }
     return GridView.builder(
-      padding: const EdgeInsets.all(2.0),
+      padding: const EdgeInsets.fromLTRB(
+        2.0,
+        2.0,
+        2.0,
+        160.0,
+      ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 2.0,

@@ -60,9 +60,9 @@ class UserModel extends Equatable {
       email: map['email'] as String? ?? '',
       displayName: map['displayName'] as String? ?? '',
       photoUrl: map['photoUrl'] as String? ?? '',
-      tvTimeSpentMinutes: stats['tvTimeSpentMinutes'] as int? ?? 0,
-      episodesWatched: stats['episodesWatched'] as int? ?? 0,
-      moviesWatched: stats['moviesWatched'] as int? ?? 0,
+      tvTimeSpentMinutes: (stats['tvTimeSpentMinutes'] as num?)?.toInt() ?? 0,
+      episodesWatched: (stats['episodesWatched'] as num?)?.toInt() ?? 0,
+      moviesWatched: (stats['moviesWatched'] as num?)?.toInt() ?? 0,
     );
   }
 

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		1DE1DD9AEF65612FEF19CEC0 /* Pods_UpNextWidgetExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FBF1C956B61E5A8862B057D1 /* Pods_UpNextWidgetExtension.framework */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
@@ -87,6 +88,7 @@
 		84F9CF8F300BDB1200AE1020 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		84F9CFA4300BDBA700AE1020 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		84F9CFA5300BDBE500AE1020 /* UpNextWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = UpNextWidgetExtension.entitlements; sourceTree = "<group>"; };
+		8D5080DC8CCD6B01054F13B1 /* Pods-UpNextWidgetExtension.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UpNextWidgetExtension.release.xcconfig"; path = "Target Support Files/Pods-UpNextWidgetExtension/Pods-UpNextWidgetExtension.release.xcconfig"; sourceTree = "<group>"; };
 		95271AAB483C6D30A9DC54F0 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -95,9 +97,12 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B9F6FDB4AF03A0AC9FCE0CCF /* Pods-UpNextWidgetExtension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UpNextWidgetExtension.debug.xcconfig"; path = "Target Support Files/Pods-UpNextWidgetExtension/Pods-UpNextWidgetExtension.debug.xcconfig"; sourceTree = "<group>"; };
 		C3E1E737A9250954C5A7153E /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		CA8EE0C46E7610DEA1B6FE6C /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		CBF01C41ADCD5058BF173174 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EFBB962F0EEB0418BE3ACB04 /* Pods-UpNextWidgetExtension.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-UpNextWidgetExtension.profile.xcconfig"; path = "Target Support Files/Pods-UpNextWidgetExtension/Pods-UpNextWidgetExtension.profile.xcconfig"; sourceTree = "<group>"; };
+		FBF1C956B61E5A8862B057D1 /* Pods_UpNextWidgetExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_UpNextWidgetExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -133,6 +138,7 @@
 				84F9CF90300BDB1200AE1020 /* SwiftUI.framework in Frameworks */,
 				84F9CF8E300BDB1200AE1020 /* WidgetKit.framework in Frameworks */,
 				9D5B069D0243D4575D52962A /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
+				1DE1DD9AEF65612FEF19CEC0 /* Pods_UpNextWidgetExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,6 +171,9 @@
 				CA8EE0C46E7610DEA1B6FE6C /* Pods-RunnerTests.debug.xcconfig */,
 				C3E1E737A9250954C5A7153E /* Pods-RunnerTests.release.xcconfig */,
 				3B5F4B80DE97F1984BC8E242 /* Pods-RunnerTests.profile.xcconfig */,
+				B9F6FDB4AF03A0AC9FCE0CCF /* Pods-UpNextWidgetExtension.debug.xcconfig */,
+				8D5080DC8CCD6B01054F13B1 /* Pods-UpNextWidgetExtension.release.xcconfig */,
+				EFBB962F0EEB0418BE3ACB04 /* Pods-UpNextWidgetExtension.profile.xcconfig */,
 			);
 			name = Pods;
 			path = Pods;
@@ -185,6 +194,7 @@
 				84F9CF8F300BDB1200AE1020 /* SwiftUI.framework */,
 				CBF01C41ADCD5058BF173174 /* Pods_Runner.framework */,
 				5B2AE26B34149B5FDAE1688A /* Pods_RunnerTests.framework */,
+				FBF1C956B61E5A8862B057D1 /* Pods_UpNextWidgetExtension.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -269,6 +279,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 84F9CF9F300BDB1A00AE1020 /* Build configuration list for PBXNativeTarget "UpNextWidgetExtension" */;
 			buildPhases = (
+				84DAD1FF5D4CE606A08877F6 /* [CP] Check Pods Manifest.lock */,
 				84F9CF87300BDB1100AE1020 /* Sources */,
 				84F9CF88300BDB1100AE1020 /* Frameworks */,
 				84F9CF89300BDB1100AE1020 /* Resources */,
@@ -301,6 +312,7 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				7C331541F125254298D8CDFE /* [CP] Embed Pods Frameworks */,
+				20B5570848ACC2760AAC3FC5 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -414,6 +426,23 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
+		20B5570848ACC2760AAC3FC5 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -467,6 +496,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		84DAD1FF5D4CE606A08877F6 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-UpNextWidgetExtension-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
@@ -677,6 +728,7 @@
 		};
 		84F9CFA0300BDB1A00AE1020 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B9F6FDB4AF03A0AC9FCE0CCF /* Pods-UpNextWidgetExtension.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -723,6 +775,7 @@
 		};
 		84F9CFA1300BDB1A00AE1020 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8D5080DC8CCD6B01054F13B1 /* Pods-UpNextWidgetExtension.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -766,6 +819,7 @@
 		};
 		84F9CFA2300BDB1A00AE1020 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EFBB962F0EEB0418BE3ACB04 /* Pods-UpNextWidgetExtension.profile.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -36,6 +37,17 @@ final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<Scaffol
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Global uncaught error handling for production stability
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    debugPrint('Global Flutter Error: ${details.exceptionAsString()}');
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Global Platform Error: $error\n$stack');
+    return true;
+  };
+
   await WidgetService.initialize();
 
   // Initialize notification and background services
@@ -211,6 +223,7 @@ class AuthGate extends StatelessWidget {
       builder: (context, state) {
         if (state is Authenticated) {
           HomeWidget.saveWidgetData<String>('current_uid', state.user.uid);
+          WidgetService.syncWatchlistToWidget(state.user.uid);
           return const ShellNavigationPage();
         } else if (state is Unauthenticated || state is AuthLoginLoading) {
           return const LoginPage();

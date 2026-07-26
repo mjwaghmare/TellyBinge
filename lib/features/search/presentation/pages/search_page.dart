@@ -375,6 +375,7 @@ class _SearchPageState extends State<SearchPage>
     _moviesScrollController.dispose();
     _tabController.dispose();
     _tabTransitionTimer?.cancel();
+    _paginationCooldown?.cancel();
     super.dispose();
   }
 
@@ -985,7 +986,12 @@ class _SearchPageState extends State<SearchPage>
     if (items.isEmpty) {
       return Center(
         child: Padding(
-          padding: EdgeInsets.all(AppSpacing.xl),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.xl,
+            AppSpacing.xl,
+            AppSpacing.bottomTabPadding,
+          ),
           child: Text(
             'No results found.\nTry searching for something else.',
             textAlign: TextAlign.center,
@@ -1002,7 +1008,12 @@ class _SearchPageState extends State<SearchPage>
             controller: controller,
             physics: physics,
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.fromLTRB(
+              12.0,
+              12.0,
+              12.0,
+              AppSpacing.bottomTabPadding,
+            ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 8,
@@ -1060,7 +1071,7 @@ class _SearchPageState extends State<SearchPage>
                                             child: SizedBox(
                                               width: 20,
                                               height: 20,
-                                              child: CircularProgressIndicator(
+                                              child: CircularProgressIndicator.adaptive(
                                                 strokeWidth: 2,
                                               ),
                                             ),
@@ -1164,15 +1175,12 @@ class _SearchPageState extends State<SearchPage>
         ),
         if (isLoadingMore)
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0),
-            child: CupertinoActivityIndicator(
-              color: AppColors.primary, // Yellow color
-              radius: 12.0,
-            ),
+            padding: EdgeInsets.only(top: 16.0, bottom: AppSpacing.bottomTabPadding),
+            child: CircularProgressIndicator.adaptive(),
           ),
         if (hasLoadMoreError && onRetry != null)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            padding: const EdgeInsets.only(top: 16.0, bottom: AppSpacing.bottomTabPadding),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1206,7 +1214,7 @@ class _SearchPageState extends State<SearchPage>
           ),
         if (hasReachedMax && items.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            padding: const EdgeInsets.only(top: 16.0, bottom: AppSpacing.bottomTabPadding),
             child: Text(
               defaultType == 'tv'
                   ? 'No more shows to load'

@@ -34,11 +34,11 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
         if (seasonsList.isNotEmpty) {
           // Find the first actual season (season_number > 0), skip specials
           final firstActualSeason = seasonsList.firstWhere(
-            (s) => (s['season_number'] as int? ?? 0) > 0,
+            (s) => ((s['season_number'] as num?)?.toInt() ?? 0) > 0,
             orElse: () => seasonsList[0],
           );
-          final firstSeasonNum = firstActualSeason['season_number'] as int? ?? 1;
-          final totalSeasons = details['number_of_seasons'] as int? ?? 0;
+          final firstSeasonNum = (firstActualSeason['season_number'] as num?)?.toInt() ?? 1;
+          final totalSeasons = (details['number_of_seasons'] as num?)?.toInt() ?? 0;
 
           final futures = <Future>[loadSeasonEpisodes(id, firstSeasonNum)];
           if (totalSeasons > firstSeasonNum) {

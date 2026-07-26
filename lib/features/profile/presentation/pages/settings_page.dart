@@ -150,25 +150,6 @@ class SettingsPage extends StatelessWidget {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(left: 16.0),
-                      child: SwitchListTile.adaptive(
-                        title: Text(
-                          'Notify 24 Hours before release',
-                          style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                            fontSize: 14,
-                          ),
-                        ),
-                        value: state.notify1DayBefore,
-                        onChanged: (bool value) {
-                          HapticFeedback.lightImpact();
-                          context
-                              .read<SettingsCubit>()
-                              .toggleNotify1DayBefore(value);
-                        },
-                      ),
-                    ),
-                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.send),

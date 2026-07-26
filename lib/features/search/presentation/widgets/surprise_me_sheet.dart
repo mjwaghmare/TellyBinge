@@ -133,7 +133,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           firstAirDateGte: _language == 'mr' ? '1990-01-01' : '2020-01-01',
           language: _language,
         );
-        final totalPages = initial['total_pages'] as int? ?? 250;
+        final totalPages = (initial['total_pages'] as num?)?.toInt() ?? 250;
         maxPage = min(totalPages, 500);
       } catch (e) {
         maxPage = 250;
@@ -238,7 +238,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               : '2020-01-01',
           language: _language,
         );
-        final totalPages = initial['total_pages'] as int? ?? 250;
+        final totalPages = (initial['total_pages'] as num?)?.toInt() ?? 250;
         maxPage = min(totalPages, 500);
       } catch (e) {
         maxPage = 250;

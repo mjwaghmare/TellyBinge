@@ -292,7 +292,6 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       onUpdate: (details) {
         if (details.progress > 0.05 && !_hasFiredSlideHaptic) {
           _hasFiredSlideHaptic = true;
-          HapticFeedback.lightImpact();
         }
         if (details.progress < 0.05) {
           _hasFiredSlideHaptic = false;
@@ -383,9 +382,9 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
           ),
           child: _isMarkingAsWatched
               ? Center(
-                  child: CircularProgressIndicator(
+                  child: CircularProgressIndicator.adaptive(
                     strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation(Color(0xFF6B8E23)),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFF6B8E23)),
                   ),
                 )
               : Row(
@@ -559,17 +558,19 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                         width: 1.5,
                                       ),
                               ),
-                              child: isWatched
-                                  ? Icon(
-                                      Icons.check,
-                                      color: Colors.white,
-                                      size: 24,
-                                    )
-                                  : Icon(
-                                      Icons.check,
-                                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
-                                      size: 24,
-                                    ),
+                              child: _isMarkingAsWatched
+                                  ? const CircularProgressIndicator.adaptive()
+                                  : (isWatched
+                                      ? const Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 24,
+                                        )
+                                      : Icon(
+                                          Icons.check,
+                                          color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                                          size: 24,
+                                        )),
                             ),
                           ),
                         ),

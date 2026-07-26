@@ -5,6 +5,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
@@ -348,6 +349,9 @@ class MoviesPageState extends State<MoviesPage> {
               child: const SizedBox.shrink(),
             ),
           ],
+          const SliverPadding(
+            padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
+          ),
         ],
       ),
     );
@@ -431,7 +435,9 @@ class MoviesPageState extends State<MoviesPage> {
               ),
             ];
           }),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 24.0)),
+          const SliverPadding(
+            padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
+          ),
         ],
       ),
     );
@@ -440,7 +446,7 @@ class MoviesPageState extends State<MoviesPage> {
   Widget _buildEmptyState(String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.fromLTRB(32.0, 32.0, 32.0, AppSpacing.bottomTabPadding),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -557,9 +563,9 @@ class MoviesPageState extends State<MoviesPage> {
   Widget _buildMovieProgressCard(Map<String, dynamic> item, String? uid) {
     final title = item['title'] as String? ?? '';
     final posterPath = item['posterPath'] as String?;
-    final runtime = item['runtime'] as int?;
+    final runtime = (item['runtime'] as num?)?.toInt();
     final isWatched = item['isWatched'] as bool? ?? false;
-    final movieId = item['id'] as int;
+    final movieId = (item['id'] as num?)?.toInt() ?? 0;
     final releaseDate = item['releaseDate'] as String? ?? '';
     final voteAverage = (item['voteAverage'] as num?)?.toDouble() ?? 0.0;
     final genres = item['genres'] as String? ?? '';
@@ -605,7 +611,6 @@ class MoviesPageState extends State<MoviesPage> {
           onUpdate: (details) {
             if (details.progress > 0.05 && !hasFiredSlideHaptic) {
               setState(() => hasFiredSlideHaptic = true);
-              HapticFeedback.lightImpact();
             }
             if (details.progress < 0.05 && hasFiredSlideHaptic) {
               setState(() => hasFiredSlideHaptic = false);
@@ -688,7 +693,7 @@ class MoviesPageState extends State<MoviesPage> {
               ),
               child: (isMarkingAsWatched || isRemoving)
                   ? Center(
-                      child: CircularProgressIndicator(
+                      child: CircularProgressIndicator.adaptive(
                         strokeWidth: 3,
                         valueColor: AlwaysStoppedAnimation(
                           isMarkingAsWatched
@@ -733,9 +738,9 @@ class MoviesPageState extends State<MoviesPage> {
                                 child: SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(
+                                  child: CircularProgressIndicator.adaptive(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation(
+                                    valueColor: const AlwaysStoppedAnimation(
                                       AppColors.primary,
                                     ),
                                   ),
@@ -897,16 +902,18 @@ class MoviesPageState extends State<MoviesPage> {
                                       ),
                               ),
                               child: Center(
-                                child: Icon(
-                                  Icons.check,
-                                  size: 20,
-                                  color: isWatched
-                                      ? Colors.white
-                                      : (Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Colors.grey[500]
-                                            : AppColors.textTertiary),
-                                ),
+                                child: (isMarkingAsWatched || isRemoving)
+                                    ? const CircularProgressIndicator.adaptive()
+                                    : Icon(
+                                        Icons.check,
+                                        size: 20,
+                                        color: isWatched
+                                            ? Colors.white
+                                            : (Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                  ? Colors.grey[500]
+                                                  : AppColors.textTertiary),
+                                      ),
                               ),
                             ),
                           ),
@@ -926,9 +933,9 @@ class MoviesPageState extends State<MoviesPage> {
     final releaseDate = item['releaseDate'] as String? ?? '';
     final isTBA = releaseDate.isEmpty || releaseDate.toUpperCase() == 'TBA';
     final daysLeft = _calculateDaysLeft(releaseDate);
-    final movieId = item['id'] as int;
+    final movieId = (item['id'] as num?)?.toInt() ?? 0;
     final hasImage = posterPath != null && posterPath.isNotEmpty;
-    final runtime = item['runtime'] as int?;
+    final runtime = (item['runtime'] as num?)?.toInt();
     final voteAverage = (item['voteAverage'] as num?)?.toDouble() ?? 0.0;
     final genres = item['genres'] as String? ?? '';
 
@@ -971,9 +978,9 @@ class MoviesPageState extends State<MoviesPage> {
                           child: SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(
+                            child: CircularProgressIndicator.adaptive(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(
+                              valueColor: const AlwaysStoppedAnimation(
                                 AppColors.primary,
                               ),
                             ),
@@ -1190,9 +1197,9 @@ class MoviesPageState extends State<MoviesPage> {
                         child: SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
+                          child: CircularProgressIndicator.adaptive(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(
+                            valueColor: const AlwaysStoppedAnimation(
                               AppColors.primary,
                             ),
                           ),
@@ -1384,7 +1391,6 @@ class MoviesPageState extends State<MoviesPage> {
 
 class _MovieStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
-  bool _wasPinned = false;
 
   _MovieStickyHeaderDelegate({required this.child});
 
@@ -1400,11 +1406,6 @@ class _MovieStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final isPinned = shrinkOffset > 0;
-    if (isPinned && !_wasPinned) {
-      HapticFeedback.lightImpact();
-    }
-    _wasPinned = isPinned;
     return SizedBox.expand(child: child);
   }
 

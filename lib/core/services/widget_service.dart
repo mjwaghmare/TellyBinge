@@ -168,7 +168,7 @@ class WidgetService {
       final int targetEpisode = show.targetEpisode;
       final String firestoreKey = '$targetSeason-$targetEpisode';
       widgetItems.add({
-        'showId': show.rawShowData['id'] as int,
+        'showId': (show.rawShowData['id'] as num?)?.toInt() ?? 0,
         'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
         'header': show.isPremiere ? 'PREMIERE' : (show.isNew ? 'NEW EPISODE' : 'WATCH NEXT'),
         'episodeTitle': show.episodeCode,
@@ -181,7 +181,7 @@ class WidgetService {
     for (var show in haventStarted) {
       if (widgetItems.length >= 3) break;
       widgetItems.add({
-        'showId': show.rawShowData['id'] as int,
+        'showId': (show.rawShowData['id'] as num?)?.toInt() ?? 0,
         'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
         'header': 'START WATCHING',
         'episodeTitle': show.episodeCode,
@@ -214,7 +214,7 @@ class WidgetService {
         }
 
         widgetItems.add({
-          'showId': show.rawShowData['id'] as int,
+          'showId': (show.rawShowData['id'] as num?)?.toInt() ?? 0,
           'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
           'header': show.upcomingIsPremiere ? 'NEXT SEASON' : 'UPCOMING',
           'episodeTitle': show.upcomingEpisodeCode,

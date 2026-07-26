@@ -313,8 +313,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         final genres = _formatGenres(movie['genres'] as List<dynamic>?);
         final overview = movie['overview'] as String? ?? '';
         final voteAverage = (movie['vote_average'] as num?)?.toDouble() ?? 0.0;
-        final voteCount = movie['vote_count'] as int? ?? 0;
-        final runtime = _formatRuntime(movie['runtime'] as int?);
+        final voteCount = (movie['vote_count'] as num?)?.toInt() ?? 0;
+        final runtime = _formatRuntime((movie['runtime'] as num?)?.toInt());
         final language = (movie['original_language'] as String? ?? '').toUpperCase();
         final released = _isReleased(releaseDate);
 
@@ -418,7 +418,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                               posterPath: movie['poster_path'],
                               backdropPath: movie['backdrop_path'],
                               releaseDate: releaseDate,
-                              runtime: movie['runtime'] as int? ?? 0,
+                              runtime: (movie['runtime'] as num?)?.toInt() ?? 0,
                               voteAverage: voteAverage,
                               genres: genres,
                             );

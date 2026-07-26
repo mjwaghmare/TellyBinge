@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import 'profile_page.dart'; // For HorizontalItem
 import '../../../../features/explore/presentation/pages/movie_details_page.dart';
 
@@ -35,7 +36,7 @@ class WatchedMoviesPage extends StatelessWidget {
         ),
       ),
       body: GridView.builder(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, AppSpacing.bottomTabPadding),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           crossAxisSpacing: 8,

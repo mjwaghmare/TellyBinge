@@ -28,6 +28,22 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
       (movies) {
         emit(MovieWatchlistSuccess(movies));
 
+        // Schedule notifications for upcoming movies in watchlist
+        for (var movie in movies) {
+          final isWatched = movie['isWatched'] as bool? ?? false;
+          final releaseDate = movie['releaseDate'] as String?;
+          final movieId = (movie['id'] as num?)?.toInt();
+          final title = movie['title'] as String? ?? 'Movie';
+          if (!isWatched && releaseDate != null && movieId != null) {
+            NotificationService().scheduleBasedOnSettings(
+              id: movieId,
+              title: 'Upcoming Release: $title',
+              body: '$title is releasing soon!',
+              releaseDateStr: releaseDate,
+            );
+          }
+        }
+
         // Start backfilling in the background sequentially to avoid socket rate limiting
         _backfillMissingGenres(uid, movies);
       },
@@ -44,7 +60,7 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     for (final movie in movies) {
       if (isClosed) break;
       if (!movie.containsKey('genres')) {
-        final movieId = movie['id'] as int?;
+        final movieId = (movie['id'] as num?)?.toInt();
         if (movieId != null) {
           if (_backfillingMovieIds.contains(movieId) || _failedMovieIds.contains(movieId)) {
             continue;

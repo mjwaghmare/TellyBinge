@@ -12,6 +12,7 @@ class AppSpacing {
   static const double xxl = 32.0;
   static const double xxxl = 48.0;
   static const double huge = 64.0;
+  static const double bottomTabPadding = 110.0;
 
   // Edge Insets helper utilities
   static const EdgeInsets allXXS = EdgeInsets.all(xxs);

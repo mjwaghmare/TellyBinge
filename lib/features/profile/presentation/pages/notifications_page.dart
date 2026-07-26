@@ -111,7 +111,7 @@ class NotificationsPage extends StatelessWidget {
         centerTitle: true,
       ),
       body: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        padding: const EdgeInsets.fromLTRB(0, AppSpacing.sm, 0, AppSpacing.bottomTabPadding),
         itemCount: _notifications.length,
         separatorBuilder: (context, index) => Divider(
           color: Theme.of(context).dividerColor,

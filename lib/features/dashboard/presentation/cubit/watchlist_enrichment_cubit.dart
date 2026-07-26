@@ -76,7 +76,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     final showsToEnrich = <Map<String, dynamic>>[];
 
     for (var raw in rawShows) {
-      final showId = raw['id'] as int?;
+      final showId = (raw['id'] as num?)?.toInt();
       if (showId == null) continue;
       if (showId == -1) continue;
       if ((raw['status'] as String?) == 'STOPPED') continue;
@@ -164,9 +164,9 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
       // Uses episode_count from show metadata (no API call needed).
       final seasonsWithUnwatched = <int>[];
       for (var season in seasons) {
-        final seasonNum = season['season_number'] as int;
+        final seasonNum = (season['season_number'] as num?)?.toInt() ?? 0;
         if (seasonNum == 0) continue;
-        final episodeCount = (season['episode_count'] as int?) ?? 0;
+        final episodeCount = (season['episode_count'] as num?)?.toInt() ?? 0;
 
         bool hasUnwatched = false;
         for (int epNum = 1; epNum <= episodeCount; epNum++) {
@@ -191,9 +191,9 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
 
       for (var season in seasons) {
         if (foundNext) break;
-        final seasonNum = season['season_number'] as int;
+        final seasonNum = (season['season_number'] as num?)?.toInt() ?? 0;
         if (seasonNum == 0) continue;
-        final episodeCount = (season['episode_count'] as int?) ?? 0;
+        final episodeCount = (season['episode_count'] as num?)?.toInt() ?? 0;
 
         for (int epNum = 1; epNum <= episodeCount; epNum++) {
           if (!watchedSet.contains('$seasonNum-$epNum')) {

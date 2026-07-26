@@ -13,17 +13,30 @@ class NotificationService {
 
   Future<void> initialize() async {
     tz.initializeTimeZones();
+    final String timeZoneName = DateTime.now().timeZoneName;
+    try {
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } catch (_) {
+      final Duration offset = DateTime.now().timeZoneOffset;
+      final location = tz.Location(
+        timeZoneName,
+        [offset.inMilliseconds],
+        [0],
+        [],
+      );
+      tz.setLocalLocation(location);
+    }
 
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('ic_launcher');
 
-    final DarwinInitializationSettings initializationSettingsIOS =
+    const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
             requestAlertPermission: false,
             requestBadgePermission: false,
             requestSoundPermission: false);
 
-    final InitializationSettings initializationSettings = InitializationSettings(
+    const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
@@ -51,8 +64,13 @@ class NotificationService {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails('test_channel', 'Test Notifications',
             importance: Importance.max, priority: Priority.high);
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    const DarwinNotificationDetails darwinPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+            presentAlert: true, presentBadge: true, presentSound: true);
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: darwinPlatformChannelSpecifics,
+    );
 
     await _notificationsPlugin.show(
       id: 999,
@@ -76,8 +94,13 @@ class NotificationService {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails('release_channel', 'Release Notifications',
             importance: Importance.max, priority: Priority.high);
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    const DarwinNotificationDetails darwinPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+            presentAlert: true, presentBadge: true, presentSound: true);
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: darwinPlatformChannelSpecifics,
+    );
 
     await _notificationsPlugin.zonedSchedule(
       id: id,
@@ -107,7 +130,7 @@ class NotificationService {
     if (releaseDateStr == null || releaseDateStr.isEmpty) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+    final notificationsEnabled = prefs.getBool('notifications_enabled') ?? false;
     if (!notificationsEnabled) return;
 
     final rawDate = DateTime.tryParse(releaseDateStr);
@@ -121,29 +144,29 @@ class NotificationService {
       releaseDate = rawDate;
     }
 
-    final notify1DayBefore = prefs.getBool('notify_1_day_before') ?? true;
+    final notify1HourBefore = prefs.getBool('notify_1_hour_before') ?? false;
 
-    // 1. Notification 1 Day Before at 9:00 AM
-    if (notify1DayBefore) {
-      final oneDayBeforeDate = releaseDate.subtract(const Duration(days: 1));
-      if (oneDayBeforeDate.isAfter(DateTime.now())) {
-        await scheduleReleaseNotification(
-          id: id * 10 + 1,
-          title: '$title (Tomorrow)',
-          body: body.replaceAll('airing soon', 'airing tomorrow'),
-          scheduledDate: oneDayBeforeDate,
-        );
-      }
-    }
-
-    // 2. Notification on Release Day at 9:00 AM (or exact time)
+    // 1. Core Notification on Release Day / Air Time
     if (releaseDate.isAfter(DateTime.now())) {
       await scheduleReleaseNotification(
-        id: id * 10 + 2,
+        id: id * 10 + 1,
         title: '$title (Today)',
         body: body.replaceAll('airing soon', 'airing today'),
         scheduledDate: releaseDate,
       );
+    }
+
+    // 2. Optional Notification 1 Hour Before Air Time
+    if (notify1HourBefore) {
+      final oneHourBeforeDate = releaseDate.subtract(const Duration(hours: 1));
+      if (oneHourBeforeDate.isAfter(DateTime.now())) {
+        await scheduleReleaseNotification(
+          id: id * 10 + 2,
+          title: '$title (In 1 Hour)',
+          body: body.replaceAll('airing soon', 'airing in 1 hour'),
+          scheduledDate: oneHourBeforeDate,
+        );
+      }
     }
   }
 }

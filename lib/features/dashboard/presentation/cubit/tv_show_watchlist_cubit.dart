@@ -103,11 +103,11 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
       final int targetEpisode = rawTargetEpisode > 0 ? rawTargetEpisode : 1;
       final String firestoreKey = '$targetSeason-$targetEpisode';
       widgetItems.add({
-        'showId': show['id'] as int,
-        'showName': show['name'] as String,
+        'showId': (show['id'] as num?)?.toInt() ?? 0,
+        'showName': (show['name'] as String?) ?? 'Unknown TV Show',
         'header': show['isPremiere'] == true ? 'PREMIERE' : (show['isNewEpisode'] == true ? 'NEW EPISODE' : 'WATCH NEXT'),
-        'episodeTitle': show['nextEpisodeCode'] as String,
-        'episodeDetails': show['nextEpisodeTitle'] as String,
+        'episodeTitle': (show['nextEpisodeCode'] as String?) ?? '',
+        'episodeDetails': (show['nextEpisodeTitle'] as String?) ?? '',
         'posterPath': show['posterPath'] as String?,
         'episodeKey': firestoreKey,
       });
@@ -123,8 +123,8 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
           ? show['nextEpisodeTitle'] as String
           : 'Pilot';
       widgetItems.add({
-        'showId': show['id'] as int,
-        'showName': show['name'] as String,
+        'showId': (show['id'] as num?)?.toInt() ?? 0,
+        'showName': (show['name'] as String?) ?? 'Unknown TV Show',
         'header': 'START WATCHING',
         'episodeTitle': episodeTitle,
         'episodeDetails': episodeDetails,
@@ -152,10 +152,10 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
         }
 
         widgetItems.add({
-          'showId': show['id'] as int,
-          'showName': show['name'] as String,
+          'showId': (show['id'] as num?)?.toInt() ?? 0,
+          'showName': (show['name'] as String?) ?? 'Unknown TV Show',
           'header': show['upcomingIsPremiere'] == true ? 'NEXT SEASON' : 'UPCOMING',
-          'episodeTitle': show['upcomingEpisodeCode'] as String,
+          'episodeTitle': (show['upcomingEpisodeCode'] as String?) ?? '',
           'episodeDetails': upcomingDetail,
           'posterPath': show['posterPath'] as String?,
           'episodeKey': '',

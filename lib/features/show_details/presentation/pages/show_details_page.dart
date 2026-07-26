@@ -41,6 +41,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
   final ValueNotifier<bool> _isCollapsed = ValueNotifier<bool>(false);
   final Map<int, bool> _expandedSeasons = {};
   final Map<int, ExpansibleController> _controllers = {};
+  final Set<String> _loadingEpisodeKeys = {};
 
   @override
   void initState() {
@@ -775,7 +776,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
       if (sNum == 0) continue; // Skip specials
       if (sNum > targetSeason) continue;
 
-      final epCount = season['episode_count'] as int? ?? 0;
+      final epCount = (season['episode_count'] as num?)?.toInt() ?? 0;
       final maxEp = (sNum == targetSeason) ? targetEp - 1 : epCount;
 
       for (int eNum = 1; eNum <= maxEp; eNum++) {
@@ -924,13 +925,15 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     Map<int, List<dynamic>> seasonsData,
     Map<String, dynamic> showDetails,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: List.generate(seasons.length, (index) {
+    return PageStorage(
+      bucket: PageStorageBucket(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: List.generate(seasons.length, (index) {
         final season = seasons[index];
-        final int seasonNumber = season['season_number'] as int? ?? 1;
+        final int seasonNumber = (season['season_number'] as num?)?.toInt() ?? 1;
         final String name = 'Season $seasonNumber';
-        final int epCount = season['episode_count'] as int? ?? 0;
+        final int epCount = (season['episode_count'] as num?)?.toInt() ?? 0;
 
         // Skip specials season entirely (season_number 0 is always Specials in TMDB)
         if (seasonNumber == 0) return const SizedBox.shrink();
@@ -966,7 +969,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 List<String> releasedEpisodesKeys = [];
                 if (epCount > 0) {
                   final totalSeasons =
-                      showDetails['number_of_seasons'] as int? ?? 0;
+                      (showDetails['number_of_seasons'] as num?)?.toInt() ?? 0;
                   if (seasonNumber < totalSeasons) {
                     for (int i = 1; i <= epCount; i++) {
                       releasedEpisodesKeys.add('$seasonNumber-$i');
@@ -976,7 +979,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     if (episodesForSeason != null &&
                         episodesForSeason.isNotEmpty) {
                       for (var ep in episodesForSeason) {
-                        final epNum = ep['episode_number'] as int? ?? 0;
+                        if (ep is! Map) continue;
+                        final epNum = (ep['episode_number'] as num?)?.toInt() ?? 0;
                         if (epNum > 0) {
                           final airDateStr = ep['air_date'] as String?;
                           if (airDateStr != null && airDateStr.isNotEmpty) {
@@ -1023,13 +1027,16 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     children: [
                       ExpansionTile(
                         controller: controller,
-                        key: PageStorageKey<String>(
+                        initiallyExpanded:
+                            _expandedSeasons[seasonNumber] ?? false,
+                        key: ValueKey<String>(
                           'season_${widget.mediaId}_$seasonNumber',
                         ),
                         tilePadding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
                           vertical: 14.0,
                         ),
+                        childrenPadding: EdgeInsets.zero,
                         shape: const Border(),
                         collapsedShape: const Border(),
                         iconColor: Colors
@@ -1135,16 +1142,23 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         onExpansionChanged: (expanded) {
                           setState(() {
                             _expandedSeasons[seasonNumber] = expanded;
+                            if (expanded) {
+                              for (var entry in _controllers.entries) {
+                                if (entry.key != seasonNumber) {
+                                  _expandedSeasons[entry.key] = false;
+                                }
+                              }
+                            }
                           });
                           if (expanded) {
                             // Collapse all other expanded tiles
                             for (var entry in _controllers.entries) {
-                              if (entry.key != seasonNumber &&
-                                  entry.value.isExpanded) {
-                                entry.value.collapse();
-                                setState(() {
-                                  _expandedSeasons[entry.key] = false;
-                                });
+                              if (entry.key != seasonNumber) {
+                                try {
+                                  if (entry.value.isExpanded) {
+                                    entry.value.collapse();
+                                  }
+                                } catch (_) {}
                               }
                             }
 
@@ -1208,8 +1222,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
           },
         );
       }),
-    );
-  }
+    ),
+  );
+}
 
   void _showEpisodeDetailsBottomSheet(
     Map<String, dynamic> ep,
@@ -1357,7 +1372,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
           child: SizedBox(
             width: 24,
             height: 24,
-            child: CircularProgressIndicator(
+            child: CircularProgressIndicator.adaptive(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
@@ -1377,12 +1392,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     }
 
     return ListView.builder(
+      key: ValueKey('episodes_list_$seasonNumber'),
+      padding: EdgeInsets.zero,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: episodes.length,
       itemBuilder: (context, index) {
         final ep = episodes[index];
-        final int epNum = ep['episode_number'] as int? ?? (index + 1);
+        final int epNum = (ep['episode_number'] as num?)?.toInt() ?? (index + 1);
         final String name = ep['name'] ?? 'Episode $epNum';
         String airDate = ep['air_date'] ?? 'No Air Date';
         bool isReleased = false;
@@ -1406,7 +1423,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         final String overview = ep['overview'] ?? '';
         final double voteAverage =
             (ep['vote_average'] as num?)?.toDouble() ?? 0.0;
-        final int voteCount = ep['vote_count'] as int? ?? 0;
+        final int voteCount = (ep['vote_count'] as num?)?.toInt() ?? 0;
         final String episodeKey = '$seasonNumber-$epNum';
 
         // Format season/episode as S01 | E02
@@ -1531,161 +1548,197 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             }
                           }
 
-                          return GestureDetector(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              if (authState is! Authenticated) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Please log in to track episodes',
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
+                              final isLoadingThisEp = _loadingEpisodeKeys.contains(episodeKey);
 
-                              if (!isTracked) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Add show to watchlist first',
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
-
-                              final uid = authState.user.uid;
-                              final cubit = context
-                                  .read<TvShowWatchlistCubit>();
-
-                              if (!isWatched) {
-                                final showState = context
-                                    .read<ShowDetailsCubit>()
-                                    .state;
-                                if (showState is ShowDetailsSuccess) {
-                                  final details = showState.details;
-                                  final unwatchedPrev =
-                                      _getUnwatchedPreviousEpisodes(
-                                        details,
-                                        seasonNumber,
-                                        epNum,
-                                        watchedEpisodes,
-                                      );
-                                  if (unwatchedPrev.isNotEmpty) {
-                                    showDialog(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        backgroundColor: AppColors.surface,
-                                        title: const Text(
-                                          'Mark Previous Episodes?',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
+                              return GestureDetector(
+                                onTap: () async {
+                                  HapticFeedback.lightImpact();
+                                  if (authState is! Authenticated) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
                                         content: Text(
-                                          'You have ${unwatchedPrev.length} unwatched previous episodes. Would you like to mark them as watched too?',
-                                          style: const TextStyle(
-                                            color: AppColors.textSecondary,
-                                          ),
+                                          'Please log in to track episodes',
                                         ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(ctx);
-                                              cubit.toggleEpisodeWatched(
-                                                uid: uid,
-                                                showId: widget.mediaId,
-                                                episodeKey: episodeKey,
-                                                isWatched: true,
-                                                showName: details['name']
-                                                    ?.toString(),
-                                                showPoster:
-                                                    details['poster_path']
-                                                        ?.toString(),
-                                                episodeTitle:
-                                                    ep['name']?.toString() ??
-                                                    'Episode ${ep['episode_number']}',
-                                              );
-                                            },
-                                            child: const Text(
-                                              'No, just this one',
-                                              style: TextStyle(
-                                                color: AppColors.textTertiary,
-                                              ),
-                                            ),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(ctx);
-                                              final allToMark = [
-                                                ...unwatchedPrev,
-                                                episodeKey,
-                                              ];
-                                              cubit.markMultipleEpisodesWatched(
-                                                uid: uid,
-                                                showId: widget.mediaId,
-                                                episodeKeys: allToMark,
-                                              );
-                                            },
-                                            child: const Text(
-                                              'Yes, mark all',
-                                              style: TextStyle(
-                                                color: AppColors.primary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
                                       ),
                                     );
                                     return;
                                   }
-                                }
-                              }
 
-                              final showState = context
-                                  .read<ShowDetailsCubit>()
-                                  .state;
-                              final details = showState is ShowDetailsSuccess
-                                  ? showState.details
-                                  : null;
+                                  if (!isTracked) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Add show to watchlist first',
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
 
-                              cubit.toggleEpisodeWatched(
-                                uid: uid,
-                                showId: widget.mediaId,
-                                episodeKey: episodeKey,
-                                isWatched: !isWatched,
-                                showName: details?['name']?.toString(),
-                                showPoster: details?['poster_path']?.toString(),
-                                episodeTitle:
-                                    ep['name']?.toString() ??
-                                    'Episode ${ep['episode_number']}',
-                              );
-                            },
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isWatched
-                                    ? Colors.green
-                                    : Colors.transparent,
-                                border: Border.all(
-                                  color: isWatched
-                                      ? Colors.green
-                                      : Colors.white38,
-                                  width: 2,
+                                  final uid = authState.user.uid;
+                                  final cubit = context
+                                      .read<TvShowWatchlistCubit>();
+
+                                  if (!isWatched) {
+                                    final showState = context
+                                        .read<ShowDetailsCubit>()
+                                        .state;
+                                    if (showState is ShowDetailsSuccess) {
+                                      final details = showState.details;
+                                      final unwatchedPrev =
+                                          _getUnwatchedPreviousEpisodes(
+                                            details,
+                                            seasonNumber,
+                                            epNum,
+                                            watchedEpisodes,
+                                          );
+                                      if (unwatchedPrev.isNotEmpty) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            backgroundColor: AppColors.surface,
+                                            title: const Text(
+                                              'Mark Previous Episodes?',
+                                              style: TextStyle(color: Colors.white),
+                                            ),
+                                            content: Text(
+                                              'You have ${unwatchedPrev.length} unwatched previous episodes. Would you like to mark them as watched too?',
+                                              style: const TextStyle(
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(ctx);
+                                                  setState(() {
+                                                    _loadingEpisodeKeys.add(episodeKey);
+                                                  });
+                                                  cubit.toggleEpisodeWatched(
+                                                    uid: uid,
+                                                    showId: widget.mediaId,
+                                                    episodeKey: episodeKey,
+                                                    isWatched: true,
+                                                    showName: details['name']
+                                                        ?.toString(),
+                                                    showPoster:
+                                                        details['poster_path']
+                                                            ?.toString(),
+                                                    episodeTitle:
+                                                        ep['name']?.toString() ??
+                                                        'Episode ${ep['episode_number']}',
+                                                  );
+                                                  Future.delayed(const Duration(milliseconds: 1500), () {
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _loadingEpisodeKeys.remove(episodeKey);
+                                                      });
+                                                    }
+                                                  });
+                                                },
+                                                child: const Text(
+                                                  'No, just this one',
+                                                  style: TextStyle(
+                                                    color: AppColors.textTertiary,
+                                                  ),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(ctx);
+                                                  final allToMark = [
+                                                    ...unwatchedPrev,
+                                                    episodeKey,
+                                                  ];
+                                                  setState(() {
+                                                    _loadingEpisodeKeys.addAll(allToMark);
+                                                  });
+                                                  cubit.markMultipleEpisodesWatched(
+                                                    uid: uid,
+                                                    showId: widget.mediaId,
+                                                    episodeKeys: allToMark,
+                                                  );
+                                                  Future.delayed(const Duration(milliseconds: 1500), () {
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _loadingEpisodeKeys.removeAll(allToMark);
+                                                      });
+                                                    }
+                                                  });
+                                                },
+                                                child: const Text(
+                                                  'Yes, mark all',
+                                                  style: TextStyle(
+                                                    color: AppColors.primary,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                    }
+                                  }
+
+                                  final showState = context
+                                      .read<ShowDetailsCubit>()
+                                      .state;
+                                  final details = showState is ShowDetailsSuccess
+                                      ? showState.details
+                                      : null;
+
+                                  setState(() {
+                                    _loadingEpisodeKeys.add(episodeKey);
+                                  });
+
+                                  cubit.toggleEpisodeWatched(
+                                    uid: uid,
+                                    showId: widget.mediaId,
+                                    episodeKey: episodeKey,
+                                    isWatched: !isWatched,
+                                    showName: details?['name']?.toString(),
+                                    showPoster: details?['poster_path']?.toString(),
+                                    episodeTitle:
+                                        ep['name']?.toString() ??
+                                        'Episode ${ep['episode_number']}',
+                                  );
+
+                                  Future.delayed(const Duration(milliseconds: 1500), () {
+                                    if (mounted) {
+                                      setState(() {
+                                        _loadingEpisodeKeys.remove(episodeKey);
+                                      });
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isWatched
+                                        ? Colors.green
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: isWatched
+                                          ? Colors.green
+                                          : Colors.white38,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: isLoadingThisEp
+                                      ? const CircularProgressIndicator.adaptive()
+                                      : Icon(
+                                          Icons.check,
+                                          size: 20,
+                                          color: isWatched
+                                              ? Colors.white
+                                              : Colors.white38,
+                                        ),
                                 ),
-                              ),
-                              child: Icon(
-                                Icons.check,
-                                size: 20,
-                                color: isWatched
-                                    ? Colors.white
-                                    : Colors.white38,
-                              ),
-                            ),
-                          );
+                              );
                         },
                       );
                     },

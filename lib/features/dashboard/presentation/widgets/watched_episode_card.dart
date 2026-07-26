@@ -192,9 +192,9 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                     child: _isReverting
                         ? const Padding(
                             padding: EdgeInsets.all(8.0),
-                            child: CircularProgressIndicator(
+                            child: CircularProgressIndicator.adaptive(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Icon(
