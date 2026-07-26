@@ -214,16 +214,45 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
 
   @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  String? _lastSyncedUid;
+
+  Future<void> _syncWidget(String uid) async {
+    if (_lastSyncedUid == uid) return;
+    _lastSyncedUid = uid;
+    try {
+      await HomeWidget.saveWidgetData<String>('current_uid', uid);
+      await WidgetService.syncWatchlistToWidget(uid);
+    } catch (e) {
+      debugPrint('AuthGate: Failed to sync widget data: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, AuthState>(
+    return BlocConsumer<AuthCubit, AuthState>(
+      listenWhen: (previous, current) {
+        if (current is Authenticated) {
+          final prevUid = previous is Authenticated ? previous.user.uid : null;
+          return prevUid != current.user.uid;
+        }
+        return false;
+      },
+      listener: (context, state) {
+        if (state is Authenticated) {
+          _syncWidget(state.user.uid);
+        }
+      },
       builder: (context, state) {
         if (state is Authenticated) {
-          HomeWidget.saveWidgetData<String>('current_uid', state.user.uid);
-          WidgetService.syncWatchlistToWidget(state.user.uid);
+          _syncWidget(state.user.uid);
           return const ShellNavigationPage();
         } else if (state is Unauthenticated || state is AuthLoginLoading) {
           return const LoginPage();
