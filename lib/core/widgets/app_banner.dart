@@ -70,7 +70,7 @@ class AppBanner {
     });
 
     // Debounce reset flag
-    Timer(const Duration(seconds: 12), () {
+    Timer(const Duration(seconds: 30), () {
       _isBannerShowing = false;
     });
   }

@@ -337,6 +337,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             bool isAdded = false;
             bool isWatched = false;
             bool isFavorite = false;
+            String? watchedAtStr;
             final Set<int> watchlistedIds = {};
             if (watchlistState is MovieWatchlistSuccess && uid != null) {
               for (final m in watchlistState.movies) {
@@ -365,6 +366,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 isAdded = true;
                 isWatched = matched.first['isWatched'] as bool? ?? false;
                 isFavorite = matched.first['isFavorite'] as bool? ?? false;
+                watchedAtStr = matched.first['watchedAt'] as String? ?? matched.first['addedAt'] as String?;
               }
             }
 
@@ -552,141 +554,168 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                           children: [
                             const SizedBox(height: AppSpacing.sm),
                             // Date & Runtime Row
-                            Row(
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
-                                  Icons.calendar_today,
-                                  color: Colors.white54,
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  _formatDate(releaseDate),
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                if (runtime.isNotEmpty) ...[
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8,
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.calendar_today,
+                                      color: Colors.white54,
+                                      size: 14,
                                     ),
-                                    child: Text(
-                                      '•',
-                                      style: TextStyle(
-                                        color: Colors.white54,
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _formatDate(releaseDate),
+                                      style: const TextStyle(
+                                        color: Colors.white70,
                                         fontSize: 14,
                                       ),
                                     ),
-                                  ),
-                                  Text(
-                                    runtime,
-                                    style: const TextStyle(
-                                      color: Colors.white54,
-                                      fontSize: 14,
-                                    ),
+                                    if (runtime.isNotEmpty) ...[
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        child: Text(
+                                          '•',
+                                          style: TextStyle(
+                                            color: Colors.white54,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        runtime,
+                                        style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                    const Spacer(),
+                                    if (uid != null) ...[
+                                      Skeleton.ignore(
+                                        child: ActionCircleButton(
+                                          isActive: isFavorite,
+                                          onTap: () {
+                                            HapticFeedback.mediumImpact();
+                                            if (isAdded) {
+                                              context
+                                                  .read<MovieWatchlistCubit>()
+                                                  .toggleFavorite(
+                                                    uid: uid,
+                                                    movieId: widget.movieId,
+                                                    isFavorite: !isFavorite,
+                                                  );
+                                            } else {
+                                              context
+                                                  .read<MovieWatchlistCubit>()
+                                                  .addMovie(
+                                                    uid: uid,
+                                                    movieId: widget.movieId,
+                                                    title: title,
+                                                    posterPath:
+                                                        movie['poster_path']
+                                                            as String?,
+                                                    backdropPath:
+                                                        movie['backdrop_path']
+                                                            as String?,
+                                                    releaseDate: releaseDate,
+                                                    runtime: runtimeMinutes,
+                                                    voteAverage: voteAverage,
+                                                    genres: genres,
+                                                    isFavorite: true,
+                                                  );
+                                            }
+                                          },
+                                          activeIcon: Icons.favorite,
+                                          inactiveIcon: Icons.favorite_border,
+                                          activeIconColor: Colors.red,
+                                          inactiveIconColor: Colors.white,
+                                          activeBgColor: Colors.grey.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          inactiveBgColor: Colors.grey.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          size: 28.0,
+                                          iconSize: 16.0,
+                                        ),
+                                      ),
+                                      if (released) const SizedBox(width: 12),
+                                    ],
+                                    if (released && uid != null)
+                                      Skeleton.ignore(
+                                        child: ActionCircleButton(
+                                          isActive: isWatched,
+                                          onTap: () {
+                                            HapticFeedback.mediumImpact();
+                                            if (isAdded) {
+                                              context
+                                                  .read<MovieWatchlistCubit>()
+                                                  .toggleWatched(
+                                                    uid: uid,
+                                                    movieId: widget.movieId,
+                                                    isWatched: !isWatched,
+                                                  );
+                                            } else {
+                                              context
+                                                  .read<MovieWatchlistCubit>()
+                                                  .addMovie(
+                                                    uid: uid,
+                                                    movieId: widget.movieId,
+                                                    title: title,
+                                                    posterPath:
+                                                        movie['poster_path']
+                                                            as String?,
+                                                    backdropPath:
+                                                        movie['backdrop_path']
+                                                            as String?,
+                                                    releaseDate: releaseDate,
+                                                    runtime: runtimeMinutes,
+                                                    voteAverage: voteAverage,
+                                                    genres: genres,
+                                                    isWatched: true,
+                                                  );
+                                            }
+                                          },
+                                          activeIcon: Icons.check,
+                                          inactiveIcon: Icons.check,
+                                          activeIconColor: Colors.white,
+                                          inactiveIconColor: Colors.white,
+                                          activeBgColor: Colors.green.withValues(
+                                            alpha: 0.8,
+                                          ),
+                                          inactiveBgColor: Colors.grey.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          size: 28.0,
+                                          iconSize: 18.0,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                if (isWatched) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.remove_red_eye_outlined,
+                                        color: Colors.greenAccent,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        watchedAtStr != null ? _formatDate(watchedAtStr) : 'Watched',
+                                        style: const TextStyle(
+                                          color: Colors.greenAccent,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
-                                const Spacer(),
-                                if (uid != null) ...[
-                                  Skeleton.ignore(
-                                    child: ActionCircleButton(
-                                      isActive: isFavorite,
-                                      onTap: () {
-                                        HapticFeedback.mediumImpact();
-                                        if (isAdded) {
-                                          context
-                                              .read<MovieWatchlistCubit>()
-                                              .toggleFavorite(
-                                                uid: uid,
-                                                movieId: widget.movieId,
-                                                isFavorite: !isFavorite,
-                                              );
-                                        } else {
-                                          context
-                                              .read<MovieWatchlistCubit>()
-                                              .addMovie(
-                                                uid: uid,
-                                                movieId: widget.movieId,
-                                                title: title,
-                                                posterPath:
-                                                    movie['poster_path']
-                                                        as String?,
-                                                backdropPath:
-                                                    movie['backdrop_path']
-                                                        as String?,
-                                                releaseDate: releaseDate,
-                                                runtime: runtimeMinutes,
-                                                voteAverage: voteAverage,
-                                                genres: genres,
-                                                isFavorite: true,
-                                              );
-                                        }
-                                      },
-                                      activeIcon: Icons.favorite,
-                                      inactiveIcon: Icons.favorite_border,
-                                      activeIconColor: Colors.red,
-                                      inactiveIconColor: Colors.white,
-                                      activeBgColor: Colors.grey.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                      inactiveBgColor: Colors.grey.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                      size: 28.0,
-                                      iconSize: 16.0,
-                                    ),
-                                  ),
-                                  if (released) const SizedBox(width: 12),
-                                ],
-                                if (released && uid != null)
-                                  Skeleton.ignore(
-                                    child: ActionCircleButton(
-                                      isActive: isWatched,
-                                      onTap: () {
-                                        HapticFeedback.mediumImpact();
-                                        if (isAdded) {
-                                          context
-                                              .read<MovieWatchlistCubit>()
-                                              .toggleWatched(
-                                                uid: uid,
-                                                movieId: widget.movieId,
-                                                isWatched: !isWatched,
-                                              );
-                                        } else {
-                                          context
-                                              .read<MovieWatchlistCubit>()
-                                              .addMovie(
-                                                uid: uid,
-                                                movieId: widget.movieId,
-                                                title: title,
-                                                posterPath:
-                                                    movie['poster_path']
-                                                        as String?,
-                                                backdropPath:
-                                                    movie['backdrop_path']
-                                                        as String?,
-                                                releaseDate: releaseDate,
-                                                runtime: runtimeMinutes,
-                                                voteAverage: voteAverage,
-                                                genres: genres,
-                                                isWatched: true,
-                                              );
-                                        }
-                                      },
-                                      activeIcon: Icons.check,
-                                      inactiveIcon: Icons.check,
-                                      activeIconColor: Colors.white,
-                                      inactiveIconColor: Colors.grey,
-                                      activeBgColor: Colors.green,
-                                      inactiveBgColor: Colors.grey.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                      size: 28.0,
-                                      iconSize: 16.0,
-                                    ),
-                                  ),
                               ],
                             ),
                             const SizedBox(height: AppSpacing.md),

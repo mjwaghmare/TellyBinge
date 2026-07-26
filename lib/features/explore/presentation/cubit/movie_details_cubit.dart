@@ -23,100 +23,115 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
         final movieDetails = primaryResults[0];
         final movieCredits = primaryResults[1];
 
-        final belongsToCollection = movieDetails['belongs_to_collection'];
-        final List<dynamic> collectionParts = [];
-        String collectionSectionTitle = 'Franchise';
-
-        if (belongsToCollection != null && belongsToCollection['id'] != null) {
-          final collectionId = belongsToCollection['id'] as int;
-          try {
-            final collectionDetails = await tmdbClient.getCollectionDetails(
-              collectionId,
-            );
-            final parts = collectionDetails['parts'] as List<dynamic>? ?? [];
-            collectionParts.addAll(
-              parts.where((item) => item['id'] != movieId),
-            );
-            final collectionName =
-                belongsToCollection['name'] as String? ?? 'Franchise';
-            collectionSectionTitle = 'More from $collectionName';
-          } catch (e) {
-            // Silently ignore collection load errors to not block the main page
-          }
+        // EMIT EARLY: So the UI loads instantly with primary details!
+        if (!isClosed) {
+          emit(MovieDetailsSuccess(
+            movieDetails: movieDetails,
+            movieCredits: movieCredits,
+            similarMovies: const [],
+            collectionParts: const [],
+            collectionSectionTitle: 'Franchise',
+          ));
         }
 
-        // Fetch similar movies intelligently based on language
-        List<dynamic> similarMovies = [];
-        try {
-          final originalLanguage =
-              movieDetails['original_language'] as String? ?? 'en';
+        // Now fire off the secondary requests in parallel without blocking the UI
+        final belongsToCollection = movieDetails['belongs_to_collection'];
+        
+        Future<Map<String, dynamic>> fetchCollection() async {
+          if (belongsToCollection != null && belongsToCollection['id'] != null) {
+            final collectionId = belongsToCollection['id'] as int;
+            try {
+              final collectionDetails = await tmdbClient.getCollectionDetails(collectionId);
+              final parts = collectionDetails['parts'] as List<dynamic>? ?? [];
+              final filteredParts = parts.where((item) => item['id'] != movieId).toList();
+              
+              filteredParts.sort((a, b) {
+                final aDateStr = a['release_date'] as String? ?? '';
+                final bDateStr = b['release_date'] as String? ?? '';
+                if (aDateStr.isEmpty) return 1;
+                if (bDateStr.isEmpty) return -1;
+                try {
+                  return DateTime.parse(bDateStr).compareTo(DateTime.parse(aDateStr));
+                } catch (_) {
+                  return 0;
+                }
+              });
 
-          if (originalLanguage != 'en') {
-            final genres = movieDetails['genres'] as List<dynamic>? ?? [];
-            final genreIds = genres.map((g) => g['id'] as int).toList();
+              final collectionName = belongsToCollection['name'] as String? ?? 'Franchise';
+              return {
+                'parts': filteredParts,
+                'title': 'More from $collectionName',
+              };
+            } catch (e) {
+              return {'parts': [], 'title': 'Franchise'};
+            }
+          }
+          return {'parts': [], 'title': 'Franchise'};
+        }
 
-            final rawSimilar = await tmdbClient.discoverMoviesWithFilters(
-              language: originalLanguage,
-              genreIds: genreIds.isNotEmpty ? genreIds : null,
-              sortBy: 'popularity.desc',
-            );
+        Future<List<dynamic>> fetchSimilar() async {
+          List<dynamic> similarMovies = [];
+          try {
+            final originalLanguage = movieDetails['original_language'] as String? ?? 'en';
 
-            similarMovies = List<dynamic>.from(rawSimilar);
+            if (originalLanguage != 'en') {
+              final genres = movieDetails['genres'] as List<dynamic>? ?? [];
+              final genreIds = genres.map((g) => g['id'] as int).toList();
 
-            // Remove the current movie itself if it appears in Discover
-            similarMovies.removeWhere((m) => m['id'] == movieId);
+              final rawSimilar = await tmdbClient.discoverMoviesWithFilters(
+                language: originalLanguage,
+                genreIds: genreIds.isNotEmpty ? genreIds : null,
+                sortBy: 'popularity.desc',
+              );
 
-            // Fallback to standard similar if discover returns too few
-            if (similarMovies.length < 5) {
-              final fallback = await tmdbClient.getSimilarMovies(movieId);
-              for (var f in fallback) {
-                if (!similarMovies.any((m) => m['id'] == f['id']) &&
-                    f['id'] != movieId) {
-                  similarMovies.add(f);
+              similarMovies = List<dynamic>.from(rawSimilar);
+              similarMovies.removeWhere((m) => m['id'] == movieId);
+
+              if (similarMovies.length < 5) {
+                final fallback = await tmdbClient.getSimilarMovies(movieId);
+                for (var f in fallback) {
+                  if (!similarMovies.any((m) => m['id'] == f['id']) && f['id'] != movieId) {
+                    similarMovies.add(f);
+                  }
                 }
               }
+            } else {
+              final rawSimilar = await tmdbClient.getSimilarMovies(movieId);
+              similarMovies = List<dynamic>.from(rawSimilar);
             }
-          } else {
-            // Standard collaborative filtering for English
-            final rawSimilar = await tmdbClient.getSimilarMovies(movieId);
-            similarMovies = List<dynamic>.from(rawSimilar);
+
+            similarMovies.sort((a, b) {
+              final aDateStr = a['release_date'] as String? ?? '';
+              final bDateStr = b['release_date'] as String? ?? '';
+              if (aDateStr.isEmpty) return 1;
+              if (bDateStr.isEmpty) return -1;
+              try {
+                return DateTime.parse(bDateStr).compareTo(DateTime.parse(aDateStr));
+              } catch (_) {
+                return 0;
+              }
+            });
+
+            return similarMovies;
+          } catch (e) {
+            return [];
           }
-        } catch (e) {
-          // Silently ignore similar movies errors
         }
 
-        // Sort collection parts by release date descending (latest first)
-        collectionParts.sort((a, b) {
-          final aDateStr = a['release_date'] as String? ?? '';
-          final bDateStr = b['release_date'] as String? ?? '';
-          if (aDateStr.isEmpty) return 1;
-          if (bDateStr.isEmpty) return -1;
-          try {
-            final aDate = DateTime.parse(aDateStr);
-            final bDate = DateTime.parse(bDateStr);
-            return bDate.compareTo(aDate);
-          } catch (_) {
-            return 0;
-          }
-        });
+        // Wait for secondary requests to finish
+        final secondaryResults = await Future.wait([
+          fetchCollection(),
+          fetchSimilar(),
+        ]);
 
-        // Sort similar movies by release date descending (latest first)
-        similarMovies.sort((a, b) {
-          final aDateStr = a['release_date'] as String? ?? '';
-          final bDateStr = b['release_date'] as String? ?? '';
-          if (aDateStr.isEmpty) return 1;
-          if (bDateStr.isEmpty) return -1;
-          try {
-            final aDate = DateTime.parse(aDateStr);
-            final bDate = DateTime.parse(bDateStr);
-            return bDate.compareTo(aDate);
-          } catch (_) {
-            return 0;
-          }
-        });
+        final collectionResult = secondaryResults[0] as Map<String, dynamic>;
+        final collectionParts = collectionResult['parts'] as List<dynamic>;
+        final collectionSectionTitle = collectionResult['title'] as String;
+        final similarMovies = secondaryResults[1] as List<dynamic>;
 
         if (isClosed) return;
 
+        // Emit again with the full data
         emit(MovieDetailsSuccess(
           movieDetails: movieDetails,
           movieCredits: movieCredits,

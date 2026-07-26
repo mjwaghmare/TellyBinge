@@ -26,8 +26,8 @@ class TmdbClient {
     }
 
     _dio.options.baseUrl = _baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 15);
-    _dio.options.receiveTimeout = const Duration(seconds: 20);
+    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.receiveTimeout = const Duration(seconds: 30);
 
     // Add interceptor to automatically append api_key and handle logging
     _dio.interceptors.add(
@@ -49,11 +49,7 @@ class TmdbClient {
             debugPrint('TmdbClient Error: ${e.message}');
           }
 
-          if (e.type == DioExceptionType.connectionError ||
-              e.type == DioExceptionType.connectionTimeout ||
-              e.error.toString().contains('SocketException')) {
-            AppBanner.showOfflineBanner();
-          }
+          // Offline banner removed by user request
 
           return handler.next(e);
         },
@@ -70,7 +66,7 @@ class TmdbClient {
     int maxRetries = 3,
   }) async {
     final slowNetworkTimer = Timer(
-      const Duration(seconds: 5),
+      const Duration(seconds: 20),
       _showSlowNetworkWarning,
     );
 
@@ -387,7 +383,10 @@ class TmdbClient {
       return _filterContent(cachedData['results'] as List<dynamic>);
     }
     try {
-      final response = await _getWithRetry('/tv/airing_today', queryParameters: {'page': page});
+      final response = await _getWithRetry(
+        '/tv/airing_today',
+        queryParameters: {'page': page},
+      );
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       return _filterContent(data['results'] as List<dynamic>? ?? []);
@@ -412,7 +411,10 @@ class TmdbClient {
       return _filterContent(cachedData['results'] as List<dynamic>);
     }
     try {
-      final response = await _getWithRetry('/movie/now_playing', queryParameters: {'page': page});
+      final response = await _getWithRetry(
+        '/movie/now_playing',
+        queryParameters: {'page': page},
+      );
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       return _filterContent(data['results'] as List<dynamic>? ?? []);
@@ -437,7 +439,10 @@ class TmdbClient {
       return _filterContent(cachedData['results'] as List<dynamic>);
     }
     try {
-      final response = await _getWithRetry('/tv/on_the_air', queryParameters: {'page': page});
+      final response = await _getWithRetry(
+        '/tv/on_the_air',
+        queryParameters: {'page': page},
+      );
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       return _filterContent(data['results'] as List<dynamic>? ?? []);
@@ -462,7 +467,10 @@ class TmdbClient {
       return _filterContent(cachedData['results'] as List<dynamic>);
     }
     try {
-      final response = await _getWithRetry('/movie/upcoming', queryParameters: {'page': page});
+      final response = await _getWithRetry(
+        '/movie/upcoming',
+        queryParameters: {'page': page},
+      );
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       return _filterContent(data['results'] as List<dynamic>? ?? []);
@@ -529,8 +537,13 @@ class TmdbClient {
     }
 
     try {
-      final bool hasSpecificFilters = year != null || originCountry != null || (watchProviderId != null && watchProviderId.isNotEmpty);
-      final int voteThreshold = hasSpecificFilters ? 0 : _getVoteCountThreshold(sortBy, language);
+      final bool hasSpecificFilters =
+          year != null ||
+          originCountry != null ||
+          (watchProviderId != null && watchProviderId.isNotEmpty);
+      final int voteThreshold = hasSpecificFilters
+          ? 0
+          : _getVoteCountThreshold(sortBy, language);
 
       // Build query params
       final queryParams = <String, dynamic>{
@@ -564,7 +577,8 @@ class TmdbClient {
       if (watchProviderId != null && watchProviderId.isNotEmpty) {
         queryParams['with_watch_providers'] = watchProviderId;
         queryParams['watch_region'] = 'US';
-        queryParams['with_watch_monetization_types'] = 'flatrate|free|ads|rent|buy';
+        queryParams['with_watch_monetization_types'] =
+            'flatrate|free|ads|rent|buy';
       }
 
       if (genreIds != null && genreIds.isNotEmpty) {
@@ -650,8 +664,13 @@ class TmdbClient {
     }
 
     try {
-      final bool hasSpecificFilters = year != null || originCountry != null || (watchProviderId != null && watchProviderId.isNotEmpty);
-      final int voteThreshold = hasSpecificFilters ? 0 : _getVoteCountThreshold(sortBy, language);
+      final bool hasSpecificFilters =
+          year != null ||
+          originCountry != null ||
+          (watchProviderId != null && watchProviderId.isNotEmpty);
+      final int voteThreshold = hasSpecificFilters
+          ? 0
+          : _getVoteCountThreshold(sortBy, language);
 
       // Build query params
       final queryParams = <String, dynamic>{
@@ -685,7 +704,8 @@ class TmdbClient {
       if (watchProviderId != null && watchProviderId.isNotEmpty) {
         queryParams['with_watch_providers'] = watchProviderId;
         queryParams['watch_region'] = 'US';
-        queryParams['with_watch_monetization_types'] = 'flatrate|free|ads|rent|buy';
+        queryParams['with_watch_monetization_types'] =
+            'flatrate|free|ads|rent|buy';
       }
 
       if (genreIds != null && genreIds.isNotEmpty) {

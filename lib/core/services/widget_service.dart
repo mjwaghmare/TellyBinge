@@ -19,7 +19,7 @@ class WidgetService {
 
   // Background-isolate operations get a hard budget. Tune based on observed
   // iOS background execution allowance for widget intents.
-  static const Duration _backgroundOpTimeout = Duration(seconds: 8);
+  static const Duration _backgroundOpTimeout = Duration(seconds: 15);
 
   static Future<void> initialize() async {
     try {

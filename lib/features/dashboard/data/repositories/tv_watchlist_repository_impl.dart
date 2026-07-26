@@ -41,6 +41,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
       'firstAirDate': firstAirDate ?? '',
       'voteAverage': voteAverage,
       'watchedEpisodes': [],
+      'episodeWatchedDates': {},
       'addedAt': DateTime.now().toIso8601String(),
       'category': 'HAVENT_STARTED',
       'nextEpisodeCode': '',
@@ -125,8 +126,10 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
         .doc('${showId}_$episodeKey');
 
     if (isWatched) {
+      final now = DateTime.now().toIso8601String();
       batch.update(docRef, {
         'watchedEpisodes': FieldValue.arrayUnion([episodeKey]),
+        'episodeWatchedDates.$episodeKey': now,
       });
       batch.set(historyRef, {
         'showId': showId,
@@ -134,11 +137,12 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
         'showPoster': showPoster ?? '',
         'episodeKey': episodeKey,
         'episodeTitle': episodeTitle ?? 'Unknown Episode',
-        'watchedAt': DateTime.now().toIso8601String(),
+        'watchedAt': now,
       });
     } else {
       batch.update(docRef, {
         'watchedEpisodes': FieldValue.arrayRemove([episodeKey]),
+        'episodeWatchedDates.$episodeKey': FieldValue.delete(),
       });
       batch.delete(historyRef);
     }
@@ -152,14 +156,20 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     required int showId,
     required List<String> episodeKeys,
   }) async {
+    final Map<String, dynamic> updates = {
+      'watchedEpisodes': FieldValue.arrayUnion(episodeKeys),
+    };
+    final now = DateTime.now().toIso8601String();
+    for (var key in episodeKeys) {
+      updates['episodeWatchedDates.$key'] = now;
+    }
+    
     await _firestore
         .collection('users')
         .doc(uid)
         .collection('shows')
         .doc(showId.toString())
-        .update({
-      'watchedEpisodes': FieldValue.arrayUnion(episodeKeys),
-    });
+        .update(updates);
   }
 
   @override
@@ -168,14 +178,19 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     required int showId,
     required List<String> episodeKeys,
   }) async {
+    final Map<String, dynamic> updates = {
+      'watchedEpisodes': FieldValue.arrayRemove(episodeKeys),
+    };
+    for (var key in episodeKeys) {
+      updates['episodeWatchedDates.$key'] = FieldValue.delete();
+    }
+    
     await _firestore
         .collection('users')
         .doc(uid)
         .collection('shows')
         .doc(showId.toString())
-        .update({
-      'watchedEpisodes': FieldValue.arrayRemove(episodeKeys),
-    });
+        .update(updates);
   }
 
   @override

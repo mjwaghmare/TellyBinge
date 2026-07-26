@@ -242,6 +242,23 @@ class MoviesPageState extends State<MoviesPage> {
     }
 
     final watchedHistory = items.where((i) => i['isWatched'] == true).toList();
+    
+    // Sort watchedHistory by watchedAt ascending (oldest first, newest at the bottom)
+    watchedHistory.sort((a, b) {
+      final aDateStr = a['watchedAt'] as String?;
+      final bDateStr = b['watchedAt'] as String?;
+      if (aDateStr == null && bDateStr == null) return 0;
+      if (aDateStr == null) return -1;
+      if (bDateStr == null) return 1;
+      try {
+        final aDate = DateTime.parse(aDateStr);
+        final bDate = DateTime.parse(bDateStr);
+        return aDate.compareTo(bDate);
+      } catch (_) {
+        return 0;
+      }
+    });
+
     final watchNext = items.where((i) => i['isWatched'] != true).toList();
 
     // Generate dummy skeleton data if loading

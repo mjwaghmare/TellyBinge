@@ -62,7 +62,7 @@ class WatchHistoryCubit extends Cubit<WatchHistoryState> {
           .doc(_currentUid)
           .collection('history')
           .where('watchedAt', isGreaterThan: sevenDaysAgo)
-          .orderBy('watchedAt', descending: true)
+          .orderBy('watchedAt', descending: false)
           .snapshots()
           .listen(
         (snapshot) {

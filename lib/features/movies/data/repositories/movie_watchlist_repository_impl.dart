@@ -49,6 +49,7 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
       'isWatched': isWatched,
       'isFavorite': isFavorite,
       'addedAt': DateTime.now().toIso8601String(),
+      if (isWatched) 'watchedAt': DateTime.now().toIso8601String(),
     });
   }
 
@@ -65,6 +66,7 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
         .doc(movieId.toString())
         .update({
       'isWatched': isWatched,
+      if (isWatched) 'watchedAt': DateTime.now().toIso8601String(),
     });
   }
 

@@ -35,9 +35,11 @@ class HorizontalItem {
   final double voteAverage;
   final String releaseDate;
   final bool isFavorite;
+  final bool isWatched;
   final bool isMovie;
-  final bool isStopped; // ADD: true when show has status == 'STOPPED'
+  final bool isStopped; 
   final String? addedAt;
+  final String? watchedAt;
 
   HorizontalItem({
     required this.movieId,
@@ -46,9 +48,11 @@ class HorizontalItem {
     required this.voteAverage,
     required this.releaseDate,
     this.isFavorite = false,
+    this.isWatched = false,
     this.isMovie = true,
     this.isStopped = false,
     this.addedAt,
+    this.watchedAt,
   });
 }
 
@@ -260,7 +264,10 @@ class _ProfilePageState extends State<ProfilePage>
                             (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
                         releaseDate: m['releaseDate'] as String? ?? '',
                         isFavorite: m['isFavorite'] as bool? ?? false,
+                        isWatched: m['isWatched'] as bool? ?? false,
                         isMovie: true,
+                        addedAt: m['addedAt'] as String?,
+                        watchedAt: m['watchedAt'] as String?,
                       ),
                     )
                     .toList();
@@ -287,6 +294,7 @@ class _ProfilePageState extends State<ProfilePage>
                             (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
                         releaseDate: m['releaseDate'] as String? ?? '',
                         isFavorite: m['isFavorite'] as bool? ?? false,
+                        isWatched: m['isWatched'] as bool? ?? false,
                         isMovie: true,
                         addedAt: m['addedAt'] as String?,
                       ),
@@ -318,8 +326,8 @@ class _ProfilePageState extends State<ProfilePage>
                             (s['voteAverage'] as num?)?.toDouble() ?? 0.0,
                         releaseDate: s['firstAirDate'] as String? ?? '',
                         isFavorite: s['isFavorite'] as bool? ?? false,
+                        isWatched: (s['watchedEpisodes'] as List?)?.isNotEmpty ?? false,
                         isMovie: false,
-                        // MODIFY: map STOPPED status from Firestore
                         isStopped: (s['status'] as String?) == 'STOPPED',
                         addedAt: s['addedAt'] as String?,
                       ),
@@ -370,9 +378,11 @@ class _ProfilePageState extends State<ProfilePage>
                             (s['voteAverage'] as num?)?.toDouble() ?? 0.0,
                         releaseDate: s['firstAirDate'] as String? ?? '',
                         isFavorite: s['isFavorite'] as bool? ?? false,
+                        isWatched: (s['watchedEpisodes'] as List?)?.isNotEmpty ?? false,
                         isMovie: false,
                         isStopped: (s['status'] as String?) == 'STOPPED',
                         addedAt: s['addedAt'] as String?,
+                        watchedAt: s['watchedAt'] as String?,
                       ),
                     )
                     .toList();
@@ -396,11 +406,19 @@ class _ProfilePageState extends State<ProfilePage>
                   (a, b) =>
                       a.title.toLowerCase().compareTo(b.title.toLowerCase()),
                 );
-              } else if (_movieSortOption == 'Last Added' ||
-                  _movieSortOption == 'Last Watched') {
+              } else if (_movieSortOption == 'Last Added') {
                 displayedMovies.sort((a, b) {
                   final dateA = _parseDate(a.addedAt ?? '');
                   final dateB = _parseDate(b.addedAt ?? '');
+                  if (dateA == null && dateB == null) return 0;
+                  if (dateA == null) return 1;
+                  if (dateB == null) return -1;
+                  return dateB.compareTo(dateA);
+                });
+              } else if (_movieSortOption == 'Last Watched') {
+                displayedMovies.sort((a, b) {
+                  final dateA = _parseDate(a.watchedAt ?? a.addedAt ?? '');
+                  final dateB = _parseDate(b.watchedAt ?? b.addedAt ?? '');
                   if (dateA == null && dateB == null) return 0;
                   if (dateA == null) return 1;
                   if (dateB == null) return -1;
@@ -413,12 +431,19 @@ class _ProfilePageState extends State<ProfilePage>
                   (a, b) =>
                       a.title.toLowerCase().compareTo(b.title.toLowerCase()),
                 );
-              } else if (_showSortOption == 'Last added' ||
-                  _showSortOption == 'Last watched') {
-                // Fallback Last watched to Last added
+              } else if (_showSortOption == 'Last added') {
                 displayedShows.sort((a, b) {
                   final dateA = _parseDate(a.addedAt ?? '');
                   final dateB = _parseDate(b.addedAt ?? '');
+                  if (dateA == null && dateB == null) return 0;
+                  if (dateA == null) return 1;
+                  if (dateB == null) return -1;
+                  return dateB.compareTo(dateA);
+                });
+              } else if (_showSortOption == 'Last watched') {
+                displayedShows.sort((a, b) {
+                  final dateA = _parseDate(a.watchedAt ?? a.addedAt ?? '');
+                  final dateB = _parseDate(b.watchedAt ?? b.addedAt ?? '');
                   if (dateA == null && dateB == null) return 0;
                   if (dateA == null) return 1;
                   if (dateB == null) return -1;
@@ -1037,6 +1062,23 @@ class _ProfilePageState extends State<ProfilePage>
                           Icons.favorite,
                           color: Colors.red,
                           size: 16,
+                        ),
+                      ),
+                    ),
+                  if (item.isWatched)
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.8),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 14,
                         ),
                       ),
                     ),

@@ -82,10 +82,26 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     return dateStr.substring(0, 4);
   }
 
-  String _getGenresString(List<dynamic>? genres) {
-    if (genres == null || genres.isEmpty) return '';
-    return genres.map((g) => g['name'] as String? ?? '').join(', ');
+  String _getGenresString(dynamic genresList) {
+    if (genresList == null || genresList is! List) return '';
+    return genresList.map((g) => g['name']).join(', ');
   }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return 'TBA';
+    try {
+      final date = DateTime.parse(dateStr);
+      final months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
+
 
   Widget _buildStarRating(double ratingOutOf10) {
     final double ratingOutOf5 = ratingOutOf10 / 2;
@@ -1505,12 +1521,74 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        airDate,
-                        style: const TextStyle(
-                          fontSize: 11.0,
-                          color: AppColors.textTertiary,
-                        ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today,
+                            size: 11,
+                            color: AppColors.textTertiary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            airDate,
+                            style: const TextStyle(
+                              fontSize: 11.0,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
+                        builder: (context, watchState) {
+                          bool isWatched = false;
+                          String? watchedAtStr;
+                          if (watchState is TvShowWatchlistSuccess) {
+                            try {
+                              final showDoc = watchState.shows.firstWhere(
+                                (s) => s['id'] == widget.mediaId,
+                              );
+                              if (showDoc['watchedEpisodes'] != null) {
+                                final watchedEpisodes = List<String>.from(
+                                  showDoc['watchedEpisodes'],
+                                );
+                                isWatched = watchedEpisodes.contains(episodeKey);
+                                
+                                // Try to get exact episode watched date
+                                if (isWatched && showDoc.containsKey('episodeWatchedDates')) {
+                                  final datesMap = showDoc['episodeWatchedDates'] as Map<String, dynamic>?;
+                                  if (datesMap != null && datesMap.containsKey(episodeKey)) {
+                                    watchedAtStr = datesMap[episodeKey] as String?;
+                                  }
+                                }
+                              }
+                              // Fallback to show-level date if episode date is not available
+                              watchedAtStr ??= showDoc['watchedAt'] as String? ?? showDoc['addedAt'] as String?;
+                            } catch (e) {
+                              // Ignore
+                            }
+                          }
+                          if (!isWatched) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.remove_red_eye_outlined,
+                                  color: Colors.greenAccent,
+                                  size: 11,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  watchedAtStr != null ? _formatDate(watchedAtStr) : 'Watched',
+                                  style: const TextStyle(
+                                    color: Colors.greenAccent,
+                                    fontSize: 11.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
