@@ -113,14 +113,18 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
 
     // Queue locks before starting requests
     for (final raw in showsToEnrich) {
-      _currentlyEnrichingShowIds.add(raw['id'] as int);
+      final showId = (raw['id'] as num?)?.toInt();
+      if (showId != null) {
+        _currentlyEnrichingShowIds.add(showId);
+      }
     }
 
     // Process sequentially to avoid "Connection reset by peer" (errno 54) socket flooding
     try {
       for (final showData in showsToEnrich) {
         if (isClosed) break;
-        final showId = showData['id'] as int;
+        final showId = (showData['id'] as num?)?.toInt();
+        if (showId == null) continue;
         try {
           await _enrichAndWriteBack(showData, uid);
         } finally {
@@ -134,7 +138,10 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     } finally {
       // Safety clean up for any remaining locked IDs (e.g. if loop broke)
       for (final raw in showsToEnrich) {
-        _currentlyEnrichingShowIds.remove(raw['id'] as int);
+        final showId = (raw['id'] as num?)?.toInt();
+        if (showId != null) {
+          _currentlyEnrichingShowIds.remove(showId);
+        }
       }
     }
   }
@@ -149,7 +156,8 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     Map<String, dynamic> showData,
     String uid,
   ) async {
-    final int showId = showData['id'];
+    final showId = (showData['id'] as num?)?.toInt();
+    if (showId == null) return;
 
     try {
       final details = await tmdbClient.getTvShowDetails(showId);
@@ -265,7 +273,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
                 seasonDetails['episodes'] as List<dynamic>? ?? [];
 
             for (var ep in episodes) {
-              final epNum = ep['episode_number'] as int;
+              final epNum = (ep['episode_number'] as num?)?.toInt() ?? 0;
               if (!watchedSet.contains('$seasonNum-$epNum')) {
                 final airDateStr = ep['air_date'] as String?;
                 if (airDateStr != null && airDateStr.isNotEmpty) {
