@@ -134,7 +134,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           language: _language,
         );
         final totalPages = (initial['total_pages'] as num?)?.toInt() ?? 250;
-        maxPage = min(totalPages, 500);
+        maxPage = totalPages.clamp(1, 500);
       } catch (e) {
         maxPage = 250;
       }
@@ -239,7 +239,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           language: _language,
         );
         final totalPages = (initial['total_pages'] as num?)?.toInt() ?? 250;
-        maxPage = min(totalPages, 500);
+        maxPage = totalPages.clamp(1, 500);
       } catch (e) {
         maxPage = 250;
       }
