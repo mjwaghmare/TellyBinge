@@ -88,6 +88,34 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     );
   }
 
+  List<dynamic> _dummyCollectionParts() {
+    return List.generate(
+      4,
+      (index) => {
+        'id': index + 1000,
+        'title': 'Collection Part',
+        'poster_path': null,
+        'backdrop_path': null,
+        'release_date': '2026-06-19',
+        'vote_average': 8.0,
+      },
+    );
+  }
+
+  List<dynamic> _dummySimilarMovies() {
+    return List.generate(
+      4,
+      (index) => {
+        'id': index + 2000,
+        'title': 'Similar Movie',
+        'poster_path': null,
+        'backdrop_path': null,
+        'release_date': '2026-06-19',
+        'vote_average': 8.0,
+      },
+    );
+  }
+
   String _getImageUrl(String? path, {String size = 'w500'}) {
     if (path == null || path.isEmpty) return '';
     return 'https://image.tmdb.org/t/p/$size$path';
@@ -193,6 +221,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
       builder: (context, state) {
         final bool isLoading =
             state is MovieDetailsInitial || state is MovieDetailsLoading;
+        final bool isCastLoading = state is MovieDetailsSuccess && state.isCastLoading;
+        final bool isCollectionLoading = state is MovieDetailsSuccess && state.isCollectionLoading;
+        final bool isSimilarLoading = state is MovieDetailsSuccess && state.isSimilarLoading;
+
         final String? error = state is MovieDetailsError ? state.message : null;
 
         if (error != null && state is! MovieDetailsSuccess) {
@@ -300,13 +332,20 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             ? state.similarMovies
             : [];
 
+        final cast = isLoading || isCastLoading ? _dummyCastList() : castData;
+        final visibleCollectionParts = isCollectionLoading 
+            ? _dummyCollectionParts() 
+            : collectionParts.take(5).toList();
+        final visibleSimilarMoviesRaw = isSimilarLoading 
+            ? _dummySimilarMovies() 
+            : similarMovies;
+
         final authState = context.read<AuthCubit>().state;
         final String? uid = authState is Authenticated
             ? authState.user.uid
             : null;
 
         final movie = isLoading ? _dummyMovieData() : movieData!;
-        final cast = isLoading ? _dummyCastList() : castData;
         final title = movie['title'] as String? ?? 'Unknown';
         final backdropPath = movie['backdrop_path'] as String?;
         final releaseDate = movie['release_date'] as String?;
@@ -371,22 +410,23 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             }
 
             // Show all collection parts regardless of watchlist status
-            final visibleCollectionParts = collectionParts.take(5).toList();
 
-            final visibleSimilarMovies = similarMovies
-                .where((item) {
-                  final rawId = item['id'];
-                  int? id;
-                  if (rawId is num) {
-                    id = rawId.toInt();
-                  } else if (rawId is String) {
-                    id = int.tryParse(rawId);
-                  }
-                  if (id == null) return false;
-                  return !watchlistedIds.contains(id);
-                })
-                .take(5)
-                .toList();
+            final visibleSimilarMovies = isSimilarLoading
+                ? visibleSimilarMoviesRaw
+                : visibleSimilarMoviesRaw
+                    .where((item) {
+                      final rawId = item['id'];
+                      int? id;
+                      if (rawId is num) {
+                        id = rawId.toInt();
+                      } else if (rawId is String) {
+                        id = int.tryParse(rawId);
+                      }
+                      if (id == null) return false;
+                      return !watchlistedIds.contains(id);
+                    })
+                    .take(5)
+                    .toList();
 
             final double bottomPadding = MediaQuery.paddingOf(context).bottom;
             final double buttonHeight = 50.0;
@@ -820,31 +860,34 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.md),
-                              SizedBox(
-                                height: 180,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: cast.length,
-                                  separatorBuilder: (context, index) =>
-                                      const SizedBox(width: 12),
-                                  itemBuilder: (context, index) {
-                                    final actor =
-                                        cast[index] as Map<String, dynamic>;
-                                    final actorName =
-                                        actor['name'] as String? ?? '';
-                                    final character =
-                                        actor['character'] as String? ?? '';
-                                    final profilePath =
-                                        actor['profile_path'] as String?;
-                                    return _buildCastCard(
-                                      imageUrl: _getImageUrl(
-                                        profilePath,
-                                        size: 'w185',
-                                      ),
-                                      realName: actorName,
-                                      characterName: character.toUpperCase(),
-                                    );
-                                  },
+                              Skeletonizer(
+                                enabled: isCastLoading || isLoading,
+                                child: SizedBox(
+                                  height: 180,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: cast.length,
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(width: 12),
+                                    itemBuilder: (context, index) {
+                                      final actor =
+                                          cast[index] as Map<String, dynamic>;
+                                      final actorName =
+                                          actor['name'] as String? ?? '';
+                                      final character =
+                                          actor['character'] as String? ?? '';
+                                      final profilePath =
+                                          actor['profile_path'] as String?;
+                                      return _buildCastCard(
+                                        imageUrl: _getImageUrl(
+                                          profilePath,
+                                          size: 'w185',
+                                        ),
+                                        realName: actorName,
+                                        characterName: character.toUpperCase(),
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.lg),
@@ -868,54 +911,57 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.md),
-                              SizedBox(
-                                height: 200,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: visibleCollectionParts.length,
-                                  separatorBuilder: (context, index) =>
-                                      const SizedBox(width: 14),
-                                  itemBuilder: (context, index) {
-                                    final rec =
-                                        visibleCollectionParts[index]
-                                            as Map<String, dynamic>;
-                                    final rawRecId = rec['id'];
-                                    int? recId;
-                                    if (rawRecId is num) {
-                                      recId = rawRecId.toInt();
-                                    } else if (rawRecId is String) {
-                                      recId = int.tryParse(rawRecId);
-                                    }
-                                    if (recId == null) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    final String recTitle =
-                                        rec['title'] ??
-                                        rec['name'] ??
-                                        'Unknown';
-                                    final String? recPoster =
-                                        rec['poster_path'];
-                                    final String? recBackdrop =
-                                        rec['backdrop_path'];
-                                    final String? recDate = rec['release_date'];
-                                    final double recVote =
-                                        (rec['vote_average'] as num?)
-                                            ?.toDouble() ??
-                                        0.0;
+                              Skeletonizer(
+                                enabled: isCollectionLoading || isLoading,
+                                child: SizedBox(
+                                  height: 200,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: visibleCollectionParts.length,
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(width: 14),
+                                    itemBuilder: (context, index) {
+                                      final rec =
+                                          visibleCollectionParts[index]
+                                              as Map<String, dynamic>;
+                                      final rawRecId = rec['id'];
+                                      int? recId;
+                                      if (rawRecId is num) {
+                                        recId = rawRecId.toInt();
+                                      } else if (rawRecId is String) {
+                                        recId = int.tryParse(rawRecId);
+                                      }
+                                      if (recId == null) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      final String recTitle =
+                                          rec['title'] ??
+                                          rec['name'] ??
+                                          'Unknown';
+                                      final String? recPoster =
+                                          rec['poster_path'];
+                                      final String? recBackdrop =
+                                          rec['backdrop_path'];
+                                      final String? recDate = rec['release_date'];
+                                      final double recVote =
+                                          (rec['vote_average'] as num?)
+                                              ?.toDouble() ??
+                                          0.0;
 
-                                    return _buildRecommendationCard(
-                                      movieId: recId,
-                                      posterPath: recPoster,
-                                      title: recTitle,
-                                      releaseDate: recDate,
-                                      voteAverage: recVote,
-                                      backdropPath: recBackdrop,
-                                      runtime: 0,
-                                      genres: '',
-                                      isAdded: watchlistedIds.contains(recId),
-                                      uid: uid,
-                                    );
-                                  },
+                                      return _buildRecommendationCard(
+                                        movieId: recId,
+                                        posterPath: recPoster,
+                                        title: recTitle,
+                                        releaseDate: recDate,
+                                        voteAverage: recVote,
+                                        backdropPath: recBackdrop,
+                                        runtime: 0,
+                                        genres: '',
+                                        isAdded: watchlistedIds.contains(recId),
+                                        uid: uid,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.lg),
@@ -939,54 +985,57 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.md),
-                              SizedBox(
-                                height: 200,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: visibleSimilarMovies.length,
-                                  separatorBuilder: (context, index) =>
-                                      const SizedBox(width: 14),
-                                  itemBuilder: (context, index) {
-                                    final rec =
-                                        visibleSimilarMovies[index]
-                                            as Map<String, dynamic>;
-                                    final rawRecId = rec['id'];
-                                    int? recId;
-                                    if (rawRecId is num) {
-                                      recId = rawRecId.toInt();
-                                    } else if (rawRecId is String) {
-                                      recId = int.tryParse(rawRecId);
-                                    }
-                                    if (recId == null) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    final String recTitle =
-                                        rec['title'] ??
-                                        rec['name'] ??
-                                        'Unknown';
-                                    final String? recPoster =
-                                        rec['poster_path'];
-                                    final String? recBackdrop =
-                                        rec['backdrop_path'];
-                                    final String? recDate = rec['release_date'];
-                                    final double recVote =
-                                        (rec['vote_average'] as num?)
-                                            ?.toDouble() ??
-                                        0.0;
+                              Skeletonizer(
+                                enabled: isSimilarLoading || isLoading,
+                                child: SizedBox(
+                                  height: 200,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: visibleSimilarMovies.length,
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(width: 14),
+                                    itemBuilder: (context, index) {
+                                      final rec =
+                                          visibleSimilarMovies[index]
+                                              as Map<String, dynamic>;
+                                      final rawRecId = rec['id'];
+                                      int? recId;
+                                      if (rawRecId is num) {
+                                        recId = rawRecId.toInt();
+                                      } else if (rawRecId is String) {
+                                        recId = int.tryParse(rawRecId);
+                                      }
+                                      if (recId == null) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      final String recTitle =
+                                          rec['title'] ??
+                                          rec['name'] ??
+                                          'Unknown';
+                                      final String? recPoster =
+                                          rec['poster_path'];
+                                      final String? recBackdrop =
+                                          rec['backdrop_path'];
+                                      final String? recDate = rec['release_date'];
+                                      final double recVote =
+                                          (rec['vote_average'] as num?)
+                                              ?.toDouble() ??
+                                          0.0;
 
-                                    return _buildRecommendationCard(
-                                      movieId: recId,
-                                      posterPath: recPoster,
-                                      title: recTitle,
-                                      releaseDate: recDate,
-                                      voteAverage: recVote,
-                                      backdropPath: recBackdrop,
-                                      runtime: 0,
-                                      genres: '',
-                                      isAdded: false,
-                                      uid: uid,
-                                    );
-                                  },
+                                      return _buildRecommendationCard(
+                                        movieId: recId,
+                                        posterPath: recPoster,
+                                        title: recTitle,
+                                        releaseDate: recDate,
+                                        voteAverage: recVote,
+                                        backdropPath: recBackdrop,
+                                        runtime: 0,
+                                        genres: '',
+                                        isAdded: false,
+                                        uid: uid,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.lg),

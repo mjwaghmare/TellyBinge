@@ -225,6 +225,43 @@ class TmdbClient {
     }
   }
 
+  /// Fetch similar TV shows for a TV show
+  Future<List<dynamic>> getSimilarTvShows(int tvId) async {
+    final cacheKey = 'similar_tv_$tvId';
+    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null) {
+      return _filterContent(cachedData['results'] as List<dynamic>? ?? []);
+    }
+
+    try {
+      final response = await _getWithRetry('/tv/$tvId/similar');
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      final results = data['results'] as List<dynamic>? ?? [];
+      return _filterContent(results);
+    } catch (e) {
+      debugPrint('Error fetching similar TV shows: $e');
+      return [];
+    }
+  }
+
+  /// Fetch cast and crew for a TV Show
+  Future<Map<String, dynamic>> getTvCredits(int tvId) async {
+    final cacheKey = 'tv_credits_$tvId';
+    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null) return cachedData;
+
+    try {
+      final response = await _getWithRetry('/tv/$tvId/credits');
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      return data;
+    } catch (e) {
+      debugPrint('Error fetching TV credits: $e');
+      return {'cast': [], 'crew': []};
+    }
+  }
+
   /// Fetch detailed information about a TV Show (does not include full season episode details)
   Future<Map<String, dynamic>> getTvShowDetails(int tvId) async {
     final cacheKey = 'tv_details_v3_$tvId';
@@ -234,7 +271,7 @@ class TmdbClient {
     try {
       final response = await _getWithRetry(
         '/tv/$tvId',
-        queryParameters: {'append_to_response': 'videos,credits'},
+        queryParameters: {'append_to_response': 'videos'},
       );
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);

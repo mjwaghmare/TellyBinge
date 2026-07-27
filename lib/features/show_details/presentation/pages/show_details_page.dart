@@ -223,6 +223,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
       builder: (context, state) {
         final bool isLoading =
             state is ShowDetailsInitial || state is ShowDetailsLoading;
+        final bool isCastLoading = state is ShowDetailsSuccess && state.isCastLoading;
+        final bool isSimilarLoading = state is ShowDetailsSuccess && state.isSimilarLoading;
         final String? error =
             state is ShowDetailsError ? state.message : null;
 
@@ -311,9 +313,6 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         final details = isLoading
             ? _dummyShowDetails()
             : (state as ShowDetailsSuccess).details;
-        final mediaType = isLoading
-            ? widget.mediaType
-            : (state as ShowDetailsSuccess).mediaType;
         final seasonsData = isLoading
             ? <int, List<dynamic>>{}
             : (state as ShowDetailsSuccess).seasonsData;
@@ -324,7 +323,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             children: [
               Skeletonizer(
                 enabled: isLoading,
-                child: _buildDetailsView(details, mediaType, seasonsData),
+                child: _buildDetailsView(
+                  context,
+                  details,
+                  seasonsData,
+                  isLoading: isLoading,
+                  isCastLoading: isCastLoading,
+                  isSimilarLoading: isSimilarLoading,
+                ),
               ),
               Positioned(
                 top: MediaQuery.paddingOf(context).top + 6,
@@ -355,10 +361,24 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
   }
 
   Widget _buildDetailsView(
-    Map<String, dynamic> details,
-    String mediaType,
-    Map<int, List<dynamic>> seasonsData,
-  ) {
+    BuildContext context,
+    Map<String, dynamic> rawDetailsData,
+    Map<int, List<dynamic>> seasonsData, {
+    bool isLoading = false,
+    bool isCastLoading = false,
+    bool isSimilarLoading = false,
+  }) {
+    final Map<String, dynamic> details = isLoading 
+        ? _dummyShowDetails() 
+        : Map<String, dynamic>.from(rawDetailsData);
+
+    if (isCastLoading && !isLoading) {
+      details['credits'] = _dummyShowDetails()['credits'];
+    }
+    if (isSimilarLoading && !isLoading) {
+      details['similar'] = _dummyShowDetails()['similar'];
+    }
+
     final String title = details['name'] ?? details['title'] ?? widget.title;
     final String? backdropPath = details['backdrop_path'];
     final String overview = details['overview'] ?? '';
@@ -496,7 +516,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           ),
                           const SizedBox(height: 6.0),
                           Text(
-                            mediaType == 'tv'
+                            widget.mediaType == 'tv'
                                 ? '$numberOfSeasons season${numberOfSeasons == 1 ? '' : 's'} • $status • $networkName'
                                 : _getYear(details['release_date']),
                             style: const TextStyle(
@@ -679,29 +699,135 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               AppSpacing.gapH16,
-              SizedBox(
-                height: 180,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: (details['credits']['cast'] as List)
-                      .take(10)
-                      .length,
-                  separatorBuilder: (context, index) => AppSpacing.gapW12,
-                  itemBuilder: (context, index) {
-                    final cast = (details['credits']['cast'] as List)
+              Skeletonizer(
+                enabled: isCastLoading || isLoading,
+                child: SizedBox(
+                  height: 180,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: (details['credits']['cast'] as List)
                         .take(10)
-                        .toList();
-                    final actor = cast[index] as Map<String, dynamic>;
-                    final actorName = actor['name'] as String? ?? 'Unknown';
-                    final character = actor['character'] as String? ?? '';
-                    final profilePath = actor['profile_path'] as String?;
-                    return _buildCastCard(
-                      personId: (actor['id'] as num?)?.toInt() ?? 0,
-                      imageUrl: _getImageUrl(profilePath, size: 'w185'),
-                      realName: actorName,
-                      characterName: character.toUpperCase(),
-                    );
-                  },
+                        .length,
+                    separatorBuilder: (context, index) => AppSpacing.gapW12,
+                    itemBuilder: (context, index) {
+                      final cast = (details['credits']['cast'] as List)
+                          .take(10)
+                          .toList();
+                      final actor = cast[index] as Map<String, dynamic>;
+                      final actorName = actor['name'] as String? ?? 'Unknown';
+                      final character = actor['character'] as String? ?? '';
+                      final profilePath = actor['profile_path'] as String?;
+                      return _buildCastCard(
+                        personId: (actor['id'] as num?)?.toInt() ?? 0,
+                        imageUrl: _getImageUrl(profilePath, size: 'w185'),
+                        realName: actorName,
+                        characterName: character.toUpperCase(),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              AppSpacing.gapH24,
+            ],
+
+            if (details['similar'] != null &&
+                details['similar']['results'] != null &&
+                (details['similar']['results'] as List).isNotEmpty) ...[
+              const Divider(height: 1, thickness: 0.5),
+              AppSpacing.gapH24,
+              const Text(
+                'More Like This',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              AppSpacing.gapH16,
+              Skeletonizer(
+                enabled: isSimilarLoading || isLoading,
+                child: SizedBox(
+                  height: 200,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: (details['similar']['results'] as List)
+                        .take(10)
+                        .length,
+                    separatorBuilder: (context, index) => AppSpacing.gapW12,
+                    itemBuilder: (context, index) {
+                      final similar = (details['similar']['results'] as List)
+                          .take(10)
+                          .toList();
+                      final item = similar[index] as Map<String, dynamic>;
+                      final posterPath = item['poster_path'] as String?;
+                      return GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ShowDetailsPage(
+                                mediaId: (item['id'] as num).toInt(),
+                                title: item['name'] ?? 'Unknown',
+                                mediaType: 'tv',
+                              ),
+                            ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 130,
+                                color: AppColors.surfaceLight,
+                                child: posterPath != null
+                                    ? CachedNetworkImage(
+                                        imageUrl: _getImageUrl(posterPath),
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            Container(color: AppColors.surfaceLight),
+                                        errorWidget: (context, url, error) =>
+                                            const Icon(Icons.error),
+                                      )
+                                    : const Icon(Icons.movie, size: 50),
+                              ),
+                              if (item['vote_average'] != null)
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.7),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.star,
+                                          color: Colors.amber,
+                                          size: 12,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          (item['vote_average'] as num).toStringAsFixed(1),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               AppSpacing.gapH24,
@@ -731,7 +857,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
       );
     }
 
-    if (mediaType == 'movie') {
+    if (widget.mediaType == 'movie') {
       return CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -1702,9 +1828,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                       isWatched: true,
                                                       showName: details['name']
                                                           ?.toString(),
-                                                      showPoster:
-                                                          details['poster_path']
-                                                              ?.toString(),
+                                                      showPoster: details['poster_path']
+                                                          ?.toString(),
                                                       episodeTitle:
                                                           ep['name']?.toString() ??
                                                           'Episode ${ep['episode_number']}',

@@ -674,7 +674,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 0.68,
+        childAspectRatio: 0.55,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -684,6 +684,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final id = item['id'];
         final title = isTv ? item['name'] : item['title'];
         final posterPath = item['poster_path'];
+        final voteAverage = (item['vote_average'] as num?)?.toDouble() ?? 0.0;
+        final date = isTv ? item['first_air_date'] : item['release_date'];
+        final year = (date != null && date.toString().length >= 4) ? date.toString().substring(0, 4) : '';
 
         return GestureDetector(
           onTap: () {
@@ -714,22 +717,64 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               );
             }
           },
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : const Color(0xFF2C2C2E),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: posterPath != null && posterPath.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: 'https://image.tmdb.org/t/p/w342$posterPath',
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) =>
-                        Container(color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : const Color(0xFF2C2C2E)),
-                    errorWidget: (context, url, error) =>
-                        Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24),
-                  )
-                : Icon(Icons.movie, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24, size: 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : const Color(0xFF2C2C2E),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: posterPath != null && posterPath.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: 'https://image.tmdb.org/t/p/w342$posterPath',
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) =>
+                              Container(color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : const Color(0xFF2C2C2E)),
+                          errorWidget: (context, url, error) =>
+                              Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24),
+                        )
+                      : Icon(Icons.movie, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24, size: 40),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.star, color: Colors.amber, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    voteAverage.toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                  if (year.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '•',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      year,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 4),
+            ],
           ),
         );
       },

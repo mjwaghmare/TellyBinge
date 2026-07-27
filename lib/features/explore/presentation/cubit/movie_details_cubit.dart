@@ -13,28 +13,24 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
     // Retry up to 3 times to handle flaky network connections
     for (int attempt = 1; attempt <= 3; attempt++) {
       try {
-        // Fetch main details and credits in parallel
-        final primaryResults = await Future.wait([
-          tmdbClient.getMovieDetails(movieId),
-          tmdbClient.getMovieCredits(movieId).catchError(
-                (_) => <String, dynamic>{'cast': [], 'crew': []},
-              ),
-        ]);
-        final movieDetails = primaryResults[0];
-        final movieCredits = primaryResults[1];
+        // Fetch main details first
+        final movieDetails = await tmdbClient.getMovieDetails(movieId);
 
         // EMIT EARLY: So the UI loads instantly with primary details!
         if (!isClosed) {
           emit(MovieDetailsSuccess(
             movieDetails: movieDetails,
-            movieCredits: movieCredits,
+            movieCredits: const {'cast': [], 'crew': []},
             similarMovies: const [],
             collectionParts: const [],
             collectionSectionTitle: 'Franchise',
+            isCastLoading: true,
+            isCollectionLoading: true,
+            isSimilarLoading: true,
           ));
         }
 
-        // Now fire off the secondary requests in parallel without blocking the UI
+        // Now fire off the secondary requests independently without blocking the UI
         final belongsToCollection = movieDetails['belongs_to_collection'];
         
         Future<Map<String, dynamic>> fetchCollection() async {
@@ -118,29 +114,58 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
           }
         }
 
-        // Wait for secondary requests to finish
-        final secondaryResults = await Future.wait([
-          fetchCollection(),
-          fetchSimilar(),
-        ]);
+        // Helper to get current success state
+        MovieDetailsSuccess? getSuccessState() {
+          if (isClosed || state is! MovieDetailsSuccess) return null;
+          return state as MovieDetailsSuccess;
+        }
 
-        final collectionResult = secondaryResults[0] as Map<String, dynamic>;
-        final collectionParts = collectionResult['parts'] as List<dynamic>;
-        final collectionSectionTitle = collectionResult['title'] as String;
-        final similarMovies = secondaryResults[1] as List<dynamic>;
+        // 1. Fetch Cast
+        tmdbClient.getMovieCredits(movieId).then((credits) {
+          final s = getSuccessState();
+          if (s != null) {
+            emit(s.copyWith(movieCredits: credits, isCastLoading: false));
+          }
+        }).catchError((_) {
+          final s = getSuccessState();
+          if (s != null) {
+            emit(s.copyWith(movieCredits: {'cast': [], 'crew': []}, isCastLoading: false));
+          }
+        });
 
-        if (isClosed) return;
+        // 2. Fetch Collection
+        fetchCollection().then((collectionResult) {
+          final s = getSuccessState();
+          if (s != null) {
+            final collectionParts = collectionResult['parts'] as List<dynamic>;
+            final collectionSectionTitle = collectionResult['title'] as String;
+            emit(s.copyWith(
+              collectionParts: collectionParts,
+              collectionSectionTitle: collectionSectionTitle,
+              isCollectionLoading: false,
+            ));
+          }
+        }).catchError((_) {
+          final s = getSuccessState();
+          if (s != null) {
+            emit(s.copyWith(isCollectionLoading: false));
+          }
+        });
 
-        // Emit again with the full data
-        emit(MovieDetailsSuccess(
-          movieDetails: movieDetails,
-          movieCredits: movieCredits,
-          similarMovies: similarMovies,
-          collectionParts: collectionParts,
-          collectionSectionTitle: collectionSectionTitle,
-        ));
+        // 3. Fetch Similar Movies
+        fetchSimilar().then((similarMovies) {
+          final s = getSuccessState();
+          if (s != null) {
+            emit(s.copyWith(similarMovies: similarMovies, isSimilarLoading: false));
+          }
+        }).catchError((_) {
+          final s = getSuccessState();
+          if (s != null) {
+            emit(s.copyWith(isSimilarLoading: false));
+          }
+        });
         
-        // Successfully loaded, break the retry loop
+        // Successfully initiated, break the retry loop
         return;
       } catch (e) {
         if (attempt == 3) {

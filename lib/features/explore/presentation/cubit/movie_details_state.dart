@@ -17,6 +17,9 @@ class MovieDetailsSuccess extends MovieDetailsState {
   final List<dynamic> similarMovies;
   final List<dynamic> collectionParts;
   final String collectionSectionTitle;
+  final bool isCastLoading;
+  final bool isCollectionLoading;
+  final bool isSimilarLoading;
 
   const MovieDetailsSuccess({
     required this.movieDetails,
@@ -24,6 +27,9 @@ class MovieDetailsSuccess extends MovieDetailsState {
     required this.similarMovies,
     required this.collectionParts,
     required this.collectionSectionTitle,
+    this.isCastLoading = false,
+    this.isCollectionLoading = false,
+    this.isSimilarLoading = false,
   });
 
   MovieDetailsSuccess copyWith({
@@ -32,6 +38,9 @@ class MovieDetailsSuccess extends MovieDetailsState {
     List<dynamic>? similarMovies,
     List<dynamic>? collectionParts,
     String? collectionSectionTitle,
+    bool? isCastLoading,
+    bool? isCollectionLoading,
+    bool? isSimilarLoading,
   }) {
     return MovieDetailsSuccess(
       movieDetails: movieDetails ?? this.movieDetails,
@@ -39,6 +48,9 @@ class MovieDetailsSuccess extends MovieDetailsState {
       similarMovies: similarMovies ?? this.similarMovies,
       collectionParts: collectionParts ?? this.collectionParts,
       collectionSectionTitle: collectionSectionTitle ?? this.collectionSectionTitle,
+      isCastLoading: isCastLoading ?? this.isCastLoading,
+      isCollectionLoading: isCollectionLoading ?? this.isCollectionLoading,
+      isSimilarLoading: isSimilarLoading ?? this.isSimilarLoading,
     );
   }
 
@@ -49,6 +61,9 @@ class MovieDetailsSuccess extends MovieDetailsState {
         similarMovies,
         collectionParts,
         collectionSectionTitle,
+        isCastLoading,
+        isCollectionLoading,
+        isSimilarLoading,
       ];
 }
 

@@ -24,12 +24,50 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
         final details = await tmdbClient.getTvShowDetails(id);
         final Map<int, List<dynamic>> initialSeasons = {};
         
-        // Emit initial details success
+        // Emit initial details success with secondary loading states
         emit(ShowDetailsSuccess(
           details: details,
           mediaType: mediaType,
           seasonsData: initialSeasons,
+          isCastLoading: true,
+          isSimilarLoading: true,
         ));
+        
+        // Helper to get current success state
+        ShowDetailsSuccess? getSuccessState() {
+          if (isClosed || state is! ShowDetailsSuccess) return null;
+          return state as ShowDetailsSuccess;
+        }
+
+        // 1. Fetch Cast independently
+        tmdbClient.getTvCredits(id).then((credits) {
+          final s = getSuccessState();
+          if (s != null) {
+            final updatedDetails = Map<String, dynamic>.from(s.details);
+            updatedDetails['credits'] = credits;
+            emit(s.copyWith(details: updatedDetails, isCastLoading: false));
+          }
+        }).catchError((_) {
+          final s = getSuccessState();
+          if (s != null) {
+            emit(s.copyWith(isCastLoading: false));
+          }
+        });
+
+        // 2. Fetch Similar independently
+        tmdbClient.getSimilarTvShows(id).then((similarShows) {
+          final s = getSuccessState();
+          if (s != null) {
+            final updatedDetails = Map<String, dynamic>.from(s.details);
+            updatedDetails['similar'] = {'results': similarShows};
+            emit(s.copyWith(details: updatedDetails, isSimilarLoading: false));
+          }
+        }).catchError((_) {
+          final s = getSuccessState();
+          if (s != null) {
+            emit(s.copyWith(isSimilarLoading: false));
+          }
+        });
 
         // Prefetch Season 1 episodes for immediate display
         final seasonsList = details['seasons'] as List<dynamic>? ?? [];
