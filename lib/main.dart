@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -48,15 +49,16 @@ void main() async {
     return true;
   };
 
+  // Initialize Firebase first — the WidgetService background interactivity callback
+  // fires in a headless isolate that requires Firebase to already be ready.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   await WidgetService.initialize();
 
   // Initialize notification and background services
   await NotificationService().initialize();
   await BackgroundSyncService().initialize();
   await BackgroundSyncService().registerPeriodicSync();
-
-  // Initialize Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize Google Sign-In
   try {
@@ -107,14 +109,64 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  StreamSubscription<Uri?>? _widgetClickSubscription;
+  // Single TmdbClient instance for widget-driven navigation.
+  // Initialised here (outside the RepositoryProvider tree) to avoid creating
+  // a fresh HTTP client on every widget tap.
+  late final TmdbClient _tmdbClient;
+
   @override
   void initState() {
     super.initState();
+    _tmdbClient = TmdbClient();
     HomeWidget.setAppGroupId(WidgetService.iOSGroupId);
+
+    // Handle cold launch: app was opened by tapping a widget Link while terminated.
+    HomeWidget.initiallyLaunchedFromHomeWidget().then((uri) {
+      if (uri != null) _handleWidgetUri(uri);
+    });
+
+    // Handle warm launch: app is already running, user taps a widget row.
+    // Also reset the AuthGate sync throttle so re-entering the app after a
+    // background mark-as-watched always triggers a fresh widget data pull.
+    _widgetClickSubscription = HomeWidget.widgetClicked.listen((uri) {
+      _AuthGateState.invalidateSyncThrottle();
+      if (uri != null) _handleWidgetUri(uri);
+    });
+  }
+
+  /// Routes incoming widget URLs to the correct page.
+  /// Currently handles: tvtimeapp://show/{showId}
+  void _handleWidgetUri(Uri uri) {
+    if (uri.scheme != 'tvtimeapp') return;
+    if (uri.host == 'show') {
+      final showIdStr = uri.pathSegments.firstOrNull;
+      final showId = int.tryParse(showIdStr ?? '');
+      if (showId != null && showId > 0) {
+        // Use a post-frame callback so we don't navigate before the widget tree is ready.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (context) => BlocProvider<ShowDetailsCubit>(
+                create: (_) => ShowDetailsCubit(tmdbClient: _tmdbClient),
+                child: ShowDetailsPage(
+                  mediaId: showId,
+                  mediaType: 'tv',
+                  title: 'Show Details',
+                  initialTabIndex: 1,
+                ),
+              ),
+            ),
+          );
+        });
+      }
+    }
+    // tvtimeapp:// (root) — just open the app, no navigation needed.
   }
 
   @override
   void dispose() {
+    _widgetClickSubscription?.cancel();
     super.dispose();
   }
 
@@ -222,11 +274,23 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
-  String? _lastSyncedUid;
+  // Time-based throttle: prevent hammering Firestore on rapid AuthCubit emissions.
+  // Static so _MyAppState can reset it from outside the widget tree when a
+  // widget click is received (signals the user returned after a background
+  // mark-as-watched, meaning we must force a fresh sync regardless of elapsed time).
+  static DateTime? _lastSyncTime;
+  static const _syncThrottle = Duration(seconds: 30);
+
+  /// Called by _MyAppState when HomeWidget.widgetClicked fires, ensuring the
+  /// very next _syncWidget call bypasses the throttle.
+  static void invalidateSyncThrottle() => _lastSyncTime = null;
 
   Future<void> _syncWidget(String uid) async {
-    if (_lastSyncedUid == uid) return;
-    _lastSyncedUid = uid;
+    final now = DateTime.now();
+    if (_lastSyncTime != null && now.difference(_lastSyncTime!) < _syncThrottle) {
+      return;
+    }
+    _lastSyncTime = now;
     try {
       await HomeWidget.saveWidgetData<String>('current_uid', uid);
       await WidgetService.syncWatchlistToWidget(uid);
@@ -238,13 +302,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
-      listenWhen: (previous, current) {
-        if (current is Authenticated) {
-          final prevUid = previous is Authenticated ? previous.user.uid : null;
-          return prevUid != current.user.uid;
-        }
-        return false;
-      },
+      listenWhen: (previous, current) => current is Authenticated,
       listener: (context, state) {
         if (state is Authenticated) {
           _syncWidget(state.user.uid);
@@ -252,7 +310,6 @@ class _AuthGateState extends State<AuthGate> {
       },
       builder: (context, state) {
         if (state is Authenticated) {
-          _syncWidget(state.user.uid);
           return const ShellNavigationPage();
         } else if (state is Unauthenticated || state is AuthLoginLoading) {
           return const LoginPage();

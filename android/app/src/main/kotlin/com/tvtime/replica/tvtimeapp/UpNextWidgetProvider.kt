@@ -2,7 +2,6 @@ package com.tvtime.replica.tvtimeapp
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -12,13 +11,19 @@ import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
 import es.antonborri.home_widget.HomeWidgetProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import java.io.File
 import java.net.URL
-import java.util.concurrent.Executors
 
 class UpNextWidgetProvider : HomeWidgetProvider() {
-    private val executor = Executors.newSingleThreadExecutor()
+    // Use a stable coroutine scope tied to Dispatchers.IO for poster loading.
+    // Unlike a bare Executor, a coroutine job can be cancelled and is not
+    // vulnerable to GC if the process is recycled between widget updates.
+    private val scope = CoroutineScope(Dispatchers.IO + Job())
 
     override fun onUpdate(
         context: Context,
@@ -98,14 +103,17 @@ class UpNextWidgetProvider : HomeWidgetProvider() {
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
 
-            // Async Poster Loading
+            // Async poster loading via a coroutine on Dispatchers.IO.
+            // This is safer than a bare Executor: the Job lifecycle is tied to
+            // the scope, so it won't hold stale references if the process is recycled.
             if (!posterPath.isNullOrEmpty()) {
                 val currentPosterPath = posterPath
-                executor.execute {
+                val currentAppWidgetId = appWidgetId
+                scope.launch {
                     val bitmap = loadBitmap(context, currentPosterPath)
                     if (bitmap != null) {
                         views.setImageViewBitmap(R.id.widget_poster, bitmap)
-                        appWidgetManager.updateAppWidget(appWidgetId, views)
+                        appWidgetManager.updateAppWidget(currentAppWidgetId, views)
                     }
                 }
             } else {

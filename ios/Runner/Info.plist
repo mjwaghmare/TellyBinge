@@ -78,6 +78,16 @@
 					<string>com.googleusercontent.apps.236216751300-u1ikv8htj6gg04nl6knudi34nucacl2g</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>com.tvtime.replica.tvtimeapp</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>tvtimeapp</string>
+				</array>
+			</dict>
 		</array>
 		<key>GIDClientID</key>
 		<string>236216751300-u1ikv8htj6gg04nl6knudi34nucacl2g.apps.googleusercontent.com</string>

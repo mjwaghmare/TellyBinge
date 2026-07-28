@@ -45,3 +45,8 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Coroutines for safe async image loading in the widget provider
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+}

@@ -741,6 +741,18 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 ),
               ),
               const SizedBox(height: 6),
+              Text(
+                title ?? '',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+              const SizedBox(height: 4),
               Row(
                 children: [
                   const Icon(Icons.star, color: Colors.amber, size: 14),

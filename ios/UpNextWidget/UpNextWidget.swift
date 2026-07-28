@@ -39,10 +39,13 @@ struct MarkAsWatchedIntent: AppIntent {
         widgetLogger.notice("👉 [Widget Tap] MarkAsWatchedIntent triggered for showId: \(rawShowId, privacy: .public), episodeKey: \(episodeKey, privacy: .public)")
         let urlString = "tvtimeapp://mark_watched?showId=\(rawShowId)&episodeKey=\(episodeKey)"
         if let url = URL(string: urlString) {
-            Task {
-                await HomeWidgetBackgroundWorker.run(url: url, appGroup: "group.tvtimeapp.widget")
-            }
+            // Await directly — do NOT wrap in Task {} or iOS kills the process
+            // before the Flutter headless isolate has a chance to run.
+            await HomeWidgetBackgroundWorker.run(url: url, appGroup: WidgetConstants.appGroup)
         }
+        // Force an immediate timeline reload so the widget UI updates right away
+        // rather than waiting for the next scheduled refresh.
+        WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
 }
@@ -140,13 +143,22 @@ struct Provider: TimelineProvider {
             items = (try? JSONDecoder().decode([UpNextItem].self, from: data)) ?? []
         }
 
-        // Pre-load poster images so they render immediately in the widget.
-        // AsyncImage is unreliable in widget extensions due to limited runtime.
+        // Pre-load all poster images in parallel so they all render immediately.
+        // Sequential loading (3 × 4s timeout) can hit the widget extension kill budget;
+        // parallel loading caps at a single 4-second round-trip regardless of count.
         Task {
             var loadedItems = items
-            for i in loadedItems.indices {
-                if let posterPath = loadedItems[i].localPosterPath {
-                    loadedItems[i].imageData = await PosterImageLoader.loadData(from: posterPath)
+            await withTaskGroup(of: (Int, Data?).self) { group in
+                for i in loadedItems.indices {
+                    let index = i
+                    let path = loadedItems[i].localPosterPath
+                    group.addTask {
+                        let data: Data? = path != nil ? await PosterImageLoader.loadData(from: path!) : nil
+                        return (index, data)
+                    }
+                }
+                for await (index, data) in group {
+                    loadedItems[index].imageData = data
                 }
             }
 
@@ -208,83 +220,73 @@ struct ItemRow: View {
     let item: UpNextItem
     
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            // Poster
-            Group {
-                if let data = item.imageData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else if let path = item.localPosterPath, let url = URL(string: path) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        default:
-                            Rectangle().fill(Color.gray.opacity(0.3))
+        // Each row deep-links to the specific show so tapping opens the detail page
+        Link(destination: URL(string: "tvtimeapp://show/\(item.showId)")!) {
+            HStack(alignment: .top, spacing: 14) {
+                // Poster — only use pre-loaded imageData; AsyncImage is unreliable
+                // in widget extensions due to their tight execution budget.
+                Group {
+                    if let data = item.imageData, let uiImage = UIImage(data: data) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else {
+                        Rectangle().fill(Color.gray.opacity(0.3))
+                    }
+                }
+                .frame(width: 55, height: 80)
+                .cornerRadius(12)
+                
+                // Details
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.header)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Color(white: 0.6))
+                        .textCase(.uppercase)
+                    
+                    Text(item.showName)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .padding(.bottom, 2)
+                    
+                    Text(item.episodeTitle)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    
+                    Text(item.episodeDetails)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(Color(white: 0.6))
+                        .lineLimit(1)
+                }
+                
+                Spacer(minLength: 8)
+                
+                // Mark As Watched Button - only show if episode can be marked
+                if !item.episodeKey.isEmpty {
+                    if #available(iOS 17.0, *) {
+                        Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
+                            Circle()
+                                .stroke(Color.blue, lineWidth: 2)
+                                .frame(width: 26, height: 26)
+                                .contentShape(Rectangle())
                         }
-                    }
-                } else {
-                    Rectangle().fill(Color.gray.opacity(0.3))
-                }
-            }
-            .frame(width: 55, height: 80)
-            .cornerRadius(12)
-            
-            // Details
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.header)
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(Color(white: 0.6))
-                    .textCase(.uppercase)
-                
-                Text(item.showName)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .padding(.bottom, 2)
-                
-                Text(item.episodeTitle)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                
-                Text(item.episodeDetails)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color(white: 0.6))
-                    .lineLimit(1)
-            }
-            
-            Spacer(minLength: 8)
-            
-            // Mark As Watched Button - only show if episode can be marked
-            if !item.episodeKey.isEmpty {
-                if #available(iOS 17.0, *) {
-                    Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
+                        .buttonStyle(PlainButtonStyle())
+                        .frame(width: 44, height: 44)
+                        .padding(.top, 16)
+                    } else {
+                        // Fallback for iOS 16: clicking the row Link already navigates
                         Circle()
                             .stroke(Color.blue, lineWidth: 2)
                             .frame(width: 26, height: 26)
-                            .contentShape(Rectangle())
+                            .frame(width: 44, height: 44)
+                            .padding(.top, 16)
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .frame(width: 44, height: 44)
-                    .padding(.top, 16)
-                } else {
-                    // Fallback for iOS 16
-                    Link(destination: URL(string: "tvtimeapp://show/\(item.showId)")!) {
-                        Circle()
-                            .stroke(Color.blue, lineWidth: 2)
-                            .frame(width: 26, height: 26)
-                            .contentShape(Rectangle())
-                    }
-                    .frame(width: 44, height: 44)
-                    .padding(.top, 16)
                 }
             }
+            .frame(height: 80)
         }
-        .frame(height: 80)
     }
 }
 
@@ -294,7 +296,8 @@ struct MediumItemRow: View {
     
     var body: some View {
         HStack(spacing: 14) {
-            // Poster
+            // Poster — only use pre-loaded imageData; AsyncImage is unreliable
+            // in widget extensions due to their tight execution budget.
             Group {
                 if let data = item.imageData, let uiImage = UIImage(data: data) {
                     Image(uiImage: uiImage)
