@@ -741,26 +741,45 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               AppSpacing.gapH16,
-              Skeletonizer(
-                enabled: isSimilarLoading || isLoading,
-                child: SizedBox(
-                  height: 200,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: (details['similar']['results'] as List)
-                        .take(10)
-                        .length,
-                    separatorBuilder: (context, index) => AppSpacing.gapW12,
-                    itemBuilder: (context, index) {
-                      final similar = (details['similar']['results'] as List)
-                          .take(10)
-                          .toList();
-                      final item = similar[index] as Map<String, dynamic>;
-                      final posterPath = item['poster_path'] as String?;
-                      final simId = (item['id'] as num?)?.toInt() ?? 0;
-                      final watchState = context.watch<TvShowWatchlistCubit>().state;
-                      final isAdded = watchState is TvShowWatchlistSuccess &&
-                          watchState.shows.any((s) => (s['id'] as num?)?.toInt() == simId);
+              BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
+                builder: (context, watchState) {
+                  final Set<int> trackedShowIds = {};
+                  if (watchState is TvShowWatchlistSuccess) {
+                    for (final s in watchState.shows) {
+                      final rawId = s['id'];
+                      if (rawId is num) {
+                        trackedShowIds.add(rawId.toInt());
+                      } else if (rawId is String) {
+                        final parsed = int.tryParse(rawId);
+                        if (parsed != null) trackedShowIds.add(parsed);
+                      }
+                    }
+                  }
+
+                  return Skeletonizer(
+                    enabled: isSimilarLoading || isLoading,
+                    child: SizedBox(
+                      height: 200,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: (details['similar']['results'] as List)
+                            .take(10)
+                            .length,
+                        separatorBuilder: (context, index) => AppSpacing.gapW12,
+                        itemBuilder: (context, index) {
+                          final similar = (details['similar']['results'] as List)
+                              .take(10)
+                              .toList();
+                          final item = similar[index] as Map<String, dynamic>;
+                          final posterPath = item['poster_path'] as String?;
+                          final rawId = item['id'];
+                          int? simId;
+                          if (rawId is num) {
+                            simId = rawId.toInt();
+                          } else if (rawId is String) {
+                            simId = int.tryParse(rawId);
+                          }
+                          final isAdded = simId != null && trackedShowIds.contains(simId);
 
                       return GestureDetector(
                         onTap: () {
@@ -901,7 +920,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     },
                   ),
                 ),
-              ),
+              );
+            },
+          ),
               AppSpacing.gapH24,
             ],
 

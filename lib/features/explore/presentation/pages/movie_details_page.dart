@@ -716,35 +716,21 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                         itemCount: visibleCollectionParts.length,
                                         separatorBuilder: (context, index) => const SizedBox(width: 14),
                                         itemBuilder: (context, index) {
-                                          final rec = visibleCollectionParts[index] as Map<String, dynamic>;
-                                          final rawRecId = rec['id'];
-                                          int? recId;
-                                          if (rawRecId is num) {
-                                            recId = rawRecId.toInt();
-                                          } else if (rawRecId is String) {
-                                            recId = int.tryParse(rawRecId);
-                                          }
-                                          if (recId == null) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          final String recTitle = rec['title'] ?? rec['name'] ?? 'Unknown';
-                                          final String? recPoster = rec['poster_path'];
-                                          final String? recBackdrop = rec['backdrop_path'];
-                                          final String? recDate = rec['release_date'];
-                                          final double recVote = (rec['vote_average'] as num?)?.toDouble() ?? 0.0;
+                                           final data = _parseRecommendationData(visibleCollectionParts[index]);
+                                           if (data == null) return const SizedBox.shrink();
 
-                                          return _buildRecommendationCard(
-                                            movieId: recId,
-                                            posterPath: recPoster,
-                                            title: recTitle,
-                                            releaseDate: recDate,
-                                            voteAverage: recVote,
-                                            backdropPath: recBackdrop,
-                                            runtime: 0,
-                                            genres: '',
-                                            isAdded: watchlistedIds.contains(recId),
-                                            uid: uid,
-                                          );
+                                           return _buildRecommendationCard(
+                                             movieId: data.id,
+                                             posterPath: data.posterPath,
+                                             title: data.title,
+                                             releaseDate: data.releaseDate,
+                                             voteAverage: data.voteAverage,
+                                             backdropPath: data.backdropPath,
+                                             runtime: 0,
+                                             genres: '',
+                                             isAdded: watchlistedIds.contains(data.id),
+                                             uid: uid,
+                                           );
                                         },
                                       ),
                                     ),
@@ -927,6 +913,27 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     );
   }
 
+  _RecommendationData? _parseRecommendationData(dynamic item) {
+    if (item is! Map<String, dynamic>) return null;
+    final rawId = item['id'];
+    int? id;
+    if (rawId is num) {
+      id = rawId.toInt();
+    } else if (rawId is String) {
+      id = int.tryParse(rawId);
+    }
+    if (id == null) return null;
+
+    return _RecommendationData(
+      id: id,
+      title: item['title'] ?? item['name'] ?? 'Unknown',
+      posterPath: item['poster_path'] as String?,
+      backdropPath: item['backdrop_path'] as String?,
+      releaseDate: item['release_date'] as String?,
+      voteAverage: (item['vote_average'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
   Widget _buildRecommendationCard({
     required int movieId,
     required String? posterPath,
@@ -1052,4 +1059,22 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
       ),
     );
   }
+}
+
+class _RecommendationData {
+  final int id;
+  final String title;
+  final String? posterPath;
+  final String? backdropPath;
+  final String? releaseDate;
+  final double voteAverage;
+
+  const _RecommendationData({
+    required this.id,
+    required this.title,
+    this.posterPath,
+    this.backdropPath,
+    this.releaseDate,
+    required this.voteAverage,
+  });
 }
