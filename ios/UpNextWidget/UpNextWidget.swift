@@ -227,6 +227,7 @@ struct MAWButtonStyle: ButtonStyle {
                     .foregroundColor(.blue)
             }
         }
+        .invalidatableContent()
         .frame(width: 38, height: 38)
         .contentShape(Rectangle())
     }
