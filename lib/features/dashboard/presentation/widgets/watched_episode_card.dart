@@ -60,10 +60,13 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
     }
   }
 
-  void _handleUnwatch(BuildContext context) {
+  void _handleUnwatch(BuildContext context) async {
     if (_isReverting) return;
     _revertStartTime = DateTime.now();
     setState(() => _isReverting = true);
+
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
 
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {

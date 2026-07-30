@@ -101,6 +101,9 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       }
     });
 
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
       final uid = authState.user.uid;
