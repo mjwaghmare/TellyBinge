@@ -195,18 +195,18 @@ struct UpNextWidgetEntryView : View {
                     MediumItemRow(item: item)
                 }
             } else {
-                // Large: show up to 4 items starting from top with fixed spacing
+                // Large: show up to 4 items evenly distributed to fill the entire container height
                 let visibleItems = Array(entry.items.prefix(4))
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     ForEach(visibleItems, id: \.showId) { item in
                         ItemRow(item: item)
+                            .frame(maxHeight: .infinity)
                     }
-                    Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .padding(14)
+        .padding(12)
         .widgetURL(URL(string: "tvtimeapp://"))
     }
 }
@@ -216,7 +216,7 @@ struct ItemRow: View {
     
     @ViewBuilder
     private var rowContent: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: 10) {
             // Poster
             Group {
                 if let data = item.imageData, let uiImage = UIImage(data: data) {
@@ -227,8 +227,8 @@ struct ItemRow: View {
                     Rectangle().fill(Color.gray.opacity(0.3))
                 }
             }
-            .frame(width: 48, height: 68)
-            .cornerRadius(8)
+            .frame(width: 44, height: 62)
+            .cornerRadius(6)
             .clipped()
             
             // Details
@@ -239,17 +239,17 @@ struct ItemRow: View {
                     .textCase(.uppercase)
                 
                 Text(item.showName)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
                     .lineLimit(1)
                 
                 Text(item.episodeTitle)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
                     .lineLimit(1)
                 
                 Text(item.episodeDetails)
-                    .font(.system(size: 11, weight: .regular))
+                    .font(.system(size: 10, weight: .regular))
                     .foregroundColor(Color(white: 0.6))
                     .lineLimit(1)
             }
@@ -260,17 +260,18 @@ struct ItemRow: View {
     private var markWatchedButtonContent: some View {
         ZStack {
             Circle()
-                .fill(Color.white.opacity(0.001))
+                .stroke(Color.blue.opacity(0.8), lineWidth: 2)
                 .frame(width: 28, height: 28)
-            Circle()
-                .stroke(Color.blue, lineWidth: 2)
-                .frame(width: 28, height: 28)
+            Image(systemName: "check")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.blue)
         }
+        .frame(width: 38, height: 38)
         .contentShape(Rectangle())
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: 8) {
             // Tapping poster or title navigates to the show detail page
             if let showURL = item.showURL {
                 Link(destination: showURL) {
@@ -289,22 +290,21 @@ struct ItemRow: View {
                         markWatchedButtonContent
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .invalidatableContent()
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                 } else {
                     if let markWatchedURL = item.markWatchedURL {
                         Link(destination: markWatchedURL) {
                             markWatchedButtonContent
                         }
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                     } else {
                         markWatchedButtonContent
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                     }
                 }
             }
         }
-        .frame(height: 68)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -359,12 +359,13 @@ struct MediumItemRow: View {
     private var markWatchedButtonContent: some View {
         ZStack {
             Circle()
-                .fill(Color.white.opacity(0.001))
+                .stroke(Color.blue.opacity(0.8), lineWidth: 2)
                 .frame(width: 28, height: 28)
-            Circle()
-                .stroke(Color.blue, lineWidth: 2)
-                .frame(width: 28, height: 28)
+            Image(systemName: "check")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.blue)
         }
+        .frame(width: 38, height: 38)
         .contentShape(Rectangle())
     }
 
@@ -388,17 +389,16 @@ struct MediumItemRow: View {
                         markWatchedButtonContent
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .invalidatableContent()
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                 } else {
                     if let markWatchedURL = item.markWatchedURL {
                         Link(destination: markWatchedURL) {
                             markWatchedButtonContent
                         }
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                     } else {
                         markWatchedButtonContent
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                     }
                 }
             }
