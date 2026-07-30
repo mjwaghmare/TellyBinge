@@ -72,16 +72,34 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
             similarMovies.removeWhere((m) => m['id'] == movieId);
 
             if (similarMovies.length < 5) {
-              final genres = movieDetails['genres'] as List<dynamic>? ?? [];
-              final genreIds = genres.map((g) => (g['id'] as num).toInt()).toList();
-              final fallback = await tmdbClient.discoverMoviesWithFilters(
-                genreIds: genreIds.isNotEmpty ? genreIds : null,
-                sortBy: 'popularity.desc',
-              );
-              for (var f in fallback) {
-                if (!similarMovies.any((m) => m['id'] == f['id']) && f['id'] != movieId) {
-                  similarMovies.add(f);
+              try {
+                final genres = movieDetails['genres'] as List<dynamic>? ?? [];
+                final genreIds = <int>[];
+                for (var g in genres) {
+                  if (g is Map && g['id'] != null) {
+                    final rawId = g['id'];
+                    if (rawId is num) {
+                      genreIds.add(rawId.toInt());
+                    } else if (rawId is String) {
+                      final parsed = int.tryParse(rawId);
+                      if (parsed != null) genreIds.add(parsed);
+                    }
+                  }
                 }
+                final fallback = await tmdbClient.discoverMoviesWithFilters(
+                  genreIds: genreIds.isNotEmpty ? genreIds : null,
+                  sortBy: 'popularity.desc',
+                );
+                for (var f in fallback) {
+                  if (f is Map && f['id'] != null) {
+                    final fId = f['id'];
+                    if (!similarMovies.any((m) => m['id'] == fId) && fId != movieId) {
+                      similarMovies.add(f);
+                    }
+                  }
+                }
+              } catch (_) {
+                // Ignore fallback failure so fetched similarMovies are preserved
               }
             }
 

@@ -796,12 +796,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             backdropPath: recBackdrop,
                                             runtime: 0,
                                             genres: '',
-                                            isAdded:
-                                                (context.watch<MovieWatchlistCubit>().state is MovieWatchlistSuccess)
-                                                ? (context.watch<MovieWatchlistCubit>().state as MovieWatchlistSuccess)
-                                                      .movies
-                                                      .any((m) => (m['id'] as num?)?.toInt() == recId)
-                                                : false,
+                                            isAdded: watchlistedIds.contains(recId),
                                             uid: uid,
                                           );
                                         },

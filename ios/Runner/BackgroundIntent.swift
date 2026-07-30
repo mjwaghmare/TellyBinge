@@ -32,13 +32,13 @@ public struct MarkAsWatchedIntent: AppIntent {
             URLQueryItem(name: "episodeKey", value: episodeKey)
         ]
         if let url = components?.url {
+            // Await completion of background Dart/native work (Firebase and UserDefaults writes)
             await HomeWidgetBackgroundWorker.run(url: url, appGroup: "group.tvtimeapp.widget")
         } else {
             widgetLogger.error("❌ [Widget Tap] Failed to construct mark_watched URL for showId: \(rawShowId, privacy: .public)")
         }
         
-        // Give background Dart isolate 500ms to finish optimistic Firestore & UserDefaults write
-        try? await Task.sleep(nanoseconds: 500_000_000)
+        // Reload timelines immediately upon completion signal
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
