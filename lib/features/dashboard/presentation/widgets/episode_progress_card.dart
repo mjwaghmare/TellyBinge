@@ -33,6 +33,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
   bool _hasFiredSlideHaptic = false;
   String? _lastMarkedEpisodeCode;
   Timer? _markingSafetyTimer;
+  DateTime? _markStartTime;
 
   @override
   void dispose() {
@@ -48,10 +49,28 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
           widget.enrichedShow.isUpToDate;
       if (hasAdvanced) {
         _markingSafetyTimer?.cancel();
-        setState(() {
-          _isMarkingAsWatched = false;
-          _lastMarkedEpisodeCode = null;
-        });
+        final elapsed = _markStartTime != null
+            ? DateTime.now().difference(_markStartTime!)
+            : const Duration(milliseconds: 500);
+        const minDuration = Duration(milliseconds: 500);
+        if (elapsed < minDuration) {
+          final remaining = minDuration - elapsed;
+          _markingSafetyTimer = Timer(remaining, () {
+            if (mounted) {
+              setState(() {
+                _isMarkingAsWatched = false;
+                _lastMarkedEpisodeCode = null;
+                _markStartTime = null;
+              });
+            }
+          });
+        } else {
+          setState(() {
+            _isMarkingAsWatched = false;
+            _lastMarkedEpisodeCode = null;
+            _markStartTime = null;
+          });
+        }
       }
     }
   }
@@ -59,13 +78,14 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
   Future<void> _markAsWatched() async {
     final show = widget.enrichedShow;
     if (show.isUpToDate ||
-        show.targetSeason == 0 ||
-        show.targetEpisode == 0 ||
+        show.targetSeason <= 0 ||
+        show.targetEpisode <= 0 ||
         _isMarkingAsWatched) {
       return;
     }
 
     _lastMarkedEpisodeCode = show.episodeCode;
+    _markStartTime = DateTime.now();
     setState(() {
       _isMarkingAsWatched = true;
     });
@@ -76,6 +96,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
         setState(() {
           _isMarkingAsWatched = false;
           _lastMarkedEpisodeCode = null;
+          _markStartTime = null;
         });
       }
     });

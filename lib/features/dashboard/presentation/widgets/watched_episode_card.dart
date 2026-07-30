@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -20,21 +21,48 @@ class WatchedEpisodeCard extends StatefulWidget {
 
 class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
   bool _isReverting = false;
+  DateTime? _revertStartTime;
+  Timer? _revertTimer;
+
+  @override
+  void dispose() {
+    _revertTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(WatchedEpisodeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.historyEvent != oldWidget.historyEvent) {
       if (_isReverting) {
-        setState(() {
-          _isReverting = false;
-        });
+        _revertTimer?.cancel();
+        final elapsed = _revertStartTime != null
+            ? DateTime.now().difference(_revertStartTime!)
+            : const Duration(milliseconds: 500);
+        const minDuration = Duration(milliseconds: 500);
+        if (elapsed < minDuration) {
+          final remaining = minDuration - elapsed;
+          _revertTimer = Timer(remaining, () {
+            if (mounted) {
+              setState(() {
+                _isReverting = false;
+                _revertStartTime = null;
+              });
+            }
+          });
+        } else {
+          setState(() {
+            _isReverting = false;
+            _revertStartTime = null;
+          });
+        }
       }
     }
   }
 
   void _handleUnwatch(BuildContext context) {
     if (_isReverting) return;
+    _revertStartTime = DateTime.now();
     setState(() => _isReverting = true);
 
     final authState = context.read<AuthCubit>().state;
