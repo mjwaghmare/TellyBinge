@@ -16,39 +16,23 @@ struct UpNextItem: Codable, Hashable {
     let episodeKey: String
 }
 
-// MARK: - Intents
-@available(iOS 17.0, *)
-struct MarkAsWatchedIntent: AppIntent {
-    static var title: LocalizedStringResource = "Mark as Watched"
-    
-    @Parameter(title: "Show ID")
-    var showId: Int
-    
-    @Parameter(title: "Episode Key")
-    var episodeKey: String
-    
-    init() {}
-    
-    init(showId: Int, episodeKey: String) {
-        self.showId = showId
-        self.episodeKey = episodeKey
+extension UpNextItem {
+    var showURL: URL? {
+        guard showId > 0 else { return nil }
+        return URL(string: "tvtimeapp://show/\(showId)")
     }
     
-    func perform() async throws -> some IntentResult {
-        let rawShowId = String(showId)
-        widgetLogger.notice("👉 [Widget Tap] MarkAsWatchedIntent triggered for showId: \(rawShowId, privacy: .public), episodeKey: \(episodeKey, privacy: .public)")
-        let urlString = "tvtimeapp://mark_watched?showId=\(rawShowId)&episodeKey=\(episodeKey)"
-        if let url = URL(string: urlString) {
-            // Await directly — do NOT wrap in Task {} or iOS kills the process
-            // before the Flutter headless isolate has a chance to run.
-            await HomeWidgetBackgroundWorker.run(url: url, appGroup: WidgetConstants.appGroup)
-        }
-        // Force an immediate timeline reload so the widget UI updates right away
-        // rather than waiting for the next scheduled refresh.
-        WidgetCenter.shared.reloadAllTimelines()
-        return .result()
+    var markWatchedURL: URL? {
+        guard showId > 0, !episodeKey.isEmpty else { return nil }
+        var components = URLComponents(string: "tvtimeapp://mark_watched")
+        components?.queryItems = [
+            URLQueryItem(name: "showId", value: String(showId)),
+            URLQueryItem(name: "episodeKey", value: episodeKey)
+        ]
+        return components?.url
     }
 }
+
 
 // MARK: - Constants & Logging
 enum WidgetConstants {
@@ -122,7 +106,8 @@ enum PosterImageLoader {
 let previewItems: [UpNextItem] = [
     UpNextItem(showId: 1, showName: "House of the Dragon", header: "NEXT SEASON", episodeTitle: "S3, E1", episodeDetails: "1h6m · Salt and Sea...", localPosterPath: nil, episodeKey: "S3E1"),
     UpNextItem(showId: 2, showName: "The Boys", header: "UPCOMING", episodeTitle: "S4, E8", episodeDetails: "1h · Season Finale", localPosterPath: nil, episodeKey: "S4E8"),
-    UpNextItem(showId: 3, showName: "Severance", header: "NEXT SEASON", episodeTitle: "S2, E1", episodeDetails: "50m", localPosterPath: nil, episodeKey: "S2E1")
+    UpNextItem(showId: 3, showName: "Severance", header: "NEXT SEASON", episodeTitle: "S2, E1", episodeDetails: "50m", localPosterPath: nil, episodeKey: "S2E1"),
+    UpNextItem(showId: 4, showName: "The Bear", header: "WATCH NEXT", episodeTitle: "S3, E1", episodeDetails: "30m", localPosterPath: nil, episodeKey: "S3E1")
 ]
 
 struct Provider: TimelineProvider {
@@ -153,7 +138,12 @@ struct Provider: TimelineProvider {
                     let index = i
                     let path = loadedItems[i].localPosterPath
                     group.addTask {
-                        let data: Data? = path != nil ? await PosterImageLoader.loadData(from: path!) : nil
+                        let data: Data?
+                        if let path = path {
+                            data = await PosterImageLoader.loadData(from: path)
+                        } else {
+                            data = nil
+                        }
                         return (index, data)
                     }
                 }
@@ -187,7 +177,10 @@ struct UpNextWidgetEntryView : View {
     var body: some View {
         VStack(spacing: 0) {
             if entry.items.isEmpty {
-                VStack {
+                VStack(spacing: 6) {
+                    Image(systemName: "tv.slash")
+                        .font(.system(size: 28))
+                        .foregroundColor(.gray)
                     Text("Watch Next")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -202,16 +195,18 @@ struct UpNextWidgetEntryView : View {
                     MediumItemRow(item: item)
                 }
             } else {
-                // Large: show up to 3 items
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(entry.items.prefix(3), id: \.showId) { item in
+                // Large: show up to 4 items starting from top with fixed spacing
+                let visibleItems = Array(entry.items.prefix(4))
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(visibleItems, id: \.showId) { item in
                         ItemRow(item: item)
                     }
+                    Spacer(minLength: 0)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
-        .padding(family == .systemMedium ? 16 : 20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(14)
         .widgetURL(URL(string: "tvtimeapp://"))
     }
 }
@@ -219,74 +214,97 @@ struct UpNextWidgetEntryView : View {
 struct ItemRow: View {
     let item: UpNextItem
     
+    @ViewBuilder
+    private var rowContent: some View {
+        HStack(alignment: .center, spacing: 12) {
+            // Poster
+            Group {
+                if let data = item.imageData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Rectangle().fill(Color.gray.opacity(0.3))
+                }
+            }
+            .frame(width: 48, height: 68)
+            .cornerRadius(8)
+            .clipped()
+            
+            // Details
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.header)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(Color(white: 0.6))
+                    .textCase(.uppercase)
+                
+                Text(item.showName)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                
+                Text(item.episodeTitle)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                
+                Text(item.episodeDetails)
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundColor(Color(white: 0.6))
+                    .lineLimit(1)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var markWatchedButtonContent: some View {
+        ZStack {
+            Circle()
+                .fill(Color.white.opacity(0.001))
+                .frame(width: 28, height: 28)
+            Circle()
+                .stroke(Color.blue, lineWidth: 2)
+                .frame(width: 28, height: 28)
+        }
+        .contentShape(Rectangle())
+    }
+
     var body: some View {
-        // Each row deep-links to the specific show so tapping opens the detail page
-        Link(destination: URL(string: "tvtimeapp://show/\(item.showId)")!) {
-            HStack(alignment: .top, spacing: 14) {
-                // Poster — only use pre-loaded imageData; AsyncImage is unreliable
-                // in widget extensions due to their tight execution budget.
-                Group {
-                    if let data = item.imageData, let uiImage = UIImage(data: data) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } else {
-                        Rectangle().fill(Color.gray.opacity(0.3))
+        HStack(alignment: .center, spacing: 12) {
+            // Tapping poster or title navigates to the show detail page
+            if let showURL = item.showURL {
+                Link(destination: showURL) {
+                    rowContent
+                }
+            } else {
+                rowContent
+            }
+            
+            Spacer(minLength: 4)
+            
+            // Mark As Watched Button — OUTSIDE the Link so intent fires directly without opening app
+            if !item.episodeKey.isEmpty {
+                if #available(iOS 17.0, *) {
+                    Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
+                        markWatchedButtonContent
                     }
-                }
-                .frame(width: 55, height: 80)
-                .cornerRadius(12)
-                
-                // Details
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.header)
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(Color(white: 0.6))
-                        .textCase(.uppercase)
-                    
-                    Text(item.showName)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .padding(.bottom, 2)
-                    
-                    Text(item.episodeTitle)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                    
-                    Text(item.episodeDetails)
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(Color(white: 0.6))
-                        .lineLimit(1)
-                }
-                
-                Spacer(minLength: 8)
-                
-                // Mark As Watched Button - only show if episode can be marked
-                if !item.episodeKey.isEmpty {
-                    if #available(iOS 17.0, *) {
-                        Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
-                            Circle()
-                                .stroke(Color.blue, lineWidth: 2)
-                                .frame(width: 26, height: 26)
-                                .contentShape(Rectangle())
+                    .buttonStyle(PlainButtonStyle())
+                    .invalidatableContent()
+                    .frame(width: 44, height: 44)
+                } else {
+                    if let markWatchedURL = item.markWatchedURL {
+                        Link(destination: markWatchedURL) {
+                            markWatchedButtonContent
                         }
-                        .buttonStyle(PlainButtonStyle())
                         .frame(width: 44, height: 44)
-                        .padding(.top, 16)
                     } else {
-                        // Fallback for iOS 16: clicking the row Link already navigates
-                        Circle()
-                            .stroke(Color.blue, lineWidth: 2)
-                            .frame(width: 26, height: 26)
+                        markWatchedButtonContent
                             .frame(width: 44, height: 44)
-                            .padding(.top, 16)
                     }
                 }
             }
-            .frame(height: 80)
         }
+        .frame(height: 68)
     }
 }
 
@@ -294,7 +312,8 @@ struct ItemRow: View {
 struct MediumItemRow: View {
     let item: UpNextItem
     
-    var body: some View {
+    @ViewBuilder
+    private var rowContent: some View {
         HStack(spacing: 14) {
             // Poster — only use pre-loaded imageData; AsyncImage is unreliable
             // in widget extensions due to their tight execution budget.
@@ -333,6 +352,32 @@ struct MediumItemRow: View {
                     .foregroundColor(Color(white: 0.6))
                     .lineLimit(1)
             }
+        }
+    }
+    
+    @ViewBuilder
+    private var markWatchedButtonContent: some View {
+        ZStack {
+            Circle()
+                .fill(Color.white.opacity(0.001))
+                .frame(width: 28, height: 28)
+            Circle()
+                .stroke(Color.blue, lineWidth: 2)
+                .frame(width: 28, height: 28)
+        }
+        .contentShape(Rectangle())
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Tapping poster or title navigates to the show detail page
+            if let showURL = item.showURL {
+                Link(destination: showURL) {
+                    rowContent
+                }
+            } else {
+                rowContent
+            }
             
             Spacer(minLength: 4)
             
@@ -340,21 +385,21 @@ struct MediumItemRow: View {
             if !item.episodeKey.isEmpty {
                 if #available(iOS 17.0, *) {
                     Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
-                        Circle()
-                            .stroke(Color.blue, lineWidth: 2)
-                            .frame(width: 28, height: 28)
-                            .contentShape(Rectangle())
+                        markWatchedButtonContent
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .invalidatableContent()
                     .frame(width: 44, height: 44)
                 } else {
-                    Link(destination: URL(string: "tvtimeapp://show/\(item.showId)")!) {
-                        Circle()
-                            .stroke(Color.blue, lineWidth: 2)
-                            .frame(width: 28, height: 28)
-                            .contentShape(Rectangle())
+                    if let markWatchedURL = item.markWatchedURL {
+                        Link(destination: markWatchedURL) {
+                            markWatchedButtonContent
+                        }
+                        .frame(width: 44, height: 44)
+                    } else {
+                        markWatchedButtonContent
+                            .frame(width: 44, height: 44)
                     }
-                    .frame(width: 44, height: 44)
                 }
             }
         }

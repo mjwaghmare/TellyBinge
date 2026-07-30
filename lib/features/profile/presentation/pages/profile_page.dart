@@ -37,7 +37,7 @@ class HorizontalItem {
   final bool isFavorite;
   final bool isWatched;
   final bool isMovie;
-  final bool isStopped; 
+  final bool isStopped;
   final String? addedAt;
   final String? watchedAt;
   final int watchedCount;
@@ -69,8 +69,7 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage>
-    with SingleTickerProviderStateMixin {
+class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
   String _movieSortOption = 'Last Added';
   String _movieProgressOption = 'All';
   String _showSortOption = 'Last added';
@@ -81,11 +80,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   late TabController _tabController;
   int _previousTabIndex = 0;
-  DateTime _heatmapMonth = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-    1,
-  );
+  DateTime _heatmapMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
   late PageController _heatmapPageController;
   int _heatmapPageIndex = 0;
   bool _isHeatmapExpanded = false;
@@ -117,10 +112,7 @@ class _ProfilePageState extends State<ProfilePage>
     // Fetch heatmap watch history for current month
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      context.read<ProfileHeatmapCubit>().loadMonthActivity(
-        user.uid,
-        _heatmapMonth,
-      );
+      context.read<ProfileHeatmapCubit>().loadMonthActivity(user.uid, _heatmapMonth);
     }
   }
 
@@ -153,12 +145,8 @@ class _ProfilePageState extends State<ProfilePage>
   void _showSettingsMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).brightness == Brightness.light
-          ? Colors.grey[200]
-          : AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      ),
+      backgroundColor: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16.0))),
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -169,21 +157,13 @@ class _ProfilePageState extends State<ProfilePage>
                 title: Text('Settings'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsPage(),
-                    ),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsPage()));
                 },
               ),
               Divider(color: Theme.of(context).dividerColor),
               ListTile(
                 leading: Icon(Icons.logout, color: AppColors.error),
-                title: Text(
-                  'Sign Out',
-                  style: TextStyle(color: AppColors.error),
-                ),
+                title: Text('Sign Out', style: TextStyle(color: AppColors.error)),
                 onTap: () {
                   Navigator.pop(context);
                   context.read<AuthCubit>().signOut();
@@ -205,14 +185,11 @@ class _ProfilePageState extends State<ProfilePage>
     String generateUsername(String name) {
       if (name.isEmpty || name == 'User') return 'user_tellybinge';
       // Strip everything except letters and numbers, then lowercase
-      String cleanName = name
-          .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
-          .toLowerCase();
+      String cleanName = name.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase();
 
       // If it ends with exactly one digit (like 'mjwaghmare5'), pad it to '05'
       if (RegExp(r'[a-z]\d$').hasMatch(cleanName)) {
-        cleanName =
-            '${cleanName.substring(0, cleanName.length - 1)}0${cleanName.substring(cleanName.length - 1)}';
+        cleanName = '${cleanName.substring(0, cleanName.length - 1)}0${cleanName.substring(cleanName.length - 1)}';
       }
 
       return cleanName;
@@ -235,11 +212,7 @@ class _ProfilePageState extends State<ProfilePage>
         ),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.menu,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-              size: 28,
-            ),
+            icon: Icon(Icons.menu, color: Theme.of(context).textTheme.bodyLarge?.color, size: 28),
             onPressed: _showSettingsMenu,
           ),
         ],
@@ -253,8 +226,7 @@ class _ProfilePageState extends State<ProfilePage>
               List<HorizontalItem> watchedShows = [];
               List<HorizontalItem> displayedShows = [];
               bool isLoadingMovies = watchlistState is MovieWatchlistLoading;
-              bool isLoadingShows =
-                  showWatchlistState is TvShowWatchlistLoading;
+              bool isLoadingShows = showWatchlistState is TvShowWatchlistLoading;
 
               if (watchlistState is MovieWatchlistSuccess) {
                 watchedMovies = watchlistState.movies
@@ -264,8 +236,7 @@ class _ProfilePageState extends State<ProfilePage>
                         movieId: (m['id'] as num?)?.toInt() ?? 0,
                         title: m['title'] as String? ?? '',
                         imageUrl: _getImageUrl(m['posterPath'] as String?),
-                        voteAverage:
-                            (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
+                        voteAverage: (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
                         releaseDate: m['releaseDate'] as String? ?? '',
                         isFavorite: m['isFavorite'] as bool? ?? false,
                         isWatched: m['isWatched'] as bool? ?? false,
@@ -279,13 +250,9 @@ class _ProfilePageState extends State<ProfilePage>
                 var filteredMovies = watchlistState.movies;
 
                 if (_movieProgressOption == 'Watched') {
-                  filteredMovies = filteredMovies
-                      .where((m) => m['isWatched'] as bool? ?? false)
-                      .toList();
+                  filteredMovies = filteredMovies.where((m) => m['isWatched'] as bool? ?? false).toList();
                 } else if (_movieProgressOption == 'Not watched') {
-                  filteredMovies = filteredMovies
-                      .where((m) => !(m['isWatched'] as bool? ?? false))
-                      .toList();
+                  filteredMovies = filteredMovies.where((m) => !(m['isWatched'] as bool? ?? false)).toList();
                 }
 
                 displayedMovies = filteredMovies
@@ -294,8 +261,7 @@ class _ProfilePageState extends State<ProfilePage>
                         movieId: (m['id'] as num?)?.toInt() ?? 0,
                         title: m['title'] as String? ?? '',
                         imageUrl: _getImageUrl(m['posterPath'] as String?),
-                        voteAverage:
-                            (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
+                        voteAverage: (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
                         releaseDate: m['releaseDate'] as String? ?? '',
                         isFavorite: m['isFavorite'] as bool? ?? false,
                         isWatched: m['isWatched'] as bool? ?? false,
@@ -320,41 +286,27 @@ class _ProfilePageState extends State<ProfilePage>
               }
 
               if (showWatchlistState is TvShowWatchlistSuccess) {
-                watchedShows = showWatchlistState.shows
-                    .map((s) => _showToHorizontalItem(s))
-                    .toList();
+                watchedShows = showWatchlistState.shows.map((s) => _showToHorizontalItem(s)).toList();
 
                 var filteredShows = showWatchlistState.shows;
 
                 // 1. Progress Filter
                 if (_showProgressOption == 'Stopped') {
-                  filteredShows = filteredShows
-                      .where((s) => s['status'] == 'STOPPED')
-                      .toList();
+                  filteredShows = filteredShows.where((s) => s['status'] == 'STOPPED').toList();
                 } else {
                   if (_showProgressOption != 'All') {
                     // Exclude stopped shows from specific categories
-                    filteredShows = filteredShows
-                        .where((s) => s['status'] != 'STOPPED')
-                        .toList();
+                    filteredShows = filteredShows.where((s) => s['status'] != 'STOPPED').toList();
                   }
 
                   if (_showProgressOption == 'Watching') {
-                    filteredShows = filteredShows
-                        .where((s) => s['category'] == 'WATCH_NEXT')
-                        .toList();
+                    filteredShows = filteredShows.where((s) => s['category'] == 'WATCH_NEXT').toList();
                   } else if (_showProgressOption == 'Haven\'t started') {
-                    filteredShows = filteredShows
-                        .where((s) => s['category'] == 'HAVENT_STARTED')
-                        .toList();
+                    filteredShows = filteredShows.where((s) => s['category'] == 'HAVENT_STARTED').toList();
                   } else if (_showProgressOption == 'Up to date') {
-                    filteredShows = filteredShows
-                        .where((s) => s['category'] == 'UP_TO_DATE')
-                        .toList();
+                    filteredShows = filteredShows.where((s) => s['category'] == 'UP_TO_DATE').toList();
                   } else if (_showProgressOption == 'Finished') {
-                    filteredShows = filteredShows
-                        .where((s) => s['category'] == 'FINISHED')
-                        .toList();
+                    filteredShows = filteredShows.where((s) => s['category'] == 'FINISHED').toList();
                   }
                 }
 
@@ -377,10 +329,7 @@ class _ProfilePageState extends State<ProfilePage>
               }
 
               if (_movieSortOption == 'Alphabetical') {
-                displayedMovies.sort(
-                  (a, b) =>
-                      a.title.toLowerCase().compareTo(b.title.toLowerCase()),
-                );
+                displayedMovies.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
               } else if (_movieSortOption == 'Last Added') {
                 displayedMovies.sort((a, b) {
                   final dateA = _parseDate(a.addedAt ?? '');
@@ -402,10 +351,7 @@ class _ProfilePageState extends State<ProfilePage>
               }
 
               if (_showSortOption == 'Alphabetical') {
-                displayedShows.sort(
-                  (a, b) =>
-                      a.title.toLowerCase().compareTo(b.title.toLowerCase()),
-                );
+                displayedShows.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
               } else if (_showSortOption == 'Last added') {
                 displayedShows.sort((a, b) {
                   final dateA = _parseDate(a.addedAt ?? '');
@@ -433,16 +379,9 @@ class _ProfilePageState extends State<ProfilePage>
                         .fold<int>(0, (sum, element) => sum + element)
                   : 0;
 
-              final totalShowMinutes =
-                  (showWatchlistState is TvShowWatchlistSuccess)
+              final totalShowMinutes = (showWatchlistState is TvShowWatchlistSuccess)
                   ? showWatchlistState.shows
-                        .map(
-                          (s) =>
-                              (List<dynamic>.from(
-                                s['watchedEpisodes'] ?? [],
-                              )).length *
-                              45,
-                        )
+                        .map((s) => (List<dynamic>.from(s['watchedEpisodes'] ?? [])).length * 45)
                         .fold<int>(0, (sum, element) => sum + element)
                   : 0;
 
@@ -467,44 +406,27 @@ class _ProfilePageState extends State<ProfilePage>
                         children: [
                           // Profile Header Info
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                              vertical: 8.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8.0),
                             child: Row(
                               children: [
                                 // Avatar with ring
                                 Container(
-                                  padding: const EdgeInsets.all(
-                                    3,
-                                  ), // Border width
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppColors.primary,
-                                  ),
+                                  padding: const EdgeInsets.all(3), // Border width
+                                  decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary),
                                   child: Container(
-                                    padding: const EdgeInsets.all(
-                                      2,
-                                    ), // Gap between ring and image
-                                    decoration: BoxDecoration(
-                                      color: Colors.black,
-                                      shape: BoxShape.circle,
-                                    ),
+                                    padding: const EdgeInsets.all(2), // Gap between ring and image
+                                    decoration: BoxDecoration(color: Colors.black, shape: BoxShape.circle),
                                     child: CircleAvatar(
                                       radius: 36,
                                       backgroundColor: Colors.grey[800],
-                                      backgroundImage: photoURL != null
+                                      backgroundImage: (photoURL != null && photoURL.isNotEmpty)
                                           ? CachedNetworkImageProvider(photoURL)
                                           : null,
-                                      child: photoURL == null
+                                      child: (photoURL == null || photoURL.isEmpty)
                                           ? Text(
-                                              displayName.isNotEmpty
-                                                  ? displayName[0].toUpperCase()
-                                                  : 'U',
+                                              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
                                               style: TextStyle(
-                                                color: Theme.of(
-                                                  context,
-                                                ).textTheme.bodyLarge?.color,
+                                                color: Theme.of(context).textTheme.bodyLarge?.color,
                                                 fontSize: 32,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -517,8 +439,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 // Stats
                                 Expanded(
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                     children: [
                                       _buildStatColumn(
                                         '${watchedShows.length}',
@@ -548,10 +469,7 @@ class _ProfilePageState extends State<ProfilePage>
                             curve: Curves.easeInOut,
                             child: _isHeatmapExpanded
                                 ? _buildHeatmapSection(context, user?.uid ?? '')
-                                : const SizedBox(
-                                    width: double.infinity,
-                                    height: 0,
-                                  ),
+                                : const SizedBox(width: double.infinity, height: 0),
                           ),
                         ],
                       ),
@@ -579,8 +497,7 @@ class _ProfilePageState extends State<ProfilePage>
                       if (notification.direction == ScrollDirection.reverse) {
                         if (_isFabVisible.value) _isFabVisible.value = false;
                         _fabTimer?.cancel();
-                      } else if (notification.direction ==
-                          ScrollDirection.forward) {
+                      } else if (notification.direction == ScrollDirection.forward) {
                         if (!_isFabVisible.value) _isFabVisible.value = true;
                         _fabTimer?.cancel();
                       }
@@ -599,16 +516,11 @@ class _ProfilePageState extends State<ProfilePage>
                         backgroundColor: Colors.transparent,
                         body: Skeletonizer(
                           enabled: isLoadingShows || _isFilteringShows,
-                          child: _buildGrid(
-                            displayedShows,
-                            'No shows matched your filter.',
-                          ),
+                          child: _buildGrid(displayedShows, 'No shows matched your filter.'),
                         ),
                         floatingActionButton: Builder(
                           builder: (context) {
-                            final isShowFilterActive =
-                                _showSortOption != 'Last added' ||
-                                _showProgressOption != 'All';
+                            final isShowFilterActive = _showSortOption != 'Last added' || _showProgressOption != 'All';
                             final fabWidget = Container(
                               margin: const EdgeInsets.only(bottom: 100),
                               height: 40,
@@ -617,9 +529,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.greenAccent.withValues(
-                                            alpha: 0.5,
-                                          ),
+                                          color: Colors.greenAccent.withValues(alpha: 0.5),
                                           blurRadius: 8,
                                           spreadRadius: 1,
                                         ),
@@ -628,43 +538,31 @@ class _ProfilePageState extends State<ProfilePage>
                                   : null,
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  final result =
-                                      await showModalBottomSheet<
-                                        Map<String, String>
-                                      >(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (context) =>
-                                            ShowsFilterBottomSheet(
-                                              initialSort: _showSortOption,
-                                              initialProgress:
-                                                  _showProgressOption,
-                                            ),
-                                      );
+                                  final result = await showModalBottomSheet<Map<String, String>>(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) => ShowsFilterBottomSheet(
+                                      initialSort: _showSortOption,
+                                      initialProgress: _showProgressOption,
+                                    ),
+                                  );
                                   if (result != null) {
                                     if (!context.mounted) return;
                                     setState(() {
-                                      _showSortOption =
-                                          result['sort'] ?? 'Last added';
-                                      _showProgressOption =
-                                          result['progress'] ?? 'All';
+                                      _showSortOption = result['sort'] ?? 'Last added';
+                                      _showProgressOption = result['progress'] ?? 'All';
                                       _isFilteringShows = true;
                                     });
-                                    final scrollController =
-                                        PrimaryScrollController.of(context);
+                                    final scrollController = PrimaryScrollController.of(context);
                                     if (scrollController.hasClients) {
                                       scrollController.animateTo(
                                         0,
-                                        duration: const Duration(
-                                          milliseconds: 300,
-                                        ),
+                                        duration: const Duration(milliseconds: 300),
                                         curve: Curves.easeOut,
                                       );
                                     }
-                                    await Future.delayed(
-                                      const Duration(milliseconds: 300),
-                                    );
+                                    await Future.delayed(const Duration(milliseconds: 300));
                                     if (mounted) {
                                       setState(() {
                                         _isFilteringShows = false;
@@ -676,26 +574,12 @@ class _ProfilePageState extends State<ProfilePage>
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.black,
                                   elevation: isShowFilterActive ? 0 : 4,
-                                  side: isShowFilterActive
-                                      ? BorderSide(
-                                          color: Colors.greenAccent,
-                                          width: 1.5,
-                                        )
-                                      : null,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 0,
-                                  ),
+                                  side: isShowFilterActive ? BorderSide(color: Colors.greenAccent, width: 1.5) : null,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
                                   shape: const StadiumBorder(),
                                 ),
                                 icon: Icon(Icons.tune, size: 20),
-                                label: Text(
-                                  'FILTERS',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
+                                label: Text('FILTERS', style: TextStyle(fontSize: 13, letterSpacing: 0.8)),
                               ),
                             );
                             return ValueListenableBuilder<bool>(
@@ -704,32 +588,25 @@ class _ProfilePageState extends State<ProfilePage>
                                 return AnimatedSlide(
                                   duration: const Duration(milliseconds: 320),
                                   curve: Curves.easeInOutCubic,
-                                  offset: isVisible
-                                      ? Offset.zero
-                                      : const Offset(0, 3.0),
+                                  offset: isVisible ? Offset.zero : const Offset(0, 3.0),
                                   child: fabWidget,
                                 );
                               },
                             );
                           },
                         ),
-                        floatingActionButtonLocation:
-                            FloatingActionButtonLocation.centerFloat,
+                        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
                       ),
                       Scaffold(
                         backgroundColor: Colors.transparent,
                         body: Skeletonizer(
                           enabled: isLoadingMovies || _isFilteringMovies,
-                          child: _buildGrid(
-                            displayedMovies,
-                            'No movies matched your filter.',
-                          ),
+                          child: _buildGrid(displayedMovies, 'No movies matched your filter.'),
                         ),
                         floatingActionButton: Builder(
                           builder: (context) {
                             final isMovieFilterActive =
-                                _movieSortOption != 'Last Added' ||
-                                _movieProgressOption != 'All';
+                                _movieSortOption != 'Last Added' || _movieProgressOption != 'All';
                             final fabWidget = Container(
                               margin: const EdgeInsets.only(bottom: 100),
                               height: 40,
@@ -738,9 +615,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.greenAccent.withValues(
-                                            alpha: 0.5,
-                                          ),
+                                          color: Colors.greenAccent.withValues(alpha: 0.5),
                                           blurRadius: 8,
                                           spreadRadius: 1,
                                         ),
@@ -749,43 +624,31 @@ class _ProfilePageState extends State<ProfilePage>
                                   : null,
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  final result =
-                                      await showModalBottomSheet<
-                                        Map<String, String>
-                                      >(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (context) =>
-                                            MoviesFilterBottomSheet(
-                                              initialSort: _movieSortOption,
-                                              initialProgress:
-                                                  _movieProgressOption,
-                                            ),
-                                      );
+                                  final result = await showModalBottomSheet<Map<String, String>>(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) => MoviesFilterBottomSheet(
+                                      initialSort: _movieSortOption,
+                                      initialProgress: _movieProgressOption,
+                                    ),
+                                  );
                                   if (result != null) {
                                     if (!context.mounted) return;
                                     setState(() {
-                                      _movieSortOption =
-                                          result['sort'] ?? 'Last Added';
-                                      _movieProgressOption =
-                                          result['progress'] ?? 'All';
+                                      _movieSortOption = result['sort'] ?? 'Last Added';
+                                      _movieProgressOption = result['progress'] ?? 'All';
                                       _isFilteringMovies = true;
                                     });
-                                    final scrollController =
-                                        PrimaryScrollController.of(context);
+                                    final scrollController = PrimaryScrollController.of(context);
                                     if (scrollController.hasClients) {
                                       scrollController.animateTo(
                                         0,
-                                        duration: const Duration(
-                                          milliseconds: 300,
-                                        ),
+                                        duration: const Duration(milliseconds: 300),
                                         curve: Curves.easeOut,
                                       );
                                     }
-                                    await Future.delayed(
-                                      const Duration(milliseconds: 300),
-                                    );
+                                    await Future.delayed(const Duration(milliseconds: 300));
                                     if (mounted) {
                                       setState(() {
                                         _isFilteringMovies = false;
@@ -797,26 +660,12 @@ class _ProfilePageState extends State<ProfilePage>
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.black,
                                   elevation: isMovieFilterActive ? 0 : 4,
-                                  side: isMovieFilterActive
-                                      ? BorderSide(
-                                          color: Colors.greenAccent,
-                                          width: 1.5,
-                                        )
-                                      : null,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 0,
-                                  ),
+                                  side: isMovieFilterActive ? BorderSide(color: Colors.greenAccent, width: 1.5) : null,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
                                   shape: const StadiumBorder(),
                                 ),
                                 icon: Icon(Icons.tune, size: 20),
-                                label: Text(
-                                  'FILTERS',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
+                                label: Text('FILTERS', style: TextStyle(fontSize: 13, letterSpacing: 0.8)),
                               ),
                             );
                             return ValueListenableBuilder<bool>(
@@ -825,17 +674,14 @@ class _ProfilePageState extends State<ProfilePage>
                                 return AnimatedSlide(
                                   duration: const Duration(milliseconds: 320),
                                   curve: Curves.easeInOutCubic,
-                                  offset: isVisible
-                                      ? Offset.zero
-                                      : const Offset(0, 3.0),
+                                  offset: isVisible ? Offset.zero : const Offset(0, 3.0),
                                   child: fabWidget,
                                 );
                               },
                             );
                           },
                         ),
-                        floatingActionButtonLocation:
-                            FloatingActionButtonLocation.centerFloat,
+                        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
                       ),
                     ],
                   ),
@@ -848,21 +694,13 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildStatColumn(
-    String count,
-    String label,
-    String timeSpent,
-    VoidCallback onTap,
-  ) {
+  Widget _buildStatColumn(String count, String label, String timeSpent, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            count,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          Text(count, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 2),
           Text(label, style: TextStyle(fontSize: 13)),
           const SizedBox(height: 4),
@@ -874,9 +712,7 @@ class _ProfilePageState extends State<ProfilePage>
             child: Text(
               timeSpent,
               style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -892,23 +728,12 @@ class _ProfilePageState extends State<ProfilePage>
       return Center(
         child: Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-          child: Text(
-            emptyMessage,
-            style: TextStyle(
-              color: Theme.of(context).disabledColor,
-              fontSize: 14,
-            ),
-          ),
+          child: Text(emptyMessage, style: TextStyle(color: Theme.of(context).disabledColor, fontSize: 14)),
         ),
       );
     }
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        2.0,
-        2.0,
-        2.0,
-        160.0,
-      ),
+      padding: const EdgeInsets.fromLTRB(2.0, 2.0, 2.0, 160.0),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 2.0,
@@ -941,9 +766,7 @@ class _ProfilePageState extends State<ProfilePage>
                   }
                 }
               },
-              child: Text(
-                item.isFavorite ? 'Remove from Favorites' : 'Mark as Favorite',
-              ),
+              child: Text(item.isFavorite ? 'Remove from Favorites' : 'Mark as Favorite'),
             ),
             CupertinoContextMenuAction(
               isDestructiveAction: true,
@@ -953,15 +776,9 @@ class _ProfilePageState extends State<ProfilePage>
                 final uid = FirebaseAuth.instance.currentUser?.uid;
                 if (uid != null) {
                   if (item.isMovie) {
-                    context.read<MovieWatchlistCubit>().removeMovie(
-                      uid: uid,
-                      movieId: item.movieId,
-                    );
+                    context.read<MovieWatchlistCubit>().removeMovie(uid: uid, movieId: item.movieId);
                   } else {
-                    context.read<TvShowWatchlistCubit>().removeShow(
-                      uid: uid,
-                      showId: item.movieId,
-                    );
+                    context.read<TvShowWatchlistCubit>().removeShow(uid: uid, showId: item.movieId);
                   }
                 }
               },
@@ -974,24 +791,15 @@ class _ProfilePageState extends State<ProfilePage>
               if (item.isMovie) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        MovieDetailsPage(movieId: item.movieId),
-                  ),
+                  MaterialPageRoute(builder: (context) => MovieDetailsPage(movieId: item.movieId)),
                 );
               } else {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => BlocProvider<ShowDetailsCubit>(
-                      create: (context) => ShowDetailsCubit(
-                        tmdbClient: context.read<TmdbClient>(),
-                      ),
-                      child: ShowDetailsPage(
-                        mediaId: item.movieId,
-                        mediaType: 'tv',
-                        title: item.title,
-                      ),
+                      create: (context) => ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+                      child: ShowDetailsPage(mediaId: item.movieId, mediaType: 'tv', title: item.title),
                     ),
                   ),
                 );
@@ -1003,41 +811,46 @@ class _ProfilePageState extends State<ProfilePage>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  CachedNetworkImage(
-                    imageUrl: item.imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) =>
-                        Container(color: AppColors.surface),
-                    errorWidget: (context, url, error) => Container(
-                      color: Theme.of(context).brightness == Brightness.light
-                          ? Colors.grey[200]
-                          : AppColors.surface,
-                      child: Center(
-                        child: Icon(
-                          Icons.movie_outlined,
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                              ? Colors.grey[500]
-                              : AppColors.textTertiary,
+                  item.imageUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: item.imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(color: AppColors.surface),
+                          errorWidget: (context, url, error) => Container(
+                            color: Theme.of(context).brightness == Brightness.light
+                                ? Colors.grey[200]
+                                : AppColors.surface,
+                            child: Center(
+                              child: Icon(
+                                Icons.movie_outlined,
+                                color: Theme.of(context).brightness == Brightness.light
+                                    ? Colors.grey[500]
+                                    : AppColors.textTertiary,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: Theme.of(context).brightness == Brightness.light
+                              ? Colors.grey[200]
+                              : AppColors.surface,
+                          child: Center(
+                            child: Icon(
+                              Icons.movie_outlined,
+                              color: Theme.of(context).brightness == Brightness.light
+                                  ? Colors.grey[500]
+                                  : AppColors.textTertiary,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
                   if (item.isFavorite)
                     Positioned(
                       top: 4,
                       right: 4,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.favorite,
-                          color: Colors.red,
-                          size: 16,
-                        ),
+                        decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                        child: Icon(Icons.favorite, color: Colors.red, size: 16),
                       ),
                     ),
                   // ADD: Watched Eye Icon for Movies and TV Shows with unknown totalEpisodes
@@ -1047,15 +860,8 @@ class _ProfilePageState extends State<ProfilePage>
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.remove_red_eye,
-                          color: Colors.green,
-                          size: 16,
-                        ),
+                        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                        child: const Icon(Icons.remove_red_eye, color: Colors.green, size: 16),
                       ),
                     ),
                   // ADD: Progress Indicator for TV Shows
@@ -1075,21 +881,14 @@ class _ProfilePageState extends State<ProfilePage>
                       top: 4,
                       right: 4,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           '${item.watchedCount.clamp(0, item.totalEpisodes)}/${item.totalEpisodes}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -1100,10 +899,7 @@ class _ProfilePageState extends State<ProfilePage>
                       top: 6,
                       right: 6,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(4.0),
@@ -1175,34 +971,21 @@ class _ProfilePageState extends State<ProfilePage>
           movieCounts = state.movieCounts;
         }
 
-        final int daysInMonth = DateUtils.getDaysInMonth(
-          currentMonth.year,
-          currentMonth.month,
-        );
-        final DateTime firstDayOfMonth = DateTime(
-          currentMonth.year,
-          currentMonth.month,
-          1,
-        );
-        final int offset = firstDayOfMonth.weekday == 7
-            ? 0
-            : firstDayOfMonth.weekday;
+        final int daysInMonth = DateUtils.getDaysInMonth(currentMonth.year, currentMonth.month);
+        final DateTime firstDayOfMonth = DateTime(currentMonth.year, currentMonth.month, 1);
+        final int offset = firstDayOfMonth.weekday == 7 ? 0 : firstDayOfMonth.weekday;
         final int totalSlots = offset + daysInMonth;
 
         final List<Color> activeLegendColors = _heatmapPageIndex == 0
             ? [
-                Theme.of(context).brightness == Brightness.light
-                    ? Color(0xFFEBEDF0)
-                    : Color(0xFF161B22),
+                Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
                 Color(0xFF0E4429),
                 Color(0xFF006D32),
                 Color(0xFF26A641),
                 Color(0xFF39D353),
               ]
             : [
-                Theme.of(context).brightness == Brightness.light
-                    ? Color(0xFFEBEDF0)
-                    : Color(0xFF161B22),
+                Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
                 Color(0xFF3E2D00),
                 Color(0xFF7C5A00),
                 Color(0xFFB98700),
@@ -1212,10 +995,7 @@ class _ProfilePageState extends State<ProfilePage>
         final showShimmer = isLoading || _isLocalLoading;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: 8.0,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1225,9 +1005,7 @@ class _ProfilePageState extends State<ProfilePage>
                   Text(
                     'WATCH ACTIVITY',
                     style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.light
-                          ? Colors.black87
-                          : Colors.white70,
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       letterSpacing: 1.2,
@@ -1243,9 +1021,7 @@ class _ProfilePageState extends State<ProfilePage>
                               constraints: const BoxConstraints(),
                               icon: Icon(
                                 Icons.chevron_left,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.color,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                                 size: 24,
                               ),
                               onPressed: isLoading
@@ -1253,22 +1029,12 @@ class _ProfilePageState extends State<ProfilePage>
                                   : () {
                                       HapticFeedback.lightImpact();
                                       final prevMonth = currentMonth.month == 1
-                                          ? DateTime(
-                                              currentMonth.year - 1,
-                                              12,
-                                              1,
-                                            )
-                                          : DateTime(
-                                              currentMonth.year,
-                                              currentMonth.month - 1,
-                                              1,
-                                            );
+                                          ? DateTime(currentMonth.year - 1, 12, 1)
+                                          : DateTime(currentMonth.year, currentMonth.month - 1, 1);
                                       setState(() {
                                         _heatmapMonth = prevMonth;
                                       });
-                                      context
-                                          .read<ProfileHeatmapCubit>()
-                                          .loadMonthActivity(uid, prevMonth);
+                                      context.read<ProfileHeatmapCubit>().loadMonthActivity(uid, prevMonth);
                                     },
                             ),
                       const SizedBox(width: 8),
@@ -1288,9 +1054,7 @@ class _ProfilePageState extends State<ProfilePage>
                               constraints: const BoxConstraints(),
                               icon: Icon(
                                 Icons.chevron_right,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.color,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                                 size: 24,
                               ),
                               onPressed: isLoading
@@ -1298,22 +1062,12 @@ class _ProfilePageState extends State<ProfilePage>
                                   : () {
                                       HapticFeedback.lightImpact();
                                       final nextMonth = currentMonth.month == 12
-                                          ? DateTime(
-                                              currentMonth.year + 1,
-                                              1,
-                                              1,
-                                            )
-                                          : DateTime(
-                                              currentMonth.year,
-                                              currentMonth.month + 1,
-                                              1,
-                                            );
+                                          ? DateTime(currentMonth.year + 1, 1, 1)
+                                          : DateTime(currentMonth.year, currentMonth.month + 1, 1);
                                       setState(() {
                                         _heatmapMonth = nextMonth;
                                       });
-                                      context
-                                          .read<ProfileHeatmapCubit>()
-                                          .loadMonthActivity(uid, nextMonth);
+                                      context.read<ProfileHeatmapCubit>().loadMonthActivity(uid, nextMonth);
                                     },
                             ),
                     ],
@@ -1337,16 +1091,13 @@ class _ProfilePageState extends State<ProfilePage>
                             _isLocalLoading = true;
                           });
                           _shimmerTimer?.cancel();
-                          _shimmerTimer = Timer(
-                            const Duration(milliseconds: 500),
-                            () {
-                              if (mounted) {
-                                setState(() {
-                                  _isLocalLoading = false;
-                                });
-                              }
-                            },
-                          );
+                          _shimmerTimer = Timer(const Duration(milliseconds: 500), () {
+                            if (mounted) {
+                              setState(() {
+                                _isLocalLoading = false;
+                              });
+                            }
+                          });
                         },
                         children: [
                           _buildHeatmapPage(
@@ -1378,20 +1129,14 @@ class _ProfilePageState extends State<ProfilePage>
                             final isActive = index == _heatmapPageIndex;
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 4.0,
-                              ),
+                              margin: const EdgeInsets.symmetric(horizontal: 4.0),
                               width: isActive ? 8.0 : 6.0,
                               height: isActive ? 8.0 : 6.0,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isActive
-                                    ? (Theme.of(
-                                            context,
-                                          ).textTheme.bodyLarge?.color ??
-                                          Colors.white)
-                                    : (Theme.of(context).brightness ==
-                                              Brightness.light
+                                    ? (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white)
+                                    : (Theme.of(context).brightness == Brightness.light
                                           ? Colors.black38
                                           : Colors.white30),
                               ),
@@ -1404,9 +1149,7 @@ class _ProfilePageState extends State<ProfilePage>
                             Text(
                               'Less',
                               style: TextStyle(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
+                                color: Theme.of(context).brightness == Brightness.light
                                     ? Colors.black54
                                     : Colors.white54,
                                 fontSize: 11,
@@ -1426,9 +1169,7 @@ class _ProfilePageState extends State<ProfilePage>
                             Text(
                               'More',
                               style: TextStyle(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
+                                color: Theme.of(context).brightness == Brightness.light
                                     ? Colors.black54
                                     : Colors.white54,
                                 fontSize: 11,
@@ -1458,18 +1199,14 @@ class _ProfilePageState extends State<ProfilePage>
   }) {
     final List<Color> colorScale = isMovies
         ? [
-            Theme.of(context).brightness == Brightness.light
-                ? Color(0xFFEBEDF0)
-                : Color(0xFF161B22),
+            Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
             Color(0xFF3E2D00),
             Color(0xFF7C5A00),
             Color(0xFFB98700),
             Color(0xFFFFC107),
           ]
         : [
-            Theme.of(context).brightness == Brightness.light
-                ? Color(0xFFEBEDF0)
-                : Color(0xFF161B22),
+            Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
             Color(0xFF0E4429),
             Color(0xFF006D32),
             Color(0xFF26A641),
@@ -1484,9 +1221,7 @@ class _ProfilePageState extends State<ProfilePage>
           child: Text(
             isMovies ? 'MOVIES WATCHED' : 'EPISODES WATCHED',
             style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.light
-                  ? Colors.black54
-                  : Colors.white54,
+              color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54,
               fontWeight: FontWeight.bold,
               fontSize: 11,
               letterSpacing: 1.1,
@@ -1500,25 +1235,20 @@ class _ProfilePageState extends State<ProfilePage>
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
-                  (day) {
-                    return Expanded(
-                      child: Center(
-                        child: Text(
-                          day,
-                          style: TextStyle(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                ? Colors.black38
-                                : Colors.white30,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) {
+                  return Expanded(
+                    child: Center(
+                      child: Text(
+                        day,
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white30,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  },
-                ).toList(),
+                    ),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 8),
               showShimmer
@@ -1526,29 +1256,20 @@ class _ProfilePageState extends State<ProfilePage>
                   : GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 7,
-                            crossAxisSpacing: 6,
-                            mainAxisSpacing: 6,
-                            childAspectRatio: 1.7,
-                          ),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 7,
+                        crossAxisSpacing: 6,
+                        mainAxisSpacing: 6,
+                        childAspectRatio: 1.7,
+                      ),
                       itemCount: totalSlots,
                       itemBuilder: (context, index) {
                         if (index < offset || index >= totalSlots) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                            ),
-                          );
+                          return Container(decoration: BoxDecoration(color: Colors.transparent));
                         }
 
                         final int day = index - offset + 1;
-                        final DateTime date = DateTime(
-                          currentMonth.year,
-                          currentMonth.month,
-                          day,
-                        );
+                        final DateTime date = DateTime(currentMonth.year, currentMonth.month, day);
                         final int count = counts[date] ?? 0;
 
                         Color cellColor;
@@ -1576,21 +1297,13 @@ class _ProfilePageState extends State<ProfilePage>
                               HapticFeedback.lightImpact();
                             },
                             child: Container(
-                              decoration: BoxDecoration(
-                                color: cellColor,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              padding: const EdgeInsets.only(
-                                bottom: 2.0,
-                                right: 4.0,
-                              ),
+                              decoration: BoxDecoration(color: cellColor, borderRadius: BorderRadius.circular(4)),
+                              padding: const EdgeInsets.only(bottom: 2.0, right: 4.0),
                               alignment: Alignment.bottomRight,
                               child: Text(
                                 '$day',
                                 style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).textTheme.bodyLarge?.color,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1611,10 +1324,7 @@ class _ProfilePageState extends State<ProfilePage>
     return Container(
       width: 12,
       height: 12,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(1.5),
-      ),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(1.5)),
     );
   }
 
@@ -1685,15 +1395,9 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: Theme.of(
-        context,
-      ).scaffoldBackgroundColor, // Background color for TabBar
+      color: Theme.of(context).scaffoldBackgroundColor, // Background color for TabBar
       child: _tabBar,
     );
   }
@@ -1712,17 +1416,13 @@ class _RippleShimmerGrid extends StatefulWidget {
   State<_RippleShimmerGrid> createState() => _RippleShimmerGridState();
 }
 
-class _RippleShimmerGridState extends State<_RippleShimmerGrid>
-    with SingleTickerProviderStateMixin {
+class _RippleShimmerGridState extends State<_RippleShimmerGrid> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
   }
 
   @override
@@ -1767,9 +1467,7 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid>
               alignment: Alignment.center,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(
-                    alpha: opacity.clamp(0.08, 0.35),
-                  ),
+                  color: Colors.white.withValues(alpha: opacity.clamp(0.08, 0.35)),
                   borderRadius: BorderRadius.circular(4),
                   boxShadow: wave > 0.15
                       ? [

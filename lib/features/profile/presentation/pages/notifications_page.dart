@@ -128,7 +128,9 @@ class NotificationsPage extends StatelessWidget {
             leading: CircleAvatar(
               radius: 20.0,
               backgroundColor: AppColors.surfaceLight,
-              backgroundImage: CachedNetworkImageProvider(item.avatarUrl),
+              backgroundImage: item.avatarUrl.isNotEmpty
+                  ? CachedNetworkImageProvider(item.avatarUrl)
+                  : null,
             ),
             title: RichText(
               text: TextSpan(

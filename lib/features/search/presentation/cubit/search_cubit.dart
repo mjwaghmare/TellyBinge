@@ -167,15 +167,26 @@ class SearchCubit extends Cubit<SearchState> {
         }
 
         if (newResults.isEmpty) {
-          emit(
-            currentState.copyWith(
-              tvHasReachedMax: isTvTab ? true : currentState.tvHasReachedMax,
-              moviesHasReachedMax: !isTvTab
-                  ? true
-                  : currentState.moviesHasReachedMax,
-              isLoadingMore: false,
-            ),
-          );
+          if (nextPage >= 500) {
+            emit(
+              currentState.copyWith(
+                tvHasReachedMax: isTvTab ? true : currentState.tvHasReachedMax,
+                moviesHasReachedMax: !isTvTab
+                    ? true
+                    : currentState.moviesHasReachedMax,
+                isLoadingMore: false,
+              ),
+            );
+          } else {
+            // Page had zero results (e.g. filtered out), but TMDB has more pages: advance page count
+            emit(
+              currentState.copyWith(
+                tvPage: isTvTab ? nextPage : currentState.tvPage,
+                moviesPage: !isTvTab ? nextPage : currentState.moviesPage,
+                isLoadingMore: false,
+              ),
+            );
+          }
         } else {
           final updatedTv = isTvTab
               ? (List<dynamic>.from(currentState.trendingTv)

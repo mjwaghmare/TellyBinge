@@ -397,7 +397,7 @@ class DashboardPageState extends State<DashboardPage> {
                                   final item = watchNext[index];
                                   return EpisodeProgressCard(
                                     key: ValueKey(
-                                      'next_${item.rawShowData['id']}',
+                                      'show_${item.rawShowData['id']}',
                                     ),
                                     enrichedShow: item,
                                     isGridView: _isGridView,
@@ -448,7 +448,7 @@ class DashboardPageState extends State<DashboardPage> {
                                   final item = haventStarted[index];
                                   return EpisodeProgressCard(
                                     key: ValueKey(
-                                      'unstarted_${item.rawShowData['id']}',
+                                      'show_${item.rawShowData['id']}',
                                     ),
                                     enrichedShow: item,
                                     isGridView: _isGridView,

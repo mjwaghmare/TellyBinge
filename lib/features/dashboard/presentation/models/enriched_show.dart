@@ -55,27 +55,75 @@ class EnrichedShow {
 
     int targetSeason = (data['targetSeason'] as num?)?.toInt() ?? 1;
     int targetEpisode = (data['targetEpisode'] as num?)?.toInt() ?? 1;
+    if (targetSeason <= 0) targetSeason = 1;
+    if (targetEpisode <= 0) targetEpisode = 1;
+
     while (watchedEpisodes.contains('$targetSeason-$targetEpisode')) {
       targetEpisode++;
     }
 
-    // Derive category from stored field, or fall back to watchedEpisodes
-    final String category = data['category'] as String? ??
-        (watchedEpisodes.isEmpty ? 'HAVENT_STARTED' : 'WATCH_NEXT');
-
-    final bool isUpToDate = category == 'UP_TO_DATE';
-
-    // Read pre-computed display fields with defaults
-    String episodeCode = data['nextEpisodeCode'] as String? ?? '';
-    final String storedCode = 'S${targetSeason.toString().padLeft(2, '0')} | E${(targetEpisode - 1).toString().padLeft(2, '0')}';
-    if (episodeCode.isEmpty || episodeCode == storedCode) {
-      episodeCode = 'S${targetSeason.toString().padLeft(2, '0')} | E${targetEpisode.toString().padLeft(2, '0')}';
+    // Derive category:
+    // If watchedEpisodes is not empty, the user has started watching this show.
+    // Unless stored category is UP_TO_DATE or FINISHED, it belongs in WATCH_NEXT.
+    final String storedCategory = data['category'] as String? ?? '';
+    String category;
+    if (watchedEpisodes.isEmpty) {
+      if (storedCategory == 'UPCOMING_ONLY') {
+        category = 'UPCOMING_ONLY';
+      } else {
+        category = 'HAVENT_STARTED';
+      }
+    } else {
+      if (storedCategory == 'UP_TO_DATE' || storedCategory == 'FINISHED') {
+        category = storedCategory;
+      } else {
+        category = 'WATCH_NEXT';
+      }
     }
+
+    final bool isUpToDate = category == 'UP_TO_DATE' || category == 'FINISHED';
+
+    // Compute episode code for next unwatched episode
+    String episodeCode;
+    final derivedCode =
+        'S${targetSeason.toString().padLeft(2, '0')} | E${targetEpisode.toString().padLeft(2, '0')}';
+
     if (isUpToDate) {
       episodeCode = 'Up to date';
+    } else {
+      final String? storedNextCode = data['nextEpisodeCode'] as String?;
+      if (storedNextCode != null && storedNextCode.isNotEmpty) {
+        final match = RegExp(r'S(\d+)\s*\|\s*E(\d+)').firstMatch(storedNextCode);
+        if (match != null) {
+          final s = int.tryParse(match.group(1) ?? '');
+          final e = int.tryParse(match.group(2) ?? '');
+          if (s == targetSeason && e == targetEpisode) {
+            episodeCode = storedNextCode;
+          } else {
+            episodeCode = derivedCode;
+          }
+        } else {
+          episodeCode = derivedCode;
+        }
+      } else {
+        episodeCode = derivedCode;
+      }
     }
-    final String episodeTitle = data['nextEpisodeTitle'] as String? ??
-        (isUpToDate ? 'Waiting for new episodes' : '');
+
+    String episodeTitle;
+    final String? storedTitle = data['nextEpisodeTitle'] as String?;
+    if (isUpToDate) {
+      episodeTitle = 'Waiting for new episodes';
+    } else if (storedTitle != null && storedTitle.isNotEmpty) {
+      final String? storedNextCode = data['nextEpisodeCode'] as String?;
+      if (storedNextCode != null && storedNextCode == episodeCode) {
+        episodeTitle = storedTitle;
+      } else {
+        episodeTitle = '';
+      }
+    } else {
+      episodeTitle = '';
+    }
     final int totalEpisodes = (data['totalEpisodes'] as num?)?.toInt() ?? 0;
     final String? extraCount = data['extraCount'] as String?;
     final bool isPremiere = data['isPremiere'] as bool? ?? false;

@@ -17,6 +17,7 @@ import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../../core/widgets/action_circle_button.dart';
+import '../../../../core/network/tmdb_client.dart';
 
 class ShowDetailsPage extends StatefulWidget {
   final int mediaId;
@@ -762,67 +763,107 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ShowDetailsPage(
-                                mediaId: (item['id'] as num).toInt(),
-                                title: item['name'] ?? 'Unknown',
-                                mediaType: 'tv',
+                              builder: (context) => BlocProvider<ShowDetailsCubit>(
+                                create: (context) => ShowDetailsCubit(
+                                  tmdbClient: context.read<TmdbClient>(),
+                                ),
+                                child: ShowDetailsPage(
+                                  mediaId: (item['id'] as num).toInt(),
+                                  title: item['name'] ?? 'Unknown',
+                                  mediaType: 'tv',
+                                ),
                               ),
                             ),
                           );
                         },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: 130,
-                                color: AppColors.surfaceLight,
-                                child: posterPath != null
-                                    ? CachedNetworkImage(
-                                        imageUrl: _getImageUrl(posterPath),
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) =>
-                                            Container(color: AppColors.surfaceLight),
-                                        errorWidget: (context, url, error) =>
-                                            const Icon(Icons.error),
-                                      )
-                                    : const Icon(Icons.movie, size: 50),
-                              ),
-                              if (item['vote_average'] != null)
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.7),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.star,
-                                          color: Colors.amber,
-                                          size: 12,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          (item['vote_average'] as num).toStringAsFixed(1),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
+                        child: SizedBox(
+                          width: 130,
+                          height: 200,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: posterPath != null && posterPath.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: _getImageUrl(posterPath),
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Container(color: AppColors.surfaceLight),
+                                          errorWidget: (context, url, error) => Container(
+                                            color: AppColors.surfaceLight,
+                                            child: const Center(
+                                              child: Icon(
+                                                Icons.movie_outlined,
+                                                color: Colors.white24,
+                                                size: 40,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Container(
+                                          color: AppColors.surfaceLight,
+                                          padding: const EdgeInsets.all(8),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                Icons.movie_outlined,
+                                                color: Colors.white24,
+                                                size: 40,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                item['name'] ?? '',
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 11,
+                                                ),
+                                                maxLines: 2,
+                                                textAlign: TextAlign.center,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      ],
+                                ),
+                                if (item['vote_average'] != null &&
+                                    (item['vote_average'] as num) > 0)
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.7),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.star,
+                                            color: Colors.amber,
+                                            size: 12,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            (item['vote_average'] as num).toStringAsFixed(1),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );

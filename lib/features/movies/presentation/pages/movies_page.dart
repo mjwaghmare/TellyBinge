@@ -723,48 +723,64 @@ class MoviesPageState extends State<MoviesPage> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.zero,
-                          child: CachedNetworkImage(
-                            imageUrl: _getImageUrl(posterPath),
-                            width: 100,
-                            height: 96.0,
-                            fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => Container(
-                              width: 100,
-                              height: 96.0,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? Colors.grey[200]
-                                  : AppColors.surfaceLight,
-                              child: const Skeleton.ignore(
-                                child: Icon(
-                                  Icons.movie_outlined,
-                                  color: AppColors.textTertiary,
-                                ),
-                              ),
-                            ),
-                            placeholder: (context, url) => Container(
-                              width: 100,
-                              height: 96.0,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? Colors.grey[200]
-                                  : AppColors.surfaceLight,
-                              child: Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator.adaptive(
-                                    strokeWidth: 2,
-                                    valueColor: const AlwaysStoppedAnimation(
-                                      AppColors.primary,
+                          child: (posterPath != null && posterPath.isNotEmpty)
+                              ? CachedNetworkImage(
+                                  imageUrl: _getImageUrl(posterPath),
+                                  width: 100,
+                                  height: 96.0,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (context, url, error) => Container(
+                                    width: 100,
+                                    height: 96.0,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Colors.grey[200]
+                                        : AppColors.surfaceLight,
+                                    child: const Skeleton.ignore(
+                                      child: Icon(
+                                        Icons.movie_outlined,
+                                        color: AppColors.textTertiary,
+                                      ),
+                                    ),
+                                  ),
+                                  placeholder: (context, url) => Container(
+                                    width: 100,
+                                    height: 96.0,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Colors.grey[200]
+                                        : AppColors.surfaceLight,
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator.adaptive(
+                                          strokeWidth: 2,
+                                          valueColor: const AlwaysStoppedAnimation(
+                                            AppColors.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: 100,
+                                  height: 96.0,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Colors.grey[200]
+                                      : AppColors.surfaceLight,
+                                  child: const Skeleton.ignore(
+                                    child: Icon(
+                                      Icons.movie_outlined,
+                                      color: AppColors.textTertiary,
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

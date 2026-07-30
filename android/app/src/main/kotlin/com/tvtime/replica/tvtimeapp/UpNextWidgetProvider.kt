@@ -77,7 +77,12 @@ class UpNextWidgetProvider : HomeWidgetProvider() {
                 // Mark as Watched button setup
                 if (showId != null && showId > 0 && !episodeKey.isNullOrEmpty()) {
                     setViewVisibility(R.id.widget_mark_watched, View.VISIBLE)
-                    val markUri = Uri.parse("tvtimeapp://mark_watched?showId=$showId&episodeKey=$episodeKey")
+                    val markUri = Uri.Builder()
+                        .scheme("tvtimeapp")
+                        .authority("mark_watched")
+                        .appendQueryParameter("showId", showId.toString())
+                        .appendQueryParameter("episodeKey", episodeKey)
+                        .build()
                     val markPendingIntent = HomeWidgetBackgroundIntent.getBroadcast(
                         context,
                         markUri

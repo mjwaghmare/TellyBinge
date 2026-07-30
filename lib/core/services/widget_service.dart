@@ -163,7 +163,7 @@ class WidgetService {
     final List<Map<String, dynamic>> widgetItems = [];
 
     for (var show in watchNext) {
-      if (widgetItems.length >= 3) break;
+      if (widgetItems.length >= 4) break;
       final int targetSeason = show.targetSeason;
       final int targetEpisode = show.targetEpisode;
       final String firestoreKey = '$targetSeason-$targetEpisode';
@@ -179,7 +179,7 @@ class WidgetService {
     }
 
     for (var show in haventStarted) {
-      if (widgetItems.length >= 3) break;
+      if (widgetItems.length >= 4) break;
       widgetItems.add({
         'showId': (show.rawShowData['id'] as num?)?.toInt() ?? 0,
         'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
@@ -193,7 +193,7 @@ class WidgetService {
 
     if (widgetItems.isEmpty) {
       for (var show in upcoming) {
-        if (widgetItems.length >= 3) break;
+        if (widgetItems.length >= 4) break;
 
         String upcomingDetail = show.upcomingEpisodeTitle;
         if (show.upcomingAirDate != null) {
@@ -294,18 +294,6 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
       return;
     }
 
-    final repo = TvWatchlistRepositoryImpl();
-    await repo
-        .toggleEpisodeWatched(
-          uid: uid,
-          showId: showId,
-          episodeKey: episodeKey,
-          isWatched: true,
-        )
-        .timeout(WidgetService._backgroundOpTimeout);
-
-    log('Background: Marked episode $episodeKey as watched for show $showId');
-
     final showDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -313,6 +301,35 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
         .doc(showId.toString())
         .get()
         .timeout(WidgetService._backgroundOpTimeout);
+
+    String? showName;
+    String? showPoster;
+    String? episodeTitle;
+
+    if (showDoc.exists) {
+      final showData = showDoc.data()!;
+      showName = showData['name'] as String?;
+      showPoster = showData['posterPath'] as String?;
+      final enriched = EnrichedShow.fromShowData(showData);
+      episodeTitle = enriched.episodeTitle.isNotEmpty
+          ? enriched.episodeTitle
+          : enriched.episodeCode;
+    }
+
+    final repo = TvWatchlistRepositoryImpl();
+    await repo
+        .toggleEpisodeWatched(
+          uid: uid,
+          showId: showId,
+          episodeKey: episodeKey,
+          isWatched: true,
+          showName: showName,
+          showPoster: showPoster,
+          episodeTitle: episodeTitle,
+        )
+        .timeout(WidgetService._backgroundOpTimeout);
+
+    log('Background: Marked episode $episodeKey as watched for show $showId ($showName)');
 
     if (showDoc.exists) {
       final showMap = Map<String, dynamic>.from(showDoc.data()!);

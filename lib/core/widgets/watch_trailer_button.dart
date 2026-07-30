@@ -40,9 +40,13 @@ class WatchTrailerButton extends StatelessWidget {
             urlStr = 'https://vimeo.com/${trailer['key']}';
           }
           if (urlStr.isNotEmpty) {
-            final url = Uri.parse(urlStr);
-            if (await canLaunchUrl(url)) {
+            final url = Uri.tryParse(urlStr);
+            if (url != null && await canLaunchUrl(url)) {
               await launchUrl(url, mode: LaunchMode.inAppWebView);
+            } else if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Could not play trailer.')),
+              );
             }
           }
         }

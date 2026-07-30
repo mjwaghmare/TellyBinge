@@ -1,8 +1,9 @@
 import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
 
 abstract class WatchHistoryState extends Equatable {
   const WatchHistoryState();
@@ -39,8 +40,8 @@ class WatchHistoryCubit extends Cubit<WatchHistoryState> {
   String? _currentUid;
 
   WatchHistoryCubit({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance,
-        super(WatchHistoryInitial());
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      super(WatchHistoryInitial());
 
   void init(String uid) {
     if (_currentUid == uid) return;
@@ -56,31 +57,31 @@ class WatchHistoryCubit extends Cubit<WatchHistoryState> {
 
     try {
       final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
-      
+
       _historySubscription = _firestore
           .collection('users')
           .doc(_currentUid)
           .collection('history')
           .where('watchedAt', isGreaterThan: sevenDaysAgo)
-          .orderBy('watchedAt', descending: false)
+          .orderBy('watchedAt', descending: true)
           .snapshots()
           .listen(
-        (snapshot) {
-          if (isClosed) return;
-          final history = snapshot.docs.map((doc) {
-            final data = doc.data();
-            data['id'] = doc.id;
-            return data;
-          }).toList();
-          
-          emit(WatchHistoryLoaded(history));
-        },
-        onError: (e) {
-          if (isClosed) return;
-          debugPrint('Error listening to history: $e');
-          emit(WatchHistoryError(e.toString()));
-        },
-      );
+            (snapshot) {
+              if (isClosed) return;
+              final history = snapshot.docs.map((doc) {
+                final data = doc.data();
+                data['id'] = doc.id;
+                return data;
+              }).toList();
+
+              emit(WatchHistoryLoaded(history));
+            },
+            onError: (e) {
+              if (isClosed) return;
+              debugPrint('Error listening to history: $e');
+              emit(WatchHistoryError(e.toString()));
+            },
+          );
     } catch (e) {
       if (!isClosed) {
         emit(WatchHistoryError(e.toString()));

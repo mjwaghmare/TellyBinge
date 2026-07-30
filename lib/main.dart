@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
@@ -139,6 +140,7 @@ class _MyAppState extends State<MyApp> {
   /// Currently handles: tvtimeapp://show/{showId}
   void _handleWidgetUri(Uri uri) {
     if (uri.scheme != 'tvtimeapp') return;
+    if (FirebaseAuth.instance.currentUser == null) return;
     if (uri.host == 'show') {
       final showIdStr = uri.pathSegments.firstOrNull;
       final showId = int.tryParse(showIdStr ?? '');

@@ -50,9 +50,7 @@ class _SearchPageState extends State<SearchPage>
   bool _hasActiveMovieFilters = false;
   bool _isFetchingMovieFilters = false;
 
-  // Pagination throttle — prevents _onScroll comparison running every 16ms
-  bool _isPaginating = false;
-  Timer? _paginationCooldown;
+  int _previousTabIndex = 0;
 
   void _handleSubTabChange() {
     if (widget.subTabNotifier != null &&
@@ -62,6 +60,7 @@ class _SearchPageState extends State<SearchPage>
   }
 
   void _resetAllFiltersAndSearch() {
+    FocusManager.instance.primaryFocus?.unfocus();
     bool needsRefresh = false;
 
     if (_hasActiveFilters ||
@@ -73,6 +72,13 @@ class _SearchPageState extends State<SearchPage>
         _selectedYear != null ||
         _selectedMovieYear != null) {
       needsRefresh = true;
+    }
+
+    if (_showsScrollController.hasClients) {
+      _showsScrollController.jumpTo(0);
+    }
+    if (_moviesScrollController.hasClients) {
+      _moviesScrollController.jumpTo(0);
     }
 
     if (needsRefresh) {
@@ -118,6 +124,8 @@ class _SearchPageState extends State<SearchPage>
       _tabController.index = widget.subTabNotifier!.value;
       widget.subTabNotifier!.addListener(_handleSubTabChange);
     }
+    _previousTabIndex = _tabController.index;
+
     _tabController.addListener(() {
       // 1. Immediately activate shimmer at the start of transition/swipe
       if (_tabController.indexIsChanging) {
@@ -125,33 +133,57 @@ class _SearchPageState extends State<SearchPage>
         setState(() {
           _isTabChanging = true;
         });
-        return;
       }
 
-      final isTv = _tabController.index == 0;
-      final activeController = isTv
-          ? _showsSearchController
-          : _moviesSearchController;
+      // Check if sub-tab index actually changed
+      if (_tabController.index != _previousTabIndex) {
+        _previousTabIndex = _tabController.index;
 
-      final trimmedQuery = activeController.text.trim();
-      if (trimmedQuery.length >= 3) {
-        final currentState = context.read<SearchCubit>().state;
-        bool shouldSearch = true;
-        if (currentState is SearchResultsSuccess) {
-          if (currentState.isTv == isTv && currentState.query == trimmedQuery) {
-            shouldSearch = false;
-          }
+        // 1. Close keyboard if opened
+        FocusManager.instance.primaryFocus?.unfocus();
+
+        // 2. Clear search queries
+        _showsSearchController.clear();
+        _moviesSearchController.clear();
+
+        // 3. Reset pagination & scroll position
+        if (_showsScrollController.hasClients) {
+          _showsScrollController.jumpTo(0);
         }
-        if (shouldSearch) {
-          context.read<SearchCubit>().executeSearch(trimmedQuery, isTv: isTv);
-        } else {
-          setState(() {
-            _isTabChanging = false;
-          });
-          return;
+        if (_moviesScrollController.hasClients) {
+          _moviesScrollController.jumpTo(0);
         }
-      } else {
+        context.read<SearchCubit>().resetTvTrending();
+        context.read<SearchCubit>().resetMoviesTrending();
+
+        // 4. Load clean trending data for newly selected tab
         _loadTrendingWithFilters();
+      } else if (!_tabController.indexIsChanging) {
+        final isTv = _tabController.index == 0;
+        final activeController = isTv
+            ? _showsSearchController
+            : _moviesSearchController;
+
+        final trimmedQuery = activeController.text.trim();
+        if (trimmedQuery.length >= 3) {
+          final currentState = context.read<SearchCubit>().state;
+          bool shouldSearch = true;
+          if (currentState is SearchResultsSuccess) {
+            if (currentState.isTv == isTv && currentState.query == trimmedQuery) {
+              shouldSearch = false;
+            }
+          }
+          if (shouldSearch) {
+            context.read<SearchCubit>().executeSearch(trimmedQuery, isTv: isTv);
+          } else {
+            setState(() {
+              _isTabChanging = false;
+            });
+            return;
+          }
+        } else {
+          _loadTrendingWithFilters();
+        }
       }
 
       _tabTransitionTimer?.cancel();
@@ -347,26 +379,27 @@ class _SearchPageState extends State<SearchPage>
   }
 
   void _onScroll(bool isTv) {
-    // Throttle: skip if a pagination request is already in-flight
-    if (_isPaginating) return;
-
     final controller = isTv ? _showsScrollController : _moviesScrollController;
     if (!controller.hasClients) return;
+
+    final currentState = context.read<SearchCubit>().state;
+    if (currentState is SearchTrendingSuccess) {
+      if (currentState.isLoadingMore) return;
+      final hasReachedMax =
+          isTv ? currentState.tvHasReachedMax : currentState.moviesHasReachedMax;
+      if (hasReachedMax) return;
+    } else if (currentState is SearchResultsSuccess) {
+      if (currentState.isLoadingMore || currentState.hasReachedMax) return;
+    }
+
     if (controller.position.pixels >=
-        controller.position.maxScrollExtent - 200) {
-      _isPaginating = true;
+        controller.position.maxScrollExtent - 400) {
       context.read<SearchCubit>().loadMore(isTv);
-      // Reset after 300 ms so we can trigger again once the load settles
-      _paginationCooldown?.cancel();
-      _paginationCooldown = Timer(const Duration(milliseconds: 300), () {
-        _isPaginating = false;
-      });
     }
   }
 
   @override
   void dispose() {
-    _paginationCooldown?.cancel();
     widget.subTabNotifier?.removeListener(_handleSubTabChange);
     widget.mainTabNotifier?.removeListener(_handleMainTabChange);
     _showsSearchController.dispose();
@@ -375,7 +408,6 @@ class _SearchPageState extends State<SearchPage>
     _moviesScrollController.dispose();
     _tabController.dispose();
     _tabTransitionTimer?.cancel();
-    _paginationCooldown?.cancel();
     super.dispose();
   }
 
@@ -804,6 +836,18 @@ class _SearchPageState extends State<SearchPage>
         if (id == null) return false;
         return !watchlistedIds.contains(id);
       }).toList();
+
+      if (filteredTrending.length < 12 &&
+          !state.isLoadingMore &&
+          !state.tvHasReachedMax &&
+          state.tvPage < 500) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.read<SearchCubit>().loadMore(true);
+          }
+        });
+      }
+
       return _buildGrid(
         filteredTrending,
         'tv',
@@ -931,6 +975,18 @@ class _SearchPageState extends State<SearchPage>
         if (id == null) return false;
         return !watchlistedIds.contains(id);
       }).toList();
+
+      if (filteredTrending.length < 12 &&
+          !state.isLoadingMore &&
+          !state.moviesHasReachedMax &&
+          state.moviesPage < 500) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.read<SearchCubit>().loadMore(false);
+          }
+        });
+      }
+
       return _buildGrid(
         filteredTrending,
         'movie',
