@@ -603,6 +603,7 @@ class MoviesPageState extends State<MoviesPage> {
               if (direction == DismissDirection.endToStart) {
                 if (!isWatched) {
                   setState(() => isMarkingAsWatched = true);
+                  await Future.delayed(const Duration(milliseconds: 500));
                   if (context.mounted) {
                     context.read<MovieWatchlistCubit>().toggleWatched(
                       uid: uid,
@@ -613,6 +614,7 @@ class MoviesPageState extends State<MoviesPage> {
                 }
               } else {
                 setState(() => isRemoving = true);
+                await Future.delayed(const Duration(milliseconds: 500));
                 if (context.mounted) {
                   context.read<MovieWatchlistCubit>().removeMovie(
                     uid: uid,
