@@ -260,11 +260,11 @@ struct ItemRow: View {
     private var markWatchedButtonContent: some View {
         ZStack {
             Circle()
-                .stroke(Color.blue.opacity(0.8), lineWidth: 2)
+                .stroke(Color.blue.opacity(0.4), lineWidth: 2)
                 .frame(width: 28, height: 28)
-            Image(systemName: "check")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.blue)
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                .scaleEffect(0.7)
         }
         .frame(width: 38, height: 38)
         .contentShape(Rectangle())
@@ -359,11 +359,11 @@ struct MediumItemRow: View {
     private var markWatchedButtonContent: some View {
         ZStack {
             Circle()
-                .stroke(Color.blue.opacity(0.8), lineWidth: 2)
+                .stroke(Color.blue.opacity(0.4), lineWidth: 2)
                 .frame(width: 28, height: 28)
-            Image(systemName: "check")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.blue)
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                .scaleEffect(0.7)
         }
         .frame(width: 38, height: 38)
         .contentShape(Rectangle())
