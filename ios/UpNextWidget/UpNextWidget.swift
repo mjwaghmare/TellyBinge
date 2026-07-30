@@ -213,7 +213,7 @@ struct UpNextWidgetEntryView : View {
 
 struct MAWButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        ZStack {
+        let content = ZStack {
             Circle()
                 .stroke(Color.blue.opacity(configuration.isPressed ? 0.5 : 0.8), lineWidth: 2)
                 .frame(width: 28, height: 28)
@@ -227,9 +227,14 @@ struct MAWButtonStyle: ButtonStyle {
                     .foregroundColor(.blue)
             }
         }
-        .invalidatableContent()
         .frame(width: 38, height: 38)
         .contentShape(Rectangle())
+
+        if #available(iOS 17.0, *) {
+            return AnyView(content.invalidatableContent())
+        } else {
+            return AnyView(content)
+        }
     }
 }
 
