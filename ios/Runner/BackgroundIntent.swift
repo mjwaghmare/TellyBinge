@@ -36,11 +36,10 @@ public struct MarkAsWatchedIntent: AppIntent {
         } else {
             widgetLogger.error("❌ [Widget Tap] Failed to construct mark_watched URL for showId: \(rawShowId, privacy: .public)")
         }
+        
+        // Give background Dart isolate 500ms to finish optimistic Firestore & UserDefaults write
+        try? await Task.sleep(nanoseconds: 500_000_000)
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
 }
-
-@available(iOS 17.0, *)
-@available(iOSApplicationExtension, unavailable)
-extension MarkAsWatchedIntent: ForegroundContinuableIntent {}

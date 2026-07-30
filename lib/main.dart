@@ -109,7 +109,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   StreamSubscription<Uri?>? _widgetClickSubscription;
   // Single TmdbClient instance for widget-driven navigation.
   // Initialised here (outside the RepositoryProvider tree) to avoid creating
@@ -119,6 +119,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tmdbClient = TmdbClient();
     HomeWidget.setAppGroupId(WidgetService.iOSGroupId);
 
@@ -136,40 +137,69 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _widgetClickSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+    final location = routeInformation.uri.toString();
+    if (location.startsWith('tvtimeapp://') || location == '/' || location == '') {
+      return true; // Intercepted: prevents Flutter Engine from pushing duplicate routes
+    }
+    return super.didPushRouteInformation(routeInformation);
+  }
+
   /// Routes incoming widget URLs to the correct page.
   /// Currently handles: tvtimeapp://show/{showId}
   void _handleWidgetUri(Uri uri) {
     if (uri.scheme != 'tvtimeapp') return;
     if (FirebaseAuth.instance.currentUser == null) return;
+    if (uri.host == 'mark_watched') {
+      interactiveWidgetCallback(uri);
+      return;
+    }
     if (uri.host == 'show') {
       final showIdStr = uri.pathSegments.firstOrNull;
       final showId = int.tryParse(showIdStr ?? '');
       if (showId != null && showId > 0) {
         // Use a post-frame callback so we don't navigate before the widget tree is ready.
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          navigatorKey.currentState?.push(
-            MaterialPageRoute(
-              builder: (context) => BlocProvider<ShowDetailsCubit>(
-                create: (_) => ShowDetailsCubit(tmdbClient: _tmdbClient),
-                child: ShowDetailsPage(
-                  mediaId: showId,
-                  mediaType: 'tv',
-                  title: 'Show Details',
-                  initialTabIndex: 1,
+          final nav = navigatorKey.currentState;
+          if (nav == null) return;
+
+          bool alreadyOnShow = false;
+          nav.popUntil((route) {
+            if (route.settings.name == '/show/$showId') {
+              alreadyOnShow = true;
+              return true; // Stay on existing show details page
+            }
+            return route.isFirst; // Pop sub-routes down to root
+          });
+
+          if (!alreadyOnShow) {
+            nav.push(
+              MaterialPageRoute(
+                settings: RouteSettings(name: '/show/$showId'),
+                builder: (context) => BlocProvider<ShowDetailsCubit>(
+                  create: (_) => ShowDetailsCubit(tmdbClient: _tmdbClient),
+                  child: ShowDetailsPage(
+                    mediaId: showId,
+                    mediaType: 'tv',
+                    title: 'Show Details',
+                    initialTabIndex: 1,
+                  ),
                 ),
               ),
-            ),
-          );
+            );
+          }
         });
       }
     }
     // tvtimeapp:// (root) — just open the app, no navigation needed.
-  }
-
-  @override
-  void dispose() {
-    _widgetClickSubscription?.cancel();
-    super.dispose();
   }
 
   @override

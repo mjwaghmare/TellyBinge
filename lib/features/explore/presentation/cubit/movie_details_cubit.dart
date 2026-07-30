@@ -66,47 +66,24 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
         }
 
         Future<List<dynamic>> fetchSimilar() async {
-          List<dynamic> similarMovies = [];
           try {
-            final originalLanguage = movieDetails['original_language'] as String? ?? 'en';
+            final rawSimilar = await tmdbClient.getSimilarMovies(movieId);
+            List<dynamic> similarMovies = List<dynamic>.from(rawSimilar);
+            similarMovies.removeWhere((m) => m['id'] == movieId);
 
-            if (originalLanguage != 'en') {
+            if (similarMovies.length < 5) {
               final genres = movieDetails['genres'] as List<dynamic>? ?? [];
-              final genreIds = genres.map((g) => g['id'] as int).toList();
-
-              final rawSimilar = await tmdbClient.discoverMoviesWithFilters(
-                language: originalLanguage,
+              final genreIds = genres.map((g) => (g['id'] as num).toInt()).toList();
+              final fallback = await tmdbClient.discoverMoviesWithFilters(
                 genreIds: genreIds.isNotEmpty ? genreIds : null,
                 sortBy: 'popularity.desc',
               );
-
-              similarMovies = List<dynamic>.from(rawSimilar);
-              similarMovies.removeWhere((m) => m['id'] == movieId);
-
-              if (similarMovies.length < 5) {
-                final fallback = await tmdbClient.getSimilarMovies(movieId);
-                for (var f in fallback) {
-                  if (!similarMovies.any((m) => m['id'] == f['id']) && f['id'] != movieId) {
-                    similarMovies.add(f);
-                  }
+              for (var f in fallback) {
+                if (!similarMovies.any((m) => m['id'] == f['id']) && f['id'] != movieId) {
+                  similarMovies.add(f);
                 }
               }
-            } else {
-              final rawSimilar = await tmdbClient.getSimilarMovies(movieId);
-              similarMovies = List<dynamic>.from(rawSimilar);
             }
-
-            similarMovies.sort((a, b) {
-              final aDateStr = a['release_date'] as String? ?? '';
-              final bDateStr = b['release_date'] as String? ?? '';
-              if (aDateStr.isEmpty) return 1;
-              if (bDateStr.isEmpty) return -1;
-              try {
-                return DateTime.parse(bDateStr).compareTo(DateTime.parse(aDateStr));
-              } catch (_) {
-                return 0;
-              }
-            });
 
             return similarMovies;
           } catch (e) {

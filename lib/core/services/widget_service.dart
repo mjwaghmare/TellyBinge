@@ -377,7 +377,7 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
           await enrichmentCubit
               .enrichShows([showMap], uid, force: true)
               .timeout(WidgetService._backgroundOpTimeout);
-          await WidgetService.syncWatchlistToWidget(uid, immediate: true);
+          await WidgetService.syncWatchlistToWidget(uid, immediate: false);
         } catch (e) {
           log('Background callback: TMDB enrichment failed: $e');
         }

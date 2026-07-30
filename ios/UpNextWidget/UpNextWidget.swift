@@ -211,33 +211,6 @@ struct UpNextWidgetEntryView : View {
     }
 }
 
-struct MAWButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        let content = ZStack {
-            Circle()
-                .stroke(Color.blue.opacity(configuration.isPressed ? 0.5 : 0.8), lineWidth: 2)
-                .frame(width: 28, height: 28)
-            if configuration.isPressed {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .blue))
-                    .scaleEffect(0.7)
-            } else {
-                Image(systemName: "check")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.blue)
-            }
-        }
-        .frame(width: 38, height: 38)
-        .contentShape(Rectangle())
-
-        if #available(iOS 17.0, *) {
-            return AnyView(content.invalidatableContent())
-        } else {
-            return AnyView(content)
-        }
-    }
-}
-
 struct ItemRow: View {
     let item: UpNextItem
     
@@ -290,6 +263,7 @@ struct ItemRow: View {
                 Link(destination: showURL) {
                     rowContent
                 }
+                .buttonStyle(PlainButtonStyle())
             } else {
                 rowContent
             }
@@ -300,10 +274,20 @@ struct ItemRow: View {
             if !item.episodeKey.isEmpty {
                 if #available(iOS 17.0, *) {
                     Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
-                        Color.clear.frame(width: 38, height: 38)
+                        ZStack {
+                            Circle()
+                                .stroke(Color.blue.opacity(0.8), lineWidth: 2)
+                                .frame(width: 28, height: 28)
+                            Image(systemName: "check")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.blue)
+                        }
+                        .frame(width: 38, height: 38)
+                        .contentShape(Circle())
                     }
-                    .buttonStyle(MAWButtonStyle())
-                    .frame(width: 40, height: 40)
+                    .buttonStyle(PlainButtonStyle())
+                    .frame(width: 44, height: 44)
+                    .zIndex(1)
                 } else {
                     if let markWatchedURL = item.markWatchedURL {
                         Link(destination: markWatchedURL) {
@@ -311,8 +295,11 @@ struct ItemRow: View {
                                 Circle().stroke(Color.blue.opacity(0.8), lineWidth: 2).frame(width: 28, height: 28)
                                 Image(systemName: "check").font(.system(size: 12, weight: .bold)).foregroundColor(.blue)
                             }
+                            .contentShape(Circle())
                         }
-                        .frame(width: 40, height: 40)
+                        .buttonStyle(PlainButtonStyle())
+                        .frame(width: 44, height: 44)
+                        .zIndex(1)
                     }
                 }
             }
@@ -375,6 +362,7 @@ struct MediumItemRow: View {
                 Link(destination: showURL) {
                     rowContent
                 }
+                .buttonStyle(PlainButtonStyle())
             } else {
                 rowContent
             }
@@ -385,10 +373,20 @@ struct MediumItemRow: View {
             if !item.episodeKey.isEmpty {
                 if #available(iOS 17.0, *) {
                     Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
-                        Color.clear.frame(width: 38, height: 38)
+                        ZStack {
+                            Circle()
+                                .stroke(Color.blue.opacity(0.8), lineWidth: 2)
+                                .frame(width: 28, height: 28)
+                            Image(systemName: "check")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.blue)
+                        }
+                        .frame(width: 38, height: 38)
+                        .contentShape(Circle())
                     }
-                    .buttonStyle(MAWButtonStyle())
-                    .frame(width: 40, height: 40)
+                    .buttonStyle(PlainButtonStyle())
+                    .frame(width: 44, height: 44)
+                    .zIndex(1)
                 } else {
                     if let markWatchedURL = item.markWatchedURL {
                         Link(destination: markWatchedURL) {
@@ -396,8 +394,11 @@ struct MediumItemRow: View {
                                 Circle().stroke(Color.blue.opacity(0.8), lineWidth: 2).frame(width: 28, height: 28)
                                 Image(systemName: "check").font(.system(size: 12, weight: .bold)).foregroundColor(.blue)
                             }
+                            .contentShape(Circle())
                         }
-                        .frame(width: 40, height: 40)
+                        .buttonStyle(PlainButtonStyle())
+                        .frame(width: 44, height: 44)
+                        .zIndex(1)
                     }
                 }
             }

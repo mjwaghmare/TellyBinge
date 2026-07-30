@@ -757,6 +757,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           .toList();
                       final item = similar[index] as Map<String, dynamic>;
                       final posterPath = item['poster_path'] as String?;
+                      final simId = (item['id'] as num?)?.toInt() ?? 0;
+                      final watchState = context.watch<TvShowWatchlistCubit>().state;
+                      final isAdded = watchState is TvShowWatchlistSuccess &&
+                          watchState.shows.any((s) => (s['id'] as num?)?.toInt() == simId);
+
                       return GestureDetector(
                         onTap: () {
                           HapticFeedback.lightImpact();
@@ -827,11 +832,37 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                           ),
                                         ),
                                 ),
+                                if (isAdded)
+                                  Positioned(
+                                    top: -10,
+                                    right: -5,
+                                    child: Container(
+                                      color: Colors.transparent,
+                                      padding: const EdgeInsets.only(
+                                        left: 8,
+                                        right: 4,
+                                        bottom: 8,
+                                        top: 0,
+                                      ),
+                                      child: const Icon(
+                                        Icons.bookmark_sharp,
+                                        color: AppColors.primary,
+                                        size: 40,
+                                        shadows: [
+                                          Shadow(
+                                            blurRadius: 4.0,
+                                            color: Colors.black87,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 if (item['vote_average'] != null &&
                                     (item['vote_average'] as num) > 0)
                                   Positioned(
                                     top: 8,
-                                    right: 8,
+                                    right: isAdded ? 36 : 8,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 6,
