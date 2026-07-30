@@ -60,7 +60,7 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
     }
   }
 
-  void _handleUnwatch(BuildContext context) async {
+  void _handleUnwatch() async {
     if (_isReverting) return;
     _revertStartTime = DateTime.now();
     setState(() => _isReverting = true);
@@ -210,7 +210,7 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
               padding: const EdgeInsets.only(right: 16.0),
               child: Center(
                 child: GestureDetector(
-                  onTap: () => _handleUnwatch(context),
+                  onTap: _handleUnwatch,
                   behavior: HitTestBehavior.opaque,
                   child: Container(
                     width: 40,
