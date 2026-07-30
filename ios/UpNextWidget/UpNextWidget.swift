@@ -211,6 +211,27 @@ struct UpNextWidgetEntryView : View {
     }
 }
 
+struct MAWButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        ZStack {
+            Circle()
+                .stroke(Color.blue.opacity(configuration.isPressed ? 0.5 : 0.8), lineWidth: 2)
+                .frame(width: 28, height: 28)
+            if configuration.isPressed {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                    .scaleEffect(0.7)
+            } else {
+                Image(systemName: "check")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.blue)
+            }
+        }
+        .frame(width: 38, height: 38)
+        .contentShape(Rectangle())
+    }
+}
+
 struct ItemRow: View {
     let item: UpNextItem
     
@@ -255,20 +276,6 @@ struct ItemRow: View {
             }
         }
     }
-    
-    @ViewBuilder
-    private var markWatchedButtonContent: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.blue.opacity(0.4), lineWidth: 2)
-                .frame(width: 28, height: 28)
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .blue))
-                .scaleEffect(0.7)
-        }
-        .frame(width: 38, height: 38)
-        .contentShape(Rectangle())
-    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -287,19 +294,19 @@ struct ItemRow: View {
             if !item.episodeKey.isEmpty {
                 if #available(iOS 17.0, *) {
                     Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
-                        markWatchedButtonContent
+                        Color.clear.frame(width: 38, height: 38)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(MAWButtonStyle())
                     .frame(width: 40, height: 40)
                 } else {
                     if let markWatchedURL = item.markWatchedURL {
                         Link(destination: markWatchedURL) {
-                            markWatchedButtonContent
+                            ZStack {
+                                Circle().stroke(Color.blue.opacity(0.8), lineWidth: 2).frame(width: 28, height: 28)
+                                Image(systemName: "check").font(.system(size: 12, weight: .bold)).foregroundColor(.blue)
+                            }
                         }
                         .frame(width: 40, height: 40)
-                    } else {
-                        markWatchedButtonContent
-                            .frame(width: 40, height: 40)
                     }
                 }
             }
@@ -354,20 +361,6 @@ struct MediumItemRow: View {
             }
         }
     }
-    
-    @ViewBuilder
-    private var markWatchedButtonContent: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.blue.opacity(0.4), lineWidth: 2)
-                .frame(width: 28, height: 28)
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .blue))
-                .scaleEffect(0.7)
-        }
-        .frame(width: 38, height: 38)
-        .contentShape(Rectangle())
-    }
 
     var body: some View {
         HStack(spacing: 14) {
@@ -386,19 +379,19 @@ struct MediumItemRow: View {
             if !item.episodeKey.isEmpty {
                 if #available(iOS 17.0, *) {
                     Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
-                        markWatchedButtonContent
+                        Color.clear.frame(width: 38, height: 38)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(MAWButtonStyle())
                     .frame(width: 40, height: 40)
                 } else {
                     if let markWatchedURL = item.markWatchedURL {
                         Link(destination: markWatchedURL) {
-                            markWatchedButtonContent
+                            ZStack {
+                                Circle().stroke(Color.blue.opacity(0.8), lineWidth: 2).frame(width: 28, height: 28)
+                                Image(systemName: "check").font(.system(size: 12, weight: .bold)).foregroundColor(.blue)
+                            }
                         }
                         .frame(width: 40, height: 40)
-                    } else {
-                        markWatchedButtonContent
-                            .frame(width: 40, height: 40)
                     }
                 }
             }
