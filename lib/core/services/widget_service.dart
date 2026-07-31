@@ -33,6 +33,36 @@ class WidgetService {
 
   static Timer? _debounceTimer;
 
+  /// The most recent debounced write, kept so it can be forced out early —
+  /// either by [flushPendingUpdate] or by the max-wait cap below.
+  static Future<void> Function()? _pendingWrite;
+
+  /// When the currently-pending write was *first* queued. Reset only once a
+  /// write actually runs, so it survives the timer being restarted.
+  static DateTime? _pendingSince;
+
+  static const _debounceWindow = Duration(milliseconds: 800);
+
+  /// Ceiling on how long a queued write can be deferred. The dashboard listener
+  /// re-fires on every watchlist emission, and enrichment writes re-trigger that
+  /// stream — so a plain debounce can be restarted indefinitely and never fire.
+  /// Past this point the next call writes through instead of rescheduling.
+  static const _maxDebounceWait = Duration(seconds: 3);
+
+  /// Runs any queued widget write immediately instead of waiting out the
+  /// debounce. Called when the app leaves the foreground: iOS suspends the
+  /// isolate on background, so a pending Timer would otherwise never fire and
+  /// the widget would sit stale until the next resume.
+  static Future<void> flushPendingUpdate() async {
+    final pending = _pendingWrite;
+    if (pending == null) return;
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
+    _pendingWrite = null;
+    _pendingSince = null;
+    await pending();
+  }
+
   /// [immediate] skips the debounce and writes synchronously. Required for
   /// background-isolate callers (e.g. mark-as-watched from the widget) since
   /// the headless engine is torn down once the triggering call completes —
@@ -80,12 +110,32 @@ class WidgetService {
 
     if (immediate) {
       _debounceTimer?.cancel();
+      _debounceTimer = null;
+      _pendingWrite = null;
+      _pendingSince = null;
       await write();
       return;
     }
 
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 800), write);
+    _pendingWrite = write;
+    final since = _pendingSince ??= DateTime.now();
+
+    // Starved past the ceiling — stop rescheduling and write this one through.
+    if (DateTime.now().difference(since) >= _maxDebounceWait) {
+      _debounceTimer = null;
+      _pendingWrite = null;
+      _pendingSince = null;
+      await write();
+      return;
+    }
+
+    _debounceTimer = Timer(_debounceWindow, () {
+      _debounceTimer = null;
+      _pendingWrite = null;
+      _pendingSince = null;
+      write();
+    });
   }
 
   static Future<void> syncWatchlistToWidget(

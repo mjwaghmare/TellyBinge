@@ -151,7 +151,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state != AppLifecycleState.resumed) return;
+
+    // Leaving the foreground: push out any debounced widget write before iOS
+    // suspends the isolate, otherwise marking an episode and immediately
+    // swiping to the home screen leaves the widget stale until the next resume.
+    // No-op when nothing is queued.
+    if (state != AppLifecycleState.resumed) {
+      WidgetService.flushPendingUpdate();
+      return;
+    }
+
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null || uid.isEmpty) return;
     _AuthGateState.syncWidget(uid, force: true);
