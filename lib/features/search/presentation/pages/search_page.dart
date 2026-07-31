@@ -1431,27 +1431,78 @@ class _FilterBottomSheet extends StatefulWidget {
 
 class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   late String _currentSortBy;
-  String? _currentYear;
   late Map<String, String> _sortOptions;
 
-  static const List<Map<String, String?>> _yearOptions = [
-    {'label': 'Any Year', 'value': null},
-    {'label': '2026', 'value': '2026'},
-    {'label': '2025', 'value': '2025'},
-    {'label': '2024', 'value': '2024'},
-    {'label': '2023', 'value': '2023'},
-    {'label': '2022', 'value': '2022'},
-    {'label': '2020s', 'value': '2020s'},
-    {'label': '2010s', 'value': '2010s'},
-    {'label': '2000s', 'value': '2000s'},
-    {'label': '1990s', 'value': '1990s'},
-  ];
+  /// Matches the oldest decade the picker previously offered, and the floor
+  /// Surprise Me uses.
+  static const int _minYear = 1990;
+
+  /// Derived from the clock, never hardcoded — the old chip list had to be
+  /// hand-edited every January to stay current.
+  ///
+  /// Floored above [_minYear] because RangeSlider asserts on `max <= min` and
+  /// on zero divisions; a device whose clock is set before 1991 would otherwise
+  /// crash the filter sheet outright.
+  static int get _maxYear {
+    final year = DateTime.now().year;
+    return year > _minYear ? year : _minYear + 1;
+  }
+
+  static RangeValues get _fullRange =>
+      RangeValues(_minYear.toDouble(), _maxYear.toDouble());
+
+  late RangeValues _yearRange;
+
+  /// The filter value handed back to the caller. A full-span selection means
+  /// "no year filter": returning null keeps the query free of date bounds, so
+  /// pre-1990 titles stay reachable exactly as they were under "Any Year", and
+  /// `hasSpecificFilters` in TmdbClient stays false rather than silently
+  /// dropping vote_count.gte to 0 on every request.
+  String? get _currentYear {
+    final start = _yearRange.start.round();
+    final end = _yearRange.end.round();
+    if (start <= _minYear && end >= _maxYear) return null;
+    return '$start-$end';
+  }
+
+  /// Inverse of [_currentYear], tolerant of the decade ("2020s") and single-year
+  /// ("2026") forms the chip list used to produce.
+  static RangeValues _rangeFromFilter(String? value) {
+    if (value == null || value.isEmpty) return _fullRange;
+
+    int? start;
+    int? end;
+    if (value.contains('-')) {
+      final parts = value.split('-');
+      if (parts.length == 2) {
+        start = int.tryParse(parts[0].trim());
+        end = int.tryParse(parts[1].trim());
+      }
+    } else if (value.endsWith('s')) {
+      start = int.tryParse(value.substring(0, value.length - 1));
+      if (start != null) end = start + 9;
+    } else {
+      start = int.tryParse(value);
+      end = start;
+    }
+
+    if (start == null || end == null) return _fullRange;
+    if (start > end) {
+      final swap = start;
+      start = end;
+      end = swap;
+    }
+    return RangeValues(
+      start.clamp(_minYear, _maxYear).toDouble(),
+      end.clamp(_minYear, _maxYear).toDouble(),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _currentSortBy = widget.selectedSortBy;
-    _currentYear = widget.selectedYear;
+    _yearRange = _rangeFromFilter(widget.selectedYear);
 
     _sortOptions = widget.isTv
         ? {
@@ -1485,61 +1536,110 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     );
   }
 
-  Widget _buildChipWrap({
-    required List<Map<String, String?>> options,
-    required String? selectedValue,
-    required Function(String? val) onSelected,
-  }) {
+  /// Two-thumb year picker. Snaps per year rather than per decade so a single
+  /// year stays selectable (the chip list's 2022–2026 entries), while the tick
+  /// row underneath keeps the decade framing. A single continuous range can't
+  /// overlap itself, which the old year/decade chips could.
+  Widget _buildYearRangeSlider(bool isDark) {
+    final start = _yearRange.start.round();
+    final end = _yearRange.end.round();
+    final isFullRange = _currentYear == null;
+
+    // Decade marks, plus the current year so the right end of the track is
+    // labelled. Dropped when a decade boundary already sits near it, which
+    // happens on turn-of-decade years.
+    final decades = <int>[
+      for (var y = _minYear; y <= _maxYear; y += 10)
+        if (_maxYear - y >= 4) y,
+      _maxYear,
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Wrap(
-        spacing: 8.0,
-        runSpacing: 8.0,
-        children: options.map((opt) {
-          final label = opt['label']!;
-          final value = opt['value'];
-          final isSelected = selectedValue == value;
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-
-          return InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => onSelected(value),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 9.0,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary
-                    : (isDark
-                        ? const Color(0xFF2A2A2A)
-                        : Colors.grey.shade200),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primary
-                      : (isDark ? Colors.white12 : Colors.black12),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                label,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isFullRange
+                    ? 'Any Year'
+                    : (start == end ? '$start' : '$start – $end'),
                 style: TextStyle(
-                  color: isSelected
-                      ? Colors.black
-                      : (isDark ? Colors.white : Colors.black87),
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isFullRange
+                      ? (isDark ? Colors.white70 : Colors.black54)
+                      : AppColors.primary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+              if (!isFullRange)
+                GestureDetector(
+                  onTap: () => setState(() => _yearRange = _fullRange),
+                  child: Text(
+                    'Any Year',
+                    style: TextStyle(
+                      color: isDark ? Colors.white54 : Colors.black45,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          RangeSlider(
+            values: _yearRange,
+            min: _minYear.toDouble(),
+            max: _maxYear.toDouble(),
+            divisions: _maxYear - _minYear,
+            labels: RangeLabels('$start', '$end'),
+            activeColor: AppColors.primary,
+            inactiveColor: isDark ? Colors.white24 : Colors.black26,
+            onChanged: (values) => setState(() => _yearRange = values),
+          ),
+          // Positioned proportionally rather than evenly spaced: the final
+          // stretch is a partial decade (2020→2026 today), so an even Row would
+          // put each label somewhere the track doesn't actually sit.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final span = (_maxYear - _minYear).toDouble();
+                return SizedBox(
+                  height: 14,
+                  child: Stack(
+                    children: [
+                      for (final tick in decades)
+                        Positioned(
+                          left: (((tick - _minYear) / span) *
+                                  constraints.maxWidth -
+                              14)
+                              .clamp(0.0, constraints.maxWidth - 28),
+                          child: SizedBox(
+                            width: 28,
+                            child: Text(
+                              '$tick',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: isDark ? Colors.white38 : Colors.black38,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -1591,7 +1691,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         onTap: () {
                           setState(() {
                             _currentSortBy = 'trending';
-                            _currentYear = null;
+                            _yearRange = _fullRange;
                           });
                           widget.onApply('trending', null);
                           Navigator.pop(context);
@@ -1670,15 +1770,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               const SizedBox(height: 16),
               // Release Year Section
               _buildSectionHeader('Release Year'),
-              _buildChipWrap(
-                options: _yearOptions,
-                selectedValue: _currentYear,
-                onSelected: (val) {
-                  setState(() {
-                    _currentYear = _currentYear == val ? null : val;
-                  });
-                },
-              ),
+              _buildYearRangeSlider(isDark),
 
               const SizedBox(height: 24),
               // Apply Button

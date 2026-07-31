@@ -643,19 +643,12 @@ class TmdbClient {
         'with_origin_country': originCountry,
       };
 
-      if (year != null && year.isNotEmpty) {
-        if (year.endsWith('s')) {
-          final startYear = int.tryParse(year.replaceAll('s', '')) ?? 2020;
-          queryParams['first_air_date.gte'] = '$startYear-01-01';
-          queryParams['first_air_date.lte'] = '${startYear + 9}-12-31';
-        } else {
-          final yInt = int.tryParse(year);
-          if (yInt != null) {
-            queryParams['first_air_date_year'] = yInt;
-          }
-          queryParams['first_air_date.gte'] = '$year-01-01';
-          queryParams['first_air_date.lte'] = '$year-12-31';
-        }
+      final yearRange = (year != null && year.isNotEmpty)
+          ? _parseYearRange(year)
+          : null;
+      if (yearRange != null) {
+        queryParams['first_air_date.gte'] = '${yearRange.$1}-01-01';
+        queryParams['first_air_date.lte'] = '${yearRange.$2}-12-31';
       } else if (firstAirDateGte != null) {
         queryParams['first_air_date.gte'] = firstAirDateGte;
       } else if (sortBy == 'first_air_date.desc') {
@@ -770,19 +763,12 @@ class TmdbClient {
         'with_origin_country': originCountry,
       };
 
-      if (year != null && year.isNotEmpty) {
-        if (year.endsWith('s')) {
-          final startYear = int.tryParse(year.replaceAll('s', '')) ?? 2020;
-          queryParams['primary_release_date.gte'] = '$startYear-01-01';
-          queryParams['primary_release_date.lte'] = '${startYear + 9}-12-31';
-        } else {
-          final yInt = int.tryParse(year);
-          if (yInt != null) {
-            queryParams['primary_release_year'] = yInt;
-          }
-          queryParams['primary_release_date.gte'] = '$year-01-01';
-          queryParams['primary_release_date.lte'] = '$year-12-31';
-        }
+      final yearRange = (year != null && year.isNotEmpty)
+          ? _parseYearRange(year)
+          : null;
+      if (yearRange != null) {
+        queryParams['primary_release_date.gte'] = '${yearRange.$1}-01-01';
+        queryParams['primary_release_date.lte'] = '${yearRange.$2}-12-31';
       } else if (primaryReleaseDateGte != null) {
         queryParams['primary_release_date.gte'] = primaryReleaseDateGte;
       } else if (sortBy == 'primary_release_date.desc') {
@@ -854,17 +840,52 @@ class TmdbClient {
     return response['results'] as List<dynamic>;
   }
 
+  /// Resolves the `year` filter into an inclusive (start, end) year pair.
+  ///
+  /// Accepts three forms: a range as written by the Explore range picker
+  /// ("1990-2010"), a decade ("2020s"), and a single year ("2026"). The latter
+  /// two predate the range picker and are kept so any value still held in
+  /// memory or in a cached filter selection keeps resolving.
+  ///
+  /// Returns null for anything unparseable, in which case the caller sends no
+  /// date bounds at all rather than guessing.
+  (int, int)? _parseYearRange(String year) {
+    if (year.contains('-')) {
+      final parts = year.split('-');
+      if (parts.length != 2) return null;
+      final from = int.tryParse(parts[0].trim());
+      final to = int.tryParse(parts[1].trim());
+      if (from == null || to == null) return null;
+      return from <= to ? (from, to) : (to, from);
+    }
+
+    if (year.endsWith('s')) {
+      final startYear = int.tryParse(year.substring(0, year.length - 1));
+      return startYear == null ? null : (startYear, startYear + 9);
+    }
+
+    final single = int.tryParse(year);
+    return single == null ? null : (single, single);
+  }
+
   int _getVoteCountThreshold(String sortBy, [String? language]) {
     if (language == 'mr') {
       return 0; // Regional content like Marathi has very few votes on TMDB
     }
     if (sortBy == 'vote_average.desc') {
+      // Deliberately high: this sort ranks by score alone, so a lower floor
+      // puts "10.0 from two votes" above genuinely acclaimed titles.
       return 100;
     } else if (sortBy == 'first_air_date.desc' ||
         sortBy == 'primary_release_date.desc') {
-      return 5;
+      // Newest-first legitimately surfaces titles that haven't accumulated
+      // votes yet, so only stub entries with none at all are excluded.
+      return 1;
     } else if (sortBy == 'popularity.desc') {
-      return 5;
+      // 1 rather than 0 — TMDB carries a long tail of zero-vote stub entries,
+      // and Surprise Me pages randomly as deep as page 500, so it reads
+      // straight into that tail. One real vote is enough to filter them.
+      return 1;
     }
     return 0;
   }

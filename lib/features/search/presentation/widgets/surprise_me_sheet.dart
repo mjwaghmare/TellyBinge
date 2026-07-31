@@ -34,6 +34,11 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
   final List<int> _seenMoviePages = [];
   static const int _maxHistory = 100;
 
+  /// Earliest release/air date Surprise Me will pull from, for every language.
+  /// Matches the oldest option the Explore year picker offers, so a surprise
+  /// can't land on something the user could never have filtered to.
+  static const String _earliestDate = '1990-01-01';
+
   List<dynamic> _tvShows = [];
   List<dynamic> _movies = [];
 
@@ -130,7 +135,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final initial = await tmdbClient.discoverTvShowsWithFiltersPaginated(
           page: 1,
           sortBy: 'popularity.desc',
-          firstAirDateGte: _language == 'mr' ? '1990-01-01' : '2020-01-01',
+          firstAirDateGte: _earliestDate,
           language: _language,
         );
         final totalPages = (initial['total_pages'] as num?)?.toInt() ?? 250;
@@ -157,7 +162,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final results = await tmdbClient.discoverTvShowsWithFilters(
           page: page,
           sortBy: 'popularity.desc',
-          firstAirDateGte: _language == 'mr' ? '1990-01-01' : '2000-01-01',
+          firstAirDateGte: _earliestDate,
           language: _language,
         );
 
@@ -233,9 +238,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final initial = await tmdbClient.discoverMoviesWithFiltersPaginated(
           page: 1,
           sortBy: 'popularity.desc',
-          primaryReleaseDateGte: _language == 'mr'
-              ? '2000-01-01'
-              : '2020-01-01',
+          primaryReleaseDateGte: _earliestDate,
           language: _language,
         );
         final totalPages = (initial['total_pages'] as num?)?.toInt() ?? 250;
@@ -262,9 +265,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final results = await tmdbClient.discoverMoviesWithFilters(
           page: page,
           sortBy: 'popularity.desc',
-          primaryReleaseDateGte: _language == 'mr'
-              ? '2000-01-01'
-              : '2020-01-01',
+          primaryReleaseDateGte: _earliestDate,
           language: _language,
         );
 
