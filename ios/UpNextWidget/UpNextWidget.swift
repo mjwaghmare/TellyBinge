@@ -17,6 +17,11 @@ struct UpNextItem: Codable, Hashable {
 }
 
 extension UpNextItem {
+    /// Drives the push transition when a row swaps to a different episode.
+    /// `episodeKey` is empty for upcoming (unaired) entries, so the episode code
+    /// is folded in to keep the identity distinct across those swaps too.
+    var episodeIdentity: String { "\(episodeKey)|\(episodeTitle)" }
+
     var showURL: URL? {
         guard showId > 0 else { return nil }
         return URL(string: "tvtimeapp://show/\(showId)")
@@ -201,6 +206,11 @@ struct UpNextWidgetEntryView : View {
                     ForEach(visibleItems, id: \.showId) { item in
                         ItemRow(item: item)
                             .frame(maxHeight: .infinity)
+                            // Marking the last episode watched drops the show
+                            // from the list entirely. Pushing a whole row out
+                            // while the rows below it reflow looks broken, so
+                            // row-level changes just fade.
+                            .transition(.opacity)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -211,9 +221,42 @@ struct UpNextWidgetEntryView : View {
     }
 }
 
+// MARK: - Episode swap animation
+/// Slides the outgoing episode off to the trailing edge while the incoming one
+/// pushes in from the leading edge.
+///
+/// The `.id()` is what makes this fire at all — without an identity change
+/// SwiftUI just redraws the same text in place and nothing animates. It has to
+/// stay *outside* the transition so the identity change removes the whole
+/// subtree the transition is attached to.
+///
+/// Guarded at iOS 17 on purpose: WidgetKit only animates timeline entry changes
+/// from 17 onward, and `.push(from:)` itself needs 16 while this target deploys
+/// to 15. Below 17 the content simply swaps with no animation.
+private struct EpisodeSwapTransition: ViewModifier {
+    let identity: String
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, *) {
+            content
+                .transition(.push(from: .leading))
+                .id(identity)
+        } else {
+            content
+        }
+    }
+}
+
+private extension View {
+    func episodeSwapTransition(identity: String) -> some View {
+        modifier(EpisodeSwapTransition(identity: identity))
+    }
+}
+
 struct ItemRow: View {
     let item: UpNextItem
-    
+
     @ViewBuilder
     private var rowContent: some View {
         HStack(alignment: .center, spacing: 10) {
@@ -253,6 +296,11 @@ struct ItemRow: View {
                     .foregroundColor(Color(white: 0.6))
                     .lineLimit(1)
             }
+            // Only the text pushes — the poster is the show's, not the
+            // episode's, so anchoring it reads as "same show, next episode".
+            // (The row itself is keyed by showId in the ForEach, so a different
+            // show never reuses this row.)
+            .episodeSwapTransition(identity: item.episodeIdentity)
         }
     }
 
@@ -306,7 +354,7 @@ struct ItemRow: View {
 // MARK: - Medium Widget Row
 struct MediumItemRow: View {
     let item: UpNextItem
-    
+
     @ViewBuilder
     private var rowContent: some View {
         HStack(spacing: 14) {
@@ -324,7 +372,12 @@ struct MediumItemRow: View {
             .frame(width: 65, height: 95)
             .cornerRadius(12)
             .clipped()
-            
+            // Medium shows a single item, so this row *can* be handed a
+            // different show entirely. Keying the poster on showId lets it stay
+            // anchored through an episode advance but push along with the text
+            // when the show changes.
+            .episodeSwapTransition(identity: String(item.showId))
+
             // Details
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.header)
@@ -347,6 +400,7 @@ struct MediumItemRow: View {
                     .foregroundColor(Color(white: 0.6))
                     .lineLimit(1)
             }
+            .episodeSwapTransition(identity: item.episodeIdentity)
         }
     }
 
