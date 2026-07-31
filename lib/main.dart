@@ -144,6 +144,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  /// Re-pull widget data when the app returns to the foreground. A widget
+  /// mark-as-watched runs in a headless isolate, so the in-app view can be
+  /// stale by the time the user opens the app — and no AuthCubit state change
+  /// fires on resume to trigger AuthGate's sync.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) return;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return;
+    _AuthGateState.syncWidget(uid, force: true);
+  }
+
   @override
   Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
     final location = routeInformation.uri.toString();
@@ -314,12 +327,16 @@ class _AuthGateState extends State<AuthGate> {
   static const _syncThrottle = Duration(seconds: 30);
 
   /// Called by _MyAppState when HomeWidget.widgetClicked fires, ensuring the
-  /// very next _syncWidget call bypasses the throttle.
+  /// very next syncWidget call bypasses the throttle.
   static void invalidateSyncThrottle() => _lastSyncTime = null;
 
-  Future<void> _syncWidget(String uid) async {
+  /// [force] skips the throttle — used on app resume and after a widget click,
+  /// where the in-app data is known to be potentially stale.
+  static Future<void> syncWidget(String uid, {bool force = false}) async {
     final now = DateTime.now();
-    if (_lastSyncTime != null && now.difference(_lastSyncTime!) < _syncThrottle) {
+    if (!force &&
+        _lastSyncTime != null &&
+        now.difference(_lastSyncTime!) < _syncThrottle) {
       return;
     }
     _lastSyncTime = now;
@@ -337,7 +354,7 @@ class _AuthGateState extends State<AuthGate> {
       listenWhen: (previous, current) => current is Authenticated,
       listener: (context, state) {
         if (state is Authenticated) {
-          _syncWidget(state.user.uid);
+          syncWidget(state.user.uid);
         }
       },
       builder: (context, state) {

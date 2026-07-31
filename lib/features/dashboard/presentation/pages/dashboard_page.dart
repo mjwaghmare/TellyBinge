@@ -96,7 +96,10 @@ class DashboardPageState extends State<DashboardPage> {
                   // Trigger background enrichment — does NOT block the UI.
                   _enrichmentCubit.enrichShows(state.shows, uid);
                   
-                  // Keep Home Screen widget in sync with latest data
+                  // Keep Home Screen widget in sync with latest data.
+                  // Use the shows already in hand — syncWatchlistToWidget(uid)
+                  // would re-read the whole collection on every stream emission,
+                  // and enrichment writes re-trigger this listener.
                   WidgetService.syncWatchlistDataToWidget(state.shows);
                 }
               },

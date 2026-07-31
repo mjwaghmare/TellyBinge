@@ -92,6 +92,11 @@ class WidgetService {
     String uid, {
     bool immediate = false,
   }) async {
+    try {
+      await HomeWidget.saveWidgetData<String>('current_uid', uid);
+    } catch (e) {
+      log('Error saving current_uid: $e');
+    }
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -172,7 +177,7 @@ class WidgetService {
         'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
         'header': show.isPremiere ? 'PREMIERE' : (show.isNew ? 'NEW EPISODE' : 'WATCH NEXT'),
         'episodeTitle': show.episodeCode,
-        'episodeDetails': show.episodeTitle,
+        'episodeDetails': show.episodeTitle.isNotEmpty ? show.episodeTitle : 'Episode $targetEpisode',
         'posterPath': show.rawShowData['posterPath'] as String?,
         'episodeKey': firestoreKey,
       });
@@ -185,7 +190,7 @@ class WidgetService {
         'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
         'header': 'START WATCHING',
         'episodeTitle': show.episodeCode,
-        'episodeDetails': show.episodeTitle,
+        'episodeDetails': show.episodeTitle.isNotEmpty ? show.episodeTitle : 'Episode 1',
         'posterPath': show.rawShowData['posterPath'] as String?,
         'episodeKey': '1-1',
       });
@@ -231,7 +236,9 @@ class WidgetService {
 
 @pragma('vm:entry-point')
 Future<void> interactiveWidgetCallback(Uri? uri) async {
-  log('🚀 [Background Isolate] Interactive widget callback received with URI: $uri');
+  final msg = '🚀 [Background Isolate] Interactive widget callback received with URI: $uri';
+  log(msg);
+  debugPrint(msg);
   WidgetsFlutterBinding.ensureInitialized();
 
   if (uri == null) return;
@@ -242,18 +249,18 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
   final episodeKey = uri.queryParameters['episodeKey'];
 
   if (showIdStr == null || episodeKey == null) {
-    log('Background callback: missing showId or episodeKey in $uri');
+    debugPrint('Background callback: missing showId or episodeKey in $uri');
     return;
   }
 
   final cleanShowIdStr = showIdStr.replaceAll(',', '').replaceAll(' ', '');
   final showId = int.tryParse(cleanShowIdStr);
   if (showId == null) {
-    log('Background callback: invalid showId "$showIdStr"');
+    debugPrint('Background callback: invalid showId "$showIdStr"');
     return;
   }
 
-  log('📌 [Background Isolate] Processing mark-as-watched for showId: $showId, episodeKey: $episodeKey');
+  debugPrint('📌 [Background Isolate] Processing mark-as-watched for showId: $showId, episodeKey: $episodeKey');
 
   WatchlistEnrichmentCubit? enrichmentCubit;
 
@@ -270,7 +277,7 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
         await dotenv.load(fileName: '.env').timeout(WidgetService._backgroundOpTimeout);
         dotenvAvailable = true;
       } catch (e) {
-        log('Background callback: dotenv unavailable in headless isolate, skipping TMDB enrichment: $e');
+        debugPrint('Background callback: dotenv unavailable in headless isolate, skipping TMDB enrichment: $e');
       }
     }
 
@@ -290,7 +297,7 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     }
 
     if (uid == null || uid.isEmpty) {
-      log('Background callback: no authenticated user, aborting mark-as-watched for show $showId');
+      debugPrint('Background callback: no authenticated user, aborting mark-as-watched for show $showId');
       return;
     }
 
@@ -329,7 +336,7 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
         )
         .timeout(WidgetService._backgroundOpTimeout);
 
-    log('Background: Marked episode $episodeKey as watched for show $showId ($showName)');
+    debugPrint('Background: Marked episode $episodeKey as watched for show $showId ($showName)');
 
     if (showDoc.exists) {
       final showMap = Map<String, dynamic>.from(showDoc.data()!);
@@ -379,12 +386,12 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
               .timeout(WidgetService._backgroundOpTimeout);
           await WidgetService.syncWatchlistToWidget(uid, immediate: true);
         } catch (e) {
-          log('Background callback: TMDB enrichment failed: $e');
+          debugPrint('Background callback: TMDB enrichment failed: $e');
         }
       }
     }
   } catch (e) {
-    log('Error in background interactive widget callback: $e');
+    debugPrint('Error in background interactive widget callback: $e');
   } finally {
     enrichmentCubit?.close();
   }

@@ -43,3 +43,15 @@ public struct MarkAsWatchedIntent: AppIntent {
         return .result()
     }
 }
+
+/// Required so the intent is performed in the *app* process rather than the
+/// widget extension. HomeWidgetBackgroundWorker's Flutter engine and method
+/// channel are only ever set up by registerInteractivityCallback, which runs in
+/// the app. Without this conformance the extension gets the intent, finds
+/// isSetupCompleted == false, and awaits a continuation nothing will resume —
+/// perform() hangs, reloadAllTimelines() never fires, and the tap does nothing.
+/// The iOSApplicationExtension-unavailable attribute keeps the widget target
+/// compiling with the same source file.
+@available(iOS 17, *)
+@available(iOSApplicationExtension, unavailable)
+extension MarkAsWatchedIntent: ForegroundContinuableIntent {}

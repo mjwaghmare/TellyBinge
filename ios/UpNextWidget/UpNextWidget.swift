@@ -274,16 +274,11 @@ struct ItemRow: View {
             if !item.episodeKey.isEmpty {
                 if #available(iOS 17.0, *) {
                     Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
-                        ZStack {
-                            Circle()
-                                .stroke(Color.blue.opacity(0.8), lineWidth: 2)
-                                .frame(width: 28, height: 28)
-                            Image(systemName: "check")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.blue)
-                        }
-                        .frame(width: 38, height: 38)
-                        .contentShape(Circle())
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(Color.blue.opacity(0.9))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
                     .frame(width: 44, height: 44)
@@ -291,11 +286,11 @@ struct ItemRow: View {
                 } else {
                     if let markWatchedURL = item.markWatchedURL {
                         Link(destination: markWatchedURL) {
-                            ZStack {
-                                Circle().stroke(Color.blue.opacity(0.8), lineWidth: 2).frame(width: 28, height: 28)
-                                Image(systemName: "check").font(.system(size: 12, weight: .bold)).foregroundColor(.blue)
-                            }
-                            .contentShape(Circle())
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundColor(Color.blue.opacity(0.9))
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(PlainButtonStyle())
                         .frame(width: 44, height: 44)
@@ -373,16 +368,11 @@ struct MediumItemRow: View {
             if !item.episodeKey.isEmpty {
                 if #available(iOS 17.0, *) {
                     Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
-                        ZStack {
-                            Circle()
-                                .stroke(Color.blue.opacity(0.8), lineWidth: 2)
-                                .frame(width: 28, height: 28)
-                            Image(systemName: "check")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.blue)
-                        }
-                        .frame(width: 38, height: 38)
-                        .contentShape(Circle())
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(Color.blue.opacity(0.9))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
                     .frame(width: 44, height: 44)
@@ -390,11 +380,11 @@ struct MediumItemRow: View {
                 } else {
                     if let markWatchedURL = item.markWatchedURL {
                         Link(destination: markWatchedURL) {
-                            ZStack {
-                                Circle().stroke(Color.blue.opacity(0.8), lineWidth: 2).frame(width: 28, height: 28)
-                                Image(systemName: "check").font(.system(size: 12, weight: .bold)).foregroundColor(.blue)
-                            }
-                            .contentShape(Circle())
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundColor(Color.blue.opacity(0.9))
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(PlainButtonStyle())
                         .frame(width: 44, height: 44)
