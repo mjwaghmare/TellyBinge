@@ -69,17 +69,32 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
   
   Future<void> toggleNotifications(bool value) async {
+    if (value) {
+      // If the OS refuses, don't leave a switch claiming notifications are on
+      // while reconcile silently blocks every schedule.
+      final granted = await NotificationService().requestPermissions();
+      if (!granted) {
+        await prefs.setBool(_notificationsEnabledKey, false);
+        emit(state.copyWith(notificationsEnabled: false));
+        await NotificationService().reconcile(force: true);
+        return;
+      }
+    }
     await prefs.setBool(_notificationsEnabledKey, value);
     emit(state.copyWith(notificationsEnabled: value));
-    if (value) {
-      await NotificationService().requestPermissions();
-    } else {
-      await NotificationService().cancelAllNotifications();
-    }
+    // Reconcile either way: switching off cancels everything, switching back on
+    // rebuilds from the watchlists already submitted. Without this, re-enabling
+    // left the user with nothing pending until a watchlist stream happened to
+    // emit. Forced because the desired titles haven't changed — only what they
+    // expand into has.
+    await NotificationService().reconcile(force: true);
   }
 
   Future<void> toggleNotify1HourBefore(bool value) async {
     await prefs.setBool(_notify1HourBeforeKey, value);
     emit(state.copyWith(notify1HourBefore: value));
+    // Turning this off has to actively cancel the hour-before alerts already
+    // scheduled, not just stop creating new ones.
+    await NotificationService().reconcile(force: true);
   }
 }

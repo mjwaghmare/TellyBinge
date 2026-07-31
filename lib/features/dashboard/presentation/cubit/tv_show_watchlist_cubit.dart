@@ -21,20 +21,24 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
         // Widget sync is handled by the dashboard BlocConsumer listener
         // via WidgetService.syncWatchlistDataToWidget — do NOT duplicate here.
         
-        // Schedule notifications for upcoming episodes
-        for (var show in shows) {
-          if (show['status'] != 'STOPPED' && show['upcomingAirDate'] != null) {
-            final showId = show['id'] as int;
-            final showName = show['name'] as String;
-            final epCode = show['upcomingEpisodeCode'] as String? ?? '';
-            NotificationService().scheduleBasedOnSettings(
-              id: showId,
-              title: 'New Episode: $showName',
-              body: 'Episode $epCode is airing soon!',
-              releaseDateStr: show['upcomingAirDate'] as String,
-            );
-          }
-        }
+        // Hand the whole watchlist over; the service reconciles it against
+        // what's actually scheduled. Shows that stopped airing or lost their
+        // upcoming episode are simply absent here and get cancelled as a result.
+        NotificationService().submitTitles(
+          NotificationMedia.tv,
+          [
+            for (final show in shows)
+              if (show['status'] != 'STOPPED' && show['upcomingAirDate'] != null)
+                PendingNotification(
+                  media: NotificationMedia.tv,
+                  mediaId: show['id'] as int,
+                  title: 'New Episode: ${show['name'] as String}',
+                  body:
+                      'Episode ${show['upcomingEpisodeCode'] as String? ?? ''} is airing soon!',
+                  releaseDateStr: show['upcomingAirDate'] as String,
+                ),
+          ],
+        );
       },
       onError: (error) {
         emit(TvShowWatchlistError(error.toString()));
@@ -72,7 +76,7 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
   }) async {
     try {
       await tvWatchlistRepository.stopWatchingShow(uid: uid, showId: showId);
-      await NotificationService().cancelNotification(showId);
+      await NotificationService().cancelNotification(NotificationMedia.tv, showId);
     } catch (e) {
       debugPrint('Error in TvShowWatchlistCubit.stopWatchingShow: $e');
     }
@@ -95,7 +99,7 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
   }) async {
     try {
       await tvWatchlistRepository.removeShow(uid: uid, showId: showId);
-      await NotificationService().cancelNotification(showId);
+      await NotificationService().cancelNotification(NotificationMedia.tv, showId);
     } catch (e) {
       debugPrint('Error in TvShowWatchlistCubit.removeShow: $e');
     }

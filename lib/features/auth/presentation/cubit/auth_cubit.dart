@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'auth_state.dart';
 
@@ -47,6 +48,9 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       await authRepository.signOut();
+      // The watchlist streams close on sign-out, so nothing would resubmit or
+      // cancel what is already scheduled for this account.
+      await NotificationService().clearForSignOut();
       emit(Unauthenticated());
     } catch (e) {
       emit(AuthError(e.toString()));

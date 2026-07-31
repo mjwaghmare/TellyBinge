@@ -15,6 +15,7 @@ import 'core/services/notification_service.dart';
 import 'core/services/background_sync_service.dart';
 import 'features/show_details/presentation/cubit/show_details_cubit.dart';
 import 'features/show_details/presentation/pages/show_details_page.dart';
+import 'features/explore/presentation/pages/movie_details_page.dart';
 import 'core/storage/settings_storage.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/cubit/theme_cubit.dart';
@@ -135,6 +136,23 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _AuthGateState.invalidateSyncThrottle();
       if (uri != null) _handleWidgetUri(uri);
     });
+
+    // Notification taps carry the same tvtimeapp:// deep links the widget uses,
+    // so they route through the same handler. Assigned here rather than at
+    // NotificationService.initialize() time, which runs before any navigator
+    // exists.
+    NotificationService().onNotificationTap = (payload) {
+      final uri = Uri.tryParse(payload);
+      if (uri != null) _handleWidgetUri(uri);
+    };
+
+    // Cold launch from a notification: no live callback fired, so the launch
+    // details have to be read back explicitly.
+    NotificationService().takeLaunchPayload().then((payload) {
+      if (payload == null) return;
+      final uri = Uri.tryParse(payload);
+      if (uri != null) _handleWidgetUri(uri);
+    });
   }
 
   @override
@@ -215,6 +233,35 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                     initialTabIndex: 1,
                   ),
                 ),
+              ),
+            );
+          }
+        });
+      }
+    }
+    if (uri.host == 'movie') {
+      // Only reachable from a movie release notification — the widget never
+      // emits this host.
+      final movieId = int.tryParse(uri.pathSegments.firstOrNull ?? '');
+      if (movieId != null && movieId > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final nav = navigatorKey.currentState;
+          if (nav == null) return;
+
+          bool alreadyOnMovie = false;
+          nav.popUntil((route) {
+            if (route.settings.name == '/movie/$movieId') {
+              alreadyOnMovie = true;
+              return true;
+            }
+            return route.isFirst;
+          });
+
+          if (!alreadyOnMovie) {
+            nav.push(
+              MaterialPageRoute(
+                settings: RouteSettings(name: '/movie/$movieId'),
+                builder: (context) => MovieDetailsPage(movieId: movieId),
               ),
             );
           }

@@ -28,25 +28,27 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
       (movies) {
         emit(MovieWatchlistSuccess(movies));
 
-        // Schedule/cancel notifications for movies in watchlist
-        for (var movie in movies) {
-          final isWatched = movie['isWatched'] as bool? ?? false;
-          final releaseDate = movie['releaseDate'] as String?;
-          final movieId = (movie['id'] as num?)?.toInt();
-          final title = movie['title'] as String? ?? 'Movie';
-          if (movieId != null) {
-            if (isWatched) {
-              NotificationService().cancelNotification(movieId);
-            } else if (releaseDate != null) {
-              NotificationService().scheduleBasedOnSettings(
-                id: movieId,
-                title: 'Upcoming Release: $title',
-                body: '$title is releasing soon!',
-                releaseDateStr: releaseDate,
-              );
-            }
-          }
-        }
+        // Hand the whole watchlist over; the service reconciles it against
+        // what's actually scheduled. Watched movies are simply absent here and
+        // get cancelled as a result.
+        NotificationService().submitTitles(
+          NotificationMedia.movie,
+          [
+            for (final movie in movies)
+              if ((movie['isWatched'] as bool? ?? false) == false &&
+                  (movie['id'] as num?) != null &&
+                  (movie['releaseDate'] as String?) != null)
+                PendingNotification(
+                  media: NotificationMedia.movie,
+                  mediaId: (movie['id'] as num).toInt(),
+                  title:
+                      'Upcoming Release: ${movie['title'] as String? ?? 'Movie'}',
+                  body:
+                      '${movie['title'] as String? ?? 'Movie'} is releasing soon!',
+                  releaseDateStr: movie['releaseDate'] as String,
+                ),
+          ],
+        );
 
         // Start backfilling in the background sequentially to avoid socket rate limiting
         _backfillMissingGenres(uid, movies);
@@ -132,14 +134,9 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
         isWatched: isWatched,
         isFavorite: isFavorite,
       );
-      
-      // Schedule notification
-      await NotificationService().scheduleBasedOnSettings(
-        id: movieId,
-        title: 'Upcoming Release: $title',
-        body: '$title is releasing soon!',
-        releaseDateStr: releaseDate,
-      );
+      // No scheduling here — the Firestore write lands on the watchlist stream,
+      // which submits the whole list. Scheduling directly would bypass the
+      // pending-notification cap that reconcile enforces.
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.addMovie: $e');
     }
@@ -188,7 +185,7 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
       );
       
       // Cancel scheduled notification if it exists
-      await NotificationService().cancelNotification(movieId);
+      await NotificationService().cancelNotification(NotificationMedia.movie, movieId);
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.removeMovie: $e');
     }
