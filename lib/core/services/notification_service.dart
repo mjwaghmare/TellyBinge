@@ -63,10 +63,10 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   /// Each title reserves this many notification ids: two per media kind, one
-  /// for the release/air-time alert and one for the optional hour-before alert.
+  /// for the day-before alert and one for the optional hour-before alert.
   static const int _slotsPerTitle = 4;
 
-  static const int _slotRelease = 0;
+  static const int _slotDayBefore = 0;
   static const int _slotHourBefore = 1;
 
   /// Reserved id well above anything [_notificationId] can produce — the
@@ -184,7 +184,7 @@ class NotificationService {
   Future<void> sendTestNotification() async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails('test_channel', 'Test Notifications',
-            importance: Importance.max, priority: Priority.high);
+            importance: Importance.max, priority: Priority.max);
     const DarwinNotificationDetails darwinPlatformChannelSpecifics =
         DarwinNotificationDetails(
             presentAlert: true, presentBadge: true, presentSound: true);
@@ -215,7 +215,7 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails('release_channel', 'Release Notifications',
-            importance: Importance.max, priority: Priority.high);
+            importance: Importance.max, priority: Priority.max);
     const DarwinNotificationDetails darwinPlatformChannelSpecifics =
         DarwinNotificationDetails(
             presentAlert: true, presentBadge: true, presentSound: true);
@@ -244,7 +244,7 @@ class NotificationService {
   /// scheduled, and without that the next run could no-op on a stale match.
   Future<void> cancelNotification(NotificationMedia media, int id) async {
     await _notificationsPlugin
-        .cancel(id: _notificationId(media, id, _slotRelease));
+        .cancel(id: _notificationId(media, id, _slotDayBefore));
     await _notificationsPlugin
         .cancel(id: _notificationId(media, id, _slotHourBefore));
     _lastScheduledSignature = null;
@@ -267,7 +267,8 @@ class NotificationService {
     _lastScheduledSignature = null;
   }
 
-  /// Turns a TMDB date string into the moment to fire at.
+  /// Turns a TMDB date string into the release moment that alerts are offset
+  /// back from — the alerts themselves fire a day or an hour before it.
   ///
   /// Date-only strings (`YYYY-MM-DD`) carry no air time, so they resolve to 9am
   /// local. Strings with a time component are parsed as-is — `DateTime.parse`
@@ -396,14 +397,18 @@ class NotificationService {
         final releaseDate = _resolveReleaseDate(pending.releaseDateStr);
         if (releaseDate == null) continue;
 
-        if (releaseDate.isAfter(now)) {
+        // The default alert lands a day ahead so there is runway to plan around
+        // the release. A title added after that moment has passed simply gets
+        // no day-before alert — the hour-before one, if enabled, still fires.
+        final dayBefore = releaseDate.subtract(const Duration(days: 1));
+        if (dayBefore.isAfter(now)) {
           alerts.add(_ScheduledAlert(
-            id: _notificationId(pending.media, pending.mediaId, _slotRelease),
-            title: '${pending.title} (Today)',
+            id: _notificationId(pending.media, pending.mediaId, _slotDayBefore),
+            title: '${pending.title} (Tomorrow)',
             body: pending.body
-                .replaceAll('airing soon', 'airing today')
-                .replaceAll('releasing soon', 'releasing today'),
-            when: releaseDate,
+                .replaceAll('airing soon', 'airing tomorrow')
+                .replaceAll('releasing soon', 'releasing tomorrow'),
+            when: dayBefore,
             payload: _deepLinkFor(pending.media, pending.mediaId),
           ));
         }

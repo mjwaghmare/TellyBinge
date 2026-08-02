@@ -117,7 +117,7 @@ class SettingsPage extends StatelessWidget {
                       ),
                     ),
                     subtitle: Text(
-                      'Get alerted before episodes or movies release',
+                      'Get alerted a day before episodes or movies release',
                       style: TextStyle(
                         color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                         fontSize: 13,
