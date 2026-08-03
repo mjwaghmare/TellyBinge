@@ -115,13 +115,62 @@ let previewItems: [UpNextItem] = [
     UpNextItem(showId: 4, showName: "The Bear", header: "WATCH NEXT", episodeTitle: "S3, E1", episodeDetails: "30m", localPosterPath: nil, episodeKey: "S3E1")
 ]
 
+struct ProfileStats: Codable, Hashable {
+    let userName: String
+    let showsCount: Int
+    let episodesCount: Int
+    let showsFormattedTime: String
+    let moviesCount: Int
+    let moviesFormattedTime: String
+
+    var formattedShowsCount: String {
+        formatCompact(showsCount)
+    }
+
+    var formattedEpisodesCount: String {
+        formatCompact(episodesCount)
+    }
+
+    var formattedMoviesCount: String {
+        formatCompact(moviesCount)
+    }
+
+    private func formatCompact(_ number: Int) -> String {
+        if number >= 1_000_000 {
+            let num = Double(number) / 1_000_000.0
+            return String(format: "%.1fM", num).replacingOccurrences(of: ".0", with: "")
+        } else if number >= 1_000 {
+            let num = Double(number) / 1_000.0
+            return String(format: "%.1fk", num).replacingOccurrences(of: ".0", with: "")
+        }
+        return "\(number)"
+    }
+}
+
+struct SimpleEntry: TimelineEntry {
+    let date: Date
+    let items: [UpNextItem]
+    let stats: ProfileStats?
+}
+
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), items: previewItems)
+        SimpleEntry(
+            date: Date(),
+            items: previewItems,
+            stats: ProfileStats(
+                userName: "TellyBinge User",
+                showsCount: 14,
+                episodesCount: 128,
+                showsFormattedTime: "12d 4h",
+                moviesCount: 48,
+                moviesFormattedTime: "5d 18h"
+            )
+        )
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        completion(SimpleEntry(date: Date(), items: previewItems))
+        completion(placeholder(in: context))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
@@ -133,9 +182,22 @@ struct Provider: TimelineProvider {
             items = (try? JSONDecoder().decode([UpNextItem].self, from: data)) ?? []
         }
 
-        // Pre-load all poster images in parallel so they all render immediately.
-        // Sequential loading (3 × 4s timeout) can hit the widget extension kill budget;
-        // parallel loading caps at a single 4-second round-trip regardless of count.
+        let userName = userDefaults?.string(forKey: "stats_user_name") ?? "TellyBinge User"
+        let showsCount = userDefaults?.integer(forKey: "stats_shows_count") ?? 0
+        let episodesCount = userDefaults?.integer(forKey: "stats_episodes_count") ?? 0
+        let showsTime = userDefaults?.string(forKey: "stats_shows_time") ?? "0m"
+        let moviesCount = userDefaults?.integer(forKey: "stats_movies_count") ?? 0
+        let moviesTime = userDefaults?.string(forKey: "stats_movies_time") ?? "0m"
+
+        let stats = ProfileStats(
+            userName: userName.isEmpty ? "TellyBinge User" : userName,
+            showsCount: showsCount,
+            episodesCount: episodesCount,
+            showsFormattedTime: showsTime.isEmpty ? "0m" : showsTime,
+            moviesCount: moviesCount,
+            moviesFormattedTime: moviesTime.isEmpty ? "0m" : moviesTime
+        )
+
         Task {
             var loadedItems = items
             await withTaskGroup(of: (Int, Data?).self) { group in
@@ -157,9 +219,8 @@ struct Provider: TimelineProvider {
                 }
             }
 
-            let entry = SimpleEntry(date: Date(), items: loadedItems)
+            let entry = SimpleEntry(date: Date(), items: loadedItems, stats: stats)
 
-            // Refresh at midnight so countdown text ("In 3 days") stays accurate
             let tomorrow = Calendar.current.startOfDay(
                 for: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
             )
@@ -169,51 +230,179 @@ struct Provider: TimelineProvider {
     }
 }
 
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let items: [UpNextItem]
+// MARK: - Views
+struct MediumStatsWidgetView: View {
+    let stats: ProfileStats
+
+    // App Theme Brand Colors from AppColors
+    private let primaryAmber = Color(red: 255/255, green: 193/255, blue: 7/255) // #FFC107
+    private let primaryDarkAmber = Color(red: 255/255, green: 143/255, blue: 0/255) // #FF8F00
+    private let airingBlue = Color(red: 33/255, green: 150/255, blue: 243/255) // #2196F3
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // Header Row: Avatar circle + User Name + STATS badge
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [primaryAmber, primaryDarkAmber],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 24, height: 24)
+                    Text(String(stats.userName.prefix(1)).uppercased())
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.black)
+                }
+
+                Text(stats.userName)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(primaryAmber)
+                    Text("STATS")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(primaryAmber)
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(primaryAmber.opacity(0.18))
+                .cornerRadius(6)
+            }
+
+            Divider()
+                .background(Color.white.opacity(0.15))
+
+            // Stat Cards Row
+            HStack(spacing: 8) {
+                // TV Shows Card (Airing Blue Theme)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "tv.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(airingBlue)
+                        Text("SHOWS ADDED")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(Color.white.opacity(0.6))
+                    }
+
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(stats.formattedShowsCount)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Text("(\(stats.formattedEpisodesCount) eps)")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color.white.opacity(0.6))
+                            .lineLimit(1)
+                    }
+
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 9))
+                            .foregroundColor(Color.white.opacity(0.6))
+                        Text(stats.showsFormattedTime)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color.white.opacity(0.8))
+                            .lineLimit(1)
+                    }
+                }
+                .padding(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.white.opacity(0.06))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(airingBlue.opacity(0.3), lineWidth: 1)
+                )
+
+                // Movies Card (Primary Amber Gold Theme)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "film.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(primaryAmber)
+                        Text("MOVIES WATCHED")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(Color.white.opacity(0.6))
+                    }
+
+                    Text(stats.formattedMoviesCount)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 9))
+                            .foregroundColor(Color.white.opacity(0.6))
+                        Text(stats.moviesFormattedTime)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color.white.opacity(0.8))
+                            .lineLimit(1)
+                    }
+                }
+                .padding(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.white.opacity(0.06))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(primaryAmber.opacity(0.3), lineWidth: 1)
+                )
+            }
+        }
+    }
 }
 
-// MARK: - Views
 struct UpNextWidgetEntryView : View {
     @Environment(\.widgetFamily) var family
     var entry: Provider.Entry
 
     var body: some View {
-        VStack(spacing: 0) {
-            if entry.items.isEmpty {
-                VStack(spacing: 6) {
-                    Image(systemName: "tv.slash")
-                        .font(.system(size: 28))
-                        .foregroundColor(.gray)
-                    Text("Watch Next")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                    Text("No shows to watch.")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if family == .systemMedium {
-                // Medium: show first item in a compact horizontal layout
-                if let item = entry.items.first {
-                    MediumItemRow(item: item)
-                }
+        Group {
+            if family == .systemMedium {
+                MediumStatsWidgetView(stats: entry.stats ?? ProfileStats(
+                    userName: "TellyBinge User",
+                    showsCount: 0,
+                    episodesCount: 0,
+                    showsFormattedTime: "0m",
+                    moviesCount: 0,
+                    moviesFormattedTime: "0m"
+                ))
             } else {
-                // Large: show up to 4 items evenly distributed to fill the entire container height
-                let visibleItems = Array(entry.items.prefix(4))
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(visibleItems, id: \.showId) { item in
-                        ItemRow(item: item)
-                            .frame(maxHeight: .infinity)
-                            // Marking the last episode watched drops the show
-                            // from the list entirely. Pushing a whole row out
-                            // while the rows below it reflow looks broken, so
-                            // row-level changes just fade.
-                            .transition(.opacity)
+                if entry.items.isEmpty {
+                    VStack(spacing: 6) {
+                        Image(systemName: "tv.slash")
+                            .font(.system(size: 28))
+                            .foregroundColor(.gray)
+                        Text("Watch Next")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        Text("No shows to watch.")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    let visibleItems = Array(entry.items.prefix(4))
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(visibleItems, id: \.showId) { item in
+                            ItemRow(item: item)
+                                .frame(maxHeight: .infinity)
+                                .transition(.opacity)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .padding(12)
@@ -351,106 +540,7 @@ struct ItemRow: View {
     }
 }
 
-// MARK: - Medium Widget Row
-struct MediumItemRow: View {
-    let item: UpNextItem
-
-    @ViewBuilder
-    private var rowContent: some View {
-        HStack(spacing: 14) {
-            // Poster — only use pre-loaded imageData; AsyncImage is unreliable
-            // in widget extensions due to their tight execution budget.
-            Group {
-                if let data = item.imageData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Rectangle().fill(Color.gray.opacity(0.3))
-                }
-            }
-            .frame(width: 65, height: 95)
-            .cornerRadius(12)
-            .clipped()
-            // Medium shows a single item, so this row *can* be handed a
-            // different show entirely. Keying the poster on showId lets it stay
-            // anchored through an episode advance but push along with the text
-            // when the show changes.
-            .episodeSwapTransition(identity: String(item.showId))
-
-            // Details
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.header)
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(Color(white: 0.6))
-                    .textCase(.uppercase)
-                
-                Text(item.showName)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                
-                Text(item.episodeTitle)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                
-                Text(item.episodeDetails)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(Color(white: 0.6))
-                    .lineLimit(1)
-            }
-            .episodeSwapTransition(identity: item.episodeIdentity)
-        }
-    }
-
-    var body: some View {
-        HStack(spacing: 14) {
-            // Tapping poster or title navigates to the show detail page
-            if let showURL = item.showURL {
-                Link(destination: showURL) {
-                    rowContent
-                }
-                .buttonStyle(PlainButtonStyle())
-            } else {
-                rowContent
-            }
-            
-            Spacer(minLength: 4)
-            
-            // Mark As Watched Button
-            if !item.episodeKey.isEmpty {
-                if #available(iOS 17.0, *) {
-                    Button(intent: MarkAsWatchedIntent(showId: item.showId, episodeKey: item.episodeKey)) {
-                        Image(systemName: "checkmark.circle")
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(Color.blue.opacity(0.9))
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .frame(width: 44, height: 44)
-                    .zIndex(1)
-                } else {
-                    if let markWatchedURL = item.markWatchedURL {
-                        Link(destination: markWatchedURL) {
-                            Image(systemName: "checkmark.circle")
-                                .font(.system(size: 24, weight: .medium))
-                                .foregroundColor(Color.blue.opacity(0.9))
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .frame(width: 44, height: 44)
-                        .zIndex(1)
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
+// MARK: - Widget Main Configuration
 @main
 struct UpNextWidget: Widget {
     let kind: String = "UpNextWidget"

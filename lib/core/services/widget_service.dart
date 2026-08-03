@@ -31,36 +31,18 @@ class WidgetService {
     }
   }
 
-  static Timer? _debounceTimer;
-
-  /// The most recent debounced write, kept so it can be forced out early —
-  /// either by [flushPendingUpdate] or by the max-wait cap below.
-  static Future<void> Function()? _pendingWrite;
-
-  /// When the currently-pending write was *first* queued. Reset only once a
-  /// write actually runs, so it survives the timer being restarted.
-  static DateTime? _pendingSince;
-
-  static const _debounceWindow = Duration(milliseconds: 800);
-
-  /// Ceiling on how long a queued write can be deferred. The dashboard listener
-  /// re-fires on every watchlist emission, and enrichment writes re-trigger that
-  /// stream — so a plain debounce can be restarted indefinitely and never fire.
-  /// Past this point the next call writes through instead of rescheduling.
-  static const _maxDebounceWait = Duration(seconds: 3);
+  static final _upNextWriter = WidgetDebouncedWriter();
+  static final _statsWriter = WidgetDebouncedWriter();
 
   /// Runs any queued widget write immediately instead of waiting out the
   /// debounce. Called when the app leaves the foreground: iOS suspends the
   /// isolate on background, so a pending Timer would otherwise never fire and
   /// the widget would sit stale until the next resume.
   static Future<void> flushPendingUpdate() async {
-    final pending = _pendingWrite;
-    if (pending == null) return;
-    _debounceTimer?.cancel();
-    _debounceTimer = null;
-    _pendingWrite = null;
-    _pendingSince = null;
-    await pending();
+    await Future.wait([
+      _upNextWriter.flush(),
+      _statsWriter.flush(),
+    ]);
   }
 
   /// [immediate] skips the debounce and writes synchronously. Required for
@@ -108,34 +90,38 @@ class WidgetService {
       }
     }
 
-    if (immediate) {
-      _debounceTimer?.cancel();
-      _debounceTimer = null;
-      _pendingWrite = null;
-      _pendingSince = null;
-      await write();
-      return;
+    await _upNextWriter.schedule(write, immediate: immediate);
+  }
+
+  /// [immediate] skips the debounce and writes synchronously.
+  static Future<void> updateProfileStatsWidget({
+    required String userName,
+    required int showsCount,
+    required int episodesCount,
+    required String showsFormattedTime,
+    required int moviesCount,
+    required String moviesFormattedTime,
+    bool immediate = false,
+  }) async {
+    Future<void> write() async {
+      try {
+        await HomeWidget.saveWidgetData<String>('stats_user_name', userName);
+        await HomeWidget.saveWidgetData<int>('stats_shows_count', showsCount);
+        await HomeWidget.saveWidgetData<int>('stats_episodes_count', episodesCount);
+        await HomeWidget.saveWidgetData<String>('stats_shows_time', showsFormattedTime);
+        await HomeWidget.saveWidgetData<int>('stats_movies_count', moviesCount);
+        await HomeWidget.saveWidgetData<String>('stats_movies_time', moviesFormattedTime);
+
+        await HomeWidget.updateWidget(
+          name: androidWidgetName,
+          iOSName: 'UpNextWidget',
+        );
+      } catch (e) {
+        log('Error updating Profile Stats Widget: $e');
+      }
     }
 
-    _debounceTimer?.cancel();
-    _pendingWrite = write;
-    final since = _pendingSince ??= DateTime.now();
-
-    // Starved past the ceiling — stop rescheduling and write this one through.
-    if (DateTime.now().difference(since) >= _maxDebounceWait) {
-      _debounceTimer = null;
-      _pendingWrite = null;
-      _pendingSince = null;
-      await write();
-      return;
-    }
-
-    _debounceTimer = Timer(_debounceWindow, () {
-      _debounceTimer = null;
-      _pendingWrite = null;
-      _pendingSince = null;
-      write();
-    });
+    await _statsWriter.schedule(write, immediate: immediate);
   }
 
   static Future<void> syncWatchlistToWidget(
@@ -444,5 +430,63 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     debugPrint('Error in background interactive widget callback: $e');
   } finally {
     enrichmentCubit?.close();
+  }
+}
+
+class WidgetDebouncedWriter {
+  final Duration debounceWindow;
+  final Duration maxDebounceWait;
+
+  Timer? _timer;
+  Future<void> Function()? _pendingWrite;
+  DateTime? _pendingSince;
+
+  WidgetDebouncedWriter({
+    this.debounceWindow = const Duration(milliseconds: 800),
+    this.maxDebounceWait = const Duration(seconds: 3),
+  });
+
+  Future<void> schedule(
+    Future<void> Function() write, {
+    bool immediate = false,
+  }) async {
+    if (immediate) {
+      _cancelAndReset();
+      await write();
+      return;
+    }
+
+    _timer?.cancel();
+    _pendingWrite = write;
+    final since = _pendingSince ??= DateTime.now();
+
+    if (DateTime.now().difference(since) >= maxDebounceWait) {
+      _resetState();
+      await write();
+      return;
+    }
+
+    _timer = Timer(debounceWindow, () {
+      _resetState();
+      write();
+    });
+  }
+
+  Future<void> flush() async {
+    final pending = _pendingWrite;
+    if (pending == null) return;
+    _cancelAndReset();
+    await pending();
+  }
+
+  void _cancelAndReset() {
+    _timer?.cancel();
+    _resetState();
+  }
+
+  void _resetState() {
+    _timer = null;
+    _pendingWrite = null;
+    _pendingSince = null;
   }
 }

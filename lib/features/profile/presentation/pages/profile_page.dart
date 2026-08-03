@@ -27,6 +27,7 @@ import 'package:flutter/services.dart';
 import '../cubit/profile_heatmap_cubit.dart';
 import '../cubit/profile_heatmap_state.dart';
 import 'settings_page.dart';
+import '../../../../core/services/widget_service.dart';
 
 class HorizontalItem {
   final int movieId;
@@ -87,6 +88,67 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   bool _isLocalLoading = false;
   Timer? _shimmerTimer;
 
+  String? _lastPublishedStatsKey;
+  int _lastWatchedMoviesCount = 0;
+  int _lastTotalMinutes = 0;
+  int _lastWatchedShowsCount = 0;
+  int _lastTotalEpisodesCount = 0;
+  int _lastTotalShowMinutes = 0;
+
+  String _formatTime(int mins) {
+    if (mins == 0) return '0m';
+    final d = mins ~/ (24 * 60);
+    final h = (mins % (24 * 60)) ~/ 60;
+    final m = mins % 60;
+    List<String> parts = [];
+    if (d > 0) parts.add('${d}d');
+    if (h > 0) parts.add('${h}h');
+    if (m > 0 || parts.isEmpty) parts.add('${m}m');
+    return parts.join(' ');
+  }
+
+  void _checkAndUpdateWidgetStats(
+    String displayName,
+    MovieWatchlistState watchlistState,
+    TvShowWatchlistState showWatchlistState,
+  ) {
+    if (watchlistState is MovieWatchlistSuccess) {
+      _lastWatchedMoviesCount = watchlistState.movies
+          .where((m) => m['isWatched'] as bool? ?? false)
+          .length;
+      _lastTotalMinutes = watchlistState.movies
+          .where((m) => m['isWatched'] as bool? ?? false)
+          .map((m) => (m['runtime'] as num?)?.toInt() ?? 0)
+          .fold<int>(0, (sum, element) => sum + element);
+    }
+
+    if (showWatchlistState is TvShowWatchlistSuccess) {
+      _lastWatchedShowsCount = showWatchlistState.shows.length;
+      _lastTotalEpisodesCount = showWatchlistState.shows
+          .map((s) => (List<dynamic>.from(s['watchedEpisodes'] ?? [])).length)
+          .fold<int>(0, (sum, element) => sum + element);
+      _lastTotalShowMinutes = _lastTotalEpisodesCount * 45;
+    }
+
+    final userName = displayName.isNotEmpty ? displayName : 'User';
+    final showsFormattedTime = _formatTime(_lastTotalShowMinutes);
+    final moviesFormattedTime = _formatTime(_lastTotalMinutes);
+
+    final newKey =
+        '$userName|$_lastWatchedShowsCount|$_lastTotalEpisodesCount|$showsFormattedTime|$_lastWatchedMoviesCount|$moviesFormattedTime';
+    if (_lastPublishedStatsKey != newKey) {
+      _lastPublishedStatsKey = newKey;
+      WidgetService.updateProfileStatsWidget(
+        userName: userName,
+        showsCount: _lastWatchedShowsCount,
+        episodesCount: _lastTotalEpisodesCount,
+        showsFormattedTime: showsFormattedTime,
+        moviesCount: _lastWatchedMoviesCount,
+        moviesFormattedTime: moviesFormattedTime,
+      );
+    }
+  }
+
   // Local FAB visibility — driven by NotificationListener inside NestedScrollView body
   final ValueNotifier<bool> _isFabVisible = ValueNotifier<bool>(true);
   Timer? _fabTimer;
@@ -114,6 +176,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     if (user != null) {
       context.read<ProfileHeatmapCubit>().loadMonthActivity(user.uid, _heatmapMonth);
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final movieState = context.read<MovieWatchlistCubit>().state;
+        final showState = context.read<TvShowWatchlistCubit>().state;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        final displayName =
+            currentUser?.displayName ?? currentUser?.email?.split('@').first ?? '';
+        _checkAndUpdateWidgetStats(displayName, movieState, showState);
+      }
+    });
   }
 
   void _onAppTabChanged() {
@@ -217,11 +290,26 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           ),
         ],
       ),
-      body: BlocBuilder<MovieWatchlistCubit, MovieWatchlistState>(
-        builder: (context, watchlistState) {
-          return BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
-            builder: (context, showWatchlistState) {
-              List<HorizontalItem> watchedMovies = [];
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<MovieWatchlistCubit, MovieWatchlistState>(
+            listener: (context, movieState) {
+              final showState = context.read<TvShowWatchlistCubit>().state;
+              _checkAndUpdateWidgetStats(displayName, movieState, showState);
+            },
+          ),
+          BlocListener<TvShowWatchlistCubit, TvShowWatchlistState>(
+            listener: (context, showState) {
+              final movieState = context.read<MovieWatchlistCubit>().state;
+              _checkAndUpdateWidgetStats(displayName, movieState, showState);
+            },
+          ),
+        ],
+        child: BlocBuilder<MovieWatchlistCubit, MovieWatchlistState>(
+          builder: (context, watchlistState) {
+            return BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
+              builder: (context, showWatchlistState) {
+                List<HorizontalItem> watchedMovies = [];
               List<HorizontalItem> displayedMovies = [];
               List<HorizontalItem> watchedShows = [];
               List<HorizontalItem> displayedShows = [];
@@ -385,18 +473,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                         .fold<int>(0, (sum, element) => sum + element)
                   : 0;
 
-              String formatTime(int mins) {
-                if (mins == 0) return '0m';
-                final d = mins ~/ (24 * 60);
-                final h = (mins % (24 * 60)) ~/ 60;
-                final m = mins % 60;
-                List<String> parts = [];
-                if (d > 0) parts.add('${d}d');
-                if (h > 0) parts.add('${h}h');
-                if (m > 0 || parts.isEmpty) parts.add('${m}m');
-                return parts.join(' ');
-              }
-
               return NestedScrollView(
                 headerSliverBuilder: (context, innerBoxIsScrolled) {
                   return [
@@ -444,7 +520,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                       _buildStatColumn(
                                         '${watchedShows.length}',
                                         'Shows added',
-                                        formatTime(totalShowMinutes),
+                                        _formatTime(totalShowMinutes),
                                         () {
                                           _toggleHeatmap(0);
                                         },
@@ -452,7 +528,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                       _buildStatColumn(
                                         '${watchedMovies.length}',
                                         'Movies watched',
-                                        formatTime(totalMinutes),
+                                        _formatTime(totalMinutes),
                                         () {
                                           _toggleHeatmap(1);
                                         },
@@ -691,8 +767,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStatColumn(String count, String label, String timeSpent, VoidCallback onTap) {
     return GestureDetector(
