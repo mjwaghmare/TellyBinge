@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -7,8 +8,13 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class WatchTrailerButton extends StatelessWidget {
   final Map<String, dynamic> trailer;
+  final List<dynamic>? allTrailers;
 
-  const WatchTrailerButton({super.key, required this.trailer});
+  const WatchTrailerButton({
+    super.key,
+    required this.trailer,
+    this.allTrailers,
+  });
 
   String _formatDate(String dateStr) {
     try {
@@ -20,11 +26,18 @@ class WatchTrailerButton extends StatelessWidget {
   }
 
   void _showTrailerBottomSheet(BuildContext context, Map<String, dynamic> trailer) {
+    final trailersList = (allTrailers != null && allTrailers!.isNotEmpty)
+        ? allTrailers!
+        : [trailer];
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _TrailerBottomSheet(trailer: trailer),
+      builder: (context) => _TrailerBottomSheet(
+        initialTrailer: trailer,
+        allTrailers: trailersList,
+      ),
     );
   }
 
@@ -139,8 +152,13 @@ class WatchTrailerButton extends StatelessWidget {
 }
 
 class _TrailerBottomSheet extends StatefulWidget {
-  final Map<String, dynamic> trailer;
-  const _TrailerBottomSheet({required this.trailer});
+  final Map<String, dynamic> initialTrailer;
+  final List<dynamic> allTrailers;
+
+  const _TrailerBottomSheet({
+    required this.initialTrailer,
+    required this.allTrailers,
+  });
 
   @override
   State<_TrailerBottomSheet> createState() => _TrailerBottomSheetState();
@@ -149,10 +167,14 @@ class _TrailerBottomSheet extends StatefulWidget {
 class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
   late YoutubePlayerController _controller;
   late DraggableScrollableController _dragController;
+  StreamSubscription<YoutubePlayerValue>? _streamSubscription;
+  final Set<int> _attemptedIndices = {};
   double? _minExtent;
   bool _isClosing = false;
   bool _dragStartedAtMin = true;
   bool _isVideoPlaying = true; // Auto-play is enabled by default
+  bool _hasError = false;
+  int _currentTrailerIndex = 0;
   static const double _maxExtent = 0.9;
 
   @override
@@ -161,7 +183,18 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
     _dragController = DraggableScrollableController();
     _dragController.addListener(_onDragChanged);
 
-    final videoKey = widget.trailer['key'] as String;
+    int idx = widget.allTrailers.indexOf(widget.initialTrailer);
+    _currentTrailerIndex = idx >= 0 ? idx : 0;
+
+    _initPlayerForCurrentIndex();
+  }
+
+  void _initPlayerForCurrentIndex() {
+    _attemptedIndices.add(_currentTrailerIndex);
+    final currentTrailer =
+        widget.allTrailers[_currentTrailerIndex] as Map<String, dynamic>;
+    final videoKey = currentTrailer['key'] as String;
+
     _controller = YoutubePlayerController.fromVideoId(
       videoId: videoKey,
       autoPlay: true,
@@ -171,11 +204,79 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
         mute: false,
       ),
     );
+
+    _streamSubscription = _controller.stream.listen((value) {
+      if (value.error != YoutubeError.none && !_hasError) {
+        if (!mounted) return;
+
+        // Check if there are other unattempted trailers
+        int nextUnattemptedIndex = -1;
+        for (int i = 0; i < widget.allTrailers.length; i++) {
+          if (!_attemptedIndices.contains(i)) {
+            nextUnattemptedIndex = i;
+            break;
+          }
+        }
+
+        if (nextUnattemptedIndex != -1) {
+          // Auto-failover to next available trailer
+          _streamSubscription?.cancel();
+          _controller.close();
+          setState(() {
+            _currentTrailerIndex = nextUnattemptedIndex;
+            _initPlayerForCurrentIndex();
+          });
+        } else {
+          // All trailers attempted & failed
+          setState(() {
+            _hasError = true;
+          });
+        }
+      }
+    });
+  }
+
+  void _tryNextTrailer() {
+    if (widget.allTrailers.length <= 1) return;
+    _streamSubscription?.cancel();
+    _controller.close();
+    setState(() {
+      _hasError = false;
+      _currentTrailerIndex =
+          (_currentTrailerIndex + 1) % widget.allTrailers.length;
+      _initPlayerForCurrentIndex();
+    });
+  }
+
+  Future<void> _launchYouTubeApp() async {
+    final currentTrailer =
+        widget.allTrailers[_currentTrailerIndex] as Map<String, dynamic>;
+    final videoKey = currentTrailer['key'] as String?;
+    if (videoKey == null || videoKey.isEmpty) return;
+
+    final appUri = Uri.parse('youtube://www.youtube.com/watch?v=$videoKey');
+    final webUri = Uri.parse('https://www.youtube.com/watch?v=$videoKey');
+
+    try {
+      if (await canLaunchUrl(appUri)) {
+        await launchUrl(appUri, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open YouTube.')),
+        );
+      }
+    } catch (_) {
+      if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      }
+    }
   }
 
   void _onDragChanged() {
     if (!_dragController.isAttached || _isClosing || _minExtent == null) return;
-    
+
     final size = _dragController.size;
     final minExtent = _minExtent!;
 
@@ -205,6 +306,7 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
 
   @override
   void dispose() {
+    _streamSubscription?.cancel();
     _dragController.removeListener(_onDragChanged);
     _dragController.dispose();
     _controller.close();
@@ -335,10 +437,103 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
                           alignment: Alignment.center,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: YoutubePlayer(
-                              controller: _controller,
-                              aspectRatio: currentLayoutW / currentLayoutH,
-                            ),
+                            child: _hasError
+                                ? Container(
+                                    color: Colors.grey[900],
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.video_library_outlined,
+                                          color: Colors.white54,
+                                          size: 40,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        const Text(
+                                          'Video Unavailable in App',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Embedding restricted by owner.',
+                                          style: TextStyle(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.6),
+                                            fontSize: 12,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          alignment: WrapAlignment.center,
+                                          children: [
+                                            if (widget.allTrailers.length > 1)
+                                              OutlinedButton.icon(
+                                                style: OutlinedButton.styleFrom(
+                                                  foregroundColor: Colors.white,
+                                                  side: const BorderSide(
+                                                      color: Colors.white38),
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
+                                                  ),
+                                                ),
+                                                onPressed: _tryNextTrailer,
+                                                icon: const Icon(
+                                                  Icons.skip_next_rounded,
+                                                  size: 16,
+                                                ),
+                                                label: const Text(
+                                                  'Try Next Trailer',
+                                                  style: TextStyle(
+                                                      fontSize: 12),
+                                                ),
+                                              ),
+                                            ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.red[700],
+                                                foregroundColor: Colors.white,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          20),
+                                                ),
+                                              ),
+                                              onPressed: _launchYouTubeApp,
+                                              icon: const Icon(
+                                                Icons.open_in_new,
+                                                size: 16,
+                                              ),
+                                              label: const Text(
+                                                'Watch on YouTube',
+                                                style: TextStyle(
+                                                    fontSize: 12),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : YoutubePlayer(
+                                    controller: _controller,
+                                    aspectRatio:
+                                        currentLayoutW / currentLayoutH,
+                                  ),
                           ),
                         ),
                       ),

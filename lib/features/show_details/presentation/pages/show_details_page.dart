@@ -686,7 +686,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             ),
             AppSpacing.gapH24,
             if (trailer != null) ...[
-              WatchTrailerButton(trailer: trailer),
+              WatchTrailerButton(
+                trailer: trailer,
+                allTrailers: youtubeTrailers,
+              ),
               AppSpacing.gapH24,
             ],
 

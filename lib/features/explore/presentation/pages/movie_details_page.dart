@@ -656,7 +656,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   const SizedBox(height: AppSpacing.lg),
                                   const Divider(color: Colors.white24, height: 1, thickness: 0.5),
                                   const SizedBox(height: AppSpacing.lg),
-                                  WatchTrailerButton(trailer: trailer),
+                                  WatchTrailerButton(
+                                    trailer: trailer,
+                                    allTrailers: youtubeTrailers,
+                                  ),
                                 ],
                                 const SizedBox(height: AppSpacing.lg),
                                 const Divider(color: Colors.white24, height: 1, thickness: 0.5),
