@@ -52,6 +52,9 @@ class _SearchPageState extends State<SearchPage>
 
   int _previousTabIndex = 0;
 
+  final _FilteredGrid _showsGrid = _FilteredGrid();
+  final _FilteredGrid _moviesGrid = _FilteredGrid();
+
   void _handleSubTabChange() {
     if (widget.subTabNotifier != null &&
         _tabController.index != widget.subTabNotifier!.value) {
@@ -440,24 +443,31 @@ class _SearchPageState extends State<SearchPage>
           ],
         ),
       ),
-      body: BlocBuilder<SearchCubit, SearchState>(
-        builder: (context, state) {
-          return BlocBuilder<MovieWatchlistCubit, MovieWatchlistState>(
-            builder: (context, movieState) {
+      // Each tab owns its BlocBuilders rather than sharing one set above the
+      // TabBarView. Nesting them above meant every emit from any of the three
+      // cubits eagerly re-ran both tabs' filtering and index-map work, even for
+      // the tab that is off screen. Scoped this way, a watchlist change only
+      // touches its own tab, and the off-screen tab's work is deferred until
+      // that tab is actually built.
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          BlocBuilder<SearchCubit, SearchState>(
+            builder: (context, state) {
               return BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
-                builder: (context, tvState) {
-                  return TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildShowsTab(state, tvState),
-                      _buildMoviesTab(state, movieState),
-                    ],
-                  );
-                },
+                builder: (context, tvState) => _buildShowsTab(state, tvState),
               );
             },
-          );
-        },
+          ),
+          BlocBuilder<SearchCubit, SearchState>(
+            builder: (context, state) {
+              return BlocBuilder<MovieWatchlistCubit, MovieWatchlistState>(
+                builder: (context, movieState) =>
+                    _buildMoviesTab(state, movieState),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -866,17 +876,8 @@ class _SearchPageState extends State<SearchPage>
       );
     } else if (state is SearchTrendingSuccess) {
       // Filter out watchlisted shows from trending
-      final filteredTrending = state.trendingTv.where((item) {
-        final rawId = item['id'];
-        int? id;
-        if (rawId is num) {
-          id = rawId.toInt();
-        } else if (rawId is String) {
-          id = int.tryParse(rawId);
-        }
-        if (id == null) return false;
-        return !watchlistedIds.contains(id);
-      }).toList();
+      _showsGrid.update(state.trendingTv, watchlistedIds);
+      final filteredTrending = _showsGrid.items;
 
       if (filteredTrending.length < 12 &&
           !state.isLoadingMore &&
@@ -897,6 +898,7 @@ class _SearchPageState extends State<SearchPage>
         hasLoadMoreError: state.tvLoadMoreError,
         onRetry: () => context.read<SearchCubit>().loadMore(true),
         hasReachedMax: state.tvHasReachedMax,
+        indexById: _showsGrid.indexById,
       );
     } else if (state is SearchResultsSuccess) {
       if (state.isTv) {
@@ -1005,17 +1007,8 @@ class _SearchPageState extends State<SearchPage>
       );
     } else if (state is SearchTrendingSuccess) {
       // Filter out watchlisted movies from trending
-      final filteredTrending = state.trendingMovies.where((item) {
-        final rawId = item['id'];
-        int? id;
-        if (rawId is num) {
-          id = rawId.toInt();
-        } else if (rawId is String) {
-          id = int.tryParse(rawId);
-        }
-        if (id == null) return false;
-        return !watchlistedIds.contains(id);
-      }).toList();
+      _moviesGrid.update(state.trendingMovies, watchlistedIds);
+      final filteredTrending = _moviesGrid.items;
 
       if (filteredTrending.length < 12 &&
           !state.isLoadingMore &&
@@ -1036,6 +1029,7 @@ class _SearchPageState extends State<SearchPage>
         hasLoadMoreError: state.moviesLoadMoreError,
         onRetry: () => context.read<SearchCubit>().loadMore(false),
         hasReachedMax: state.moviesHasReachedMax,
+        indexById: _moviesGrid.indexById,
       );
     } else if (state is SearchResultsSuccess) {
       if (!state.isTv) {
@@ -1079,6 +1073,7 @@ class _SearchPageState extends State<SearchPage>
     bool hasLoadMoreError = false,
     VoidCallback? onRetry,
     bool hasReachedMax = false,
+    Map<int, int>? indexById,
   }) {
     if (items.isEmpty) {
       return Center(
@@ -1108,18 +1103,7 @@ class _SearchPageState extends State<SearchPage>
         (hasLoadMoreError && onRetry != null) ||
         (hasReachedMax && items.isNotEmpty);
 
-    final itemIndexMap = <int, int>{};
-    for (int i = 0; i < items.length; i++) {
-      final rawId = items[i]['id'];
-      if (rawId is int) {
-        itemIndexMap[rawId] = i;
-      } else if (rawId is num) {
-        itemIndexMap[rawId.toInt()] = i;
-      } else if (rawId != null) {
-        final parsed = int.tryParse(rawId.toString());
-        if (parsed != null) itemIndexMap[parsed] = i;
-      }
-    }
+    final itemIndexMap = indexById ?? _FilteredGrid.indexOf(items);
 
     return CustomScrollView(
       controller: controller,
@@ -1437,6 +1421,66 @@ class _SearchPageState extends State<SearchPage>
         ),
       );
     }
+  }
+}
+
+/// Caches the watchlist-filtered list and its id -> index map for one grid.
+///
+/// Both are O(n) over a trending list that grows with every page fetched, and
+/// they were being recomputed on every rebuild — including the two emits that
+/// each `loadMore` produces while you are mid-fling. Recomputing allocates a
+/// fresh List and HashMap each time, so the cost showed up as GC pressure as
+/// much as raw CPU. Keyed on source identity, so it recomputes only when the
+/// cubit actually hands over a new list or the watchlist changes.
+class _FilteredGrid {
+  List<dynamic>? _sourceItems;
+  Set<int>? _excludedIds;
+
+  List<dynamic>? _items;
+  Map<int, int>? _indexById;
+
+  List<dynamic> get items => _items!;
+  Map<int, int> get indexById => _indexById!;
+
+  static int? _idOf(dynamic raw) {
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw == null) return null;
+    return int.tryParse(raw.toString());
+  }
+
+  /// Builds the id -> index map for an arbitrary list (skeleton placeholders and
+  /// raw search results, which are short enough not to need caching).
+  static Map<int, int> indexOf(List<dynamic> items) {
+    final map = <int, int>{};
+    for (int i = 0; i < items.length; i++) {
+      final id = _idOf(items[i]['id']);
+      if (id != null) map[id] = i;
+    }
+    return map;
+  }
+
+  void update(List<dynamic> sourceItems, Set<int> excludedIds) {
+    final unchanged =
+        _items != null &&
+        identical(_sourceItems, sourceItems) &&
+        _excludedIds!.length == excludedIds.length &&
+        _excludedIds!.containsAll(excludedIds);
+    if (unchanged) return;
+
+    final filtered = <dynamic>[];
+    final index = <int, int>{};
+    for (final item in sourceItems) {
+      final id = _idOf(item['id']);
+      if (id == null || excludedIds.contains(id)) continue;
+      index[id] = filtered.length;
+      filtered.add(item);
+    }
+
+    _sourceItems = sourceItems;
+    _excludedIds = excludedIds;
+    _items = filtered;
+    _indexById = index;
   }
 }
 
