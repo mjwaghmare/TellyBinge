@@ -716,7 +716,7 @@ class MoviesPageState extends State<MoviesPage> {
                         strokeWidth: 3,
                         valueColor: AlwaysStoppedAnimation(
                           isMarkingAsWatched
-                              ? const Color(0xFF6B8E23)
+                              ? AppColors.brandGreen
                               : AppColors.error,
                         ),
                       ),
@@ -1410,7 +1410,7 @@ class MoviesPageState extends State<MoviesPage> {
     return Container(
       width: 130,
       height: 96.0,
-      color: const Color(0xFF1E88E5).withValues(alpha: 0.85),
+      color: AppColors.accentBlue.withValues(alpha: 0.85),
       child: Center(
         child: Skeleton.ignore(
           child: Icon(

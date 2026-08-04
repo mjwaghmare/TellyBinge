@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:equatable/equatable.dart';
 
 enum ImportTvTimeStatus {
   initial,
@@ -9,7 +10,7 @@ enum ImportTvTimeStatus {
   failure,
 }
 
-class ImportTvTimeState {
+class ImportTvTimeState extends Equatable {
   const ImportTvTimeState({
     this.status = ImportTvTimeStatus.initial,
     this.file,
@@ -44,5 +45,14 @@ class ImportTvTimeState {
       statusMessage: statusMessage ?? this.statusMessage,
     );
   }
+
+  @override
+  List<Object?> get props => [
+        status,
+        file,
+        errorMessage,
+        progress,
+        statusMessage,
+      ];
 }
 

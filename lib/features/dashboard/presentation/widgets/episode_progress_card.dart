@@ -135,8 +135,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       isScrollControlled: true,
       builder: (sheetContext) {
         return Container(
-          decoration: BoxDecoration(
-            color: Color(0xFF1C1C1E),
+          decoration: const BoxDecoration(
+            color: AppColors.surfaceDarkAlt,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -178,15 +178,15 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: TextStyle(
-                    color: Color(0xFFAAAAAA),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
                     fontSize: 13,
                     height: 1.5,
                   ),
                   children: [
                     TextSpan(
                       text: showName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
@@ -238,9 +238,9 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                 height: 44,
                 child: TextButton(
                   onPressed: () => Navigator.pop(sheetContext),
-                  child: Text(
+                  child: const Text(
                     'Cancel',
-                    style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
                   ),
                 ),
               ),
@@ -408,7 +408,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
               ? Center(
                   child: CircularProgressIndicator.adaptive(
                     strokeWidth: 3,
-                    valueColor: const AlwaysStoppedAnimation(Color(0xFF6B8E23)),
+                    valueColor: const AlwaysStoppedAnimation(AppColors.brandGreen),
                   ),
                 )
               : Row(

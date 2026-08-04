@@ -11,6 +11,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../auth/presentation/cubit/auth_state.dart';
 
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
@@ -208,7 +209,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     _heatmapPageController = PageController();
 
     // Fetch heatmap watch history for current month
-    final user = FirebaseAuth.instance.currentUser;
+    final authState = context.read<AuthCubit>().state;
+    final user = authState is Authenticated ? authState.user : null;
     if (user != null) {
       context.read<ProfileHeatmapCubit>().loadMonthActivity(user.uid, _heatmapMonth);
     }
@@ -217,9 +219,12 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       if (mounted) {
         final movieState = context.read<MovieWatchlistCubit>().state;
         final showState = context.read<TvShowWatchlistCubit>().state;
-        final currentUser = FirebaseAuth.instance.currentUser;
-        final displayName =
-            currentUser?.displayName ?? currentUser?.email?.split('@').first ?? '';
+        final currentAuthState = context.read<AuthCubit>().state;
+        final currentUser =
+            currentAuthState is Authenticated ? currentAuthState.user : null;
+        final displayName = currentUser?.displayName.isNotEmpty == true
+            ? currentUser!.displayName
+            : (currentUser?.email.split('@').first ?? '');
         _checkAndUpdateWidgetStats(displayName, movieState, showState);
       }
     });
@@ -287,9 +292,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final displayName = user?.displayName ?? 'User';
-    final photoURL = user?.photoURL;
+    final authState = context.watch<AuthCubit>().state;
+    final user = authState is Authenticated ? authState.user : null;
+    final displayName = (user?.displayName.isNotEmpty == true) ? user!.displayName : 'User';
+    final photoURL = user?.photoUrl;
 
     String generateUsername(String name) {
       if (name.isEmpty || name == 'User') return 'user_tellybinge';
@@ -853,7 +859,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               onPressed: () {
                 HapticFeedback.mediumImpact();
                 Navigator.pop(context);
-                final uid = FirebaseAuth.instance.currentUser?.uid;
+                final authState = context.read<AuthCubit>().state;
+                final uid = authState is Authenticated ? authState.user.uid : null;
                 if (uid != null) {
                   if (item.isMovie) {
                     context.read<MovieWatchlistCubit>().toggleFavorite(
@@ -877,7 +884,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               onPressed: () {
                 HapticFeedback.mediumImpact();
                 Navigator.pop(context);
-                final uid = FirebaseAuth.instance.currentUser?.uid;
+                final authState = context.read<AuthCubit>().state;
+                final uid = authState is Authenticated ? authState.user.uid : null;
                 if (uid != null) {
                   if (item.isMovie) {
                     context.read<MovieWatchlistCubit>().removeMovie(uid: uid, movieId: item.movieId);

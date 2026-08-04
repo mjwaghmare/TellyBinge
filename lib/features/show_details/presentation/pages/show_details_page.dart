@@ -1257,7 +1257,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   decoration: BoxDecoration(
                     color: (_expandedSeasons[seasonNumber] ?? false)
                         ? Colors.transparent
-                        : const Color(0xFF141414),
+                        : AppColors.surface,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   clipBehavior: Clip.hardEdge,
@@ -1478,7 +1478,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: AppColors.surfaceDarkAlt,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -1672,7 +1672,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         return Container(
           margin: const EdgeInsets.only(left: 2.0, right: 2.0, bottom: 10.0),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
+            color: AppColors.surfaceDarkAlt,
             borderRadius: BorderRadius.circular(8.0),
           ),
           clipBehavior: Clip.hardEdge,

@@ -216,9 +216,9 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6B8E23), // TV Time Green
+                      color: AppColors.brandGreen, // TV Time Green
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF6B8E23), width: 2),
+                      border: Border.all(color: AppColors.brandGreen, width: 2),
                     ),
                     child: _isReverting
                         ? const Padding(

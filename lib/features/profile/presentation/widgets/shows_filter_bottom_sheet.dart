@@ -97,7 +97,7 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                               : (Theme.of(context).brightness ==
                                         Brightness.light
                                     ? Colors.grey.shade300
-                                    : const Color(0xFFCCCCCC)),
+                                    : AppColors.borderLight),
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: Text(

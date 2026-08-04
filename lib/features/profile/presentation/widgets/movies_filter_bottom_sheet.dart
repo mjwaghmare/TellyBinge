@@ -91,7 +91,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                               : (Theme.of(context).brightness ==
                                         Brightness.light
                                     ? Colors.grey.shade300
-                                    : const Color(0xFFCCCCCC)),
+                                    : AppColors.borderLight),
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: Text(

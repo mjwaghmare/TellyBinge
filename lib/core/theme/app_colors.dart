@@ -21,6 +21,13 @@ class AppColors {
   static const Color error = Color(0xFFE53935); // Red for error states
   static const Color success = Color(0xFF4CAF50); // Green for positive states
 
+  // Accent & Surface Tokens
+  static const Color brandGreen = Color(0xFF6B8E23); // Green badge accent
+  static const Color accentBlue = Color(0xFF1E88E5); // Blue action accent
+  static const Color surfaceDarkAlt = Color(0xFF1E1E1E); // Sheet / Card background
+  static const Color surfaceElevated = Color(0xFF2C2C2E); // Elevated tile / input fill
+  static const Color borderLight = Color(0xFFCCCCCC); // Light divider / border
+
   // Text Colors
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFB0B0B0);
