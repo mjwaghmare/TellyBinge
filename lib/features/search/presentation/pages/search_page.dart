@@ -1188,57 +1188,47 @@ class _SearchPageState extends State<SearchPage>
                         Expanded(
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8.0),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Container(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Colors.grey[200]
-                                      : AppColors.surfaceLight,
-                                  width: double.infinity,
-                                  child:
-                                      posterPath != null &&
-                                          posterPath.isNotEmpty
-                                      ? CachedNetworkImage(
-                                          imageUrl: _getImageUrl(posterPath),
-                                          fit: BoxFit.cover,
-                                          memCacheWidth: 250,
-                                          placeholder: (context, url) =>
-                                              const SizedBox.shrink(),
-                                          errorWidget: (context, url, error) =>
-                                              Skeleton.ignore(
-                                                child: Icon(
-                                                  Icons.movie_creation_outlined,
-                                                  size: 32,
-                                                  color:
-                                                      Theme.of(
-                                                            context,
-                                                          ).brightness ==
-                                                          Brightness.light
-                                                      ? Colors.grey[500]
-                                                      : AppColors.textTertiary,
-                                                ),
-                                              ),
-                                        )
-                                      : Skeleton.ignore(
-                                          child: Icon(
-                                            Icons.movie_creation_outlined,
-                                            size: 32,
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? Colors.grey[500]
-                                                : AppColors.textTertiary,
+                            child: Container(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey[200]
+                                  : AppColors.surfaceLight,
+                              width: double.infinity,
+                              height: double.infinity,
+                              child: posterPath != null && posterPath.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: _getImageUrl(posterPath),
+                                      fit: BoxFit.cover,
+                                      memCacheWidth: 250,
+                                      placeholder: (context, url) =>
+                                          const SizedBox.shrink(),
+                                      errorWidget: (context, url, error) =>
+                                          Skeleton.ignore(
+                                            child: Icon(
+                                              Icons.movie_creation_outlined,
+                                              size: 32,
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
+                                                      Brightness.light
+                                                  ? Colors.grey[500]
+                                                  : AppColors.textTertiary,
+                                            ),
                                           ),
-                                        ),
-                                ),
-                                if (mediaType == 'tv' &&
-                                    Skeletonizer.maybeOf(context)?.enabled !=
-                                        true)
-                                  TvShowStatusOverlay(tvId: id),
-                              ],
+                                    )
+                                  : Skeleton.ignore(
+                                      child: Icon(
+                                        Icons.movie_creation_outlined,
+                                        size: 32,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.grey[500]
+                                            : AppColors.textTertiary,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
@@ -1447,140 +1437,6 @@ class _SearchPageState extends State<SearchPage>
         ),
       );
     }
-  }
-}
-
-class TvShowStatusOverlay extends StatefulWidget {
-  final int tvId;
-
-  const TvShowStatusOverlay({super.key, required this.tvId});
-
-  @override
-  State<TvShowStatusOverlay> createState() => _TvShowStatusOverlayState();
-}
-
-class _TvShowStatusOverlayState extends State<TvShowStatusOverlay> {
-  /// Resolved status per show, shared by every tile for the app session.
-  static final Map<int, String?> _tvStatusCache = {};
-
-  /// Lookups currently running, so a tile that is rebuilt or scrolled back into
-  /// view joins the existing request instead of firing a duplicate one.
-  static final Map<int, Future<String?>> _inFlight = {};
-
-  /// A tile must stay on screen this long before we spend a lookup on it.
-  /// Flinging past a tile cancels it, which is what keeps fast scrolls cheap:
-  /// each lookup can cost file I/O plus an isolate spawn in the cache layer.
-  static const Duration _settleDelay = Duration(milliseconds: 350);
-
-  Timer? _settleTimer;
-  bool _showPill = false;
-  bool _loaded = false;
-  String _pillText = 'ENDED';
-  Color _pillColor = AppColors.error;
-
-  @override
-  void initState() {
-    super.initState();
-    _resolveStatus();
-  }
-
-  @override
-  void didUpdateWidget(TvShowStatusOverlay oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.tvId != widget.tvId) {
-      _settleTimer?.cancel();
-      _loaded = false;
-      _showPill = false;
-      _resolveStatus();
-    }
-  }
-
-  @override
-  void dispose() {
-    _settleTimer?.cancel();
-    super.dispose();
-  }
-
-  void _resolveStatus() {
-    if (_tvStatusCache.containsKey(widget.tvId)) {
-      _applyStatusString(_tvStatusCache[widget.tvId] ?? '');
-      _loaded = true;
-      return;
-    }
-    _settleTimer = Timer(_settleDelay, _checkStatus);
-  }
-
-  void _applyStatusString(String status) {
-    final normalized = status.toLowerCase();
-    if (normalized == 'ended') {
-      _showPill = true;
-      _pillText = 'ENDED';
-      _pillColor = AppColors.error;
-    } else if (normalized == 'canceled' || normalized == 'cancelled') {
-      _showPill = true;
-      _pillText = 'CANCELLED';
-      _pillColor = AppColors.error;
-    } else if (normalized == 'planned' ||
-        normalized == 'in production' ||
-        normalized == 'post production') {
-      _showPill = true;
-      _pillText = 'UPCOMING';
-      _pillColor = AppColors.airing;
-    } else {
-      _showPill = false;
-    }
-  }
-
-  Future<void> _checkStatus() async {
-    if (!mounted) return;
-    final tvId = widget.tvId;
-    final tmdbClient = context.read<TmdbClient>();
-
-    final future = _inFlight[tvId] ??= () async {
-      try {
-        final details = await tmdbClient.getTvShowDetails(tvId);
-        return details['status'] as String? ?? '';
-      } catch (_) {
-        // Cache the failure too, so a retry does not fire on every rebuild.
-        return null;
-      }
-    }();
-
-    final status = await future;
-    _inFlight.remove(tvId);
-    _tvStatusCache[tvId] = status;
-
-    if (!mounted) return;
-    setState(() {
-      _applyStatusString(status ?? '');
-      _loaded = true;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_loaded || !_showPill) return const SizedBox.shrink();
-
-    return Positioned(
-      top: 6,
-      right: 6,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        decoration: BoxDecoration(
-          color: _pillColor.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(4.0),
-        ),
-        child: Text(
-          _pillText,
-          style: TextStyle(
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-            fontSize: 9.0,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ),
-    );
   }
 }
 
