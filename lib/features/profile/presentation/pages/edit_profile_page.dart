@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -100,7 +101,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 children: [
                   Text(
                     'Display name',
-                    style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70, fontSize: 14),
+                    style: TextStyle(color: context.adaptiveColor(light: Colors.black87, dark: Colors.white70), fontSize: 14),
                   ),
                   TextField(
                     controller: _displayNameController,
@@ -157,7 +158,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70, fontSize: 14),
+                  style: TextStyle(color: context.adaptiveColor(light: Colors.black87, dark: Colors.white70), fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Text(

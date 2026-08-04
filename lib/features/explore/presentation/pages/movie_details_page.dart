@@ -226,7 +226,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 12),
+                    AppSpacing.gapH12,
                     Text(
                       userFriendlyError,
                       style: const TextStyle(color: AppColors.textTertiary, fontSize: 15, height: 1.4),
@@ -240,8 +240,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.xl)),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.sm),
                       ),
                       child: const Text('RETRY', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     ),
@@ -391,7 +391,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.add, size: 22),
-                          SizedBox(width: 8),
+                          AppSpacing.gapW8,
                           Text(
                             'ADD MOVIE',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1.0),
@@ -585,7 +585,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       ],
                                     ),
                                     if (isWatched) ...[
-                                      const SizedBox(height: 8),
+                                      AppSpacing.gapH8,
                                       Row(
                                         children: [
                                           const Icon(
@@ -593,7 +593,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             color: Colors.greenAccent,
                                             size: 14,
                                           ),
-                                          const SizedBox(width: 6),
+                                          AppSpacing.gapW4,
                                           Text(
                                             watchedAtStr != null ? _formatDate(watchedAtStr) : 'Watched',
                                             style: const TextStyle(color: Colors.greenAccent, fontSize: 13),
@@ -603,21 +603,21 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     ],
                                   ],
                                 ),
-                                const SizedBox(height: AppSpacing.md),
+                                AppSpacing.gapH16,
                                 const Divider(color: Colors.white24, height: 1, thickness: 0.5),
-                                const SizedBox(height: AppSpacing.md),
+                                AppSpacing.gapH16,
 
                                 // Movie Info Section
                                 const Text(
                                   'Movie info',
                                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                                 ),
-                                const SizedBox(height: AppSpacing.sm),
+                                AppSpacing.gapH8,
                                 // Rating row
                                 Row(
                                   children: [
                                     ..._buildStars(voteAverage / 2), // TMDb is out of 10, convert to 5
-                                    const SizedBox(width: 8),
+                                    AppSpacing.gapW8,
                                     Text(
                                       '${(voteAverage / 2).toStringAsFixed(1)}/5',
                                       style: const TextStyle(
@@ -626,7 +626,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    AppSpacing.gapW8,
                                     Text(
                                       _formatVoteCount(voteCount),
                                       style: const TextStyle(color: Colors.white54, fontSize: 12),

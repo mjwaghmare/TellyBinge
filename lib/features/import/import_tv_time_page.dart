@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_text_styles.dart';
 import 'cubit/import_tv_time_cubit.dart';
 import 'cubit/import_tv_time_state.dart';
 
@@ -39,16 +41,16 @@ class ImportTvTimePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 24),
+                  AppSpacing.gapH24,
 
                   const Icon(Icons.folder_zip, size: 72),
 
-                  const SizedBox(height: 16),
+                  AppSpacing.gapH16,
 
                   const Text(
                     'Import your TV Time GDPR backup',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: AppTextStyles.lg,
                   ),
 
                   const SizedBox(height: 30),
@@ -59,7 +61,7 @@ class ImportTvTimePage extends StatelessWidget {
                       child: Column(
                         children: [
                           Text(state.fileName, textAlign: TextAlign.center),
-                          const SizedBox(height: 16),
+                          AppSpacing.gapH16,
                           FilledButton(
                             onPressed: state.status == ImportTvTimeStatus.processing ? null : cubit.pickZip,
                             child: const Text('Select ZIP'),
@@ -74,13 +76,13 @@ class ImportTvTimePage extends StatelessWidget {
                   if (state.status == ImportTvTimeStatus.processing)
                     Column(
                       children: [
-                        Text(state.statusMessage, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
+                        Text(state.statusMessage, textAlign: TextAlign.center, style: AppTextStyles.smBold),
+                        AppSpacing.gapH8,
                         LinearProgressIndicator(value: state.progress),
                       ],
                     ),
 
-                  const SizedBox(height: 16),
+                  AppSpacing.gapH16,
 
                   FilledButton(
                     onPressed:

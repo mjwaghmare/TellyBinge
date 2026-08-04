@@ -1090,18 +1090,12 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
         final List<Color> activeLegendColors = _heatmapPageIndex == 0
             ? [
-                Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
-                Color(0xFF0E4429),
-                Color(0xFF006D32),
-                Color(0xFF26A641),
-                Color(0xFF39D353),
+                AppColors.heatmapEmpty(context),
+                ...AppColors.heatmapGreenScale,
               ]
             : [
-                Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
-                Color(0xFF3E2D00),
-                Color(0xFF7C5A00),
-                Color(0xFFB98700),
-                Color(0xFFFFC107),
+                AppColors.heatmapEmpty(context),
+                ...AppColors.heatmapYellowScale,
               ];
 
         final showShimmer = isLoading || _isLocalLoading;
@@ -1311,18 +1305,12 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }) {
     final List<Color> colorScale = isMovies
         ? [
-            Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
-            Color(0xFF3E2D00),
-            Color(0xFF7C5A00),
-            Color(0xFFB98700),
-            Color(0xFFFFC107),
+            AppColors.heatmapEmpty(context),
+            ...AppColors.heatmapYellowScale,
           ]
         : [
-            Theme.of(context).brightness == Brightness.light ? Color(0xFFEBEDF0) : Color(0xFF161B22),
-            Color(0xFF0E4429),
-            Color(0xFF006D32),
-            Color(0xFF26A641),
-            Color(0xFF39D353),
+            AppColors.heatmapEmpty(context),
+            ...AppColors.heatmapGreenScale,
           ];
 
     return Column(

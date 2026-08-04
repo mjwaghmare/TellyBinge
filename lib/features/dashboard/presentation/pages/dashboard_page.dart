@@ -208,7 +208,7 @@ class DashboardPageState extends State<DashboardPage> {
                           isGridView: _isGridView,
                         ),
                       ),
-                  const SizedBox(height: 16),
+                  AppSpacing.gapH16,
                   _buildCenteredHeaderRow('HAVEN\'T STARTED'),
                   ...dummyShows
                       .skip(2)
@@ -247,7 +247,7 @@ class DashboardPageState extends State<DashboardPage> {
                           enrichedShow: item,
                         ),
                       ),
-                  const SizedBox(height: 16),
+                  AppSpacing.gapH16,
                   _buildCenteredHeaderRow('LATER'),
                   ...dummyShows
                       .skip(2)
@@ -562,7 +562,7 @@ class DashboardPageState extends State<DashboardPage> {
           ),
         );
         groupSlivers
-            .add(const SliverToBoxAdapter(child: SizedBox(height: 16)));
+            .add(const SliverToBoxAdapter(child: AppSpacing.gapH16));
       }
 
       slivers.add(SliverMainAxisGroup(slivers: groupSlivers));
@@ -612,9 +612,9 @@ class DashboardPageState extends State<DashboardPage> {
             Icon(
               Icons.tv_outlined,
               size: 64,
-              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+              color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
             ),
-            const SizedBox(height: 16),
+            AppSpacing.gapH16,
             Text(
               message,
               textAlign: TextAlign.center,
@@ -664,7 +664,7 @@ class DashboardPageState extends State<DashboardPage> {
           height: 30,
           width: 30,
           decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+            color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
             borderRadius: BorderRadius.circular(6.0),
           ),
           child: Icon(
@@ -688,7 +688,7 @@ class DashboardPageState extends State<DashboardPage> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
                 borderRadius: BorderRadius.circular(20.0),
               ),
               child: Text(
@@ -714,7 +714,7 @@ class DashboardPageState extends State<DashboardPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+            color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
             borderRadius: BorderRadius.circular(20.0),
           ),
           child: Text(
@@ -783,7 +783,7 @@ class DashboardPageState extends State<DashboardPage> {
                     imageUrl: 'https://image.tmdb.org/t/p/w500$posterPath',
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
-                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                      color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
                       child: Center(
                         child: SizedBox(
                           width: 20,
@@ -798,18 +798,18 @@ class DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                      color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
                       child: Icon(
                         Icons.tv_outlined,
-                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                        color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
                       ),
                     ),
                   )
                 : Container(
-                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                    color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
                     child: Icon(
                       Icons.tv_outlined,
-                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                      color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
                     ),
                   ),
             if (showProgress && totalEpisodes > 0) ...[

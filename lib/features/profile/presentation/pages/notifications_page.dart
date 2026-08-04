@@ -158,7 +158,7 @@ class NotificationsPage extends StatelessWidget {
               child: Text(
                 item.time,
                 style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                  color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
                   fontSize: 12.0,
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
 class ShowsFilterBottomSheet extends StatefulWidget {
   final String initialSort;
@@ -46,13 +47,11 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
     return FractionallySizedBox(
       heightFactor: 0.6,
       child: Material(
-        color:
-            Theme.of(context).bottomSheetTheme.backgroundColor ??
-            (Theme.of(context).brightness == Brightness.light
-                ? Colors.white
-                : const Color(
-                    0xFF1E1E1E,
-                  )), // Dark grey background matching the screenshot
+        color: Theme.of(context).bottomSheetTheme.backgroundColor ??
+            context.adaptiveColor(
+              light: Colors.white,
+              dark: AppColors.surfaceDarkAlt,
+            ), // Dark grey background matching the screenshot
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -64,10 +63,8 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Text(
                 'Sort by',
-                style: TextStyle(
+                style: AppTextStyles.mdBold.copyWith(
                   color: Theme.of(context).textTheme.bodyLarge?.color,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -94,22 +91,13 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
-                              : (Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Colors.grey.shade300
-                                    : AppColors.borderLight),
-                          borderRadius: BorderRadius.circular(24),
+                              : AppColors.chipBorder(context),
+                          borderRadius: BorderRadius.circular(AppSpacing.xl),
                         ),
                         child: Text(
                           option,
-                          style: TextStyle(
-                            color: Colors
-                                .black, // Dark text for both yellow and grey
-                            fontSize: 14,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w500,
-                          ),
+                          style: (isSelected ? AppTextStyles.smBold : AppTextStyles.smMedium)
+                              .withColor(Colors.black),
                         ),
                       ),
                     ),
@@ -127,10 +115,8 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Text(
                 'Progress',
-                style: TextStyle(
+                style: AppTextStyles.mdBold.copyWith(
                   color: Theme.of(context).textTheme.bodyLarge?.color,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -226,17 +212,17 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: Colors.white54),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(AppSpacing.xl),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: Text(
                           'RESET',
                           style: TextStyle(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                ? Colors.black87
-                                : Colors.white70,
+                            color: context.adaptiveColor(
+                              light: Colors.black87,
+                              dark: Colors.white70,
+                            ),
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),
@@ -255,7 +241,7 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(AppSpacing.xl),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),

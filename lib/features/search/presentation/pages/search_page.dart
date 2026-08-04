@@ -497,7 +497,7 @@ class _SearchPageState extends State<SearchPage>
                 hintText: isTv ? 'Search shows...' : 'Search movies...',
                 prefixIcon: Icon(
                   Icons.search,
-                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                  color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
                 ),
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: controller,
@@ -577,7 +577,7 @@ class _SearchPageState extends State<SearchPage>
     String currentLanguage = (isTv ? _tvLanguage : _movieLanguage) ?? 'all';
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : const Color(0xFF1E1E1E)),
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : AppColors.surfaceDarkAlt),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -625,7 +625,7 @@ class _SearchPageState extends State<SearchPage>
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(AppSpacing.xl),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -649,7 +649,7 @@ class _SearchPageState extends State<SearchPage>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(AppSpacing.xl),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -807,11 +807,11 @@ class _SearchPageState extends State<SearchPage>
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppSpacing.xl),
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+                    horizontal: AppSpacing.xl,
+                    vertical: AppSpacing.sm,
                   ),
                 ),
                 child: Text(
@@ -946,11 +946,11 @@ class _SearchPageState extends State<SearchPage>
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppSpacing.xl),
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+                    horizontal: AppSpacing.xl,
+                    vertical: AppSpacing.sm,
                   ),
                 ),
                 child: Text(
@@ -1648,7 +1648,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
     return Material(
       color: Theme.of(context).bottomSheetTheme.backgroundColor ??
-          (isDark ? const Color(0xFF181818) : Colors.white),
+          (isDark ? AppColors.surface : Colors.white),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: SafeArea(
         top: false,
@@ -1708,10 +1708,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              AppSpacing.gapH12,
               Divider(color: Theme.of(context).dividerColor, height: 1),
 
-              const SizedBox(height: 8),
+              AppSpacing.gapH8,
               // Sort by Section
               _buildSectionHeader('Sort by'),
               Padding(
@@ -1741,7 +1741,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           color: isSelected
                               ? AppColors.primary
                               : (isDark
-                                  ? const Color(0xFF2A2A2A)
+                                  ? AppColors.surfaceLight
                                   : Colors.grey.shade200),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
@@ -1767,7 +1767,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              AppSpacing.gapH16,
               // Release Year Section
               _buildSectionHeader('Release Year'),
               _buildYearRangeSlider(isDark),
@@ -1790,7 +1790,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                       backgroundColor: AppColors.primary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(AppSpacing.xl),
                       ),
                     ),
                     child: const Text(
@@ -1805,7 +1805,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              AppSpacing.gapH8,
             ],
           ),
         ),

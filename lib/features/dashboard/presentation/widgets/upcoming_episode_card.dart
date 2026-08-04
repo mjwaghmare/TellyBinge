@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../models/enriched_show.dart';
@@ -56,8 +58,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             daysLeft == 1 ? 'DAY' : 'DAYS',
-            style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+            style: AppTextStyles.xs.copyWith(
+              color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
               fontSize: 10.0,
               letterSpacing: 1.0,
             ),
@@ -69,11 +71,11 @@ class UpcomingEpisodeCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const SizedBox(height: 12),
+          AppSpacing.gapH12,
           Text(
             networkName,
-            style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+            style: AppTextStyles.xs.copyWith(
+              color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
               fontSize: 11.0,
             ),
           ),
@@ -141,20 +143,20 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       errorWidget: (context, url, error) => Container(
                         width: 130,
                         height: cardHeight,
-                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
-                        child: Icon(Icons.tv, color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary),
+                        color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+                        child: Icon(Icons.tv, color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary)),
                       ),
                       placeholder: (context, url) => Container(
                         width: 130,
                         height: cardHeight,
-                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                        color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
                       ),
                     )
                   : Container(
                       width: 130,
                       height: cardHeight,
-                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
-                      child: Icon(Icons.tv, color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary),
+                      color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+                      child: Icon(Icons.tv, color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary)),
                     ),
             ),
             const SizedBox(width: 12),

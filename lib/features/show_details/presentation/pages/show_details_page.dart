@@ -270,7 +270,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 12),
+                    AppSpacing.gapH12,
                     Text(
                       userFriendlyError,
                       style: const TextStyle(
@@ -289,11 +289,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(AppSpacing.xl),
                         ),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 12,
+                          horizontal: AppSpacing.xxl,
+                          vertical: AppSpacing.sm,
                         ),
                       ),
                       child: const Text(
@@ -578,7 +578,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                 size: 28.0,
                                 iconSize: 16.0,
                               ),
-                              const SizedBox(height: 8),
+                              AppSpacing.gapH8,
                             ],
                             Row(
                               mainAxisSize: MainAxisSize.min,
@@ -669,7 +669,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             Row(
               children: [
                 _buildStarRating(voteAverage),
-                const SizedBox(width: 8),
+                AppSpacing.gapW8,
                 Text(
                   '${(voteAverage / 2).toStringAsFixed(1)}/5',
                   style: const TextStyle(
@@ -1362,8 +1362,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: allReleasedWatched
-                                        ? Colors.green
-                                        : const Color(0xFFF0F0F0),
+                                        ? AppColors.brandGreen
+                                        : AppColors.borderLight,
                                   ),
                                   child: Icon(
                                     Icons.check,

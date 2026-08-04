@@ -125,11 +125,11 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                         imageUrl: imageUrl,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
-                          color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                          color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
                         ),
                         errorWidget: (context, url, error) => Container(
-                          color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
-                          child: Icon(Icons.tv, color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary),
+                          color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+                          child: Icon(Icons.tv, color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary)),
                         ),
                       )
                     : Container(color: AppColors.surfaceLight),

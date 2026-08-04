@@ -33,4 +33,38 @@ class AppColors {
   static const Color textSecondary = Color(0xFFB0B0B0);
   static const Color textTertiary = Color(0xFF757575);
   static const Color textOnPrimary = Color(0xFF000000);
+
+  // Heatmap Activity Tokens
+  static const Color heatmapEmptyLight = Color(0xFFEBEDF0);
+  static const Color heatmapEmptyDark = Color(0xFF161B22);
+  static const List<Color> heatmapGreenScale = [
+    Color(0xFF0E4429),
+    Color(0xFF006D32),
+    Color(0xFF26A641),
+    Color(0xFF39D353),
+  ];
+  static const List<Color> heatmapYellowScale = [
+    Color(0xFF3E2D00),
+    Color(0xFF7C5A00),
+    Color(0xFFB98700),
+    primary,
+  ];
+
+  // Dynamic Theme Helpers
+  static bool isLight(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.light;
+
+  static Color chipBorder(BuildContext context) =>
+      isLight(context) ? Colors.grey.shade300 : borderLight;
+
+  static Color heatmapEmpty(BuildContext context) =>
+      isLight(context) ? heatmapEmptyLight : heatmapEmptyDark;
+}
+
+extension BuildContextColorX on BuildContext {
+  bool get isLight => Theme.of(this).brightness == Brightness.light;
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+
+  Color adaptiveColor({required Color light, required Color dark}) =>
+      isLight ? light : dark;
 }

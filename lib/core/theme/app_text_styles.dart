@@ -76,10 +76,21 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
+  static const TextStyle xsBold = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12.0,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimary,
+  );
+
   static const TextStyle xxl = TextStyle(
     fontFamily: fontFamily,
     fontSize: 32.0,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
   );
+}
+
+extension TextStyleColorX on TextStyle {
+  TextStyle withColor(Color color) => copyWith(color: color);
 }

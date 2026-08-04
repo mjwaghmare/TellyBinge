@@ -8,6 +8,7 @@ import 'package:shake/shake.dart';
 
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
@@ -355,7 +356,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     String currentLanguage = _language ?? 'all';
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : const Color(0xFF1E1E1E)),
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : AppColors.surfaceDarkAlt),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -367,7 +368,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 16),
+                  AppSpacing.gapH16,
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
@@ -379,7 +380,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  AppSpacing.gapH16,
                   _buildLanguageTile('All', 'all', currentLanguage, (val) {
                     setModalState(() => currentLanguage = val.toString());
                   }),
@@ -389,7 +390,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                   _buildLanguageTile('Marathi', 'mr', currentLanguage, (val) {
                     setModalState(() => currentLanguage = val.toString());
                   }),
-                  const SizedBox(height: 16),
+                  AppSpacing.gapH16,
                   Divider(color: Theme.of(context).dividerColor, height: 1),
                   Padding(
                     padding: const EdgeInsets.all(12),
@@ -404,7 +405,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(AppSpacing.xl),
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
@@ -428,7 +429,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(AppSpacing.xl),
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
@@ -499,7 +500,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       heightFactor: 0.92,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade100 : const Color(0xFF121212),
+          color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade100 : AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -519,7 +520,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      AppSpacing.gapW8,
                       IconButton(
                         onPressed: _showLanguageBottomSheet,
                         icon: Stack(
@@ -543,7 +544,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                                     color: Colors.greenAccent,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade100 : const Color(0xFF121212),
+                                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade100 : AppColors.surface,
                                       width: 2,
                                     ),
                                   ),
@@ -642,7 +643,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(error, style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54)),
-            const SizedBox(height: 16),
+            AppSpacing.gapH16,
             ElevatedButton(
               onPressed: _shuffleCurrentTab,
               child: Text('Try Again'),
@@ -725,7 +726,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : const Color(0xFF2C2C2E),
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   clipBehavior: Clip.antiAlias,
@@ -734,14 +735,14 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                           imageUrl: 'https://image.tmdb.org/t/p/w342$posterPath',
                           fit: BoxFit.cover,
                           placeholder: (context, url) =>
-                              Container(color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : const Color(0xFF2C2C2E)),
+                              Container(color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : AppColors.surfaceElevated),
                           errorWidget: (context, url, error) =>
                               Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24),
                         )
                       : Icon(Icons.movie, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24, size: 40),
                 ),
               ),
-              const SizedBox(height: 6),
+              AppSpacing.gapH4,
               Text(
                 title ?? '',
                 maxLines: 2,
@@ -858,7 +859,7 @@ class _PremiumPulseGridState extends State<_PremiumPulseGrid>
                 opacity: opacity,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade300 : const Color(0xFF3A3A3C), // Sleek metallic grey
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade300 : AppColors.surfaceElevated, // Sleek metallic grey
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),

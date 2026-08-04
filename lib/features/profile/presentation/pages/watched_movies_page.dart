@@ -62,7 +62,7 @@ class WatchedMoviesPage extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8.0),
                     child: Container(
-                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[300] : AppColors.surfaceLight,
+                      color: context.adaptiveColor(light: Colors.grey[300]!, dark: AppColors.surfaceLight),
                       width: double.infinity,
                       child: movie.imageUrl.isNotEmpty
                           ? CachedNetworkImage(
@@ -73,7 +73,7 @@ class WatchedMoviesPage extends StatelessWidget {
                                     child: Icon(
                                       Icons.movie_creation_outlined,
                                       size: 32,
-                                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                                      color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
                                     ),
                                   ),
                             )
@@ -81,7 +81,7 @@ class WatchedMoviesPage extends StatelessWidget {
                               child: Icon(
                                 Icons.movie_creation_outlined,
                                 size: 32,
-                                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                                color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
                               ),
                             ),
                     ),
