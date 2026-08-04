@@ -36,15 +36,22 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
                 if ((movie['isWatched'] as bool? ?? false) == false &&
                     (movie['id'] as num?) != null &&
                     (movie['releaseDate'] as String?) != null)
-                  PendingNotification(
-                    media: NotificationMedia.movie,
-                    mediaId: (movie['id'] as num).toInt(),
-                    title:
-                        'Upcoming Release: ${movie['title'] as String? ?? 'Movie'}',
-                    body:
-                        '${movie['title'] as String? ?? 'Movie'} is releasing soon!',
-                    releaseDateStr: movie['releaseDate'] as String,
-                  ),
+                  () {
+                    final (
+                      title,
+                      body,
+                    ) = NotificationService.generateMovieNotificationContent(
+                      movieId: (movie['id'] as num).toInt(),
+                      movieTitle: movie['title'] as String? ?? 'Movie',
+                    );
+                    return PendingNotification(
+                      media: NotificationMedia.movie,
+                      mediaId: (movie['id'] as num).toInt(),
+                      title: title,
+                      body: body,
+                      releaseDateStr: movie['releaseDate'] as String,
+                    );
+                  }(),
             ]);
 
             // Start backfilling in the background sequentially to avoid socket rate limiting

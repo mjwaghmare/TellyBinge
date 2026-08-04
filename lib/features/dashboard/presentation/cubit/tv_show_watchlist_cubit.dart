@@ -31,14 +31,23 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
               for (final show in shows)
                 if (show['status'] != 'STOPPED' &&
                     show['upcomingAirDate'] != null)
-                  PendingNotification(
-                    media: NotificationMedia.tv,
-                    mediaId: show['id'] as int,
-                    title: 'New Episode: ${show['name'] as String}',
-                    body:
-                        'Episode ${show['upcomingEpisodeCode'] as String? ?? ''} is airing soon!',
-                    releaseDateStr: show['upcomingAirDate'] as String,
-                  ),
+                  () {
+                    final (
+                      title,
+                      body,
+                    ) = NotificationService.generateTvNotificationContent(
+                      showId: show['id'] as int,
+                      showName: show['name'] as String? ?? 'Show',
+                      episodeCode: show['upcomingEpisodeCode'] as String? ?? '',
+                    );
+                    return PendingNotification(
+                      media: NotificationMedia.tv,
+                      mediaId: show['id'] as int,
+                      title: title,
+                      body: body,
+                      releaseDateStr: show['upcomingAirDate'] as String,
+                    );
+                  }(),
             ]);
           },
           onError: (error) {

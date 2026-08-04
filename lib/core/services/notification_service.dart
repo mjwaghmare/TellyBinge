@@ -59,6 +59,74 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
+  /// Generates a funny, sarcastic, and varied notification title & body
+  /// for a TV show episode based on the show's ID.
+  static (String title, String body) generateTvNotificationContent({
+    required int showId,
+    required String showName,
+    required String episodeCode,
+  }) {
+    final epText = episodeCode.isNotEmpty
+        ? 'Episode $episodeCode'
+        : 'New episode';
+    final templates = [
+      (
+        '🍿 Cancel your plans: $showName',
+        '$epText drops {time}. Don\'t pretend you had better things to do.',
+      ),
+      (
+        '🛌 Sleep is overrated: $showName',
+        '$epText is airing {time}. Your pillow can wait.',
+      ),
+      (
+        '⏰ Productivity left the chat: $showName',
+        '$epText lands {time}. Time to ignore your to-do list.',
+      ),
+      (
+        '🙄 Oh look, more drama: $showName',
+        '$epText airs {time}. Try not to scream at your screen.',
+      ),
+      (
+        '🧠 Goodbye braincells: $showName',
+        '$epText arrives {time}. Ready for another cliffhanger?',
+      ),
+    ];
+    final index = showId.abs() % templates.length;
+    return templates[index];
+  }
+
+  /// Generates a funny, sarcastic, and varied notification title & body
+  /// for a Movie release based on the movie's ID.
+  static (String title, String body) generateMovieNotificationContent({
+    required int movieId,
+    required String movieTitle,
+  }) {
+    final templates = [
+      (
+        '🎬 Clear your calendar: $movieTitle',
+        '$movieTitle premieres {time}. Grab the remote and lock the door.',
+      ),
+      (
+        '🍿 Popcorn Emergency: $movieTitle',
+        '$movieTitle releases {time}. Prepare your snacks.',
+      ),
+      (
+        '🛋️ Your couch is calling: $movieTitle',
+        '$movieTitle lands {time}. Get comfortable.',
+      ),
+      (
+        '💸 There goes your free time: $movieTitle',
+        '$movieTitle drops {time}. No excuses, go watch it.',
+      ),
+      (
+        '🌟 Big Screen Energy: $movieTitle',
+        '$movieTitle is releasing {time}. Movie night is scheduled.',
+      ),
+    ];
+    final index = movieId.abs() % templates.length;
+    return templates[index];
+  }
+
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 

@@ -27,6 +27,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../cubit/profile_heatmap_cubit.dart';
 import '../cubit/profile_heatmap_state.dart';
+import 'notifications_page.dart';
 import 'settings_page.dart';
 import '../../../../core/services/widget_service.dart';
 
@@ -354,6 +355,40 @@ class _ProfilePageState extends State<ProfilePage>
           ),
         ),
         actions: [
+          IconButton(
+            icon: Stack(
+              children: [
+                Icon(
+                  Icons.notifications_outlined,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  size: 26,
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.xxs),
+                    decoration: const BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 8,
+                      minHeight: 8,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsPage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(
               Icons.menu,
