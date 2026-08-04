@@ -166,6 +166,7 @@ class NotificationService {
   /// Reserved id well above anything [_notificationId] can produce — the
   /// largest TMDB id today is around 1.5M, so ×4 stays under 7M.
   static const int _testNotificationId = 1 << 30;
+  static const int _reinstallNotificationId = (1 << 30) - 2;
 
   int _notificationId(NotificationMedia media, int mediaId, int slot) =>
       mediaId * _slotsPerTitle + (media == NotificationMedia.tv ? 0 : 2) + slot;
@@ -198,8 +199,48 @@ class NotificationService {
     await _setHasUnread(false);
   }
 
+  /// Schedules a 6th-day reinstall reminder notification ONLY on iOS Release builds
+  /// for free-tier personal developer provisioning expiration.
+  Future<void> scheduleReinstallReminderIfNeeded() async {
+    if (!kReleaseMode || defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    int? installTimestamp = prefs.getInt('app_install_timestamp');
+    if (installTimestamp == null) {
+      installTimestamp = DateTime.now().millisecondsSinceEpoch;
+      await prefs.setInt('app_install_timestamp', installTimestamp);
+    }
+
+    final alreadyScheduled =
+        prefs.getBool('reinstall_reminder_scheduled') ?? false;
+    if (alreadyScheduled) {
+      return;
+    }
+
+    final installDate = DateTime.fromMillisecondsSinceEpoch(installTimestamp);
+    final reminderDate = installDate.add(const Duration(days: 6));
+
+    if (reminderDate.isAfter(DateTime.now())) {
+      try {
+        await _scheduleOne(
+          id: _reinstallNotificationId,
+          title: "⏳ Time's Almost Up!",
+          body: "Free profile expires tomorrow. Connect to Xcode and rebuild now! 💻",
+          scheduledDate: reminderDate,
+        );
+        await prefs.setBool('reinstall_reminder_scheduled', true);
+      } catch (e) {
+        debugPrint('Failed to schedule reinstall reminder: $e');
+      }
+    }
+  }
+
   Future<void> initialize() async {
     await _initUnreadStatus();
+    await scheduleReinstallReminderIfNeeded();
     tz.initializeTimeZones();
     try {
       final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
