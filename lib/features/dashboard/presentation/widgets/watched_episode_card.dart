@@ -124,6 +124,7 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                     ? CachedNetworkImage(
                         imageUrl: imageUrl,
                         fit: BoxFit.cover,
+                        memCacheWidth: 300,
                         placeholder: (context, url) => Container(
                           color: context.adaptiveColor(
                             light: Colors.grey[200]!,

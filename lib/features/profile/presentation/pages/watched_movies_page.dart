@@ -81,6 +81,7 @@ class WatchedMoviesPage extends StatelessWidget {
                           ? CachedNetworkImage(
                               imageUrl: movie.imageUrl,
                               fit: BoxFit.cover,
+                              memCacheWidth: 360,
                               errorWidget: (context, url, error) => Center(
                                 child: Icon(
                                   Icons.movie_creation_outlined,

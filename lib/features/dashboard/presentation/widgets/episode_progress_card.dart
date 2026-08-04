@@ -426,6 +426,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                               width: 100,
                               height: cardHeight,
                               fit: BoxFit.cover,
+                              memCacheWidth: 300,
                               errorWidget: (context, url, error) => Container(
                                 width: 100,
                                 height: cardHeight,

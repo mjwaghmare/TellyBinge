@@ -56,6 +56,28 @@ class MoviesPageState extends State<MoviesPage> {
     return 'https://image.tmdb.org/t/p/$size$path';
   }
 
+  Map<int, int> _buildIndexMap(List<Map<String, dynamic>> items) {
+    final map = <int, int>{};
+    for (int i = 0; i < items.length; i++) {
+      final id = (items[i]['id'] as num?)?.toInt();
+      if (id != null) map[id] = i;
+    }
+    return map;
+  }
+
+  /// Lets a sliver delegate locate an already-built tile after the list order
+  /// shifts (marking a movie watched moves it between sections), so the tile is
+  /// reused instead of torn down and rebuilt at its new index.
+  int? Function(Key) _findChildIndex(String prefix, Map<int, int> indexMap) {
+    return (Key key) {
+      if (key is ValueKey<String> && key.value.startsWith(prefix)) {
+        final id = int.tryParse(key.value.substring(prefix.length));
+        if (id != null) return indexMap[id];
+      }
+      return null;
+    };
+  }
+
   String _formatRuntime(int? minutes) {
     if (minutes == null || minutes == 0) return '';
     final h = minutes ~/ 60;
@@ -288,6 +310,9 @@ class MoviesPageState extends State<MoviesPage> {
           )
         : watchNext;
 
+    final watchedHistoryIndexMap = _buildIndexMap(displayWatchedHistory);
+    final watchNextIndexMap = _buildIndexMap(displayWatchNext);
+
     return Skeletonizer(
       enabled: isLoading,
       child: CustomScrollView(
@@ -311,28 +336,46 @@ class MoviesPageState extends State<MoviesPage> {
                     childAspectRatio: 2 / 3,
                   ),
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => Opacity(
-                      opacity: 0.5,
-                      child: _buildMovieGridCard(
-                        displayWatchedHistory[index],
-                        uid,
+                    (context, index) => RepaintBoundary(
+                      key: ValueKey(
+                        'history_${displayWatchedHistory[index]['id']}',
+                      ),
+                      child: Opacity(
+                        opacity: 0.5,
+                        child: _buildMovieGridCard(
+                          displayWatchedHistory[index],
+                          uid,
+                        ),
                       ),
                     ),
                     childCount: displayWatchedHistory.length,
+                    findChildIndexCallback: _findChildIndex(
+                      'history_',
+                      watchedHistoryIndexMap,
+                    ),
                   ),
                 ),
               )
             else
               SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) => Opacity(
-                    opacity: 0.5,
-                    child: _buildMovieProgressCard(
-                      displayWatchedHistory[index],
-                      uid,
+                  (context, index) => RepaintBoundary(
+                    key: ValueKey(
+                      'history_${displayWatchedHistory[index]['id']}',
+                    ),
+                    child: Opacity(
+                      opacity: 0.5,
+                      child: _buildMovieProgressCard(
+                        displayWatchedHistory[index],
+                        uid,
+                      ),
                     ),
                   ),
                   childCount: displayWatchedHistory.length,
+                  findChildIndexCallback: _findChildIndex(
+                    'history_',
+                    watchedHistoryIndexMap,
+                  ),
                 ),
               ),
             const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
@@ -352,18 +395,38 @@ class MoviesPageState extends State<MoviesPage> {
                             childAspectRatio: 2 / 3,
                           ),
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) =>
-                            _buildMovieGridCard(displayWatchNext[index], uid),
+                        (context, index) => RepaintBoundary(
+                          key: ValueKey(
+                            'next_${displayWatchNext[index]['id']}',
+                          ),
+                          child: _buildMovieGridCard(
+                            displayWatchNext[index],
+                            uid,
+                          ),
+                        ),
                         childCount: displayWatchNext.length,
+                        findChildIndexCallback: _findChildIndex(
+                          'next_',
+                          watchNextIndexMap,
+                        ),
                       ),
                     ),
                   )
                 else
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) =>
-                          _buildMovieProgressCard(displayWatchNext[index], uid),
+                      (context, index) => RepaintBoundary(
+                        key: ValueKey('next_${displayWatchNext[index]['id']}'),
+                        child: _buildMovieProgressCard(
+                          displayWatchNext[index],
+                          uid,
+                        ),
+                      ),
                       childCount: displayWatchNext.length,
+                      findChildIndexCallback: _findChildIndex(
+                        'next_',
+                        watchNextIndexMap,
+                      ),
                     ),
                   ),
                 const SliverToBoxAdapter(child: SizedBox(height: 32.0)),
@@ -425,6 +488,8 @@ class MoviesPageState extends State<MoviesPage> {
 
             if (grouped.isEmpty) return <Widget>[];
 
+            final groupedIndexMap = _buildIndexMap(grouped);
+
             return [
               SliverMainAxisGroup(
                 slivers: [
@@ -439,21 +504,34 @@ class MoviesPageState extends State<MoviesPage> {
                               childAspectRatio: 2 / 3,
                             ),
                         delegate: SliverChildBuilderDelegate(
-                          (context, index) => _buildMovieGridCard(
-                            grouped[index],
-                            uid,
-                            isUpcoming: true,
+                          (context, index) => RepaintBoundary(
+                            key: ValueKey('upcoming_${grouped[index]['id']}'),
+                            child: _buildMovieGridCard(
+                              grouped[index],
+                              uid,
+                              isUpcoming: true,
+                            ),
                           ),
                           childCount: grouped.length,
+                          findChildIndexCallback: _findChildIndex(
+                            'upcoming_',
+                            groupedIndexMap,
+                          ),
                         ),
                       ),
                     )
                   else
                     SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) =>
-                            _buildUpcomingMovieCard(grouped[index], uid),
+                        (context, index) => RepaintBoundary(
+                          key: ValueKey('upcoming_${grouped[index]['id']}'),
+                          child: _buildUpcomingMovieCard(grouped[index], uid),
+                        ),
                         childCount: grouped.length,
+                        findChildIndexCallback: _findChildIndex(
+                          'upcoming_',
+                          groupedIndexMap,
+                        ),
                       ),
                     ),
                   const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
@@ -745,6 +823,7 @@ class MoviesPageState extends State<MoviesPage> {
                                   width: 100,
                                   height: 96.0,
                                   fit: BoxFit.cover,
+                                  memCacheWidth: 300,
                                   errorWidget: (context, url, error) =>
                                       Container(
                                         width: 100,
@@ -1018,6 +1097,7 @@ class MoviesPageState extends State<MoviesPage> {
                       width: 130,
                       height: 96.0,
                       fit: BoxFit.cover,
+                      memCacheWidth: 390,
                       errorWidget: (context, url, error) =>
                           _buildBlueClapperboardPlaceholder(),
                       placeholder: (context, url) => Container(
@@ -1241,6 +1321,7 @@ class MoviesPageState extends State<MoviesPage> {
                 ? CachedNetworkImage(
                     imageUrl: _getImageUrl(posterPath),
                     fit: BoxFit.cover,
+                    memCacheWidth: 360,
                     placeholder: (context, url) => Container(
                       color: Theme.of(context).brightness == Brightness.light
                           ? Colors.grey[200]

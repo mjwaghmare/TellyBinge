@@ -813,6 +813,7 @@ class DashboardPageState extends State<DashboardPage> {
                 ? CachedNetworkImage(
                     imageUrl: 'https://image.tmdb.org/t/p/w500$posterPath',
                     fit: BoxFit.cover,
+                    memCacheWidth: 360,
                     placeholder: (context, url) => Container(
                       color: context.adaptiveColor(
                         light: Colors.grey[200]!,

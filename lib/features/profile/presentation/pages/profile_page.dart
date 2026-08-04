@@ -1181,6 +1181,7 @@ class _ProfilePageState extends State<ProfilePage>
                       ? CachedNetworkImage(
                           imageUrl: item.imageUrl,
                           fit: BoxFit.cover,
+                          memCacheWidth: 360,
                           placeholder: (context, url) =>
                               Container(color: AppColors.surface),
                           errorWidget: (context, url, error) => Container(

@@ -1198,7 +1198,9 @@ class _SearchPageState extends State<SearchPage>
                                       ? Colors.grey[200]
                                       : AppColors.surfaceLight,
                                   width: double.infinity,
-                                  child: posterPath != null && posterPath.isNotEmpty
+                                  child:
+                                      posterPath != null &&
+                                          posterPath.isNotEmpty
                                       ? CachedNetworkImage(
                                           imageUrl: _getImageUrl(posterPath),
                                           fit: BoxFit.cover,
@@ -1233,8 +1235,9 @@ class _SearchPageState extends State<SearchPage>
                                         ),
                                 ),
                                 if (mediaType == 'tv' &&
-                                    Skeletonizer.maybeOf(context)?.enabled != true)
-                                  TvShowStatusOverlay(tvId: id, index: index),
+                                    Skeletonizer.maybeOf(context)?.enabled !=
+                                        true)
+                                  TvShowStatusOverlay(tvId: id),
                               ],
                             ),
                           ),
@@ -1449,13 +1452,8 @@ class _SearchPageState extends State<SearchPage>
 
 class TvShowStatusOverlay extends StatefulWidget {
   final int tvId;
-  final int index;
 
-  const TvShowStatusOverlay({
-    super.key,
-    required this.tvId,
-    required this.index,
-  });
+  const TvShowStatusOverlay({super.key, required this.tvId});
 
   @override
   State<TvShowStatusOverlay> createState() => _TvShowStatusOverlayState();

@@ -790,6 +790,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                           imageUrl:
                               'https://image.tmdb.org/t/p/w342$posterPath',
                           fit: BoxFit.cover,
+                          memCacheWidth: 342,
                           placeholder: (context, url) => Container(
                             color:
                                 Theme.of(context).brightness == Brightness.light

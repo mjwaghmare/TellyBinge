@@ -146,6 +146,7 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       width: 130,
                       height: cardHeight,
                       fit: BoxFit.cover,
+                      memCacheWidth: 390,
                       errorWidget: (context, url, error) => Container(
                         width: 130,
                         height: cardHeight,
