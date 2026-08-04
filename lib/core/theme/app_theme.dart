@@ -6,11 +6,11 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData darkTheme() {
-    final scaffoldBg = Colors.black;
-    final cardBg = const Color(0xFF121212);
-    final dividerBg = const Color(0xFF1C1C1E);
-    final appBarBg = Colors.black;
-    final bottomNavBg = Colors.black;
+    const scaffoldBg = AppColors.darkBackground;
+    const cardBg = AppColors.surface;
+    const dividerBg = AppColors.borderDark;
+    const appBarBg = AppColors.darkBackground;
+    const bottomNavBg = AppColors.darkBackground;
 
     return ThemeData(
       useMaterial3: true,
@@ -23,7 +23,7 @@ class AppTheme {
         bodyColor: AppColors.textPrimary,
         displayColor: AppColors.textPrimary,
       ),
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.primaryDark,
         surface: cardBg,
@@ -31,15 +31,22 @@ class AppTheme {
         onPrimary: AppColors.textOnPrimary,
         onSurface: AppColors.textPrimary,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: appBarBg,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        titleTextStyle: const TextStyle(
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        titleTextStyle: TextStyle(
           fontSize: 20.0,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surfaceElevated,
+        modalBackgroundColor: AppColors.surfaceElevated,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
         ),
       ),
       tabBarTheme: const TabBarThemeData(
@@ -55,12 +62,15 @@ class AppTheme {
           letterSpacing: 1.0,
         ),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: bottomNavBg,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textTertiary,
-        selectedLabelStyle: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w500),
-        unselectedLabelStyle: const TextStyle(fontSize: 12.0),
+        selectedLabelStyle: TextStyle(
+          fontSize: 12.0,
+          fontWeight: FontWeight.w500,
+        ),
+        unselectedLabelStyle: TextStyle(fontSize: 12.0),
         type: BottomNavigationBarType.fixed,
         elevation: 8.0,
       ),
@@ -75,7 +85,10 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
-          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16.0,
+          ),
           padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
@@ -90,9 +103,12 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceLight,
+        fillColor: AppColors.surfaceElevated,
         hintStyle: const TextStyle(color: AppColors.textTertiary),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16.0,
+          horizontal: 16.0,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
           borderSide: BorderSide.none,
@@ -114,11 +130,11 @@ class AppTheme {
   }
 
   static ThemeData lightTheme() {
-    const scaffoldBg = Color(0xFFF9F9FB);
-    const cardBg = Colors.white;
-    const dividerBg = Color(0xFFE5E7EB);
-    const appBarBg = Colors.white;
-    const bottomNavBg = Colors.white;
+    const scaffoldBg = AppColors.lightBackground;
+    const cardBg = AppColors.lightSurface;
+    const dividerBg = AppColors.borderLight;
+    const appBarBg = AppColors.lightSurface;
+    const bottomNavBg = AppColors.lightSurface;
 
     return ThemeData(
       useMaterial3: true,
@@ -128,26 +144,33 @@ class AppTheme {
       cardColor: cardBg,
       dividerColor: dividerBg,
       textTheme: GoogleFonts.nunitoTextTheme(ThemeData.light().textTheme).apply(
-        bodyColor: const Color(0xFF1F2937),
-        displayColor: const Color(0xFF1F2937),
+        bodyColor: AppColors.lightTextPrimary,
+        displayColor: AppColors.lightTextPrimary,
       ),
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.primaryDark,
-        surface: Colors.white,
+        surface: cardBg,
         error: AppColors.error,
         onPrimary: AppColors.textOnPrimary,
-        onSurface: Color(0xFF1F2937),
+        onSurface: AppColors.lightTextPrimary,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: appBarBg,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: Color(0xFF1F2937)),
-        titleTextStyle: const TextStyle(
+        iconTheme: IconThemeData(color: AppColors.lightTextPrimary),
+        titleTextStyle: TextStyle(
           fontSize: 20.0,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF1F2937),
+          color: AppColors.lightTextPrimary,
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.lightSurfaceElevated,
+        modalBackgroundColor: AppColors.lightSurfaceElevated,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
         ),
       ),
       tabBarTheme: const TabBarThemeData(
@@ -155,20 +178,23 @@ class AppTheme {
           borderSide: BorderSide(color: AppColors.primary, width: 4.0),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: Color(0xFF1F2937),
-        unselectedLabelColor: Color(0xFF9CA3AF),
+        labelColor: AppColors.lightTextPrimary,
+        unselectedLabelColor: AppColors.lightTextTertiary,
         labelStyle: TextStyle(
           fontSize: 14.0,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.0,
         ),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: bottomNavBg,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: const Color(0xFF9CA3AF),
-        selectedLabelStyle: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w500),
-        unselectedLabelStyle: const TextStyle(fontSize: 12.0),
+        unselectedItemColor: AppColors.lightTextTertiary,
+        selectedLabelStyle: TextStyle(
+          fontSize: 12.0,
+          fontWeight: FontWeight.w500,
+        ),
+        unselectedLabelStyle: TextStyle(fontSize: 12.0),
         type: BottomNavigationBarType.fixed,
         elevation: 8.0,
       ),
@@ -183,7 +209,10 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
-          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16.0,
+          ),
           padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
@@ -198,9 +227,12 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF3F4F6),
-        hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+        fillColor: AppColors.lightSurfaceElevated,
+        hintStyle: const TextStyle(color: AppColors.lightTextTertiary),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16.0,
+          horizontal: 16.0,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
           borderSide: BorderSide.none,

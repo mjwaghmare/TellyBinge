@@ -36,7 +36,8 @@ import 'features/dashboard/data/repositories/tv_watchlist_repository_impl.dart';
 import 'firebase_options.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,12 +85,14 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
 
-  runApp(MyApp(
-    settingsStorage: settingsStorage,
-    isDarkInitial: isDarkInitial,
-    isOledInitial: isOledInitial,
-    prefs: prefs,
-  ));
+  runApp(
+    MyApp(
+      settingsStorage: settingsStorage,
+      isDarkInitial: isDarkInitial,
+      isOledInitial: isOledInitial,
+      prefs: prefs,
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -185,9 +188,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   @override
-  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+  Future<bool> didPushRouteInformation(
+    RouteInformation routeInformation,
+  ) async {
     final location = routeInformation.uri.toString();
-    if (location.startsWith('tvtimeapp://') || location == '/' || location == '') {
+    if (location.startsWith('tvtimeapp://') ||
+        location == '/' ||
+        location == '') {
       return true; // Intercepted: prevents Flutter Engine from pushing duplicate routes
     }
     return super.didPushRouteInformation(routeInformation);
@@ -276,8 +283,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<SharedPreferences>.value(value: widget.prefs),
-        RepositoryProvider<SettingsStorage>.value(value: widget.settingsStorage),
-        RepositoryProvider<AuthRepository>(create: (context) => AuthRepositoryImpl()),
+        RepositoryProvider<SettingsStorage>.value(
+          value: widget.settingsStorage,
+        ),
+        RepositoryProvider<AuthRepository>(
+          create: (context) => AuthRepositoryImpl(),
+        ),
         RepositoryProvider<TmdbClient>(create: (context) => TmdbClient()),
         RepositoryProvider<MovieWatchlistRepository>(
           create: (context) => MovieWatchlistRepositoryImpl(),
@@ -301,11 +312,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               isOledInitial: widget.isOledInitial,
             ),
           ),
-          BlocProvider<AuthCubit>(create: (context) => AuthCubit(authRepository: context.read<AuthRepository>())),
-          BlocProvider<SearchCubit>(create: (context) => SearchCubit(tmdbClient: context.read<TmdbClient>())),
+          BlocProvider<AuthCubit>(
+            create: (context) =>
+                AuthCubit(authRepository: context.read<AuthRepository>()),
+          ),
+          BlocProvider<SearchCubit>(
+            create: (context) =>
+                SearchCubit(tmdbClient: context.read<TmdbClient>()),
+          ),
           BlocProvider<MovieWatchlistCubit>(
             create: (context) => MovieWatchlistCubit(
-              movieWatchlistRepository: context.read<MovieWatchlistRepository>(),
+              movieWatchlistRepository: context
+                  .read<MovieWatchlistRepository>(),
               tmdbClient: context.read<TmdbClient>(),
             ),
           ),
@@ -319,7 +337,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           builder: (context, themeState) {
             return MaterialApp(
               title: 'TellyBinge',
-              themeMode: themeState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+              themeMode: themeState.isDarkMode
+                  ? ThemeMode.dark
+                  : ThemeMode.light,
               darkTheme: AppTheme.darkTheme(),
               theme: AppTheme.lightTheme(),
               navigatorKey: navigatorKey,
@@ -332,13 +352,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 final path = settings.name;
                 if (path != null && path.length > 1) {
                   final parts = path.split('/');
-                  final showIdStr = parts.lastWhere((e) => e.isNotEmpty, orElse: () => '');
+                  final showIdStr = parts.lastWhere(
+                    (e) => e.isNotEmpty,
+                    orElse: () => '',
+                  );
                   final showId = int.tryParse(showIdStr);
                   if (showId != null) {
                     return MaterialPageRoute(
                       settings: settings,
                       builder: (context) => BlocProvider<ShowDetailsCubit>(
-                        create: (context) => ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+                        create: (context) => ShowDetailsCubit(
+                          tmdbClient: context.read<TmdbClient>(),
+                        ),
                         child: ShowDetailsPage(
                           mediaId: showId,
                           mediaType: 'tv',
@@ -354,9 +379,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               onUnknownRoute: (settings) {
                 return MaterialPageRoute(
                   settings: settings,
-                  builder: (_) => const Scaffold(
-                    backgroundColor: Colors.black,
-                  ),
+                  builder: (_) => const Scaffold(backgroundColor: Colors.black),
                 );
               },
             );
@@ -435,7 +458,14 @@ class _AuthGateState extends State<AuthGate> {
               child: Stack(
                 children: [
                   Center(
-                    child: Hero(tag: 'app_logo', child: Image.asset('assets/images/logo.png', width: 160, height: 160)),
+                    child: Hero(
+                      tag: 'app_logo',
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 160,
+                        height: 160,
+                      ),
+                    ),
                   ),
                 ],
               ),

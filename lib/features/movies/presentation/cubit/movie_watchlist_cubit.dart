@@ -10,68 +10,69 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   final MovieWatchlistRepository movieWatchlistRepository;
   final TmdbClient? tmdbClient;
   StreamSubscription? _watchlistSubscription;
-  
+
   // Sets to manage concurrent requests and failure retry loops
   final Set<int> _backfillingMovieIds = {};
   final Set<int> _failedMovieIds = {};
 
-  MovieWatchlistCubit({
-    required this.movieWatchlistRepository,
-    this.tmdbClient,
-  }) : super(MovieWatchlistInitial());
+  MovieWatchlistCubit({required this.movieWatchlistRepository, this.tmdbClient})
+    : super(MovieWatchlistInitial());
 
   void watchWatchlist(String uid) {
     emit(MovieWatchlistLoading());
     _watchlistSubscription?.cancel();
-    
-    _watchlistSubscription = movieWatchlistRepository.watchWatchlist(uid).listen(
-      (movies) {
-        emit(MovieWatchlistSuccess(movies));
 
-        // Hand the whole watchlist over; the service reconciles it against
-        // what's actually scheduled. Watched movies are simply absent here and
-        // get cancelled as a result.
-        NotificationService().submitTitles(
-          NotificationMedia.movie,
-          [
-            for (final movie in movies)
-              if ((movie['isWatched'] as bool? ?? false) == false &&
-                  (movie['id'] as num?) != null &&
-                  (movie['releaseDate'] as String?) != null)
-                PendingNotification(
-                  media: NotificationMedia.movie,
-                  mediaId: (movie['id'] as num).toInt(),
-                  title:
-                      'Upcoming Release: ${movie['title'] as String? ?? 'Movie'}',
-                  body:
-                      '${movie['title'] as String? ?? 'Movie'} is releasing soon!',
-                  releaseDateStr: movie['releaseDate'] as String,
-                ),
-          ],
+    _watchlistSubscription = movieWatchlistRepository
+        .watchWatchlist(uid)
+        .listen(
+          (movies) {
+            emit(MovieWatchlistSuccess(movies));
+
+            // Hand the whole watchlist over; the service reconciles it against
+            // what's actually scheduled. Watched movies are simply absent here and
+            // get cancelled as a result.
+            NotificationService().submitTitles(NotificationMedia.movie, [
+              for (final movie in movies)
+                if ((movie['isWatched'] as bool? ?? false) == false &&
+                    (movie['id'] as num?) != null &&
+                    (movie['releaseDate'] as String?) != null)
+                  PendingNotification(
+                    media: NotificationMedia.movie,
+                    mediaId: (movie['id'] as num).toInt(),
+                    title:
+                        'Upcoming Release: ${movie['title'] as String? ?? 'Movie'}',
+                    body:
+                        '${movie['title'] as String? ?? 'Movie'} is releasing soon!',
+                    releaseDateStr: movie['releaseDate'] as String,
+                  ),
+            ]);
+
+            // Start backfilling in the background sequentially to avoid socket rate limiting
+            _backfillMissingGenres(uid, movies);
+          },
+          onError: (error) {
+            emit(MovieWatchlistError(error.toString()));
+          },
         );
-
-        // Start backfilling in the background sequentially to avoid socket rate limiting
-        _backfillMissingGenres(uid, movies);
-      },
-      onError: (error) {
-        emit(MovieWatchlistError(error.toString()));
-      },
-    );
   }
 
   // Sequential backfiller that manages lock set and delays requests
-  Future<void> _backfillMissingGenres(String uid, List<Map<String, dynamic>> movies) async {
+  Future<void> _backfillMissingGenres(
+    String uid,
+    List<Map<String, dynamic>> movies,
+  ) async {
     if (tmdbClient == null) return;
-    
+
     for (final movie in movies) {
       if (isClosed) break;
       if (!movie.containsKey('genres')) {
         final movieId = (movie['id'] as num?)?.toInt();
         if (movieId != null) {
-          if (_backfillingMovieIds.contains(movieId) || _failedMovieIds.contains(movieId)) {
+          if (_backfillingMovieIds.contains(movieId) ||
+              _failedMovieIds.contains(movieId)) {
             continue;
           }
-          
+
           _backfillingMovieIds.add(movieId);
           try {
             await _fillMissingGenres(uid, movieId);
@@ -174,18 +175,15 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     }
   }
 
-  Future<void> removeMovie({
-    required String uid,
-    required int movieId,
-  }) async {
+  Future<void> removeMovie({required String uid, required int movieId}) async {
     try {
-      await movieWatchlistRepository.removeMovie(
-        uid: uid,
-        movieId: movieId,
-      );
-      
+      await movieWatchlistRepository.removeMovie(uid: uid, movieId: movieId);
+
       // Cancel scheduled notification if it exists
-      await NotificationService().cancelNotification(NotificationMedia.movie, movieId);
+      await NotificationService().cancelNotification(
+        NotificationMedia.movie,
+        movieId,
+      );
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.removeMovie: $e');
     }

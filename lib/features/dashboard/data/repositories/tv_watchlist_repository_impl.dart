@@ -5,7 +5,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
   final FirebaseFirestore _firestore;
 
   TvWatchlistRepositoryImpl({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) {
@@ -34,32 +34,32 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
         .collection('shows')
         .doc(showId.toString())
         .set({
-      'id': showId,
-      'name': name,
-      'posterPath': posterPath ?? '',
-      'backdropPath': backdropPath ?? '',
-      'firstAirDate': firstAirDate ?? '',
-      'voteAverage': voteAverage,
-      'watchedEpisodes': [],
-      'episodeWatchedDates': {},
-      'addedAt': DateTime.now().toIso8601String(),
-      'category': 'HAVENT_STARTED',
-      'nextEpisodeCode': '',
-      'nextEpisodeTitle': '',
-      'targetSeason': 1,
-      'targetEpisode': 1,
-      'extraCount': null,
-      'isPremiere': false,
-      'isNewEpisode': false,
-      'upcomingEpisodeCode': 'TBA',
-      'upcomingEpisodeTitle': 'No upcoming episodes',
-      'upcomingAirDate': null,
-      'upcomingNetworkName': null,
-      'hasUpcoming': false,
-      'upcomingIsPremiere': false,
-      'upcomingIsNew': false,
-      'lastEnrichedAt': '',
-    });
+          'id': showId,
+          'name': name,
+          'posterPath': posterPath ?? '',
+          'backdropPath': backdropPath ?? '',
+          'firstAirDate': firstAirDate ?? '',
+          'voteAverage': voteAverage,
+          'watchedEpisodes': [],
+          'episodeWatchedDates': {},
+          'addedAt': DateTime.now().toIso8601String(),
+          'category': 'HAVENT_STARTED',
+          'nextEpisodeCode': '',
+          'nextEpisodeTitle': '',
+          'targetSeason': 1,
+          'targetEpisode': 1,
+          'extraCount': null,
+          'isPremiere': false,
+          'isNewEpisode': false,
+          'upcomingEpisodeCode': 'TBA',
+          'upcomingEpisodeTitle': 'No upcoming episodes',
+          'upcomingAirDate': null,
+          'upcomingNetworkName': null,
+          'hasUpcoming': false,
+          'upcomingIsPremiere': false,
+          'upcomingIsNew': false,
+          'lastEnrichedAt': '',
+        });
   }
 
   @override
@@ -89,10 +89,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
   }
 
   @override
-  Future<void> removeShow({
-    required String uid,
-    required int showId,
-  }) async {
+  Future<void> removeShow({required String uid, required int showId}) async {
     await _firestore
         .collection('users')
         .doc(uid)
@@ -163,7 +160,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     for (var key in episodeKeys) {
       updates['episodeWatchedDates.$key'] = now;
     }
-    
+
     await _firestore
         .collection('users')
         .doc(uid)
@@ -184,7 +181,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     for (var key in episodeKeys) {
       updates['episodeWatchedDates.$key'] = FieldValue.delete();
     }
-    
+
     await _firestore
         .collection('users')
         .doc(uid)

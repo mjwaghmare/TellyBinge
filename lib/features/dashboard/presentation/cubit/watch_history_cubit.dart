@@ -56,7 +56,9 @@ class WatchHistoryCubit extends Cubit<WatchHistoryState> {
     emit(WatchHistoryLoading());
 
     try {
-      final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
+      final sevenDaysAgo = DateTime.now()
+          .subtract(const Duration(days: 7))
+          .toIso8601String();
 
       _historySubscription = _firestore
           .collection('users')

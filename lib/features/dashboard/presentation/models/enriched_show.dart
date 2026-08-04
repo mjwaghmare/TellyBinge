@@ -93,7 +93,9 @@ class EnrichedShow {
     } else {
       final String? storedNextCode = data['nextEpisodeCode'] as String?;
       if (storedNextCode != null && storedNextCode.isNotEmpty) {
-        final match = RegExp(r'S(\d+)\s*\|\s*E(\d+)').firstMatch(storedNextCode);
+        final match = RegExp(
+          r'S(\d+)\s*\|\s*E(\d+)',
+        ).firstMatch(storedNextCode);
         if (match != null) {
           final s = int.tryParse(match.group(1) ?? '');
           final e = int.tryParse(match.group(2) ?? '');
@@ -138,8 +140,7 @@ class EnrichedShow {
         data['upcomingIsPremiere'] as bool? ?? false;
     final bool upcomingIsNew = data['upcomingIsNew'] as bool? ?? false;
     final bool hasUpcoming = data['hasUpcoming'] as bool? ?? false;
-    final String? upcomingNetworkName =
-        data['upcomingNetworkName'] as String?;
+    final String? upcomingNetworkName = data['upcomingNetworkName'] as String?;
 
     DateTime? upcomingAirDate;
     int? upcomingDaysLeft;
@@ -181,9 +182,7 @@ class EnrichedShow {
     );
   }
 
-  EnrichedShow copyWith({
-    Map<String, dynamic>? rawShowData,
-  }) {
+  EnrichedShow copyWith({Map<String, dynamic>? rawShowData}) {
     return EnrichedShow(
       rawShowData: rawShowData ?? this.rawShowData,
       episodeCode: episodeCode,

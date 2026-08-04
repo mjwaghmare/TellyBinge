@@ -45,7 +45,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
   void didUpdateWidget(EpisodeProgressCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_isMarkingAsWatched) {
-      final hasAdvanced = widget.enrichedShow.episodeCode != _lastMarkedEpisodeCode ||
+      final hasAdvanced =
+          widget.enrichedShow.episodeCode != _lastMarkedEpisodeCode ||
           widget.enrichedShow.isUpToDate;
       if (hasAdvanced) {
         _markingSafetyTimer?.cancel();
@@ -240,7 +241,10 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   onPressed: () => Navigator.pop(sheetContext),
                   child: const Text(
                     'Cancel',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
@@ -384,9 +388,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
             context,
             CupertinoPageRoute(
               builder: (context) => BlocProvider<ShowDetailsCubit>(
-                create: (context) => ShowDetailsCubit(
-                  tmdbClient: context.read<TmdbClient>(),
-                ),
+                create: (context) =>
+                    ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
                 child: ShowDetailsPage(
                   mediaId: showId,
                   mediaType: 'tv',
@@ -408,7 +411,9 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
               ? Center(
                   child: CircularProgressIndicator.adaptive(
                     strokeWidth: 3,
-                    valueColor: const AlwaysStoppedAnimation(AppColors.brandGreen),
+                    valueColor: const AlwaysStoppedAnimation(
+                      AppColors.brandGreen,
+                    ),
                   ),
                 )
               : Row(
@@ -424,25 +429,45 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                               errorWidget: (context, url, error) => Container(
                                 width: 100,
                                 height: cardHeight,
-                                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.grey[200]
+                                    : AppColors.surfaceLight,
                                 child: Icon(
                                   Icons.tv,
-                                  color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Colors.grey[500]
+                                      : AppColors.textTertiary,
                                 ),
                               ),
                               placeholder: (context, url) => Container(
                                 width: 100,
                                 height: cardHeight,
-                                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.grey[200]
+                                    : AppColors.surfaceLight,
                               ),
                             )
                           : Container(
                               width: 100,
                               height: cardHeight,
-                              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey[200]
+                                  : AppColors.surfaceLight,
                               child: Icon(
                                 Icons.tv,
-                                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.grey[500]
+                                    : AppColors.textTertiary,
                               ),
                             ),
                     ),
@@ -470,7 +495,11 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                 border: isDummy
                                     ? null
                                     : Border.all(
-                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.black12,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white24
+                                            : Colors.black12,
                                         width: 1.0,
                                       ),
                                 borderRadius: BorderRadius.circular(16.0),
@@ -484,7 +513,11 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white
+                                            : Colors.black87,
                                         fontSize: 9.0,
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.0,
@@ -495,7 +528,11 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                   if (!isDummy)
                                     Icon(
                                       Icons.chevron_right,
-                                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black54,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.white70
+                                          : Colors.black54,
                                       size: 14,
                                     ),
                                 ],
@@ -508,7 +545,9 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                   TextSpan(
                                     text: show.episodeCode,
                                     style: TextStyle(
-                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.color,
                                       fontSize: 14.0,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.5,
@@ -518,7 +557,11 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                     TextSpan(
                                       text: ' ${show.extraCount}',
                                       style: TextStyle(
-                                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : Colors.black54,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? AppColors.textSecondary
+                                            : Colors.black54,
                                         fontSize: 11.0,
                                       ),
                                     ),
@@ -532,7 +575,11 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : Colors.black54,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? AppColors.textSecondary
+                                    : Colors.black54,
                                 fontSize: 11.0,
                               ),
                             ),
@@ -574,27 +621,38 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                 shape: BoxShape.circle,
                                 color: isWatched
                                     ? AppColors.success
-                                    : (Theme.of(context).brightness == Brightness.light ? Colors.transparent : Colors.white),
+                                    : (Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Colors.transparent
+                                          : Colors.white),
                                 border: isWatched
                                     ? null
                                     : Border.all(
-                                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[400]! : Colors.transparent,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.grey[400]!
+                                            : Colors.transparent,
                                         width: 1.5,
                                       ),
                               ),
                               child: _isMarkingAsWatched
                                   ? const CircularProgressIndicator.adaptive()
                                   : (isWatched
-                                      ? const Icon(
-                                          Icons.check,
-                                          color: Colors.white,
-                                          size: 24,
-                                        )
-                                      : Icon(
-                                          Icons.check,
-                                          color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
-                                          size: 24,
-                                        )),
+                                        ? const Icon(
+                                            Icons.check,
+                                            color: Colors.white,
+                                            size: 24,
+                                          )
+                                        : Icon(
+                                            Icons.check,
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Colors.grey[500]
+                                                : AppColors.textTertiary,
+                                            size: 24,
+                                          )),
                             ),
                           ),
                         ),

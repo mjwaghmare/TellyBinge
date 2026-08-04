@@ -59,7 +59,10 @@ class UpcomingEpisodeCard extends StatelessWidget {
           Text(
             daysLeft == 1 ? 'DAY' : 'DAYS',
             style: AppTextStyles.xs.copyWith(
-              color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
+              color: context.adaptiveColor(
+                light: Colors.grey[500]!,
+                dark: AppColors.textTertiary,
+              ),
               fontSize: 10.0,
               letterSpacing: 1.0,
             ),
@@ -75,7 +78,10 @@ class UpcomingEpisodeCard extends StatelessWidget {
           Text(
             networkName,
             style: AppTextStyles.xs.copyWith(
-              color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
+              color: context.adaptiveColor(
+                light: Colors.grey[500]!,
+                dark: AppColors.textTertiary,
+              ),
               fontSize: 11.0,
             ),
           ),
@@ -143,20 +149,41 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       errorWidget: (context, url, error) => Container(
                         width: 130,
                         height: cardHeight,
-                        color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
-                        child: Icon(Icons.tv, color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary)),
+                        color: context.adaptiveColor(
+                          light: Colors.grey[200]!,
+                          dark: AppColors.surfaceLight,
+                        ),
+                        child: Icon(
+                          Icons.tv,
+                          color: context.adaptiveColor(
+                            light: Colors.grey[500]!,
+                            dark: AppColors.textTertiary,
+                          ),
+                        ),
                       ),
                       placeholder: (context, url) => Container(
                         width: 130,
                         height: cardHeight,
-                        color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+                        color: context.adaptiveColor(
+                          light: Colors.grey[200]!,
+                          dark: AppColors.surfaceLight,
+                        ),
                       ),
                     )
                   : Container(
                       width: 130,
                       height: cardHeight,
-                      color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
-                      child: Icon(Icons.tv, color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary)),
+                      color: context.adaptiveColor(
+                        light: Colors.grey[200]!,
+                        dark: AppColors.surfaceLight,
+                      ),
+                      child: Icon(
+                        Icons.tv,
+                        color: context.adaptiveColor(
+                          light: Colors.grey[500]!,
+                          dark: AppColors.textTertiary,
+                        ),
+                      ),
                     ),
             ),
             const SizedBox(width: 12),
@@ -181,7 +208,14 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         border: isDummy
                             ? null
-                            : Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.black12, width: 1.0),
+                            : Border.all(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white24
+                                    : Colors.black12,
+                                width: 1.0,
+                              ),
                         borderRadius: BorderRadius.circular(16.0),
                       ),
                       child: Row(
@@ -193,7 +227,11 @@ class UpcomingEpisodeCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black87,
                                 fontSize: 9.0,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.0,
@@ -204,7 +242,11 @@ class UpcomingEpisodeCard extends StatelessWidget {
                           if (!isDummy)
                             Icon(
                               Icons.chevron_right,
-                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black54,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white70
+                                  : Colors.black54,
                               size: 14,
                             ),
                         ],
@@ -225,7 +267,9 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : Colors.black54,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
                         fontSize: 11.0,
                       ),
                     ),

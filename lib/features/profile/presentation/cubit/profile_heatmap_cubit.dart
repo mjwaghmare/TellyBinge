@@ -7,8 +7,8 @@ class ProfileHeatmapCubit extends Cubit<ProfileHeatmapState> {
   final FirebaseFirestore _firestore;
 
   ProfileHeatmapCubit({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance,
-        super(ProfileHeatmapInitial());
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      super(ProfileHeatmapInitial());
 
   Future<void> loadMonthActivity(String uid, DateTime month) async {
     emit(ProfileHeatmapLoading());
@@ -48,7 +48,11 @@ class ProfileHeatmapCubit extends Cubit<ProfileHeatmapState> {
         if (watchedAtStr != null) {
           final watchedAt = DateTime.tryParse(watchedAtStr);
           if (watchedAt != null) {
-            final dateKey = DateTime(watchedAt.year, watchedAt.month, watchedAt.day);
+            final dateKey = DateTime(
+              watchedAt.year,
+              watchedAt.month,
+              watchedAt.day,
+            );
             tvCounts[dateKey] = (tvCounts[dateKey] ?? 0) + 1;
           }
         }
@@ -75,11 +79,13 @@ class ProfileHeatmapCubit extends Cubit<ProfileHeatmapState> {
         await Future.delayed(Duration(milliseconds: remaining));
       }
 
-      emit(ProfileHeatmapLoaded(
-        tvCounts: tvCounts,
-        movieCounts: movieCounts,
-        selectedMonth: month,
-      ));
+      emit(
+        ProfileHeatmapLoaded(
+          tvCounts: tvCounts,
+          movieCounts: movieCounts,
+          selectedMonth: month,
+        ),
+      );
     } catch (e, stackTrace) {
       debugPrint('Error loading heatmap: $e');
       debugPrint(stackTrace.toString());

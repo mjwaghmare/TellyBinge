@@ -48,11 +48,10 @@ class ImportTvTimeState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        file,
-        errorMessage,
-        progress,
-        statusMessage,
-      ];
+    status,
+    file,
+    errorMessage,
+    progress,
+    statusMessage,
+  ];
 }
-

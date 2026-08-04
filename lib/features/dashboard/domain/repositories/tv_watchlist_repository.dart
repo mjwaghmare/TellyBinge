@@ -9,18 +9,9 @@ abstract class TvWatchlistRepository {
     required String? firstAirDate,
     required double voteAverage,
   });
-  Future<void> stopWatchingShow({
-    required String uid,
-    required int showId,
-  });
-  Future<void> continueWatchingShow({
-    required String uid,
-    required int showId,
-  });
-  Future<void> removeShow({
-    required String uid,
-    required int showId,
-  });
+  Future<void> stopWatchingShow({required String uid, required int showId});
+  Future<void> continueWatchingShow({required String uid, required int showId});
+  Future<void> removeShow({required String uid, required int showId});
   Future<void> toggleEpisodeWatched({
     required String uid,
     required int showId,

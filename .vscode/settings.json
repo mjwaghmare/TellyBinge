@@ -1,0 +1,17 @@
+{
+  "editor.wordWrap": "on",
+  "editor.wordWrapColumn": 80,
+  "editor.rulers": [
+    80
+  ],
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.wordWrapColumn": 80
+  },
+  "[dart]": {
+    "editor.wordWrap": "on",
+    "editor.rulers": [
+      80
+    ]
+  }
+}

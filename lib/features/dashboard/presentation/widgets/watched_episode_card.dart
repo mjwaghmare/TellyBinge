@@ -10,10 +10,7 @@ import '../cubit/tv_show_watchlist_cubit.dart';
 class WatchedEpisodeCard extends StatefulWidget {
   final Map<String, dynamic> historyEvent;
 
-  const WatchedEpisodeCard({
-    super.key,
-    required this.historyEvent,
-  });
+  const WatchedEpisodeCard({super.key, required this.historyEvent});
 
   @override
   State<WatchedEpisodeCard> createState() => _WatchedEpisodeCardState();
@@ -86,16 +83,19 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
         ? 'https://image.tmdb.org/t/p/w500$posterPath'
         : null;
 
-    final showName = widget.historyEvent['showName']?.toString().toUpperCase() ?? 'UNKNOWN';
-    
+    final showName =
+        widget.historyEvent['showName']?.toString().toUpperCase() ?? 'UNKNOWN';
+
     // Parse episodeKey like "1-4" to "S01 | E04"
     final epKey = widget.historyEvent['episodeKey']?.toString() ?? '';
     String displayCode = epKey;
     if (epKey.contains('-')) {
       final parts = epKey.split('-');
       if (parts.length == 2) {
-        final s = int.tryParse(parts[0])?.toString().padLeft(2, '0') ?? parts[0];
-        final e = int.tryParse(parts[1])?.toString().padLeft(2, '0') ?? parts[1];
+        final s =
+            int.tryParse(parts[0])?.toString().padLeft(2, '0') ?? parts[0];
+        final e =
+            int.tryParse(parts[1])?.toString().padLeft(2, '0') ?? parts[1];
         displayCode = 'S$s | E$e';
       }
     }
@@ -125,18 +125,30 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                         imageUrl: imageUrl,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
-                          color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+                          color: context.adaptiveColor(
+                            light: Colors.grey[200]!,
+                            dark: AppColors.surfaceLight,
+                          ),
                         ),
                         errorWidget: (context, url, error) => Container(
-                          color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
-                          child: Icon(Icons.tv, color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary)),
+                          color: context.adaptiveColor(
+                            light: Colors.grey[200]!,
+                            dark: AppColors.surfaceLight,
+                          ),
+                          child: Icon(
+                            Icons.tv,
+                            color: context.adaptiveColor(
+                              light: Colors.grey[500]!,
+                              dark: AppColors.textTertiary,
+                            ),
+                          ),
                         ),
                       )
                     : Container(color: AppColors.surfaceLight),
               ),
             ),
             const SizedBox(width: 12),
-            
+
             // Info
             Expanded(
               child: Padding(
@@ -147,9 +159,17 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                   children: [
                     // Show Name Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0,
+                        vertical: 4.0,
+                      ),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.black12, width: 1.0),
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white24
+                              : Colors.black12,
+                          width: 1.0,
+                        ),
                         borderRadius: BorderRadius.circular(16.0),
                       ),
                       child: Row(
@@ -161,7 +181,11 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black87,
                                 fontSize: 9.0,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.0,
@@ -172,13 +196,16 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                           Icon(
                             Icons.chevron_right,
                             size: 14,
-                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black54,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white70
+                                : Colors.black54,
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 4),
-                    
+
                     // Episode Code
                     Text(
                       displayCode,
@@ -189,12 +216,14 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                         letterSpacing: 0.5,
                       ),
                     ),
-                    
+
                     // Episode Title
                     Text(
                       episodeTitle.isNotEmpty ? episodeTitle : 'TBA',
                       style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : Colors.black54,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
                         fontSize: 11.0,
                       ),
                       maxLines: 1,
@@ -204,7 +233,7 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                 ),
               ),
             ),
-            
+
             // Checkmark
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
@@ -225,14 +254,12 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                             padding: EdgeInsets.all(8.0),
                             child: CircularProgressIndicator.adaptive(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
-                        : Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 24,
-                          ),
+                        : Icon(Icons.check, color: Colors.white, size: 24),
                   ),
                 ),
               ),

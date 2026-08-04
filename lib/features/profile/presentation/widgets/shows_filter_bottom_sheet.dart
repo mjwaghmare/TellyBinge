@@ -47,7 +47,8 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
     return FractionallySizedBox(
       heightFactor: 0.6,
       child: Material(
-        color: Theme.of(context).bottomSheetTheme.backgroundColor ??
+        color:
+            Theme.of(context).bottomSheetTheme.backgroundColor ??
             context.adaptiveColor(
               light: Colors.white,
               dark: AppColors.surfaceDarkAlt,
@@ -91,13 +92,31 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
-                              : AppColors.chipBorder(context),
+                              : context.adaptiveColor(
+                                  light: Colors.grey.shade200,
+                                  dark: AppColors.surfaceElevated,
+                                ),
                           borderRadius: BorderRadius.circular(AppSpacing.xl),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.chipBorder(context),
+                          ),
                         ),
                         child: Text(
                           option,
-                          style: (isSelected ? AppTextStyles.smBold : AppTextStyles.smMedium)
-                              .withColor(Colors.black),
+                          style:
+                              (isSelected
+                                      ? AppTextStyles.smBold
+                                      : AppTextStyles.smMedium)
+                                  .withColor(
+                                    isSelected
+                                        ? AppColors.textOnPrimary
+                                        : (Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.color ??
+                                              AppColors.textPrimary),
+                                  ),
                         ),
                       ),
                     ),

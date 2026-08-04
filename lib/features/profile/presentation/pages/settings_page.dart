@@ -25,7 +25,9 @@ class SettingsPage extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        iconTheme: IconThemeData(color: Theme.of(context).textTheme.bodyLarge?.color),
+        iconTheme: IconThemeData(
+          color: Theme.of(context).textTheme.bodyLarge?.color,
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -52,7 +54,9 @@ class SettingsPage extends StatelessWidget {
                     subtitle: Text(
                       'Use dark interface',
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                         fontSize: 13,
                       ),
                     ),
@@ -85,7 +89,9 @@ class SettingsPage extends StatelessWidget {
                 subtitle: Text(
                   'Show 18+ movies and TV shows in search and discover.',
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                     fontSize: 13,
                   ),
                 ),
@@ -119,7 +125,9 @@ class SettingsPage extends StatelessWidget {
                     subtitle: Text(
                       'Get alerted a day before episodes or movies release',
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                         fontSize: 13,
                       ),
                     ),
@@ -143,20 +151,27 @@ class SettingsPage extends StatelessWidget {
                         value: state.notify1HourBefore,
                         onChanged: (bool value) {
                           HapticFeedback.lightImpact();
-                          context
-                              .read<SettingsCubit>()
-                              .toggleNotify1HourBefore(value);
+                          context.read<SettingsCubit>().toggleNotify1HourBefore(
+                            value,
+                          );
                         },
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.send),
                         label: const Text('Send Test Notification'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.blue,
-                          side: BorderSide(color: Theme.of(context).dividerColor),
+                          foregroundColor:
+                              Theme.of(context).textTheme.bodyLarge?.color ??
+                              Colors.blue,
+                          side: BorderSide(
+                            color: Theme.of(context).dividerColor,
+                          ),
                         ),
                         onPressed: () {
                           HapticFeedback.lightImpact();
@@ -186,7 +201,9 @@ class SettingsPage extends StatelessWidget {
             subtitle: Text(
               'Import your watch history from a TV Time GDPR export',
               style: TextStyle(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                 fontSize: 11,
               ),
             ),
@@ -214,8 +231,12 @@ class SettingsPage extends StatelessWidget {
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.6) ?? AppColors.textSecondary,
-                          fontSize: 12,
+          color:
+              Theme.of(
+                context,
+              ).textTheme.bodyLarge?.color?.withValues(alpha: 0.6) ??
+              AppColors.textSecondary,
+          fontSize: 12,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
         ),

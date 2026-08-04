@@ -60,16 +60,16 @@ class SearchTrendingSuccess extends SearchState {
 
   @override
   List<Object?> get props => [
-        trendingTv,
-        trendingMovies,
-        tvPage,
-        moviesPage,
-        tvHasReachedMax,
-        moviesHasReachedMax,
-        isLoadingMore,
-        tvLoadMoreError,
-        moviesLoadMoreError,
-      ];
+    trendingTv,
+    trendingMovies,
+    tvPage,
+    moviesPage,
+    tvHasReachedMax,
+    moviesHasReachedMax,
+    isLoadingMore,
+    tvLoadMoreError,
+    moviesLoadMoreError,
+  ];
 }
 
 class SearchResultsSuccess extends SearchState {
@@ -113,14 +113,14 @@ class SearchResultsSuccess extends SearchState {
 
   @override
   List<Object?> get props => [
-        results,
-        query,
-        isTv,
-        page,
-        hasReachedMax,
-        isLoadingMore,
-        hasLoadMoreError,
-      ];
+    results,
+    query,
+    isTv,
+    page,
+    hasReachedMax,
+    isLoadingMore,
+    hasLoadMoreError,
+  ];
 }
 
 class SearchError extends SearchState {

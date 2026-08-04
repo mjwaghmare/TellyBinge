@@ -1,12 +1,17 @@
 # TellyBinge Design System
 
-This document outlines the core visual language, design tokens, typography, spacing scale, component patterns, and UI rules for the **TellyBinge** mobile application.
+This document outlines the core visual language, design tokens, typography,
+spacing scale, component patterns, and UI rules for the **TellyBinge** mobile
+application.
 
 ---
 
 ## 1. 🎨 Color Palette & Theme Tokens
 
-All color references in the application **must** consume `AppColors` tokens defined in [`lib/core/theme/app_colors.dart`](file:///Users/admin/Documents/mwstudioprojects/tvtimeapp/lib/core/theme/app_colors.dart) or semantic properties from `Theme.of(context)`. Direct raw hex colors in widgets are strictly prohibited.
+All color references in the application **must** consume `AppColors` tokens
+defined in [`lib/core/theme/app_colors.dart`](lib/core/theme/app_colors.dart)
+or semantic properties from `Theme.of(context)`. Direct raw hex colors in
+widgets are strictly prohibited.
 
 ### Brand Colors
 | Token Name | Hex Value | Preview | Usage |
@@ -22,33 +27,33 @@ All color references in the application **must** consume `AppColors` tokens defi
 | `AppColors.accentBlue` | `#1E88E5` | Placeholder media icons & secondary action accents |
 | `AppColors.watched` | `#FFC107` | Watch progress bar fill |
 | `AppColors.airing` | `#2196F3` | Airing status tags for TV shows |
-| `AppColors.ended` | `#9C27B0` | Ended status tags for TV shows |
+| `AppColors.ended` | `#757575` | Muted neutral grey status tag for ended shows |
 | `AppColors.error` | `#E53935` | Destructive buttons, error alerts, removing items |
-| `AppColors.success` | `#4CAF50` | Positive confirmations |
+| `AppColors.success` | `#4CAF50` | Positive confirmations & watched badges |
 
-### Dark & Light Surface Tokens
-| Token Name | Hex Value | Usage |
-| :--- | :--- | :--- |
-| `AppColors.darkBackground` / `background` | `#0D0D0D` | Solid dark scaffold background |
-| `AppColors.surface` | `#161616` | Standard card background |
-| `AppColors.surfaceLight` | `#222222` | Text fields, list tile backgrounds |
-| `AppColors.surfaceDarkAlt` | `#1E1E1E` | Bottom sheet backgrounds, modal cards |
-| `AppColors.surfaceElevated` | `#2C2C2E` | Elevated chip fills, modal tiles |
-| `AppColors.borderLight` | `#CCCCCC` | Light mode borders and inactive filter outlines |
+### 3-Tier Surface Hierarchy (Dark & Light)
+| Token Name | Dark Hex | Light Hex | Tier / Usage |
+| :--- | :--- | :--- | :--- |
+| `AppColors.background` / `darkBackground` | `#0D0D0D` | `#F9F9FB` | **Level 0 (Canvas):** Scaffold screen background |
+| `AppColors.surface` | `#161616` | `#FFFFFF` | **Level 1 (Cards):** Standard content cards & tiles |
+| `AppColors.surfaceElevated` | `#242424` | `#F3F4F6` | **Level 2 (Modals):** Bottom sheets, dialogs, inputs |
+| `AppColors.borderDark` / `borderLight` | `#2C2C2E` | `#E5E7EB` | Dividers, chip outlines, input borders |
 
 ### Text Color Tokens
-| Token Name | Hex Value | Usage |
-| :--- | :--- | :--- |
-| `AppColors.textPrimary` | `#FFFFFF` | Primary body text and headers in dark mode |
-| `AppColors.textSecondary` | `#B0B0B0` | Subtitles, metadata, secondary text |
-| `AppColors.textTertiary` | `#757575` | Inactive icons, subtle text, placeholder hints |
-| `AppColors.textOnPrimary` | `#000000` | Text rendered on top of `AppColors.primary` |
+| Token Name | Dark Hex | Light Hex | Usage |
+| :--- | :--- | :--- | :--- |
+| `AppColors.textPrimary` | `#FFFFFF` | `#1F2937` | Primary body text and headers |
+| `AppColors.textSecondary` | `#B0B0B0` | `#6B7280` | Subtitles, metadata, secondary text |
+| `AppColors.textTertiary` | `#757575` | `#9CA3AF` | Inactive icons, subtle text, placeholder hints |
+| `AppColors.textOnPrimary` | `#000000` | `#000000` | Text rendered on top of `AppColors.primary` |
 
 ---
 
 ## 2. 🔤 Typography System
 
-Typography is driven globally by **Google Fonts Nunito** and system fallback via `AppTextStyles` in [`lib/core/theme/app_text_styles.dart`](file:///Users/admin/Documents/mwstudioprojects/tvtimeapp/lib/core/theme/app_text_styles.dart).
+Typography is driven globally by **Google Fonts Nunito** and system fallback
+via `AppTextStyles` in
+[`lib/core/theme/app_text_styles.dart`](lib/core/theme/app_text_styles.dart).
 
 | Style Token | Font Size | Weight | Line Height / Case | Common Usage |
 | :--- | :--- | :--- | :--- | :--- |
@@ -68,7 +73,8 @@ Typography is driven globally by **Google Fonts Nunito** and system fallback via
 
 ## 3. 📐 Spacing & Grid System
 
-All layouts **must** follow the 4pt/8pt grid system utilizing `AppSpacing` tokens in [`lib/core/theme/app_spacing.dart`](file:///Users/admin/Documents/mwstudioprojects/tvtimeapp/lib/core/theme/app_spacing.dart).
+All layouts **must** follow the 4pt/8pt grid system utilizing `AppSpacing`
+tokens in [`lib/core/theme/app_spacing.dart`](lib/core/theme/app_spacing.dart).
 
 ### Spacing Scale
 - `AppSpacing.xxs` = **4.0pt**
@@ -82,9 +88,14 @@ All layouts **must** follow the 4pt/8pt grid system utilizing `AppSpacing` token
 - `AppSpacing.huge` = **64.0pt**
 
 ### Layout Helpers
-- **Horizontal Gap Widgets**: `AppSpacing.gapW4`, `AppSpacing.gapW8`, `AppSpacing.gapW12`, `AppSpacing.gapW16`, `AppSpacing.gapW20`, `AppSpacing.gapW24`, `AppSpacing.gapW32`
-- **Vertical Gap Widgets**: `AppSpacing.gapH4`, `AppSpacing.gapH8`, `AppSpacing.gapH12`, `AppSpacing.gapH16`, `AppSpacing.gapH20`, `AppSpacing.gapH24`, `AppSpacing.gapH32`, `AppSpacing.gapH48`
-- **Padding Insets**: `AppSpacing.allXXS`, `AppSpacing.allXS`, `AppSpacing.allSM`, `AppSpacing.allMD`, `AppSpacing.allLG`, `AppSpacing.allXL`
+- **Horizontal Gap Widgets**: `AppSpacing.gapW4`, `AppSpacing.gapW8`,
+  `AppSpacing.gapW12`, `AppSpacing.gapW16`, `AppSpacing.gapW20`,
+  `AppSpacing.gapW24`, `AppSpacing.gapW32`
+- **Vertical Gap Widgets**: `AppSpacing.gapH4`, `AppSpacing.gapH8`,
+  `AppSpacing.gapH12`, `AppSpacing.gapH16`, `AppSpacing.gapH20`,
+  `AppSpacing.gapH24`, `AppSpacing.gapH32`, `AppSpacing.gapH48`
+- **Padding Insets**: `AppSpacing.allXXS`, `AppSpacing.allXS`,
+  `AppSpacing.allSM`, `AppSpacing.allMD`, `AppSpacing.allLG`, `AppSpacing.allXL`
 
 ---
 
@@ -96,19 +107,24 @@ All layouts **must** follow the 4pt/8pt grid system utilizing `AppSpacing` token
 - **Background**: Uses `Theme.of(context).cardColor` or `AppColors.surfaceDarkAlt` in modals.
 
 ### Buttons & Interactive Targets
-- **Elevated Button**: Primary brand action button with `AppColors.primary` background, `AppColors.textOnPrimary` text, bold 16pt font, 14pt vertical padding, 8pt border radius.
+- **Elevated Button**: Primary brand action button with `AppColors.primary`
+  background, `AppColors.textOnPrimary` text, bold 16pt font, 14pt vertical
+  padding, 8pt border radius.
 - **Destructive Button**: `AppColors.error` background with white text.
 - **Touch Target Minimum**: Every interactive element (icon buttons, text buttons, cards) must maintain a minimum **48x48dp** touch target.
 
 ### Bottom Sheets & Modals
-- **Shape**: `RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16)))` or `20.0pt`.
+- **Shape**: `RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16)))`
+  or `20.0pt`.
 - **Background**: `AppColors.surfaceDarkAlt` in dark mode, modal background from theme.
 
 ---
 
 ## 5. 🚫 Non-Negotiable UI Rules
 
-1. **No Hardcoded Hex Colors**: Never use `Color(0xFF...)` directly inside feature widget files. Use `AppColors` tokens.
-2. **No Hardcoded Spacing**: Never use arbitrary pixel numbers like `SizedBox(height: 17)` or `EdgeInsets.all(19)`. Use `AppSpacing` tokens.
+1. **No Hardcoded Hex Colors**: Never use `Color(0xFF...)` directly inside
+   feature widget files. Use `AppColors` tokens.
+2. **No Hardcoded Spacing**: Never use arbitrary pixel numbers like
+   `SizedBox(height: 17)` or `EdgeInsets.all(19)`. Use `AppSpacing` tokens.
 3. **Dark Mode First**: Support both Dark and Light mode dynamically via `Theme.of(context)`.
 4. **Accessibility**: Ensure touch targets are >= 48x48dp and contrast complies with WCAG AA.

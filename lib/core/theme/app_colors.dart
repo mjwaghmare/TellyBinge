@@ -3,38 +3,53 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Brand Colors
-  static const Color primary = Color(0xFFFFC107); // Amber Yellow
-  static const Color primaryDark = Color(0xFFFF8F00); // Darker Amber for presses/accents
-  static const Color primaryLight = Color(0xFFFFD54F); // Lighter Amber
+  // 1. Primary Brand Accent Tokens
+  static const Color primary = Color(0xFFFFC107); // Signature Amber Yellow
+  static const Color primaryDark = Color(0xFFFF8F00); // Darker Amber accent
+  static const Color primaryLight = Color(0xFFFFD54F); // Lighter Amber accent
 
-  // Dark Theme Colors
-  static const Color darkBackground = Color(0xFF0D0D0D); // Solid dark background
-  static const Color background = Color(0xFF0D0D0D); // Solid dark background
-  static const Color surface = Color(0xFF161616); // Card background
-  static const Color surfaceLight = Color(0xFF222222); // Input fields, list tiles
-  
-  // Status Colors
-  static const Color watched = Color(0xFFFFC107); // Yellow/Amber watch progress
-  static const Color airing = Color(0xFF2196F3); // Blue for shows that are airing
-  static const Color ended = Color(0xFF9C27B0); // Purple for ended shows
-  static const Color error = Color(0xFFE53935); // Red for error states
+  // 2. 3-Tier Surface Hierarchy (Dark Mode)
+  static const Color darkBackground = Color(0xFF0D0D0D); // Level 0: Canvas
+  static const Color background = darkBackground;
+  static const Color surface = Color(0xFF161616); // Level 1: Cards / Tiles
+  static const Color surfaceElevated = Color(
+    0xFF242424,
+  ); // Level 2: Modals / Sheets
+  static const Color surfaceLight = surfaceElevated; // Compatibility alias
+  static const Color surfaceDarkAlt = surfaceElevated; // Compatibility alias
+
+  // 3-Tier Surface Hierarchy (Light Mode)
+  static const Color lightBackground = Color(0xFFF9F9FB); // Level 0: Canvas
+  static const Color lightSurface = Color(0xFFFFFFFF); // Level 1: Cards
+  static const Color lightSurfaceElevated = Color(
+    0xFFF3F4F6,
+  ); // Level 2: Modals
+
+  // 3. Status & Functional Tokens
+  static const Color watched = primary; // Amber Yellow watch indicator
+  static const Color airing = Color(0xFF2196F3); // Blue for airing shows
+  static const Color ended = Color(0xFF757575); // Neutral Grey for ended shows
+  static const Color error = Color(0xFFE53935); // Red for error/destructive
   static const Color success = Color(0xFF4CAF50); // Green for positive states
 
-  // Accent & Surface Tokens
+  // 4. Accent & Divider Tokens
   static const Color brandGreen = Color(0xFF6B8E23); // Green badge accent
   static const Color accentBlue = Color(0xFF1E88E5); // Blue action accent
-  static const Color surfaceDarkAlt = Color(0xFF1E1E1E); // Sheet / Card background
-  static const Color surfaceElevated = Color(0xFF2C2C2E); // Elevated tile / input fill
-  static const Color borderLight = Color(0xFFCCCCCC); // Light divider / border
+  static const Color borderLight = Color(0xFFE5E7EB); // Light divider / border
+  static const Color borderDark = Color(0xFF2C2C2E); // Dark divider / border
 
-  // Text Colors
+  // 5. Text Tokens (Dark Mode)
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFB0B0B0);
-  static const Color textTertiary = Color(0xFF757575);
+  static const Color textTertiary = Color(0xFF8E8E93);
   static const Color textOnPrimary = Color(0xFF000000);
 
-  // Heatmap Activity Tokens
+  // Text Tokens (Light Mode)
+  static const Color lightTextPrimary = Color(0xFF1F2937);
+  static const Color lightTextSecondary = Color(0xFF6B7280);
+  static const Color lightTextTertiary = Color(0xFF64748B);
+
+  // 6. Heatmap Activity Tokens
   static const Color heatmapEmptyLight = Color(0xFFEBEDF0);
   static const Color heatmapEmptyDark = Color(0xFF161B22);
   static const List<Color> heatmapGreenScale = [
@@ -55,7 +70,7 @@ class AppColors {
       Theme.of(context).brightness == Brightness.light;
 
   static Color chipBorder(BuildContext context) =>
-      isLight(context) ? Colors.grey.shade300 : borderLight;
+      isLight(context) ? borderLight : borderDark;
 
   static Color heatmapEmpty(BuildContext context) =>
       isLight(context) ? heatmapEmptyLight : heatmapEmptyDark;

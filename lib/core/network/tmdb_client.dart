@@ -75,7 +75,9 @@ class TmdbClient {
       for (int retry = 0; retry < maxRetries; retry++) {
         Duration remaining = overallDeadline.difference(DateTime.now());
         if (remaining.isNegative || remaining == Duration.zero) {
-          throw TimeoutException('Overall request deadline exceeded across retries');
+          throw TimeoutException(
+            'Overall request deadline exceeded across retries',
+          );
         }
 
         bool timerFired = false;
@@ -93,13 +95,17 @@ class TmdbClient {
           );
           timer.cancel();
           if (timerFired || DateTime.now().isAfter(overallDeadline)) {
-            throw TimeoutException('Overall request deadline exceeded across retries');
+            throw TimeoutException(
+              'Overall request deadline exceeded across retries',
+            );
           }
           return response;
         } on DioException catch (e) {
           timer.cancel();
           if (CancelToken.isCancel(e)) {
-            throw TimeoutException('Overall request deadline exceeded across retries');
+            throw TimeoutException(
+              'Overall request deadline exceeded across retries',
+            );
           }
 
           // Don't retry on client errors (4xx) except 429 (Rate Limit)
@@ -122,15 +128,21 @@ class TmdbClient {
 
           remaining = overallDeadline.difference(DateTime.now());
           if (remaining.isNegative || remaining == Duration.zero) {
-            throw TimeoutException('Overall request deadline exceeded across retries');
+            throw TimeoutException(
+              'Overall request deadline exceeded across retries',
+            );
           }
 
           final desiredDelay = Duration(milliseconds: delayMs);
-          final actualDelay = desiredDelay > remaining ? remaining : desiredDelay;
+          final actualDelay = desiredDelay > remaining
+              ? remaining
+              : desiredDelay;
           await Future.delayed(actualDelay);
 
           if (DateTime.now().isAfter(overallDeadline)) {
-            throw TimeoutException('Overall request deadline exceeded across retries');
+            throw TimeoutException(
+              'Overall request deadline exceeded across retries',
+            );
           }
         } catch (e) {
           timer.cancel();
@@ -145,15 +157,21 @@ class TmdbClient {
 
           remaining = overallDeadline.difference(DateTime.now());
           if (remaining.isNegative || remaining == Duration.zero) {
-            throw TimeoutException('Overall request deadline exceeded across retries');
+            throw TimeoutException(
+              'Overall request deadline exceeded across retries',
+            );
           }
 
           final desiredDelay = Duration(milliseconds: delayMs);
-          final actualDelay = desiredDelay > remaining ? remaining : desiredDelay;
+          final actualDelay = desiredDelay > remaining
+              ? remaining
+              : desiredDelay;
           await Future.delayed(actualDelay);
 
           if (DateTime.now().isAfter(overallDeadline)) {
-            throw TimeoutException('Overall request deadline exceeded across retries');
+            throw TimeoutException(
+              'Overall request deadline exceeded across retries',
+            );
           }
         }
       }

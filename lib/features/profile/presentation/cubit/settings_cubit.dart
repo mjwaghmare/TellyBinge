@@ -29,10 +29,10 @@ class SettingsState extends Equatable {
 
   @override
   List<Object> get props => [
-        allowAdultContent,
-        notificationsEnabled,
-        notify1HourBefore,
-      ];
+    allowAdultContent,
+    notificationsEnabled,
+    notify1HourBefore,
+  ];
 }
 
 class SettingsCubit extends Cubit<SettingsState> {
@@ -42,24 +42,25 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _notificationsEnabledKey = 'notifications_enabled';
   static const String _notify1HourBeforeKey = 'notify_1_hour_before';
 
-  SettingsCubit({
-    required this.prefs,
-    required this.tmdbClient,
-  }) : super(const SettingsState()) {
+  SettingsCubit({required this.prefs, required this.tmdbClient})
+    : super(const SettingsState()) {
     _loadSettings();
   }
 
   void _loadSettings() {
     final allowAdult = prefs.getBool(_adultContentKey) ?? false;
-    final notificationsEnabled = prefs.getBool(_notificationsEnabledKey) ?? false;
+    final notificationsEnabled =
+        prefs.getBool(_notificationsEnabledKey) ?? false;
     final notify1HourBefore = prefs.getBool(_notify1HourBeforeKey) ?? false;
-    
+
     tmdbClient.allowAdultContent = allowAdult;
-    emit(SettingsState(
-      allowAdultContent: allowAdult,
-      notificationsEnabled: notificationsEnabled,
-      notify1HourBefore: notify1HourBefore,
-    ));
+    emit(
+      SettingsState(
+        allowAdultContent: allowAdult,
+        notificationsEnabled: notificationsEnabled,
+        notify1HourBefore: notify1HourBefore,
+      ),
+    );
   }
 
   Future<void> toggleAdultContent(bool value) async {
@@ -67,7 +68,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     tmdbClient.allowAdultContent = value;
     emit(state.copyWith(allowAdultContent: value));
   }
-  
+
   Future<void> toggleNotifications(bool value) async {
     if (value) {
       // If the OS refuses, don't leave a switch claiming notifications are on

@@ -23,10 +23,7 @@ abstract class MovieWatchlistRepository {
     required int movieId,
     required bool isFavorite,
   });
-  Future<void> removeMovie({
-    required String uid,
-    required int movieId,
-  });
+  Future<void> removeMovie({required String uid, required int movieId});
   Future<void> updateMovieGenres({
     required String uid,
     required int movieId,

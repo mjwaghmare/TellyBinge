@@ -31,12 +31,21 @@ class WatchedMoviesPage extends StatelessWidget {
           ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).textTheme.bodyLarge?.color, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: GridView.builder(
-        padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, AppSpacing.bottomTabPadding),
+        padding: const EdgeInsets.fromLTRB(
+          12.0,
+          12.0,
+          12.0,
+          AppSpacing.bottomTabPadding,
+        ),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           crossAxisSpacing: 8,
@@ -51,7 +60,8 @@ class WatchedMoviesPage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => MovieDetailsPage(movieId: movie.movieId),
+                  builder: (context) =>
+                      MovieDetailsPage(movieId: movie.movieId),
                 ),
               );
             },
@@ -62,26 +72,34 @@ class WatchedMoviesPage extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8.0),
                     child: Container(
-                      color: context.adaptiveColor(light: Colors.grey[300]!, dark: AppColors.surfaceLight),
+                      color: context.adaptiveColor(
+                        light: Colors.grey[300]!,
+                        dark: AppColors.surfaceLight,
+                      ),
                       width: double.infinity,
                       child: movie.imageUrl.isNotEmpty
                           ? CachedNetworkImage(
                               imageUrl: movie.imageUrl,
                               fit: BoxFit.cover,
-                              errorWidget: (context, url, error) =>
-                                  Center(
-                                    child: Icon(
-                                      Icons.movie_creation_outlined,
-                                      size: 32,
-                                      color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
-                                    ),
+                              errorWidget: (context, url, error) => Center(
+                                child: Icon(
+                                  Icons.movie_creation_outlined,
+                                  size: 32,
+                                  color: context.adaptiveColor(
+                                    light: Colors.grey[500]!,
+                                    dark: AppColors.textTertiary,
                                   ),
+                                ),
+                              ),
                             )
                           : Center(
                               child: Icon(
                                 Icons.movie_creation_outlined,
                                 size: 32,
-                                color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
+                                color: context.adaptiveColor(
+                                  light: Colors.grey[500]!,
+                                  dark: AppColors.textTertiary,
+                                ),
                               ),
                             ),
                     ),
@@ -110,7 +128,9 @@ class WatchedMoviesPage extends StatelessWidget {
                         movie.voteAverage.toStringAsFixed(1),
                         style: TextStyle(
                           fontSize: 10.0,
-                          color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              AppColors.textSecondary,
                         ),
                       ),
                       if (_getYear(movie.releaseDate).isNotEmpty) ...[
@@ -119,7 +139,9 @@ class WatchedMoviesPage extends StatelessWidget {
                           '•',
                           style: TextStyle(
                             fontSize: 10.0,
-                            color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color ??
+                                AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -127,7 +149,9 @@ class WatchedMoviesPage extends StatelessWidget {
                           _getYear(movie.releaseDate),
                           style: TextStyle(
                             fontSize: 10.0,
-                            color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color ??
+                                AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -136,7 +160,9 @@ class WatchedMoviesPage extends StatelessWidget {
                         _getYear(movie.releaseDate),
                         style: TextStyle(
                           fontSize: 10.0,
-                          color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                          color:
+                              Theme.of(context).textTheme.bodyMedium?.color ??
+                              AppColors.textSecondary,
                         ),
                       ),
                     ],

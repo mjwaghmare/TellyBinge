@@ -35,10 +35,18 @@ class MoviesPageState extends State<MoviesPage> {
 
   void scrollToTop() {
     if (watchlistScrollController.hasClients) {
-      watchlistScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      watchlistScrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
     if (upcomingScrollController.hasClients) {
-      upcomingScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      upcomingScrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
   }
 
@@ -120,9 +128,10 @@ class MoviesPageState extends State<MoviesPage> {
 
           String getMovieReleaseDate(Map<String, dynamic> movie) {
             return (movie['releaseDate'] ??
-                    movie['release_date'] ??
-                    movie['firstAirDate'] ??
-                    movie['first_air_date']) as String? ??
+                        movie['release_date'] ??
+                        movie['firstAirDate'] ??
+                        movie['first_air_date'])
+                    as String? ??
                 '';
           }
 
@@ -242,7 +251,7 @@ class MoviesPageState extends State<MoviesPage> {
     }
 
     final watchedHistory = items.where((i) => i['isWatched'] == true).toList();
-    
+
     // Sort watchedHistory by watchedAt ascending (oldest first, newest at the bottom)
     watchedHistory.sort((a, b) {
       final aDateStr = a['watchedAt'] as String?;
@@ -463,7 +472,12 @@ class MoviesPageState extends State<MoviesPage> {
   Widget _buildEmptyState(String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(32.0, 32.0, 32.0, AppSpacing.bottomTabPadding),
+        padding: const EdgeInsets.fromLTRB(
+          32.0,
+          32.0,
+          32.0,
+          AppSpacing.bottomTabPadding,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -731,21 +745,22 @@ class MoviesPageState extends State<MoviesPage> {
                                   width: 100,
                                   height: 96.0,
                                   fit: BoxFit.cover,
-                                  errorWidget: (context, url, error) => Container(
-                                    width: 100,
-                                    height: 96.0,
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Colors.grey[200]
-                                        : AppColors.surfaceLight,
-                                    child: const Skeleton.ignore(
-                                      child: Icon(
-                                        Icons.movie_outlined,
-                                        color: AppColors.textTertiary,
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                        width: 100,
+                                        height: 96.0,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.grey[200]
+                                            : AppColors.surfaceLight,
+                                        child: const Skeleton.ignore(
+                                          child: Icon(
+                                            Icons.movie_outlined,
+                                            color: AppColors.textTertiary,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
                                   placeholder: (context, url) => Container(
                                     width: 100,
                                     height: 96.0,
@@ -758,12 +773,14 @@ class MoviesPageState extends State<MoviesPage> {
                                       child: SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator.adaptive(
-                                          strokeWidth: 2,
-                                          valueColor: const AlwaysStoppedAnimation(
-                                            AppColors.primary,
-                                          ),
-                                        ),
+                                        child:
+                                            CircularProgressIndicator.adaptive(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  const AlwaysStoppedAnimation(
+                                                    AppColors.primary,
+                                                  ),
+                                            ),
                                       ),
                                     ),
                                   ),

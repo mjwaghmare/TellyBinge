@@ -18,42 +18,52 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
 
         // EMIT EARLY: So the UI loads instantly with primary details!
         if (!isClosed) {
-          emit(MovieDetailsSuccess(
-            movieDetails: movieDetails,
-            movieCredits: const {'cast': [], 'crew': []},
-            similarMovies: const [],
-            collectionParts: const [],
-            collectionSectionTitle: 'Franchise',
-            isCastLoading: true,
-            isCollectionLoading: true,
-            isSimilarLoading: true,
-          ));
+          emit(
+            MovieDetailsSuccess(
+              movieDetails: movieDetails,
+              movieCredits: const {'cast': [], 'crew': []},
+              similarMovies: const [],
+              collectionParts: const [],
+              collectionSectionTitle: 'Franchise',
+              isCastLoading: true,
+              isCollectionLoading: true,
+              isSimilarLoading: true,
+            ),
+          );
         }
 
         // Now fire off the secondary requests independently without blocking the UI
         final belongsToCollection = movieDetails['belongs_to_collection'];
-        
+
         Future<Map<String, dynamic>> fetchCollection() async {
-          if (belongsToCollection != null && belongsToCollection['id'] != null) {
+          if (belongsToCollection != null &&
+              belongsToCollection['id'] != null) {
             final collectionId = belongsToCollection['id'] as int;
             try {
-              final collectionDetails = await tmdbClient.getCollectionDetails(collectionId);
+              final collectionDetails = await tmdbClient.getCollectionDetails(
+                collectionId,
+              );
               final parts = collectionDetails['parts'] as List<dynamic>? ?? [];
-              final filteredParts = parts.where((item) => item['id'] != movieId).toList();
-              
+              final filteredParts = parts
+                  .where((item) => item['id'] != movieId)
+                  .toList();
+
               filteredParts.sort((a, b) {
                 final aDateStr = a['release_date'] as String? ?? '';
                 final bDateStr = b['release_date'] as String? ?? '';
                 if (aDateStr.isEmpty) return 1;
                 if (bDateStr.isEmpty) return -1;
                 try {
-                  return DateTime.parse(bDateStr).compareTo(DateTime.parse(aDateStr));
+                  return DateTime.parse(
+                    bDateStr,
+                  ).compareTo(DateTime.parse(aDateStr));
                 } catch (_) {
                   return 0;
                 }
               });
 
-              final collectionName = belongsToCollection['name'] as String? ?? 'Franchise';
+              final collectionName =
+                  belongsToCollection['name'] as String? ?? 'Franchise';
               return {
                 'parts': filteredParts,
                 'title': 'More from $collectionName',
@@ -93,7 +103,8 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
                 for (var f in fallback) {
                   if (f is Map && f['id'] != null) {
                     final fId = f['id'];
-                    if (!similarMovies.any((m) => m['id'] == fId) && fId != movieId) {
+                    if (!similarMovies.any((m) => m['id'] == fId) &&
+                        fId != movieId) {
                       similarMovies.add(f);
                     }
                   }
@@ -116,50 +127,71 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
         }
 
         // 1. Fetch Cast
-        tmdbClient.getMovieCredits(movieId).then((credits) {
-          final s = getSuccessState();
-          if (s != null) {
-            emit(s.copyWith(movieCredits: credits, isCastLoading: false));
-          }
-        }).catchError((_) {
-          final s = getSuccessState();
-          if (s != null) {
-            emit(s.copyWith(movieCredits: {'cast': [], 'crew': []}, isCastLoading: false));
-          }
-        });
+        tmdbClient
+            .getMovieCredits(movieId)
+            .then((credits) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(s.copyWith(movieCredits: credits, isCastLoading: false));
+              }
+            })
+            .catchError((_) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(
+                  s.copyWith(
+                    movieCredits: {'cast': [], 'crew': []},
+                    isCastLoading: false,
+                  ),
+                );
+              }
+            });
 
         // 2. Fetch Collection
-        fetchCollection().then((collectionResult) {
-          final s = getSuccessState();
-          if (s != null) {
-            final collectionParts = collectionResult['parts'] as List<dynamic>;
-            final collectionSectionTitle = collectionResult['title'] as String;
-            emit(s.copyWith(
-              collectionParts: collectionParts,
-              collectionSectionTitle: collectionSectionTitle,
-              isCollectionLoading: false,
-            ));
-          }
-        }).catchError((_) {
-          final s = getSuccessState();
-          if (s != null) {
-            emit(s.copyWith(isCollectionLoading: false));
-          }
-        });
+        fetchCollection()
+            .then((collectionResult) {
+              final s = getSuccessState();
+              if (s != null) {
+                final collectionParts =
+                    collectionResult['parts'] as List<dynamic>;
+                final collectionSectionTitle =
+                    collectionResult['title'] as String;
+                emit(
+                  s.copyWith(
+                    collectionParts: collectionParts,
+                    collectionSectionTitle: collectionSectionTitle,
+                    isCollectionLoading: false,
+                  ),
+                );
+              }
+            })
+            .catchError((_) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(s.copyWith(isCollectionLoading: false));
+              }
+            });
 
         // 3. Fetch Similar Movies
-        fetchSimilar().then((similarMovies) {
-          final s = getSuccessState();
-          if (s != null) {
-            emit(s.copyWith(similarMovies: similarMovies, isSimilarLoading: false));
-          }
-        }).catchError((_) {
-          final s = getSuccessState();
-          if (s != null) {
-            emit(s.copyWith(isSimilarLoading: false));
-          }
-        });
-        
+        fetchSimilar()
+            .then((similarMovies) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(
+                  s.copyWith(
+                    similarMovies: similarMovies,
+                    isSimilarLoading: false,
+                  ),
+                );
+              }
+            })
+            .catchError((_) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(s.copyWith(isSimilarLoading: false));
+              }
+            });
+
         // Successfully initiated, break the retry loop
         return;
       } catch (e) {

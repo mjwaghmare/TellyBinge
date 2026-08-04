@@ -25,7 +25,10 @@ class WatchTrailerButton extends StatelessWidget {
     }
   }
 
-  void _showTrailerBottomSheet(BuildContext context, Map<String, dynamic> trailer) {
+  void _showTrailerBottomSheet(
+    BuildContext context,
+    Map<String, dynamic> trailer,
+  ) {
     final trailersList = (allTrailers != null && allTrailers!.isNotEmpty)
         ? allTrailers!
         : [trailer];
@@ -320,11 +323,14 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
     final screenH = screenSize.height;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    const double handleHeight = 40.0; // 24px top padding + 4px handle + 12px bottom padding
-    const double topMargin = 16.0; // Margin between drag handle and video player
+    const double handleHeight =
+        40.0; // 24px top padding + 4px handle + 12px bottom padding
+    const double topMargin =
+        16.0; // Margin between drag handle and video player
     const double bottomPaddingValue = 24.0; // Same as top handle padding
     final double playerH = screenW * 9 / 16;
-    final double initialHeight = handleHeight + topMargin + playerH + bottomPaddingValue + bottomPadding;
+    final double initialHeight =
+        handleHeight + topMargin + playerH + bottomPaddingValue + bottomPadding;
 
     _minExtent ??= (initialHeight / screenH).clamp(0.15, 0.85);
     final double minExtent = _minExtent!;
@@ -346,206 +352,235 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
         snap: true,
         snapSizes: [minExtent, _maxExtent],
         builder: (context, scrollController) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final double currentSheetHeight = constraints.maxHeight;
-            final double extent = currentSheetHeight / screenH;
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final double currentSheetHeight = constraints.maxHeight;
+              final double extent = currentSheetHeight / screenH;
 
-            final double t = ((extent - minExtent) / (_maxExtent - minExtent)).clamp(0.0, 1.0);
+              final double t = ((extent - minExtent) / (_maxExtent - minExtent))
+                  .clamp(0.0, 1.0);
 
-            // Determine target dimensions and rotation based on physical device orientation
-            final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+              // Determine target dimensions and rotation based on physical device orientation
+              final bool isLandscape =
+                  MediaQuery.of(context).orientation == Orientation.landscape;
 
-            final double angle = isLandscape ? 0.0 : t * (math.pi / 2);
+              final double angle = isLandscape ? 0.0 : t * (math.pi / 2);
 
-            final double playerW0 = screenW;
-            final double playerH0 = screenW * 9 / 16;
+              final double playerW0 = screenW;
+              final double playerH0 = screenW * 9 / 16;
 
-            final double playerW1;
-            final double playerH1;
+              final double playerW1;
+              final double playerH1;
 
-            if (isLandscape) {
-              // In physical landscape mode, fit to screen width and height cleanly without rotation
-              playerW1 = math.min(screenW - 32.0, (screenH - handleHeight - topMargin - bottomPaddingValue - bottomPadding) * 16 / 9);
-              playerH1 = playerW1 * 9 / 16;
-            } else {
-              // In portrait mode, rotate to landscape on drag up
-              playerW1 = math.min(screenH * _maxExtent - (handleHeight + topMargin + bottomPaddingValue), screenW * 16 / 9);
-              playerH1 = playerW1 * 9 / 16;
-            }
+              if (isLandscape) {
+                // In physical landscape mode, fit to screen width and height cleanly without rotation
+                playerW1 = math.min(
+                  screenW - 32.0,
+                  (screenH -
+                          handleHeight -
+                          topMargin -
+                          bottomPaddingValue -
+                          bottomPadding) *
+                      16 /
+                      9,
+                );
+                playerH1 = playerW1 * 9 / 16;
+              } else {
+                // In portrait mode, rotate to landscape on drag up
+                playerW1 = math.min(
+                  screenH * _maxExtent -
+                      (handleHeight + topMargin + bottomPaddingValue),
+                  screenW * 16 / 9,
+                );
+                playerH1 = playerW1 * 9 / 16;
+              }
 
-            // Interpolate current layout width and height
-            final double currentLayoutW = playerW0 + t * (playerW1 - playerW0);
-            final double currentLayoutH = playerH0 + t * (playerH1 - playerH0);
+              // Interpolate current layout width and height
+              final double currentLayoutW =
+                  playerW0 + t * (playerW1 - playerW0);
+              final double currentLayoutH =
+                  playerH0 + t * (playerH1 - playerH0);
 
-            // Interpolate position relative to sheet top
-            final double currentCenterSheet;
-            if (isLandscape) {
-              // Centered below the handle in landscape mode
-              currentCenterSheet = handleHeight + topMargin + currentLayoutH / 2;
-            } else {
-              // Anchored position below the handle: keep top at handleHeight + topMargin in portrait mode
-              currentCenterSheet = handleHeight + topMargin + (playerH0 + t * (playerW1 - playerH0)) / 2;
-            }
+              // Interpolate position relative to sheet top
+              final double currentCenterSheet;
+              if (isLandscape) {
+                // Centered below the handle in landscape mode
+                currentCenterSheet =
+                    handleHeight + topMargin + currentLayoutH / 2;
+              } else {
+                // Anchored position below the handle: keep top at handleHeight + topMargin in portrait mode
+                currentCenterSheet =
+                    handleHeight +
+                    topMargin +
+                    (playerH0 + t * (playerW1 - playerH0)) / 2;
+              }
 
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(16.0),
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(16.0),
+                  ),
                 ),
-              ),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                clipBehavior: Clip.none, // Allow rotated player to render outside scroll viewport without clipping during transition
-                child: SizedBox(
-                  height: currentSheetHeight,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned.fill(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          child: const SizedBox.expand(),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  clipBehavior: Clip
+                      .none, // Allow rotated player to render outside scroll viewport without clipping during transition
+                  child: SizedBox(
+                    height: currentSheetHeight,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Positioned.fill(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            child: const SizedBox.expand(),
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.only(top: 24, bottom: 12),
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
                           child: Container(
-                            height: 4,
-                            width: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white30,
-                              borderRadius: BorderRadius.circular(2),
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.only(top: 24, bottom: 12),
+                            child: Container(
+                              height: 4,
+                              width: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white30,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        left: screenW / 2 - currentLayoutW / 2,
-                        top: currentCenterSheet - currentLayoutH / 2,
-                        width: currentLayoutW,
-                        height: currentLayoutH,
-                        child: Transform.rotate(
-                          angle: angle,
-                          alignment: Alignment.center,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: _hasError
-                                ? Container(
-                                    color: Colors.grey[900],
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.video_library_outlined,
-                                          color: Colors.white54,
-                                          size: 40,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        const Text(
-                                          'Video Unavailable in App',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
+                        Positioned(
+                          left: screenW / 2 - currentLayoutW / 2,
+                          top: currentCenterSheet - currentLayoutH / 2,
+                          width: currentLayoutW,
+                          height: currentLayoutH,
+                          child: Transform.rotate(
+                            angle: angle,
+                            alignment: Alignment.center,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: _hasError
+                                  ? Container(
+                                      color: Colors.grey[900],
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Icons.video_library_outlined,
+                                            color: Colors.white54,
+                                            size: 40,
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Embedding restricted by owner.',
-                                          style: TextStyle(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.6),
-                                            fontSize: 12,
+                                          const SizedBox(height: 8),
+                                          const Text(
+                                            'Video Unavailable in App',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          alignment: WrapAlignment.center,
-                                          children: [
-                                            if (widget.allTrailers.length > 1)
-                                              OutlinedButton.icon(
-                                                style: OutlinedButton.styleFrom(
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Embedding restricted by owner.',
+                                            style: TextStyle(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.6,
+                                              ),
+                                              fontSize: 12,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            alignment: WrapAlignment.center,
+                                            children: [
+                                              if (widget.allTrailers.length > 1)
+                                                OutlinedButton.icon(
+                                                  style: OutlinedButton.styleFrom(
+                                                    foregroundColor:
+                                                        Colors.white,
+                                                    side: const BorderSide(
+                                                      color: Colors.white38,
+                                                    ),
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            20,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  onPressed: _tryNextTrailer,
+                                                  icon: const Icon(
+                                                    Icons.skip_next_rounded,
+                                                    size: 16,
+                                                  ),
+                                                  label: const Text(
+                                                    'Try Next Trailer',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ElevatedButton.icon(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.red[700],
                                                   foregroundColor: Colors.white,
-                                                  side: const BorderSide(
-                                                      color: Colors.white38),
                                                   visualDensity:
                                                       VisualDensity.compact,
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                            20),
+                                                          20,
+                                                        ),
                                                   ),
                                                 ),
-                                                onPressed: _tryNextTrailer,
+                                                onPressed: _launchYouTubeApp,
                                                 icon: const Icon(
-                                                  Icons.skip_next_rounded,
+                                                  Icons.open_in_new,
                                                   size: 16,
                                                 ),
                                                 label: const Text(
-                                                  'Try Next Trailer',
+                                                  'Watch on YouTube',
                                                   style: TextStyle(
-                                                      fontSize: 12),
+                                                    fontSize: 12,
+                                                  ),
                                                 ),
                                               ),
-                                            ElevatedButton.icon(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    Colors.red[700],
-                                                foregroundColor: Colors.white,
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          20),
-                                                ),
-                                              ),
-                                              onPressed: _launchYouTubeApp,
-                                              icon: const Icon(
-                                                Icons.open_in_new,
-                                                size: 16,
-                                              ),
-                                              label: const Text(
-                                                'Watch on YouTube',
-                                                style: TextStyle(
-                                                    fontSize: 12),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : YoutubePlayer(
+                                      controller: _controller,
+                                      aspectRatio:
+                                          currentLayoutW / currentLayoutH,
                                     ),
-                                  )
-                                : YoutubePlayer(
-                                    controller: _controller,
-                                    aspectRatio:
-                                        currentLayoutW / currentLayoutH,
-                                  ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        );
-      },
-    ),
-  );
-}
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
 }

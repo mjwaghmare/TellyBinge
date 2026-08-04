@@ -5,7 +5,7 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
   final FirebaseFirestore _firestore;
 
   MovieWatchlistRepositoryImpl({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) {
@@ -38,19 +38,19 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
         .collection('movies')
         .doc(movieId.toString())
         .set({
-      'id': movieId,
-      'title': title,
-      'posterPath': posterPath ?? '',
-      'backdropPath': backdropPath ?? '',
-      'releaseDate': releaseDate ?? '',
-      'runtime': runtime,
-      'voteAverage': voteAverage,
-      'genres': genres ?? '',
-      'isWatched': isWatched,
-      'isFavorite': isFavorite,
-      'addedAt': DateTime.now().toIso8601String(),
-      if (isWatched) 'watchedAt': DateTime.now().toIso8601String(),
-    });
+          'id': movieId,
+          'title': title,
+          'posterPath': posterPath ?? '',
+          'backdropPath': backdropPath ?? '',
+          'releaseDate': releaseDate ?? '',
+          'runtime': runtime,
+          'voteAverage': voteAverage,
+          'genres': genres ?? '',
+          'isWatched': isWatched,
+          'isFavorite': isFavorite,
+          'addedAt': DateTime.now().toIso8601String(),
+          if (isWatched) 'watchedAt': DateTime.now().toIso8601String(),
+        });
   }
 
   @override
@@ -65,9 +65,9 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
         .collection('movies')
         .doc(movieId.toString())
         .update({
-      'isWatched': isWatched,
-      if (isWatched) 'watchedAt': DateTime.now().toIso8601String(),
-    });
+          'isWatched': isWatched,
+          if (isWatched) 'watchedAt': DateTime.now().toIso8601String(),
+        });
   }
 
   @override
@@ -81,16 +81,11 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
         .doc(uid)
         .collection('movies')
         .doc(movieId.toString())
-        .update({
-      'isFavorite': isFavorite,
-    });
+        .update({'isFavorite': isFavorite});
   }
 
   @override
-  Future<void> removeMovie({
-    required String uid,
-    required int movieId,
-  }) async {
+  Future<void> removeMovie({required String uid, required int movieId}) async {
     await _firestore
         .collection('users')
         .doc(uid)

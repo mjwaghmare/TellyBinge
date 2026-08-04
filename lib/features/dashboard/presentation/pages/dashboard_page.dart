@@ -21,6 +21,7 @@ import '../widgets/watched_episode_card.dart';
 import '../widgets/upcoming_episode_card.dart';
 import '../models/enriched_show.dart';
 import '../../../../core/services/widget_service.dart';
+
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onNavigateToExplore;
   const DashboardPage({super.key, this.onNavigateToExplore});
@@ -57,10 +58,18 @@ class DashboardPageState extends State<DashboardPage> {
 
   void scrollToTop() {
     if (watchlistScrollController.hasClients) {
-      watchlistScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      watchlistScrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
     if (upcomingScrollController.hasClients) {
-      upcomingScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      upcomingScrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
   }
 
@@ -82,11 +91,7 @@ class DashboardPageState extends State<DashboardPage> {
         body: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, authState) {
             if (authState is! Authenticated) {
-              return Center(
-                child: Text(
-                  'Please log in to see your watchlist',
-                ),
-              );
+              return Center(child: Text('Please log in to see your watchlist'));
             }
             final uid = authState.user.uid;
             _watchHistoryCubit.init(uid);
@@ -95,7 +100,7 @@ class DashboardPageState extends State<DashboardPage> {
                 if (state is TvShowWatchlistSuccess) {
                   // Trigger background enrichment — does NOT block the UI.
                   _enrichmentCubit.enrichShows(state.shows, uid);
-                  
+
                   // Keep Home Screen widget in sync with latest data.
                   // Use the shows already in hand — syncWatchlistToWidget(uid)
                   // would re-read the whole collection on every stream emission,
@@ -146,9 +151,7 @@ class DashboardPageState extends State<DashboardPage> {
                     ),
                   );
                 }
-                return Center(
-                  child: Text('No data'),
-                );
+                return Center(child: Text('No data'));
               },
             );
           },
@@ -194,7 +197,10 @@ class DashboardPageState extends State<DashboardPage> {
             children: [
               ListView(
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(top: 8.0, bottom: AppSpacing.bottomTabPadding),
+                padding: const EdgeInsets.only(
+                  top: 8.0,
+                  bottom: AppSpacing.bottomTabPadding,
+                ),
                 children: [
                   _buildCenteredHeaderRow('WATCH NEXT'),
                   ...dummyShows
@@ -234,7 +240,10 @@ class DashboardPageState extends State<DashboardPage> {
             children: [
               ListView(
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(top: 8.0, bottom: AppSpacing.bottomTabPadding),
+                padding: const EdgeInsets.only(
+                  top: 8.0,
+                  bottom: AppSpacing.bottomTabPadding,
+                ),
                 children: [
                   _buildCenteredHeaderRow('TOMORROW'),
                   ...dummyShows
@@ -292,10 +301,12 @@ class DashboardPageState extends State<DashboardPage> {
     }
 
     DateTime? getReleaseDate(EnrichedShow show) {
-      final dateStr = (show.rawShowData['firstAirDate'] ??
-              show.rawShowData['first_air_date'] ??
-              show.rawShowData['releaseDate'] ??
-              show.rawShowData['release_date']) as String?;
+      final dateStr =
+          (show.rawShowData['firstAirDate'] ??
+                  show.rawShowData['first_air_date'] ??
+                  show.rawShowData['releaseDate'] ??
+                  show.rawShowData['release_date'])
+              as String?;
       if (dateStr == null || dateStr.isEmpty) return null;
       return DateTime.tryParse(dateStr);
     }
@@ -344,10 +355,7 @@ class DashboardPageState extends State<DashboardPage> {
                     slivers: [
                       _buildStickyHeader('WATCHED HISTORY'),
                       SliverPadding(
-                        padding: const EdgeInsets.only(
-                          bottom: 24.0,
-                          top: 4.0,
-                        ),
+                        padding: const EdgeInsets.only(bottom: 24.0, top: 4.0),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate((
                             context,
@@ -523,9 +531,7 @@ class DashboardPageState extends State<DashboardPage> {
     void addGroup(String title, List<EnrichedShow> items) {
       if (items.isEmpty) return;
 
-      final List<Widget> groupSlivers = [
-        _buildStickyHeader(title),
-      ];
+      final List<Widget> groupSlivers = [_buildStickyHeader(title)];
 
       if (_isGridView) {
         groupSlivers.add(
@@ -561,8 +567,7 @@ class DashboardPageState extends State<DashboardPage> {
             }, childCount: items.length),
           ),
         );
-        groupSlivers
-            .add(const SliverToBoxAdapter(child: AppSpacing.gapH16));
+        groupSlivers.add(const SliverToBoxAdapter(child: AppSpacing.gapH16));
       }
 
       slivers.add(SliverMainAxisGroup(slivers: groupSlivers));
@@ -590,7 +595,10 @@ class DashboardPageState extends State<DashboardPage> {
           controller: upcomingScrollController,
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.only(top: 8.0, bottom: AppSpacing.bottomTabPadding),
+              padding: const EdgeInsets.only(
+                top: 8.0,
+                bottom: AppSpacing.bottomTabPadding,
+              ),
               sliver: SliverMainAxisGroup(slivers: slivers),
             ),
           ],
@@ -605,21 +613,31 @@ class DashboardPageState extends State<DashboardPage> {
   Widget _buildEmptyState(String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(32.0, 32.0, 32.0, AppSpacing.bottomTabPadding),
+        padding: const EdgeInsets.fromLTRB(
+          32.0,
+          32.0,
+          32.0,
+          AppSpacing.bottomTabPadding,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.tv_outlined,
               size: 64,
-              color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
+              color: context.adaptiveColor(
+                light: Colors.grey[500]!,
+                dark: AppColors.textTertiary,
+              ),
             ),
             AppSpacing.gapH16,
             Text(
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                color:
+                    Theme.of(context).textTheme.bodyMedium?.color ??
+                    AppColors.textSecondary,
                 fontSize: 14.0,
                 height: 1.4,
               ),
@@ -664,7 +682,10 @@ class DashboardPageState extends State<DashboardPage> {
           height: 30,
           width: 30,
           decoration: BoxDecoration(
-            color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+            color: context.adaptiveColor(
+              light: Colors.grey[200]!,
+              dark: AppColors.surfaceLight,
+            ),
             borderRadius: BorderRadius.circular(6.0),
           ),
           child: Icon(
@@ -685,16 +706,23 @@ class DashboardPageState extends State<DashboardPage> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 12.0),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14.0,
+                vertical: 6.0,
+              ),
               decoration: BoxDecoration(
-                color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+                color: context.adaptiveColor(
+                  light: Colors.grey[200]!,
+                  dark: AppColors.surfaceLight,
+                ),
                 borderRadius: BorderRadius.circular(20.0),
               ),
               child: Text(
                 title,
                 style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
                   fontSize: 10.0,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
@@ -714,13 +742,18 @@ class DashboardPageState extends State<DashboardPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
           decoration: BoxDecoration(
-            color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+            color: context.adaptiveColor(
+              light: Colors.grey[200]!,
+              dark: AppColors.surfaceLight,
+            ),
             borderRadius: BorderRadius.circular(20.0),
           ),
           child: Text(
             title,
             style: TextStyle(
-              color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
+              color: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
               fontSize: 10.0,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.0,
@@ -760,9 +793,7 @@ class DashboardPageState extends State<DashboardPage> {
                 mediaId: showId,
                 mediaType: 'tv',
                 title: title,
-                initialTabIndex: isUpcoming
-                    ? 0
-                    : 1,
+                initialTabIndex: isUpcoming ? 0 : 1,
               ),
             ),
           ),
@@ -783,7 +814,10 @@ class DashboardPageState extends State<DashboardPage> {
                     imageUrl: 'https://image.tmdb.org/t/p/w500$posterPath',
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
-                      color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+                      color: context.adaptiveColor(
+                        light: Colors.grey[200]!,
+                        dark: AppColors.surfaceLight,
+                      ),
                       child: Center(
                         child: SizedBox(
                           width: 20,
@@ -798,18 +832,30 @@ class DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+                      color: context.adaptiveColor(
+                        light: Colors.grey[200]!,
+                        dark: AppColors.surfaceLight,
+                      ),
                       child: Icon(
                         Icons.tv_outlined,
-                        color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
+                        color: context.adaptiveColor(
+                          light: Colors.grey[500]!,
+                          dark: AppColors.textTertiary,
+                        ),
                       ),
                     ),
                   )
                 : Container(
-                    color: context.adaptiveColor(light: Colors.grey[200]!, dark: AppColors.surfaceLight),
+                    color: context.adaptiveColor(
+                      light: Colors.grey[200]!,
+                      dark: AppColors.surfaceLight,
+                    ),
                     child: Icon(
                       Icons.tv_outlined,
-                      color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
+                      color: context.adaptiveColor(
+                        light: Colors.grey[500]!,
+                        dark: AppColors.textTertiary,
+                      ),
                     ),
                   ),
             if (showProgress && totalEpisodes > 0) ...[

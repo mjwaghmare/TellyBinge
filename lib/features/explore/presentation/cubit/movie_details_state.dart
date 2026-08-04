@@ -47,7 +47,8 @@ class MovieDetailsSuccess extends MovieDetailsState {
       movieCredits: movieCredits ?? this.movieCredits,
       similarMovies: similarMovies ?? this.similarMovies,
       collectionParts: collectionParts ?? this.collectionParts,
-      collectionSectionTitle: collectionSectionTitle ?? this.collectionSectionTitle,
+      collectionSectionTitle:
+          collectionSectionTitle ?? this.collectionSectionTitle,
       isCastLoading: isCastLoading ?? this.isCastLoading,
       isCollectionLoading: isCollectionLoading ?? this.isCollectionLoading,
       isSimilarLoading: isSimilarLoading ?? this.isSimilarLoading,
@@ -56,15 +57,15 @@ class MovieDetailsSuccess extends MovieDetailsState {
 
   @override
   List<Object?> get props => [
-        movieDetails,
-        movieCredits,
-        similarMovies,
-        collectionParts,
-        collectionSectionTitle,
-        isCastLoading,
-        isCollectionLoading,
-        isSimilarLoading,
-      ];
+    movieDetails,
+    movieCredits,
+    similarMovies,
+    collectionParts,
+    collectionSectionTitle,
+    isCastLoading,
+    isCollectionLoading,
+    isSimilarLoading,
+  ];
 }
 
 class MovieDetailsError extends MovieDetailsState {

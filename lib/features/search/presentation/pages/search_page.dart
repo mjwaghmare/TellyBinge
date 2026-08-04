@@ -169,7 +169,8 @@ class _SearchPageState extends State<SearchPage>
           final currentState = context.read<SearchCubit>().state;
           bool shouldSearch = true;
           if (currentState is SearchResultsSuccess) {
-            if (currentState.isTv == isTv && currentState.query == trimmedQuery) {
+            if (currentState.isTv == isTv &&
+                currentState.query == trimmedQuery) {
               shouldSearch = false;
             }
           }
@@ -246,11 +247,14 @@ class _SearchPageState extends State<SearchPage>
       } else if (_selectedSortBy == 'upcoming' && !hasActiveExtra) {
         filteredShows = await tmdbClient.getUpcomingTvShows();
       } else {
-        final effectiveSortBy = (_selectedSortBy == 'trending' || _selectedSortBy == 'popularity.desc')
+        final effectiveSortBy =
+            (_selectedSortBy == 'trending' ||
+                _selectedSortBy == 'popularity.desc')
             ? 'popularity.desc'
-            : (_selectedSortBy == 'airing_today' || _selectedSortBy == 'upcoming'
-                ? 'first_air_date.desc'
-                : _selectedSortBy);
+            : (_selectedSortBy == 'airing_today' ||
+                      _selectedSortBy == 'upcoming'
+                  ? 'first_air_date.desc'
+                  : _selectedSortBy);
         filteredShows = await tmdbClient.discoverTvShowsWithFilters(
           sortBy: effectiveSortBy,
           language: _tvLanguage,
@@ -281,7 +285,8 @@ class _SearchPageState extends State<SearchPage>
       _moviesScrollController.jumpTo(0);
     }
 
-    final hasActiveMovieExtra = _movieLanguage != null || _selectedMovieYear != null;
+    final hasActiveMovieExtra =
+        _movieLanguage != null || _selectedMovieYear != null;
     final hasActive = _hasActiveMovieFilters || hasActiveMovieExtra;
 
     if (!hasActive) {
@@ -305,11 +310,14 @@ class _SearchPageState extends State<SearchPage>
       } else if (_selectedMovieSortBy == 'upcoming' && !hasActiveMovieExtra) {
         filteredMovies = await tmdbClient.getUpcomingMovies();
       } else {
-        final effectiveSortBy = (_selectedMovieSortBy == 'trending' || _selectedMovieSortBy == 'popularity.desc')
+        final effectiveSortBy =
+            (_selectedMovieSortBy == 'trending' ||
+                _selectedMovieSortBy == 'popularity.desc')
             ? 'popularity.desc'
-            : (_selectedMovieSortBy == 'now_playing' || _selectedMovieSortBy == 'upcoming'
-                ? 'primary_release_date.desc'
-                : _selectedMovieSortBy);
+            : (_selectedMovieSortBy == 'now_playing' ||
+                      _selectedMovieSortBy == 'upcoming'
+                  ? 'primary_release_date.desc'
+                  : _selectedMovieSortBy);
         filteredMovies = await tmdbClient.discoverMoviesWithFilters(
           sortBy: effectiveSortBy,
           language: _movieLanguage,
@@ -385,8 +393,9 @@ class _SearchPageState extends State<SearchPage>
     final currentState = context.read<SearchCubit>().state;
     if (currentState is SearchTrendingSuccess) {
       if (currentState.isLoadingMore) return;
-      final hasReachedMax =
-          isTv ? currentState.tvHasReachedMax : currentState.moviesHasReachedMax;
+      final hasReachedMax = isTv
+          ? currentState.tvHasReachedMax
+          : currentState.moviesHasReachedMax;
       if (hasReachedMax) return;
     } else if (currentState is SearchResultsSuccess) {
       if (currentState.isLoadingMore || currentState.hasReachedMax) return;
@@ -497,7 +506,10 @@ class _SearchPageState extends State<SearchPage>
                 hintText: isTv ? 'Search shows...' : 'Search movies...',
                 prefixIcon: Icon(
                   Icons.search,
-                  color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
+                  color: context.adaptiveColor(
+                    light: Colors.grey[500]!,
+                    dark: AppColors.textTertiary,
+                  ),
                 ),
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: controller,
@@ -509,7 +521,11 @@ class _SearchPageState extends State<SearchPage>
                           IconButton(
                             icon: Icon(
                               Icons.clear,
-                              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey[500]
+                                  : AppColors.textTertiary,
                             ),
                             onPressed: () {
                               controller.clear();
@@ -577,7 +593,11 @@ class _SearchPageState extends State<SearchPage>
     String currentLanguage = (isTv ? _tvLanguage : _movieLanguage) ?? 'all';
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : AppColors.surfaceDarkAlt),
+      backgroundColor:
+          Theme.of(context).bottomSheetTheme.backgroundColor ??
+          (Theme.of(context).brightness == Brightness.light
+              ? Colors.white
+              : AppColors.surfaceDarkAlt),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -590,7 +610,9 @@ class _SearchPageState extends State<SearchPage>
               children: [
                 const SizedBox(height: AppSpacing.md),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
                   child: Text(
                     'Language',
                     style: TextStyle(
@@ -623,16 +645,28 @@ class _SearchPageState extends State<SearchPage>
                             _applyLanguage(isTv, 'all', searchText);
                           },
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54),
+                            side: BorderSide(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.black54
+                                  : Colors.white54,
+                            ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppSpacing.xl),
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.xl,
+                              ),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           child: Text(
                             'CANCEL',
                             style: TextStyle(
-                              color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.black87
+                                  : Colors.white70,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
                             ),
@@ -649,7 +683,9 @@ class _SearchPageState extends State<SearchPage>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppSpacing.xl),
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.xl,
+                              ),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -709,7 +745,12 @@ class _SearchPageState extends State<SearchPage>
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white38, width: 1.5),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? Colors.black38
+                      : Colors.white38,
+                  width: 1.5,
+                ),
               ),
             ),
       onTap: () => onChanged(value),
@@ -1051,13 +1092,19 @@ class _SearchPageState extends State<SearchPage>
           child: Text(
             'No results found.\nTry searching for something else.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary, fontSize: 16.0),
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Colors.grey[500]
+                  : AppColors.textTertiary,
+              fontSize: 16.0,
+            ),
           ),
         ),
       );
     }
 
-    final bool hasFooter = isLoadingMore ||
+    final bool hasFooter =
+        isLoadingMore ||
         (hasLoadMoreError && onRetry != null) ||
         (hasReachedMax && items.isNotEmpty);
 
@@ -1096,8 +1143,18 @@ class _SearchPageState extends State<SearchPage>
                 try {
                   final dt = DateTime.parse(dateStr);
                   const months = [
-                    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-                    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
+                    'JAN',
+                    'FEB',
+                    'MAR',
+                    'APR',
+                    'MAY',
+                    'JUN',
+                    'JUL',
+                    'AUG',
+                    'SEP',
+                    'OCT',
+                    'NOV',
+                    'DEC',
                   ];
                   formattedDate = '${months[dt.month - 1]}, ${dt.year}';
                 } catch (_) {
@@ -1120,28 +1177,38 @@ class _SearchPageState extends State<SearchPage>
                           fit: StackFit.expand,
                           children: [
                             Container(
-                              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey[200]
+                                  : AppColors.surfaceLight,
                               width: double.infinity,
                               child: posterPath != null && posterPath.isNotEmpty
                                   ? CachedNetworkImage(
                                       imageUrl: _getImageUrl(posterPath),
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) =>
-                                          Center(
-                                            child: SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator.adaptive(
+                                      placeholder: (context, url) => Center(
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child:
+                                              CircularProgressIndicator.adaptive(
                                                 strokeWidth: 2,
                                               ),
-                                            ),
-                                          ),
+                                        ),
+                                      ),
                                       errorWidget: (context, url, error) =>
                                           Skeleton.ignore(
                                             child: Icon(
                                               Icons.movie_creation_outlined,
                                               size: 32,
-                                              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
+                                                      Brightness.light
+                                                  ? Colors.grey[500]
+                                                  : AppColors.textTertiary,
                                             ),
                                           ),
                                     )
@@ -1149,7 +1216,11 @@ class _SearchPageState extends State<SearchPage>
                                       child: Icon(
                                         Icons.movie_creation_outlined,
                                         size: 32,
-                                        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.grey[500]
+                                            : AppColors.textTertiary,
                                       ),
                                     ),
                             ),
@@ -1187,7 +1258,11 @@ class _SearchPageState extends State<SearchPage>
                             voteAverage.toStringAsFixed(1),
                             style: TextStyle(
                               fontSize: 10.0,
-                              color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color ??
+                                  AppColors.textSecondary,
                             ),
                           ),
                           if (formattedDate.isNotEmpty) ...[
@@ -1196,7 +1271,11 @@ class _SearchPageState extends State<SearchPage>
                               '•',
                               style: TextStyle(
                                 fontSize: 10.0,
-                                color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.color ??
+                                    AppColors.textSecondary,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -1207,7 +1286,11 @@ class _SearchPageState extends State<SearchPage>
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 10.0,
-                                  color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color ??
+                                      AppColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -1220,7 +1303,11 @@ class _SearchPageState extends State<SearchPage>
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 10.0,
-                                color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.color ??
+                                    AppColors.textSecondary,
                               ),
                             ),
                           ),
@@ -1235,19 +1322,27 @@ class _SearchPageState extends State<SearchPage>
         ),
         if (isLoadingMore)
           const Padding(
-            padding: EdgeInsets.only(top: 16.0, bottom: AppSpacing.bottomTabPadding),
+            padding: EdgeInsets.only(
+              top: 16.0,
+              bottom: AppSpacing.bottomTabPadding,
+            ),
             child: CircularProgressIndicator.adaptive(),
           ),
         if (hasLoadMoreError && onRetry != null)
           Padding(
-            padding: const EdgeInsets.only(top: 16.0, bottom: AppSpacing.bottomTabPadding),
+            padding: const EdgeInsets.only(
+              top: 16.0,
+              bottom: AppSpacing.bottomTabPadding,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Failed to load more data.',
                   style: TextStyle(
-                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.grey[500]
+                        : AppColors.textTertiary,
                     fontSize: 14.0,
                   ),
                 ),
@@ -1274,13 +1369,18 @@ class _SearchPageState extends State<SearchPage>
           ),
         if (hasReachedMax && items.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 16.0, bottom: AppSpacing.bottomTabPadding),
+            padding: const EdgeInsets.only(
+              top: 16.0,
+              bottom: AppSpacing.bottomTabPadding,
+            ),
             child: Text(
               defaultType == 'tv'
                   ? 'No more shows to load'
                   : 'No more movies to load',
               style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                color: Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey[500]
+                    : AppColors.textTertiary,
                 fontSize: 14.0,
                 fontWeight: FontWeight.w500,
               ),
@@ -1413,10 +1513,7 @@ class _FilterBottomSheet extends StatefulWidget {
   final bool isTv;
   final String selectedSortBy;
   final String? selectedYear;
-  final Function(
-    String sortBy,
-    String? year,
-  ) onApply;
+  final Function(String sortBy, String? year) onApply;
 
   const _FilterBottomSheet({
     required this.isTv,
@@ -1523,7 +1620,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 8.0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        8.0,
+      ),
       child: Text(
         title,
         style: TextStyle(
@@ -1612,10 +1714,11 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     children: [
                       for (final tick in decades)
                         Positioned(
-                          left: (((tick - _minYear) / span) *
-                                  constraints.maxWidth -
-                              14)
-                              .clamp(0.0, constraints.maxWidth - 28),
+                          left:
+                              (((tick - _minYear) / span) *
+                                          constraints.maxWidth -
+                                      14)
+                                  .clamp(0.0, constraints.maxWidth - 28),
                           child: SizedBox(
                             width: 28,
                             child: Text(
@@ -1640,14 +1743,15 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasActiveFilter = _currentSortBy != 'trending' || _currentYear != null;
+    final hasActiveFilter =
+        _currentSortBy != 'trending' || _currentYear != null;
 
     return Material(
-      color: Theme.of(context).bottomSheetTheme.backgroundColor ??
+      color:
+          Theme.of(context).bottomSheetTheme.backgroundColor ??
           (isDark ? AppColors.surface : Colors.white),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: SafeArea(
@@ -1741,8 +1845,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           color: isSelected
                               ? AppColors.primary
                               : (isDark
-                                  ? AppColors.surfaceLight
-                                  : Colors.grey.shade200),
+                                    ? AppColors.surfaceLight
+                                    : Colors.grey.shade200),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: isSelected
@@ -1758,7 +1862,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                 ? Colors.black
                                 : (isDark ? Colors.white : Colors.black87),
                             fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                           ),
                         ),
                       ),
@@ -1780,10 +1886,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   height: 48,
                   child: ElevatedButton(
                     onPressed: () {
-                      widget.onApply(
-                        _currentSortBy,
-                        _currentYear,
-                      );
+                      widget.onApply(_currentSortBy, _currentYear);
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(

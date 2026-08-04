@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 class TmdbCacheManager {
   TmdbCacheManager._();
-  
+
   static final TmdbCacheManager instance = TmdbCacheManager._();
 
   static const int _maxMemoryCacheSize = 50;
@@ -61,10 +61,7 @@ class TmdbCacheManager {
 
     try {
       final file = await _getCacheFile(key);
-      final cacheData = {
-        'timestamp': timestamp,
-        'data': data,
-      };
+      final cacheData = {'timestamp': timestamp, 'data': data};
       final encoded = await compute(jsonEncode, cacheData);
       await file.writeAsString(encoded);
     } catch (e) {
@@ -73,10 +70,16 @@ class TmdbCacheManager {
   }
 
   /// Read data from cache file, returns null if missing or expired
-  Future<Map<String, dynamic>?> readCache(String key, {Duration maxAge = const Duration(days: 1)}) async {
+  Future<Map<String, dynamic>?> readCache(
+    String key, {
+    Duration maxAge = const Duration(days: 1),
+  }) async {
     // 1. Check in-memory cache first
-    if (_memoryCache.containsKey(key) && _memoryCacheTimestamps.containsKey(key)) {
-      final memAge = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(_memoryCacheTimestamps[key]!));
+    if (_memoryCache.containsKey(key) &&
+        _memoryCacheTimestamps.containsKey(key)) {
+      final memAge = DateTime.now().difference(
+        DateTime.fromMillisecondsSinceEpoch(_memoryCacheTimestamps[key]!),
+      );
       if (memAge < maxAge) {
         return _memoryCache[key];
       } else {
@@ -91,10 +94,13 @@ class TmdbCacheManager {
       if (!await file.exists()) return null;
 
       final contents = await file.readAsString();
-      final cacheData = await compute(jsonDecode, contents) as Map<String, dynamic>;
-      
+      final cacheData =
+          await compute(jsonDecode, contents) as Map<String, dynamic>;
+
       final timestamp = cacheData['timestamp'] as int? ?? 0;
-      final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(timestamp));
+      final age = DateTime.now().difference(
+        DateTime.fromMillisecondsSinceEpoch(timestamp),
+      );
 
       if (age < maxAge) {
         final data = cacheData['data'] as Map<String, dynamic>;
@@ -112,7 +118,9 @@ class TmdbCacheManager {
         final file = await _getCacheFile(key);
         if (await file.exists()) {
           await file.delete();
-          debugPrint('Deleted corrupted or invalid TMDb cache file for key: $key');
+          debugPrint(
+            'Deleted corrupted or invalid TMDb cache file for key: $key',
+          );
         }
       } catch (_) {}
       debugPrint('Error reading TMDb cache for key $key: $e');

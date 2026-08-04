@@ -74,16 +74,14 @@ class NotificationService {
   static const int _testNotificationId = 1 << 30;
 
   int _notificationId(NotificationMedia media, int mediaId, int slot) =>
-      mediaId * _slotsPerTitle +
-      (media == NotificationMedia.tv ? 0 : 2) +
-      slot;
+      mediaId * _slotsPerTitle + (media == NotificationMedia.tv ? 0 : 2) + slot;
 
   /// Matches the scheme the home-screen widget already uses, so notification
   /// taps route through the same handler.
   String _deepLinkFor(NotificationMedia media, int mediaId) =>
       media == NotificationMedia.tv
-          ? 'tvtimeapp://show/$mediaId'
-          : 'tvtimeapp://movie/$mediaId';
+      ? 'tvtimeapp://show/$mediaId'
+      : 'tvtimeapp://movie/$mediaId';
 
   Future<void> initialize() async {
     tz.initializeTimeZones();
@@ -100,14 +98,16 @@ class NotificationService {
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-            requestAlertPermission: false,
-            requestBadgePermission: false,
-            requestSoundPermission: false);
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        );
 
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     await _notificationsPlugin.initialize(
       settings: initializationSettings,
@@ -132,7 +132,8 @@ class NotificationService {
   /// A cold launch has no live callback to fire, so the launch details have to
   /// be read once the app is up and routed manually.
   Future<String?> takeLaunchPayload() async {
-    final details = await _notificationsPlugin.getNotificationAppLaunchDetails();
+    final details = await _notificationsPlugin
+        .getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp != true) return null;
     final payload = details?.notificationResponse?.payload;
     return (payload == null || payload.isEmpty) ? null : payload;
@@ -143,16 +144,14 @@ class NotificationService {
   Future<bool> requestPermissions() async {
     final iosGranted = await _notificationsPlugin
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+          IOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
 
     final androidGranted = await _notificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
 
     // Exactly one implementation resolves per platform; the other is null.
@@ -165,15 +164,19 @@ class NotificationService {
   /// settings long after enabling them here, and nothing in the app would
   /// otherwise notice.
   Future<bool> hasSystemPermission() async {
-    final ios = _notificationsPlugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final ios = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     if (ios != null) {
       final options = await ios.checkPermissions();
       return options?.isEnabled ?? false;
     }
 
-    final android = _notificationsPlugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
       return await android.areNotificationsEnabled() ?? false;
     }
@@ -183,11 +186,18 @@ class NotificationService {
 
   Future<void> sendTestNotification() async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails('test_channel', 'Test Notifications',
-            importance: Importance.max, priority: Priority.max);
+        AndroidNotificationDetails(
+          'test_channel',
+          'Test Notifications',
+          importance: Importance.max,
+          priority: Priority.max,
+        );
     const DarwinNotificationDetails darwinPlatformChannelSpecifics =
         DarwinNotificationDetails(
-            presentAlert: true, presentBadge: true, presentSound: true);
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: darwinPlatformChannelSpecifics,
@@ -214,11 +224,18 @@ class NotificationService {
     }
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails('release_channel', 'Release Notifications',
-            importance: Importance.max, priority: Priority.max);
+        AndroidNotificationDetails(
+          'release_channel',
+          'Release Notifications',
+          importance: Importance.max,
+          priority: Priority.max,
+        );
     const DarwinNotificationDetails darwinPlatformChannelSpecifics =
         DarwinNotificationDetails(
-            presentAlert: true, presentBadge: true, presentSound: true);
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: darwinPlatformChannelSpecifics,
@@ -243,10 +260,12 @@ class NotificationService {
   /// cleared because the platform no longer matches what reconcile last
   /// scheduled, and without that the next run could no-op on a stale match.
   Future<void> cancelNotification(NotificationMedia media, int id) async {
-    await _notificationsPlugin
-        .cancel(id: _notificationId(media, id, _slotDayBefore));
-    await _notificationsPlugin
-        .cancel(id: _notificationId(media, id, _slotHourBefore));
+    await _notificationsPlugin.cancel(
+      id: _notificationId(media, id, _slotDayBefore),
+    );
+    await _notificationsPlugin.cancel(
+      id: _notificationId(media, id, _slotHourBefore),
+    );
     _lastScheduledSignature = null;
   }
 
@@ -371,7 +390,8 @@ class NotificationService {
     _reconcileTimer = null;
 
     final prefs = await SharedPreferences.getInstance();
-    final notificationsEnabled = prefs.getBool('notifications_enabled') ?? false;
+    final notificationsEnabled =
+        prefs.getBool('notifications_enabled') ?? false;
 
     // The in-app preference is necessary but not sufficient — a user who
     // revoked notifications in system settings keeps the toggle showing "on",
@@ -402,30 +422,41 @@ class NotificationService {
         // no day-before alert — the hour-before one, if enabled, still fires.
         final dayBefore = releaseDate.subtract(const Duration(days: 1));
         if (dayBefore.isAfter(now)) {
-          alerts.add(_ScheduledAlert(
-            id: _notificationId(pending.media, pending.mediaId, _slotDayBefore),
-            title: '${pending.title} (Tomorrow)',
-            body: pending.body
-                .replaceAll('airing soon', 'airing tomorrow')
-                .replaceAll('releasing soon', 'releasing tomorrow'),
-            when: dayBefore,
-            payload: _deepLinkFor(pending.media, pending.mediaId),
-          ));
+          alerts.add(
+            _ScheduledAlert(
+              id: _notificationId(
+                pending.media,
+                pending.mediaId,
+                _slotDayBefore,
+              ),
+              title: '${pending.title} (Tomorrow)',
+              body: pending.body
+                  .replaceAll('airing soon', 'airing tomorrow')
+                  .replaceAll('releasing soon', 'releasing tomorrow'),
+              when: dayBefore,
+              payload: _deepLinkFor(pending.media, pending.mediaId),
+            ),
+          );
         }
 
         if (notify1HourBefore) {
           final hourBefore = releaseDate.subtract(const Duration(hours: 1));
           if (hourBefore.isAfter(now)) {
-            alerts.add(_ScheduledAlert(
-              id: _notificationId(
-                  pending.media, pending.mediaId, _slotHourBefore),
-              title: '${pending.title} (In 1 Hour)',
-              body: pending.body
-                  .replaceAll('airing soon', 'airing in 1 hour')
-                  .replaceAll('releasing soon', 'releasing in 1 hour'),
-              when: hourBefore,
-              payload: _deepLinkFor(pending.media, pending.mediaId),
-            ));
+            alerts.add(
+              _ScheduledAlert(
+                id: _notificationId(
+                  pending.media,
+                  pending.mediaId,
+                  _slotHourBefore,
+                ),
+                title: '${pending.title} (In 1 Hour)',
+                body: pending.body
+                    .replaceAll('airing soon', 'airing in 1 hour')
+                    .replaceAll('releasing soon', 'releasing in 1 hour'),
+                when: hourBefore,
+                payload: _deepLinkFor(pending.media, pending.mediaId),
+              ),
+            );
           }
         }
       }

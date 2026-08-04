@@ -120,7 +120,8 @@ class SearchCubit extends Cubit<SearchState> {
             (isTvTab ? currentState.tvPage : currentState.moviesPage) + 1;
 
         final bool tvNoFilters = _tvLanguage == null && _tvYear == null;
-        final bool movieNoFilters = _movieLanguage == null && _movieYear == null;
+        final bool movieNoFilters =
+            _movieLanguage == null && _movieYear == null;
 
         List<dynamic> newResults = [];
 
@@ -132,11 +133,12 @@ class SearchCubit extends Cubit<SearchState> {
           } else if (_tvSortBy == 'upcoming' && tvNoFilters) {
             newResults = await tmdbClient.getUpcomingTvShows(page: nextPage);
           } else {
-            final effectiveSortBy = (_tvSortBy == 'trending' || _tvSortBy == 'popularity.desc')
+            final effectiveSortBy =
+                (_tvSortBy == 'trending' || _tvSortBy == 'popularity.desc')
                 ? 'popularity.desc'
                 : (_tvSortBy == 'airing_today' || _tvSortBy == 'upcoming'
-                    ? 'first_air_date.desc'
-                    : _tvSortBy);
+                      ? 'first_air_date.desc'
+                      : _tvSortBy);
             newResults = await tmdbClient.discoverTvShowsWithFilters(
               page: nextPage,
               sortBy: effectiveSortBy,
@@ -152,11 +154,13 @@ class SearchCubit extends Cubit<SearchState> {
           } else if (_movieSortBy == 'upcoming' && movieNoFilters) {
             newResults = await tmdbClient.getUpcomingMovies(page: nextPage);
           } else {
-            final effectiveSortBy = (_movieSortBy == 'trending' || _movieSortBy == 'popularity.desc')
+            final effectiveSortBy =
+                (_movieSortBy == 'trending' ||
+                    _movieSortBy == 'popularity.desc')
                 ? 'popularity.desc'
                 : (_movieSortBy == 'now_playing' || _movieSortBy == 'upcoming'
-                    ? 'primary_release_date.desc'
-                    : _movieSortBy);
+                      ? 'primary_release_date.desc'
+                      : _movieSortBy);
             newResults = await tmdbClient.discoverMoviesWithFilters(
               page: nextPage,
               sortBy: effectiveSortBy,
@@ -233,12 +237,7 @@ class SearchCubit extends Cubit<SearchState> {
         return;
       }
       final isRetry = currentState.hasLoadMoreError;
-      emit(
-        currentState.copyWith(
-          isLoadingMore: true,
-          hasLoadMoreError: false,
-        ),
-      );
+      emit(currentState.copyWith(isLoadingMore: true, hasLoadMoreError: false));
 
       try {
         final nextPage = currentState.page + 1;
@@ -248,9 +247,13 @@ class SearchCubit extends Cubit<SearchState> {
 
         var filteredNewResults = newResults;
         if (currentState.isTv && _tvLanguage != null) {
-          filteredNewResults = newResults.where((item) => item['original_language'] == _tvLanguage).toList();
+          filteredNewResults = newResults
+              .where((item) => item['original_language'] == _tvLanguage)
+              .toList();
         } else if (!currentState.isTv && _movieLanguage != null) {
-          filteredNewResults = newResults.where((item) => item['original_language'] == _movieLanguage).toList();
+          filteredNewResults = newResults
+              .where((item) => item['original_language'] == _movieLanguage)
+              .toList();
         }
 
         if (filteredNewResults.isEmpty) {
@@ -331,9 +334,13 @@ class SearchCubit extends Cubit<SearchState> {
 
       var filteredResults = results;
       if (isTv && _tvLanguage != null) {
-        filteredResults = results.where((item) => item['original_language'] == _tvLanguage).toList();
+        filteredResults = results
+            .where((item) => item['original_language'] == _tvLanguage)
+            .toList();
       } else if (!isTv && _movieLanguage != null) {
-        filteredResults = results.where((item) => item['original_language'] == _movieLanguage).toList();
+        filteredResults = results
+            .where((item) => item['original_language'] == _movieLanguage)
+            .toList();
       }
 
       emit(

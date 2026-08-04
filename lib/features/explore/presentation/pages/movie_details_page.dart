@@ -20,13 +20,21 @@ class MovieDetailsPage extends StatelessWidget {
   final int movieId;
   final bool fromRecommendation;
 
-  const MovieDetailsPage({super.key, required this.movieId, this.fromRecommendation = false});
+  const MovieDetailsPage({
+    super.key,
+    required this.movieId,
+    this.fromRecommendation = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MovieDetailsCubit>(
-      create: (context) => MovieDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-      child: MovieDetailsView(movieId: movieId, fromRecommendation: fromRecommendation),
+      create: (context) =>
+          MovieDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+      child: MovieDetailsView(
+        movieId: movieId,
+        fromRecommendation: fromRecommendation,
+      ),
     );
   }
 }
@@ -35,7 +43,11 @@ class MovieDetailsView extends StatefulWidget {
   final int movieId;
   final bool fromRecommendation;
 
-  const MovieDetailsView({super.key, required this.movieId, this.fromRecommendation = false});
+  const MovieDetailsView({
+    super.key,
+    required this.movieId,
+    this.fromRecommendation = false,
+  });
 
   @override
   State<MovieDetailsView> createState() => _MovieDetailsViewState();
@@ -66,7 +78,14 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
   }
 
   List<dynamic> _dummyCastList() {
-    return List.generate(4, (index) => {'name': 'Actor Name', 'character': 'Character Name', 'profile_path': null});
+    return List.generate(
+      4,
+      (index) => {
+        'name': 'Actor Name',
+        'character': 'Character Name',
+        'profile_path': null,
+      },
+    );
   }
 
   List<dynamic> _dummyCollectionParts() {
@@ -106,7 +125,20 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     if (dateStr == null || dateStr.isEmpty) return 'TBA';
     try {
       final date = DateTime.parse(dateStr);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       return '${date.day} ${months[date.month - 1]} ${date.year}';
     } catch (_) {
       return dateStr;
@@ -165,7 +197,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             onPressed: () {
               HapticFeedback.mediumImpact();
               Navigator.pop(context);
-              context.read<MovieWatchlistCubit>().removeMovie(uid: uid, movieId: widget.movieId);
+              context.read<MovieWatchlistCubit>().removeMovie(
+                uid: uid,
+                movieId: widget.movieId,
+              );
             },
             child: const Text('Remove movie'),
           ),
@@ -184,19 +219,27 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
   Widget build(BuildContext context) {
     return BlocBuilder<MovieDetailsCubit, MovieDetailsState>(
       builder: (context, state) {
-        final bool isLoading = state is MovieDetailsInitial || state is MovieDetailsLoading;
-        final bool isCastLoading = state is MovieDetailsSuccess && state.isCastLoading;
-        final bool isCollectionLoading = state is MovieDetailsSuccess && state.isCollectionLoading;
-        final bool isSimilarLoading = state is MovieDetailsSuccess && state.isSimilarLoading;
+        final bool isLoading =
+            state is MovieDetailsInitial || state is MovieDetailsLoading;
+        final bool isCastLoading =
+            state is MovieDetailsSuccess && state.isCastLoading;
+        final bool isCollectionLoading =
+            state is MovieDetailsSuccess && state.isCollectionLoading;
+        final bool isSimilarLoading =
+            state is MovieDetailsSuccess && state.isSimilarLoading;
 
         final String? error = state is MovieDetailsError ? state.message : null;
 
         if (error != null && state is! MovieDetailsSuccess) {
-          String userFriendlyError = 'An unexpected error occurred. Please try again.';
+          String userFriendlyError =
+              'An unexpected error occurred. Please try again.';
           if (error.contains('404')) {
-            userFriendlyError = 'This movie could not be found or may have been removed.';
-          } else if (error.contains('SocketException') || error.contains('DioException')) {
-            userFriendlyError = 'Please check your internet connection and try again.';
+            userFriendlyError =
+                'This movie could not be found or may have been removed.';
+          } else if (error.contains('SocketException') ||
+              error.contains('DioException')) {
+            userFriendlyError =
+                'Please check your internet connection and try again.';
           }
 
           return Scaffold(
@@ -204,7 +247,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             appBar: AppBar(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, size: 22, color: Colors.white),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  size: 22,
+                  color: Colors.white,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -214,7 +261,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset('assets/images/error_devices.png', width: 140, height: 140, fit: BoxFit.contain),
+                    Image.asset(
+                      'assets/images/error_devices.png',
+                      width: 140,
+                      height: 140,
+                      fit: BoxFit.contain,
+                    ),
                     const SizedBox(height: 32),
                     const Text(
                       'Oops! Something went wrong',
@@ -229,21 +281,38 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                     AppSpacing.gapH12,
                     Text(
                       userFriendlyError,
-                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 15, height: 1.4),
+                      style: const TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 15,
+                        height: 1.4,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: () {
-                        context.read<MovieDetailsCubit>().loadMovieDetails(widget.movieId);
+                        context.read<MovieDetailsCubit>().loadMovieDetails(
+                          widget.movieId,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.xl)),
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.sm),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppSpacing.xl),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xxl,
+                          vertical: AppSpacing.sm,
+                        ),
                       ),
-                      child: const Text('RETRY', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                      child: const Text(
+                        'RETRY',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -252,20 +321,36 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
           );
         }
 
-        final movieData = state is MovieDetailsSuccess ? state.movieDetails : null;
+        final movieData = state is MovieDetailsSuccess
+            ? state.movieDetails
+            : null;
         final castData = state is MovieDetailsSuccess
-            ? (state.movieCredits['cast'] as List<dynamic>? ?? []).take(10).toList()
+            ? (state.movieCredits['cast'] as List<dynamic>? ?? [])
+                  .take(10)
+                  .toList()
             : [];
-        final collectionParts = state is MovieDetailsSuccess ? state.collectionParts : [];
-        final collectionSectionTitle = state is MovieDetailsSuccess ? state.collectionSectionTitle : 'Franchise';
-        final similarMovies = state is MovieDetailsSuccess ? state.similarMovies : [];
+        final collectionParts = state is MovieDetailsSuccess
+            ? state.collectionParts
+            : [];
+        final collectionSectionTitle = state is MovieDetailsSuccess
+            ? state.collectionSectionTitle
+            : 'Franchise';
+        final similarMovies = state is MovieDetailsSuccess
+            ? state.similarMovies
+            : [];
 
         final cast = isLoading || isCastLoading ? _dummyCastList() : castData;
-        final visibleCollectionParts = isCollectionLoading ? _dummyCollectionParts() : collectionParts.take(5).toList();
-        final visibleSimilarMoviesRaw = isSimilarLoading ? _dummySimilarMovies() : similarMovies;
+        final visibleCollectionParts = isCollectionLoading
+            ? _dummyCollectionParts()
+            : collectionParts.take(5).toList();
+        final visibleSimilarMoviesRaw = isSimilarLoading
+            ? _dummySimilarMovies()
+            : similarMovies;
 
         final authState = context.read<AuthCubit>().state;
-        final String? uid = authState is Authenticated ? authState.user.uid : null;
+        final String? uid = authState is Authenticated
+            ? authState.user.uid
+            : null;
 
         final movie = isLoading ? _dummyMovieData() : movieData!;
         final title = movie['title'] as String? ?? 'Unknown';
@@ -277,12 +362,19 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         final voteCount = (movie['vote_count'] as num?)?.toInt() ?? 0;
         final runtimeMinutes = (movie['runtime'] as num?)?.toInt() ?? 0;
         final runtime = _formatRuntime(runtimeMinutes);
-        final language = (movie['original_language'] as String? ?? '').toUpperCase();
+        final language = (movie['original_language'] as String? ?? '')
+            .toUpperCase();
         final released = _isReleased(releaseDate);
 
-        final videos = isLoading ? <dynamic>[] : (movie['videos']?['results'] as List<dynamic>? ?? []);
-        final youtubeTrailers = videos.where((v) => v['type'] == 'Trailer' && v['site'] == 'YouTube').toList();
-        final otherTrailers = videos.where((v) => v['type'] == 'Trailer' && v['site'] != 'YouTube').toList();
+        final videos = isLoading
+            ? <dynamic>[]
+            : (movie['videos']?['results'] as List<dynamic>? ?? []);
+        final youtubeTrailers = videos
+            .where((v) => v['type'] == 'Trailer' && v['site'] == 'YouTube')
+            .toList();
+        final otherTrailers = videos
+            .where((v) => v['type'] == 'Trailer' && v['site'] != 'YouTube')
+            .toList();
         final Map<String, dynamic>? trailer = youtubeTrailers.isNotEmpty
             ? youtubeTrailers.first
             : (otherTrailers.isNotEmpty ? otherTrailers.first : null);
@@ -321,7 +413,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 isAdded = true;
                 isWatched = matched.first['isWatched'] as bool? ?? false;
                 isFavorite = matched.first['isFavorite'] as bool? ?? false;
-                watchedAtStr = matched.first['watchedAt'] as String? ?? matched.first['addedAt'] as String?;
+                watchedAtStr =
+                    matched.first['watchedAt'] as String? ??
+                    matched.first['addedAt'] as String?;
               }
             }
 
@@ -348,7 +442,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             final double buttonHeight = 50.0;
             final double verticalMargin = 12.0;
             final double horizontalMargin = 16.0;
-            final double totalContainerHeight = buttonHeight + verticalMargin + verticalMargin + bottomPadding;
+            final double totalContainerHeight =
+                buttonHeight + verticalMargin + verticalMargin + bottomPadding;
 
             return Scaffold(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -394,7 +489,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                           AppSpacing.gapW8,
                           Text(
                             'ADD MOVIE',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.0,
+                            ),
                           ),
                         ],
                       ),
@@ -411,13 +510,19 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                         SliverAppBar(
                           automaticallyImplyLeading: false,
                           leading: const SizedBox.shrink(),
-                          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).scaffoldBackgroundColor,
                           expandedHeight: 300.0,
                           pinned: true,
                           actions: [
                             if (isAdded && uid != null)
                               IconButton(
-                                icon: const Icon(Icons.more_horiz, size: 28, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.more_horiz,
+                                  size: 28,
+                                  color: Colors.white,
+                                ),
                                 onPressed: () => _showMoreActions(
                                   context: context,
                                   uid: uid,
@@ -428,7 +533,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                           ],
                           flexibleSpace: FlexibleSpaceBar(
                             centerTitle: false,
-                            titlePadding: const EdgeInsets.only(left: 16, bottom: 4, right: 48),
+                            titlePadding: const EdgeInsets.only(
+                              left: 16,
+                              bottom: 4,
+                              right: 48,
+                            ),
                             title: Column(
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,7 +556,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   const SizedBox(height: 2),
                                   Text(
                                     genres,
-                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 10),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                      fontSize: 10,
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -457,11 +571,13 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                             background: Stack(
                               fit: StackFit.expand,
                               children: [
-                                if (backdropPath != null && backdropPath.isNotEmpty)
+                                if (backdropPath != null &&
+                                    backdropPath.isNotEmpty)
                                   CachedNetworkImage(
                                     imageUrl: _getImageUrl(backdropPath),
                                     fit: BoxFit.cover,
-                                    errorWidget: (context, url, error) => Container(color: Colors.grey[900]),
+                                    errorWidget: (context, url, error) =>
+                                        Container(color: Colors.grey[900]),
                                   )
                                 else
                                   Container(color: Colors.grey[900]),
@@ -470,7 +586,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     gradient: LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
-                                      colors: [Colors.black45, Colors.transparent, Colors.black],
+                                      colors: [
+                                        Colors.black45,
+                                        Colors.transparent,
+                                        Colors.black,
+                                      ],
                                       stops: [0.0, 0.4, 1.0],
                                     ),
                                   ),
@@ -492,18 +612,39 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   children: [
                                     Row(
                                       children: [
-                                        const Icon(Icons.calendar_today, color: Colors.white54, size: 14),
+                                        const Icon(
+                                          Icons.calendar_today,
+                                          color: Colors.white54,
+                                          size: 14,
+                                        ),
                                         const SizedBox(width: 6),
                                         Text(
                                           _formatDate(releaseDate),
-                                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 14,
+                                          ),
                                         ),
                                         if (runtime.isNotEmpty) ...[
                                           const Padding(
-                                            padding: EdgeInsets.symmetric(horizontal: 8),
-                                            child: Text('•', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
+                                            child: Text(
+                                              '•',
+                                              style: TextStyle(
+                                                color: Colors.white54,
+                                                fontSize: 14,
+                                              ),
+                                            ),
                                           ),
-                                          Text(runtime, style: const TextStyle(color: Colors.white54, fontSize: 14)),
+                                          Text(
+                                            runtime,
+                                            style: const TextStyle(
+                                              color: Colors.white54,
+                                              fontSize: 14,
+                                            ),
+                                          ),
                                         ],
                                         const Spacer(),
                                         if (uid != null) ...[
@@ -513,37 +654,55 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                               onTap: () {
                                                 HapticFeedback.mediumImpact();
                                                 if (isAdded) {
-                                                  context.read<MovieWatchlistCubit>().toggleFavorite(
-                                                    uid: uid,
-                                                    movieId: widget.movieId,
-                                                    isFavorite: !isFavorite,
-                                                  );
+                                                  context
+                                                      .read<
+                                                        MovieWatchlistCubit
+                                                      >()
+                                                      .toggleFavorite(
+                                                        uid: uid,
+                                                        movieId: widget.movieId,
+                                                        isFavorite: !isFavorite,
+                                                      );
                                                 } else {
-                                                  context.read<MovieWatchlistCubit>().addMovie(
-                                                    uid: uid,
-                                                    movieId: widget.movieId,
-                                                    title: title,
-                                                    posterPath: movie['poster_path'] as String?,
-                                                    backdropPath: movie['backdrop_path'] as String?,
-                                                    releaseDate: releaseDate,
-                                                    runtime: runtimeMinutes,
-                                                    voteAverage: voteAverage,
-                                                    genres: genres,
-                                                    isFavorite: true,
-                                                  );
+                                                  context
+                                                      .read<
+                                                        MovieWatchlistCubit
+                                                      >()
+                                                      .addMovie(
+                                                        uid: uid,
+                                                        movieId: widget.movieId,
+                                                        title: title,
+                                                        posterPath:
+                                                            movie['poster_path']
+                                                                as String?,
+                                                        backdropPath:
+                                                            movie['backdrop_path']
+                                                                as String?,
+                                                        releaseDate:
+                                                            releaseDate,
+                                                        runtime: runtimeMinutes,
+                                                        voteAverage:
+                                                            voteAverage,
+                                                        genres: genres,
+                                                        isFavorite: true,
+                                                      );
                                                 }
                                               },
                                               activeIcon: Icons.favorite,
-                                              inactiveIcon: Icons.favorite_border,
+                                              inactiveIcon:
+                                                  Icons.favorite_border,
                                               activeIconColor: Colors.red,
                                               inactiveIconColor: Colors.white,
-                                              activeBgColor: Colors.grey.withValues(alpha: 0.3),
-                                              inactiveBgColor: Colors.grey.withValues(alpha: 0.3),
+                                              activeBgColor: Colors.grey
+                                                  .withValues(alpha: 0.3),
+                                              inactiveBgColor: Colors.grey
+                                                  .withValues(alpha: 0.3),
                                               size: 28.0,
                                               iconSize: 16.0,
                                             ),
                                           ),
-                                          if (released) const SizedBox(width: 12),
+                                          if (released)
+                                            const SizedBox(width: 12),
                                         ],
                                         if (released && uid != null)
                                           Skeleton.ignore(
@@ -552,32 +711,48 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                               onTap: () {
                                                 HapticFeedback.mediumImpact();
                                                 if (isAdded) {
-                                                  context.read<MovieWatchlistCubit>().toggleWatched(
-                                                    uid: uid,
-                                                    movieId: widget.movieId,
-                                                    isWatched: !isWatched,
-                                                  );
+                                                  context
+                                                      .read<
+                                                        MovieWatchlistCubit
+                                                      >()
+                                                      .toggleWatched(
+                                                        uid: uid,
+                                                        movieId: widget.movieId,
+                                                        isWatched: !isWatched,
+                                                      );
                                                 } else {
-                                                  context.read<MovieWatchlistCubit>().addMovie(
-                                                    uid: uid,
-                                                    movieId: widget.movieId,
-                                                    title: title,
-                                                    posterPath: movie['poster_path'] as String?,
-                                                    backdropPath: movie['backdrop_path'] as String?,
-                                                    releaseDate: releaseDate,
-                                                    runtime: runtimeMinutes,
-                                                    voteAverage: voteAverage,
-                                                    genres: genres,
-                                                    isWatched: true,
-                                                  );
+                                                  context
+                                                      .read<
+                                                        MovieWatchlistCubit
+                                                      >()
+                                                      .addMovie(
+                                                        uid: uid,
+                                                        movieId: widget.movieId,
+                                                        title: title,
+                                                        posterPath:
+                                                            movie['poster_path']
+                                                                as String?,
+                                                        backdropPath:
+                                                            movie['backdrop_path']
+                                                                as String?,
+                                                        releaseDate:
+                                                            releaseDate,
+                                                        runtime: runtimeMinutes,
+                                                        voteAverage:
+                                                            voteAverage,
+                                                        genres: genres,
+                                                        isWatched: true,
+                                                      );
                                                 }
                                               },
                                               activeIcon: Icons.check,
                                               inactiveIcon: Icons.check,
                                               activeIconColor: Colors.white,
                                               inactiveIconColor: Colors.white,
-                                              activeBgColor: Colors.green.withValues(alpha: 0.8),
-                                              inactiveBgColor: Colors.grey.withValues(alpha: 0.3),
+                                              activeBgColor: Colors.green
+                                                  .withValues(alpha: 0.8),
+                                              inactiveBgColor: Colors.grey
+                                                  .withValues(alpha: 0.3),
                                               size: 28.0,
                                               iconSize: 18.0,
                                             ),
@@ -595,8 +770,13 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                           ),
                                           AppSpacing.gapW4,
                                           Text(
-                                            watchedAtStr != null ? _formatDate(watchedAtStr) : 'Watched',
-                                            style: const TextStyle(color: Colors.greenAccent, fontSize: 13),
+                                            watchedAtStr != null
+                                                ? _formatDate(watchedAtStr)
+                                                : 'Watched',
+                                            style: const TextStyle(
+                                              color: Colors.greenAccent,
+                                              fontSize: 13,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -604,19 +784,29 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   ],
                                 ),
                                 AppSpacing.gapH16,
-                                const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+                                const Divider(
+                                  color: Colors.white24,
+                                  height: 1,
+                                  thickness: 0.5,
+                                ),
                                 AppSpacing.gapH16,
 
                                 // Movie Info Section
                                 const Text(
                                   'Movie info',
-                                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 AppSpacing.gapH8,
                                 // Rating row
                                 Row(
                                   children: [
-                                    ..._buildStars(voteAverage / 2), // TMDb is out of 10, convert to 5
+                                    ..._buildStars(
+                                      voteAverage / 2,
+                                    ), // TMDb is out of 10, convert to 5
                                     AppSpacing.gapW8,
                                     Text(
                                       '${(voteAverage / 2).toStringAsFixed(1)}/5',
@@ -629,7 +819,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     AppSpacing.gapW8,
                                     Text(
                                       _formatVoteCount(voteCount),
-                                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                      style: const TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -637,11 +830,18 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
-                                      const Icon(Icons.language, color: Colors.white54, size: 14),
+                                      const Icon(
+                                        Icons.language,
+                                        color: Colors.white54,
+                                        size: 14,
+                                      ),
                                       const SizedBox(width: 6),
                                       Text(
                                         'Language: $language',
-                                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -650,11 +850,19 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 if (overview.isNotEmpty)
                                   Text(
                                     overview,
-                                    style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                      height: 1.5,
+                                    ),
                                   ),
                                 if (trailer != null) ...[
                                   const SizedBox(height: AppSpacing.lg),
-                                  const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+                                  const Divider(
+                                    color: Colors.white24,
+                                    height: 1,
+                                    thickness: 0.5,
+                                  ),
                                   const SizedBox(height: AppSpacing.lg),
                                   WatchTrailerButton(
                                     trailer: trailer,
@@ -662,14 +870,22 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   ),
                                 ],
                                 const SizedBox(height: AppSpacing.lg),
-                                const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+                                const Divider(
+                                  color: Colors.white24,
+                                  height: 1,
+                                  thickness: 0.5,
+                                ),
                                 const SizedBox(height: AppSpacing.lg),
 
                                 // Cast Section
                                 if (cast.isNotEmpty) ...[
                                   const Text(
                                     'Cast',
-                                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: AppSpacing.md),
                                   Skeletonizer(
@@ -679,16 +895,27 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       child: ListView.separated(
                                         scrollDirection: Axis.horizontal,
                                         itemCount: cast.length,
-                                        separatorBuilder: (context, index) => const SizedBox(width: 12),
+                                        separatorBuilder: (context, index) =>
+                                            const SizedBox(width: 12),
                                         itemBuilder: (context, index) {
-                                          final actor = cast[index] as Map<String, dynamic>;
-                                          final actorName = actor['name'] as String? ?? '';
-                                          final character = actor['character'] as String? ?? '';
-                                          final profilePath = actor['profile_path'] as String?;
+                                          final actor =
+                                              cast[index]
+                                                  as Map<String, dynamic>;
+                                          final actorName =
+                                              actor['name'] as String? ?? '';
+                                          final character =
+                                              actor['character'] as String? ??
+                                              '';
+                                          final profilePath =
+                                              actor['profile_path'] as String?;
                                           return _buildCastCard(
-                                            imageUrl: _getImageUrl(profilePath, size: 'w185'),
+                                            imageUrl: _getImageUrl(
+                                              profilePath,
+                                              size: 'w185',
+                                            ),
                                             realName: actorName,
-                                            characterName: character.toUpperCase(),
+                                            characterName: character
+                                                .toUpperCase(),
                                           );
                                         },
                                       ),
@@ -698,8 +925,13 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 ],
 
                                 // Franchise Collection Parts
-                                if (!widget.fromRecommendation && visibleCollectionParts.isNotEmpty) ...[
-                                  const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+                                if (!widget.fromRecommendation &&
+                                    visibleCollectionParts.isNotEmpty) ...[
+                                  const Divider(
+                                    color: Colors.white24,
+                                    height: 1,
+                                    thickness: 0.5,
+                                  ),
                                   const SizedBox(height: AppSpacing.lg),
                                   Text(
                                     collectionSectionTitle,
@@ -716,24 +948,32 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       height: 200,
                                       child: ListView.separated(
                                         scrollDirection: Axis.horizontal,
-                                        itemCount: visibleCollectionParts.length,
-                                        separatorBuilder: (context, index) => const SizedBox(width: 14),
+                                        itemCount:
+                                            visibleCollectionParts.length,
+                                        separatorBuilder: (context, index) =>
+                                            const SizedBox(width: 14),
                                         itemBuilder: (context, index) {
-                                           final data = _parseRecommendationData(visibleCollectionParts[index]);
-                                           if (data == null) return const SizedBox.shrink();
+                                          final data = _parseRecommendationData(
+                                            visibleCollectionParts[index],
+                                          );
+                                          if (data == null) {
+                                            return const SizedBox.shrink();
+                                          }
 
-                                           return _buildRecommendationCard(
-                                             movieId: data.id,
-                                             posterPath: data.posterPath,
-                                             title: data.title,
-                                             releaseDate: data.releaseDate,
-                                             voteAverage: data.voteAverage,
-                                             backdropPath: data.backdropPath,
-                                             runtime: 0,
-                                             genres: '',
-                                             isAdded: watchlistedIds.contains(data.id),
-                                             uid: uid,
-                                           );
+                                          return _buildRecommendationCard(
+                                            movieId: data.id,
+                                            posterPath: data.posterPath,
+                                            title: data.title,
+                                            releaseDate: data.releaseDate,
+                                            voteAverage: data.voteAverage,
+                                            backdropPath: data.backdropPath,
+                                            runtime: 0,
+                                            genres: '',
+                                            isAdded: watchlistedIds.contains(
+                                              data.id,
+                                            ),
+                                            uid: uid,
+                                          );
                                         },
                                       ),
                                     ),
@@ -742,12 +982,21 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 ],
 
                                 // Similar Movie Recommendations
-                                if (!widget.fromRecommendation && visibleSimilarMovies.isNotEmpty) ...[
-                                  const Divider(color: Colors.white24, height: 1, thickness: 0.5),
+                                if (!widget.fromRecommendation &&
+                                    visibleSimilarMovies.isNotEmpty) ...[
+                                  const Divider(
+                                    color: Colors.white24,
+                                    height: 1,
+                                    thickness: 0.5,
+                                  ),
                                   const SizedBox(height: AppSpacing.lg),
                                   const Text(
                                     'More Like This',
-                                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: AppSpacing.md),
                                   Skeletonizer(
@@ -757,9 +1006,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       child: ListView.separated(
                                         scrollDirection: Axis.horizontal,
                                         itemCount: visibleSimilarMovies.length,
-                                        separatorBuilder: (context, index) => const SizedBox(width: 14),
+                                        separatorBuilder: (context, index) =>
+                                            const SizedBox(width: 14),
                                         itemBuilder: (context, index) {
-                                          final rec = visibleSimilarMovies[index] as Map<String, dynamic>;
+                                          final rec =
+                                              visibleSimilarMovies[index]
+                                                  as Map<String, dynamic>;
                                           final rawRecId = rec['id'];
                                           int? recId;
                                           if (rawRecId is num) {
@@ -770,11 +1022,20 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                           if (recId == null) {
                                             return const SizedBox.shrink();
                                           }
-                                          final String recTitle = rec['title'] ?? rec['name'] ?? 'Unknown';
-                                          final String? recPoster = rec['poster_path'];
-                                          final String? recBackdrop = rec['backdrop_path'];
-                                          final String? recDate = rec['release_date'];
-                                          final double recVote = (rec['vote_average'] as num?)?.toDouble() ?? 0.0;
+                                          final String recTitle =
+                                              rec['title'] ??
+                                              rec['name'] ??
+                                              'Unknown';
+                                          final String? recPoster =
+                                              rec['poster_path'];
+                                          final String? recBackdrop =
+                                              rec['backdrop_path'];
+                                          final String? recDate =
+                                              rec['release_date'];
+                                          final double recVote =
+                                              (rec['vote_average'] as num?)
+                                                  ?.toDouble() ??
+                                              0.0;
 
                                           return _buildRecommendationCard(
                                             movieId: recId,
@@ -785,7 +1046,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             backdropPath: recBackdrop,
                                             runtime: 0,
                                             genres: '',
-                                            isAdded: watchlistedIds.contains(recId),
+                                            isAdded: watchlistedIds.contains(
+                                              recId,
+                                            ),
                                             uid: uid,
                                           );
                                         },
@@ -807,10 +1070,17 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                     child: Container(
                       width: 36,
                       height: 36,
-                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        shape: BoxShape.circle,
+                      ),
                       child: IconButton(
                         padding: EdgeInsets.zero,
-                        icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          size: 18,
+                          color: Colors.white,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -845,10 +1115,17 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     return '$count ratings';
   }
 
-  Widget _buildCastCard({required String imageUrl, required String realName, required String characterName}) {
+  Widget _buildCastCard({
+    required String imageUrl,
+    required String realName,
+    required String characterName,
+  }) {
     return Container(
       width: 120,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Colors.white10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.white10,
+      ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
@@ -861,7 +1138,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               fit: BoxFit.cover,
               errorWidget: (context, url, error) => Container(
                 color: Colors.grey[800],
-                child: const Center(child: Icon(Icons.person, color: Colors.white24, size: 40)),
+                child: const Center(
+                  child: Icon(Icons.person, color: Colors.white24, size: 40),
+                ),
               ),
             )
           else
@@ -869,7 +1148,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               width: 120,
               height: 180,
               color: Colors.grey[800],
-              child: const Center(child: Icon(Icons.person, color: Colors.white24, size: 40)),
+              child: const Center(
+                child: Icon(Icons.person, color: Colors.white24, size: 40),
+              ),
             ),
           // Gradient for text readability
           Positioned(
@@ -879,7 +1160,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             height: 70,
             child: Container(
               decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(8),
+                  bottomRight: Radius.circular(8),
+                ),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -897,7 +1181,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               children: [
                 Text(
                   realName,
-                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -967,7 +1255,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
       onTap: () {
         Navigator.push(
           context,
-          CupertinoPageRoute(builder: (context) => MovieDetailsPage(movieId: movieId, fromRecommendation: true)),
+          CupertinoPageRoute(
+            builder: (context) =>
+                MovieDetailsPage(movieId: movieId, fromRecommendation: true),
+          ),
         );
       },
       child: SizedBox(
@@ -988,20 +1279,31 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                         ? CachedNetworkImage(
                             imageUrl: _getImageUrl(posterPath, size: 'w185'),
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(color: AppColors.surfaceLight),
+                            placeholder: (context, url) =>
+                                Container(color: AppColors.surfaceLight),
                             errorWidget: (context, url, error) => const Center(
-                              child: Icon(Icons.movie_creation_outlined, size: 24, color: AppColors.textTertiary),
+                              child: Icon(
+                                Icons.movie_creation_outlined,
+                                size: 24,
+                                color: AppColors.textTertiary,
+                              ),
                             ),
                           )
                         : const Center(
-                            child: Icon(Icons.movie_creation_outlined, size: 24, color: AppColors.textTertiary),
+                            child: Icon(
+                              Icons.movie_creation_outlined,
+                              size: 24,
+                              color: AppColors.textTertiary,
+                            ),
                           ),
                   ),
                   if (isAdded)
                     Container(
                       height: 140,
                       width: 100,
-                      color: Colors.black.withValues(alpha: 0.15), // Very light overlay
+                      color: Colors.black.withValues(
+                        alpha: 0.15,
+                      ), // Very light overlay
                     ),
                   if (isAdded && uid != null)
                     Positioned(
@@ -1010,16 +1312,31 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                       child: GestureDetector(
                         onTap: () {
                           HapticFeedback.mediumImpact();
-                          context.read<MovieWatchlistCubit>().removeMovie(uid: uid, movieId: movieId);
+                          context.read<MovieWatchlistCubit>().removeMovie(
+                            uid: uid,
+                            movieId: movieId,
+                          );
                         },
                         child: Container(
                           color: Colors.transparent, // Expands hit area
-                          padding: const EdgeInsets.only(left: 8, right: 4, bottom: 8, top: 0),
+                          padding: const EdgeInsets.only(
+                            left: 8,
+                            right: 4,
+                            bottom: 8,
+                            top: 0,
+                          ),
                           child: const Icon(
                             Icons.bookmark_sharp,
-                            color: AppColors.primary, // Using the app's brand color
+                            color: AppColors
+                                .primary, // Using the app's brand color
                             size: 40,
-                            shadows: [Shadow(blurRadius: 4.0, color: Colors.black87, offset: Offset(0, 2))],
+                            shadows: [
+                              Shadow(
+                                blurRadius: 4.0,
+                                color: Colors.black87,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -1033,7 +1350,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 2),
             // Rating & Year Row
@@ -1044,16 +1365,37 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   const SizedBox(width: 3),
                   Text(
                     voteAverage.toStringAsFixed(1),
-                    style: const TextStyle(fontSize: 10.0, color: AppColors.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 10.0,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   if (year.isNotEmpty) ...[
                     const SizedBox(width: 4),
-                    const Text('•', style: TextStyle(fontSize: 10.0, color: AppColors.textSecondary)),
+                    const Text(
+                      '•',
+                      style: TextStyle(
+                        fontSize: 10.0,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     const SizedBox(width: 4),
-                    Text(year, style: const TextStyle(fontSize: 10.0, color: AppColors.textSecondary)),
+                    Text(
+                      year,
+                      style: const TextStyle(
+                        fontSize: 10.0,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ],
                 ] else if (year.isNotEmpty) ...[
-                  Text(year, style: const TextStyle(fontSize: 10.0, color: AppColors.textSecondary)),
+                  Text(
+                    year,
+                    style: const TextStyle(
+                      fontSize: 10.0,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ],
               ],
             ),

@@ -39,10 +39,7 @@ class WidgetService {
   /// isolate on background, so a pending Timer would otherwise never fire and
   /// the widget would sit stale until the next resume.
   static Future<void> flushPendingUpdate() async {
-    await Future.wait([
-      _upNextWriter.flush(),
-      _statsWriter.flush(),
-    ]);
+    await Future.wait([_upNextWriter.flush(), _statsWriter.flush()]);
   }
 
   /// [immediate] skips the debounce and writes synchronously. Required for
@@ -69,8 +66,9 @@ class WidgetService {
               if (posterPath.startsWith('http')) {
                 fullPosterUrl = posterPath;
               } else {
-                final cleanPath =
-                    posterPath.startsWith('/') ? posterPath : '/$posterPath';
+                final cleanPath = posterPath.startsWith('/')
+                    ? posterPath
+                    : '/$posterPath';
                 fullPosterUrl = 'https://image.tmdb.org/t/p/w500$cleanPath';
               }
               itemsCopy[i]['localPosterPath'] = fullPosterUrl;
@@ -107,10 +105,19 @@ class WidgetService {
       try {
         await HomeWidget.saveWidgetData<String>('stats_user_name', userName);
         await HomeWidget.saveWidgetData<int>('stats_shows_count', showsCount);
-        await HomeWidget.saveWidgetData<int>('stats_episodes_count', episodesCount);
-        await HomeWidget.saveWidgetData<String>('stats_shows_time', showsFormattedTime);
+        await HomeWidget.saveWidgetData<int>(
+          'stats_episodes_count',
+          episodesCount,
+        );
+        await HomeWidget.saveWidgetData<String>(
+          'stats_shows_time',
+          showsFormattedTime,
+        );
         await HomeWidget.saveWidgetData<int>('stats_movies_count', moviesCount);
-        await HomeWidget.saveWidgetData<String>('stats_movies_time', moviesFormattedTime);
+        await HomeWidget.saveWidgetData<String>(
+          'stats_movies_time',
+          moviesFormattedTime,
+        );
 
         await HomeWidget.updateWidget(
           name: androidWidgetName,
@@ -149,7 +156,9 @@ class WidgetService {
     List<Map<String, dynamic>> shows, {
     bool immediate = false,
   }) async {
-    final enrichedShows = shows.map((data) => EnrichedShow.fromShowData(data)).toList();
+    final enrichedShows = shows
+        .map((data) => EnrichedShow.fromShowData(data))
+        .toList();
 
     final watchNext = <EnrichedShow>[];
     final haventStarted = <EnrichedShow>[];
@@ -163,7 +172,8 @@ class WidgetService {
       }
 
       if (show.watchlistStatus == 'UPCOMING_ONLY') continue;
-      if (show.watchlistStatus == 'UP_TO_DATE' || show.watchlistStatus == 'FINISHED') {
+      if (show.watchlistStatus == 'UP_TO_DATE' ||
+          show.watchlistStatus == 'FINISHED') {
         continue;
       }
 
@@ -175,10 +185,12 @@ class WidgetService {
     }
 
     DateTime? getReleaseDate(EnrichedShow show) {
-      final dateStr = (show.rawShowData['firstAirDate'] ??
-              show.rawShowData['first_air_date'] ??
-              show.rawShowData['releaseDate'] ??
-              show.rawShowData['release_date']) as String?;
+      final dateStr =
+          (show.rawShowData['firstAirDate'] ??
+                  show.rawShowData['first_air_date'] ??
+                  show.rawShowData['releaseDate'] ??
+                  show.rawShowData['release_date'])
+              as String?;
       if (dateStr == null || dateStr.isEmpty) return null;
       return DateTime.tryParse(dateStr);
     }
@@ -211,9 +223,13 @@ class WidgetService {
       widgetItems.add({
         'showId': (show.rawShowData['id'] as num?)?.toInt() ?? 0,
         'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
-        'header': show.isPremiere ? 'PREMIERE' : (show.isNew ? 'NEW EPISODE' : 'WATCH NEXT'),
+        'header': show.isPremiere
+            ? 'PREMIERE'
+            : (show.isNew ? 'NEW EPISODE' : 'WATCH NEXT'),
         'episodeTitle': show.episodeCode,
-        'episodeDetails': show.episodeTitle.isNotEmpty ? show.episodeTitle : 'Episode $targetEpisode',
+        'episodeDetails': show.episodeTitle.isNotEmpty
+            ? show.episodeTitle
+            : 'Episode $targetEpisode',
         'posterPath': show.rawShowData['posterPath'] as String?,
         'episodeKey': firestoreKey,
       });
@@ -226,7 +242,9 @@ class WidgetService {
         'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
         'header': 'START WATCHING',
         'episodeTitle': show.episodeCode,
-        'episodeDetails': show.episodeTitle.isNotEmpty ? show.episodeTitle : 'Episode 1',
+        'episodeDetails': show.episodeTitle.isNotEmpty
+            ? show.episodeTitle
+            : 'Episode 1',
         'posterPath': show.rawShowData['posterPath'] as String?,
         'episodeKey': '1-1',
       });
@@ -256,7 +274,8 @@ class WidgetService {
 
         widgetItems.add({
           'showId': (show.rawShowData['id'] as num?)?.toInt() ?? 0,
-          'showName': (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
+          'showName':
+              (show.rawShowData['name'] as String?) ?? 'Unknown TV Show',
           'header': show.upcomingIsPremiere ? 'NEXT SEASON' : 'UPCOMING',
           'episodeTitle': show.upcomingEpisodeCode,
           'episodeDetails': upcomingDetail,
@@ -272,7 +291,8 @@ class WidgetService {
 
 @pragma('vm:entry-point')
 Future<void> interactiveWidgetCallback(Uri? uri) async {
-  final msg = '🚀 [Background Isolate] Interactive widget callback received with URI: $uri';
+  final msg =
+      '🚀 [Background Isolate] Interactive widget callback received with URI: $uri';
   log(msg);
   debugPrint(msg);
   WidgetsFlutterBinding.ensureInitialized();
@@ -296,7 +316,9 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     return;
   }
 
-  debugPrint('📌 [Background Isolate] Processing mark-as-watched for showId: $showId, episodeKey: $episodeKey');
+  debugPrint(
+    '📌 [Background Isolate] Processing mark-as-watched for showId: $showId, episodeKey: $episodeKey',
+  );
 
   WatchlistEnrichmentCubit? enrichmentCubit;
 
@@ -310,10 +332,14 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     bool dotenvAvailable = dotenv.isInitialized;
     if (!dotenvAvailable) {
       try {
-        await dotenv.load(fileName: '.env').timeout(WidgetService._backgroundOpTimeout);
+        await dotenv
+            .load(fileName: '.env')
+            .timeout(WidgetService._backgroundOpTimeout);
         dotenvAvailable = true;
       } catch (e) {
-        debugPrint('Background callback: dotenv unavailable in headless isolate, skipping TMDB enrichment: $e');
+        debugPrint(
+          'Background callback: dotenv unavailable in headless isolate, skipping TMDB enrichment: $e',
+        );
       }
     }
 
@@ -321,10 +347,9 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     String? uid = user?.uid;
     if (uid == null || uid.isEmpty) {
       try {
-        final u = await FirebaseAuth.instance
-            .authStateChanges()
-            .first
-            .timeout(const Duration(seconds: 2));
+        final u = await FirebaseAuth.instance.authStateChanges().first.timeout(
+          const Duration(seconds: 2),
+        );
         uid = u?.uid;
       } catch (_) {}
     }
@@ -333,7 +358,9 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
     }
 
     if (uid == null || uid.isEmpty) {
-      debugPrint('Background callback: no authenticated user, aborting mark-as-watched for show $showId');
+      debugPrint(
+        'Background callback: no authenticated user, aborting mark-as-watched for show $showId',
+      );
       return;
     }
 
@@ -372,7 +399,9 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
         )
         .timeout(WidgetService._backgroundOpTimeout);
 
-    debugPrint('Background: Marked episode $episodeKey as watched for show $showId ($showName)');
+    debugPrint(
+      'Background: Marked episode $episodeKey as watched for show $showId ($showName)',
+    );
 
     if (showDoc.exists) {
       final showMap = Map<String, dynamic>.from(showDoc.data()!);

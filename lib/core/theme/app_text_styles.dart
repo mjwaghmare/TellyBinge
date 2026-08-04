@@ -4,7 +4,8 @@ import 'app_colors.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  static const String fontFamily = 'Roboto'; // Standard system font, can fall back
+  static const String fontFamily =
+      'Roboto'; // Standard system font, can fall back
 
   static const TextStyle xs = TextStyle(
     fontFamily: fontFamily,

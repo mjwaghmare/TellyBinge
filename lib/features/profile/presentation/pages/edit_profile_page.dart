@@ -32,12 +32,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leading: IconButton(
-          icon: Icon(Icons.close, color: Theme.of(context).textTheme.bodyLarge?.color, size: 28),
+          icon: Icon(
+            Icons.close,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            size: 28,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Edit profile',
-          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
         actions: [
@@ -48,9 +56,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: Text(
               'SAVE',
               style: TextStyle(
-                color: Colors.blue, 
-                fontWeight: FontWeight.bold, 
-                letterSpacing: 0.5
+                color: Colors.blue,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -62,16 +70,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Divider(color: Colors.white24, height: 1, thickness: 0.5),
-            
+
             // Profile Photo Row
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 12.0,
+              ),
               child: Row(
                 children: [
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+                      border: Border.all(
+                        color: Theme.of(context).dividerColor,
+                        width: 1,
+                      ),
                     ),
                     child: const CircleAvatar(
                       radius: 28,
@@ -92,20 +106,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ),
             Divider(color: Colors.white24, height: 1, thickness: 0.5),
-            
+
             // Display Name
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 12.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Display name',
-                    style: TextStyle(color: context.adaptiveColor(light: Colors.black87, dark: Colors.white70), fontSize: 14),
+                    style: TextStyle(
+                      color: context.adaptiveColor(
+                        light: Colors.black87,
+                        dark: Colors.white70,
+                      ),
+                      fontSize: 14,
+                    ),
                   ),
                   TextField(
                     controller: _displayNameController,
-                    style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 16),
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontSize: 16,
+                    ),
                     cursorColor: Colors.blue,
                     decoration: const InputDecoration(
                       filled: false,
@@ -121,10 +147,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ),
             Divider(color: Colors.white24, height: 1, thickness: 0.5),
-            
+
             // Personal Information Section
             Padding(
-              padding: EdgeInsets.fromLTRB(AppSpacing.md, 24.0, AppSpacing.md, 16.0),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                24.0,
+                AppSpacing.md,
+                16.0,
+              ),
               child: Text(
                 'Personal information',
                 style: TextStyle(
@@ -134,11 +165,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
             ),
-            
+
             // Static Information Fields
             _buildStaticField('Birth year', '1993'),
             _buildStaticField('Gender', 'Male'),
-            
+
             Divider(color: Colors.white24, height: 1, thickness: 0.5),
           ],
         ),
@@ -148,7 +179,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Widget _buildStaticField(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 12.0,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -158,12 +192,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(color: context.adaptiveColor(light: Colors.black87, dark: Colors.white70), fontSize: 14),
+                  style: TextStyle(
+                    color: context.adaptiveColor(
+                      light: Colors.black87,
+                      dark: Colors.white70,
+                    ),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 16),
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontSize: 16,
+                  ),
                 ),
               ],
             ),

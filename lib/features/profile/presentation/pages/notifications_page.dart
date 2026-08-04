@@ -26,65 +26,75 @@ class NotificationsPage extends StatelessWidget {
     const NotificationItem(
       username: 'moon',
       actionText: 'followed you back on TV Time',
-      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80',
       time: '4 days ago',
     ),
     const NotificationItem(
       username: 'Rebeka',
       actionText: 'followed you back on TV Time',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80',
       time: '25 June 2026',
     ),
     const NotificationItem(
       username: '🍁',
       actionText: 'followed you on TV Time',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80',
       time: '18 June 2026',
     ),
     const NotificationItem(
       username: 'Ambi',
       actionText: 'followed you on TV Time',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80',
       time: '14 June 2026',
     ),
     const NotificationItem(
       username: 'Sabrina',
       actionText: 'followed you back on TV Time',
-      avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80',
       time: '31 May 2026',
     ),
     const NotificationItem(
       username: 'Sabrina',
       actionText: 'has accepted your follow request',
-      avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80',
       time: '31 May 2026',
     ),
     const NotificationItem(
       username: 'Chichan ™',
       actionText: 'commented the episode S04 | E04',
       subtitleDetail: 'of FROM',
-      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80',
       time: '16 May 2026',
     ),
     const NotificationItem(
       username: 'S.b1lk6n',
       actionText: 'commented the episode S01 | E06',
       subtitleDetail: 'of Midnight Mass (2021)',
-      avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80',
       time: '11 May 2026',
     ),
     const NotificationItem(
       username: 'Chichan ™',
       actionText: 'commented the episode S02 | E06',
       subtitleDetail: 'of Squid Game: The Challenge',
-      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80',
       time: '11 May 2026',
     ),
     const NotificationItem(
       username: 'Chichan ™',
       actionText: 'commented the episode S02 | E07',
       subtitleDetail: 'of Squid Game: The Challenge',
-      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80',
       time: '11 May 2026',
     ),
   ];
@@ -97,7 +107,10 @@ class NotificationsPage extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).textTheme.bodyLarge?.color),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -111,7 +124,12 @@ class NotificationsPage extends StatelessWidget {
         centerTitle: true,
       ),
       body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(0, AppSpacing.sm, 0, AppSpacing.bottomTabPadding),
+        padding: const EdgeInsets.fromLTRB(
+          0,
+          AppSpacing.sm,
+          0,
+          AppSpacing.bottomTabPadding,
+        ),
         itemCount: _notifications.length,
         separatorBuilder: (context, index) => Divider(
           color: Theme.of(context).dividerColor,
@@ -158,7 +176,10 @@ class NotificationsPage extends StatelessWidget {
               child: Text(
                 item.time,
                 style: TextStyle(
-                  color: context.adaptiveColor(light: Colors.grey[500]!, dark: AppColors.textTertiary),
+                  color: context.adaptiveColor(
+                    light: AppColors.lightTextSecondary,
+                    dark: AppColors.textSecondary,
+                  ),
                   fontSize: 12.0,
                 ),
               ),

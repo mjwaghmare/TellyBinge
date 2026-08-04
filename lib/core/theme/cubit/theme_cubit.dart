@@ -6,10 +6,7 @@ class ThemeState extends Equatable {
   final bool isDarkMode;
   final bool isOledDarkMode;
 
-  const ThemeState({
-    required this.isDarkMode,
-    required this.isOledDarkMode,
-  });
+  const ThemeState({required this.isDarkMode, required this.isOledDarkMode});
 
   @override
   List<Object?> get props => [isDarkMode, isOledDarkMode];
@@ -22,7 +19,9 @@ class ThemeCubit extends Cubit<ThemeState> {
     required this.storage,
     required bool isDarkInitial,
     required bool isOledInitial,
-  }) : super(ThemeState(isDarkMode: isDarkInitial, isOledDarkMode: isOledInitial));
+  }) : super(
+         ThemeState(isDarkMode: isDarkInitial, isOledDarkMode: isOledInitial),
+       );
 
   Future<void> toggleDarkMode(bool value) async {
     await storage.writeSetting('dark_mode', value);

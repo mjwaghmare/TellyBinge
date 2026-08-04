@@ -11,8 +11,8 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
   WatchlistEnrichmentCubit({
     required this.tmdbClient,
     FirebaseFirestore? firestore,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        super(WatchlistEnrichmentInitial());
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       super(WatchlistEnrichmentInitial());
 
   /// Tracks which show IDs have already been enriched in this session
   /// to avoid redundant TMDB calls when Firestore re-fires after write-back.
@@ -48,7 +48,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     if (lastEnrichedStr == null || lastEnrichedStr.isEmpty) return false;
     try {
       if (showData['totalEpisodes'] == null) return false;
-      
+
       final lastEnriched = DateTime.parse(lastEnrichedStr);
       final age = DateTime.now().difference(lastEnriched);
       return age.inHours < 6;
@@ -86,8 +86,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         continue;
       }
 
-      final watchedEpisodes =
-          List<String>.from(raw['watchedEpisodes'] ?? []);
+      final watchedEpisodes = List<String>.from(raw['watchedEpisodes'] ?? []);
       final currentHash = _computeWatchedHash(watchedEpisodes);
       final previousHash = _watchedEpisodesHash[showId];
 
@@ -130,11 +129,12 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         } finally {
           _currentlyEnrichingShowIds.remove(showId);
         }
-        await Future.delayed(const Duration(milliseconds: 250)); // Be nice to TMDB API
+        await Future.delayed(
+          const Duration(milliseconds: 250),
+        ); // Be nice to TMDB API
       }
     } catch (e) {
-      debugPrint(
-          'WatchlistEnrichmentCubit: Background enrichment error: $e');
+      debugPrint('WatchlistEnrichmentCubit: Background enrichment error: $e');
     } finally {
       // Safety clean up for any remaining locked IDs (e.g. if loop broke)
       for (final raw in showsToEnrich) {
@@ -161,8 +161,9 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
 
     try {
       final details = await tmdbClient.getTvShowDetails(showId);
-      final watchedEpisodes =
-          List<String>.from(showData['watchedEpisodes'] ?? []);
+      final watchedEpisodes = List<String>.from(
+        showData['watchedEpisodes'] ?? [],
+      );
       final seasons = details['seasons'] as List<dynamic>? ?? [];
 
       // Build a set of watched episodes for O(1) lookups
@@ -234,11 +235,12 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         // Fetch the target season for the next episode title
         try {
           final seasonDetails = await tmdbClient.getTvSeasonDetails(
-              showId, tempTargetSeason);
+            showId,
+            tempTargetSeason,
+          );
           fetchedSeasons[tempTargetSeason] = seasonDetails;
 
-          final episodes =
-              seasonDetails['episodes'] as List<dynamic>? ?? [];
+          final episodes = seasonDetails['episodes'] as List<dynamic>? ?? [];
           final epObj = episodes.firstWhere(
             (e) => e['episode_number'] == tempTargetEpisode,
             orElse: () => <String, dynamic>{},
@@ -264,13 +266,17 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
           try {
             // Reuse already-fetched season data
             if (!fetchedSeasons.containsKey(seasonNum)) {
-              await Future.delayed(const Duration(milliseconds: 100)); // Slight delay between season fetches
-              fetchedSeasons[seasonNum] = await tmdbClient.getTvSeasonDetails(showId, seasonNum);
+              await Future.delayed(
+                const Duration(milliseconds: 100),
+              ); // Slight delay between season fetches
+              fetchedSeasons[seasonNum] = await tmdbClient.getTvSeasonDetails(
+                showId,
+                seasonNum,
+              );
             }
             final seasonDetails = fetchedSeasons[seasonNum]!;
 
-            final episodes =
-                seasonDetails['episodes'] as List<dynamic>? ?? [];
+            final episodes = seasonDetails['episodes'] as List<dynamic>? ?? [];
 
             for (var ep in episodes) {
               final epNum = (ep['episode_number'] as num?)?.toInt() ?? 0;
@@ -278,10 +284,12 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
                 final airDateStr = ep['air_date'] as String?;
                 if (airDateStr != null && airDateStr.isNotEmpty) {
                   try {
-                    final airDate =
-                        DateTime.parse(airDateStr).toLocal();
+                    final airDate = DateTime.parse(airDateStr).toLocal();
                     final airDay = DateTime(
-                        airDate.year, airDate.month, airDate.day);
+                      airDate.year,
+                      airDate.month,
+                      airDate.day,
+                    );
                     if (!airDay.isAfter(today)) {
                       airedUnwatchedCount++;
                     }
@@ -309,8 +317,9 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         if (watchedEpisodes.isEmpty) {
           category = 'UPCOMING_ONLY';
         } else {
-          category = (details['status'] == 'Ended' || details['status'] == 'Canceled') 
-              ? 'FINISHED' 
+          category =
+              (details['status'] == 'Ended' || details['status'] == 'Canceled')
+              ? 'FINISHED'
               : 'UP_TO_DATE';
         }
         episodeCode = 'Up to date';
@@ -328,8 +337,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
               (s) => s['season_number'] == tempTargetSeason,
               orElse: () => <String, dynamic>{},
             );
-            if (seasonObj.isNotEmpty &&
-                _isRecent(seasonObj['air_date'])) {
+            if (seasonObj.isNotEmpty && _isRecent(seasonObj['air_date'])) {
               isPremiere = true;
             }
           } catch (_) {}
@@ -337,10 +345,8 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
 
         final lastToAir = details['last_episode_to_air'];
         if (lastToAir != null) {
-          final lastS =
-              lastToAir['season_number'].toString().padLeft(2, '0');
-          final lastE =
-              lastToAir['episode_number'].toString().padLeft(2, '0');
+          final lastS = lastToAir['season_number'].toString().padLeft(2, '0');
+          final lastE = lastToAir['episode_number'].toString().padLeft(2, '0');
           if (nextCode == 'S$lastS | E$lastE' &&
               _isRecent(lastToAir['air_date'])) {
             isNewEpisode = true;
@@ -350,8 +356,10 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
           if (watchedEpisodes.isEmpty) {
             category = 'UPCOMING_ONLY';
           } else {
-            category = (details['status'] == 'Ended' || details['status'] == 'Canceled') 
-                ? 'FINISHED' 
+            category =
+                (details['status'] == 'Ended' ||
+                    details['status'] == 'Canceled')
+                ? 'FINISHED'
                 : 'UP_TO_DATE';
           }
         } else {
@@ -375,30 +383,26 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
       final nextToAir = details['next_episode_to_air'];
       if (nextToAir != null) {
         hasUpcoming = true;
-        final sStr =
-            nextToAir['season_number'].toString().padLeft(2, '0');
-        final eStr =
-            nextToAir['episode_number'].toString().padLeft(2, '0');
+        final sStr = nextToAir['season_number'].toString().padLeft(2, '0');
+        final eStr = nextToAir['episode_number'].toString().padLeft(2, '0');
         upcomingEpisodeCode = 'S$sStr | E$eStr';
 
         upcomingEpisodeTitle =
             nextToAir['name'] ?? 'Episode ${nextToAir['episode_number']}';
         if (upcomingEpisodeTitle.isEmpty) {
-          upcomingEpisodeTitle =
-              'Episode ${nextToAir['episode_number']}';
+          upcomingEpisodeTitle = 'Episode ${nextToAir['episode_number']}';
         }
 
         if (upcomingEpisodeTitle.startsWith('Episode ')) {
           try {
             final seasonNumInt = nextToAir['season_number'] as int;
             // Reuse already-fetched season data
-            final seasonDetails = fetchedSeasons[seasonNumInt] ??
-                await tmdbClient.getTvSeasonDetails(
-                    showId, seasonNumInt);
+            final seasonDetails =
+                fetchedSeasons[seasonNumInt] ??
+                await tmdbClient.getTvSeasonDetails(showId, seasonNumInt);
             fetchedSeasons[seasonNumInt] = seasonDetails;
 
-            final episodes =
-                seasonDetails['episodes'] as List<dynamic>? ?? [];
+            final episodes = seasonDetails['episodes'] as List<dynamic>? ?? [];
             final epNumInt = nextToAir['episode_number'] as int;
             final specificEp = episodes.firstWhere(
               (e) => e['episode_number'] == epNumInt,
@@ -474,8 +478,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
       _enrichedShowIds.add(showId);
       _watchedEpisodesHash[showId] = _computeWatchedHash(watchedEpisodes);
     } catch (e) {
-      debugPrint(
-          'WatchlistEnrichmentCubit: Error enriching show $showId: $e');
+      debugPrint('WatchlistEnrichmentCubit: Error enriching show $showId: $e');
     }
   }
 }

@@ -356,7 +356,11 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     String currentLanguage = _language ?? 'all';
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.light ? Colors.white : AppColors.surfaceDarkAlt),
+      backgroundColor:
+          Theme.of(context).bottomSheetTheme.backgroundColor ??
+          (Theme.of(context).brightness == Brightness.light
+              ? Colors.white
+              : AppColors.surfaceDarkAlt),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -403,16 +407,28 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                               _applyLanguage('all');
                             },
                             style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54),
+                              side: BorderSide(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.black54
+                                    : Colors.white54,
+                              ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppSpacing.xl),
+                                borderRadius: BorderRadius.circular(
+                                  AppSpacing.xl,
+                                ),
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                             child: Text(
                               'CANCEL',
                               style: TextStyle(
-                                color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.black87
+                                    : Colors.white70,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
                               ),
@@ -429,7 +445,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppSpacing.xl),
+                                borderRadius: BorderRadius.circular(
+                                  AppSpacing.xl,
+                                ),
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
@@ -487,7 +505,12 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Theme.of(context).brightness == Brightness.light ? Colors.black38 : Colors.white38, width: 1.5),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? Colors.black38
+                      : Colors.white38,
+                  width: 1.5,
+                ),
               ),
             ),
       onTap: () => onChanged(value),
@@ -500,7 +523,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       heightFactor: 0.92,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade100 : AppColors.surface,
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.grey.shade100
+              : AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -544,7 +569,11 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                                     color: Colors.greenAccent,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade100 : AppColors.surface,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Colors.grey.shade100
+                                          : AppColors.surface,
                                       width: 2,
                                     ),
                                   ),
@@ -556,7 +585,12 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                     ],
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white70),
+                    icon: Icon(
+                      Icons.close,
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.black87
+                          : Colors.white70,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -567,7 +601,10 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               controller: _tabController,
               indicatorColor: AppColors.primary,
               labelColor: AppColors.primary,
-              unselectedLabelColor: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54,
+              unselectedLabelColor:
+                  Theme.of(context).brightness == Brightness.light
+                  ? Colors.black54
+                  : Colors.white54,
               tabs: const [
                 Tab(text: 'SHOWS'),
                 Tab(text: 'MOVIES'),
@@ -642,7 +679,14 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(error, style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54)),
+            Text(
+              error,
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.light
+                    ? Colors.black54
+                    : Colors.white54,
+              ),
+            ),
             AppSpacing.gapH16,
             ElevatedButton(
               onPressed: _shuffleCurrentTab,
@@ -659,7 +703,14 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
 
     if (items.isEmpty) {
       return Center(
-        child: Text('Nothing found.', style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black54 : Colors.white54)),
+        child: Text(
+          'Nothing found.',
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.black54
+                : Colors.white54,
+          ),
+        ),
       );
     }
 
@@ -688,7 +739,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         final posterPath = item['poster_path'];
         final voteAverage = (item['vote_average'] as num?)?.toDouble() ?? 0.0;
         final date = isTv ? item['first_air_date'] : item['release_date'];
-        final year = (date != null && date.toString().length >= 4) ? date.toString().substring(0, 4) : '';
+        final year = (date != null && date.toString().length >= 4)
+            ? date.toString().substring(0, 4)
+            : '';
 
         return GestureDetector(
           onTap: () {
@@ -726,20 +779,39 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : AppColors.surfaceElevated,
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.grey.shade200
+                        : AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: posterPath != null && posterPath.isNotEmpty
                       ? CachedNetworkImage(
-                          imageUrl: 'https://image.tmdb.org/t/p/w342$posterPath',
+                          imageUrl:
+                              'https://image.tmdb.org/t/p/w342$posterPath',
                           fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              Container(color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade200 : AppColors.surfaceElevated),
-                          errorWidget: (context, url, error) =>
-                              Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24),
+                          placeholder: (context, url) => Container(
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                ? Colors.grey.shade200
+                                : AppColors.surfaceElevated,
+                          ),
+                          errorWidget: (context, url, error) => Icon(
+                            Icons.broken_image,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                ? Colors.black26
+                                : Colors.white24,
+                          ),
                         )
-                      : Icon(Icons.movie, color: Theme.of(context).brightness == Brightness.light ? Colors.black26 : Colors.white24, size: 40),
+                      : Icon(
+                          Icons.movie,
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                              ? Colors.black26
+                              : Colors.white24,
+                          size: 40,
+                        ),
                 ),
               ),
               AppSpacing.gapH4,
@@ -773,7 +845,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                       '•',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -781,7 +855,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                       year,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -859,7 +935,9 @@ class _PremiumPulseGridState extends State<_PremiumPulseGrid>
                 opacity: opacity,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade300 : AppColors.surfaceElevated, // Sleek metallic grey
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.grey.shade300
+                        : AppColors.surfaceElevated, // Sleek metallic grey
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),

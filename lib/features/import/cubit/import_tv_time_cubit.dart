@@ -281,7 +281,7 @@ class ImportTvTimeCubit extends Cubit<ImportTvTimeState> {
       WriteBatch batch = _firestore.batch();
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not logged in');
-      
+
       final moviesCollection = _firestore
           .collection('users')
           .doc(user.uid)
@@ -358,20 +358,22 @@ class ImportTvTimeCubit extends Cubit<ImportTvTimeState> {
 
           if (bestMatch != null) {
             final showId = bestMatch['id'] as int;
-            
+
             if (existingShowIds.contains(showId)) {
-               if (show.watchedEpisodes.isNotEmpty) {
-                 final docRef = showsCollection.doc(showId.toString());
-                 batch.update(docRef, {
-                   'watchedEpisodes': FieldValue.arrayUnion(show.watchedEpisodes)
-                 });
-                 processedShowsCount++;
-               } else {
-                 showsSkipped++;
-               }
-               continue;
+              if (show.watchedEpisodes.isNotEmpty) {
+                final docRef = showsCollection.doc(showId.toString());
+                batch.update(docRef, {
+                  'watchedEpisodes': FieldValue.arrayUnion(
+                    show.watchedEpisodes,
+                  ),
+                });
+                processedShowsCount++;
+              } else {
+                showsSkipped++;
+              }
+              continue;
             }
-            
+
             final docRef = showsCollection.doc(showId.toString());
 
             final data = <String, dynamic>{
@@ -504,7 +506,8 @@ class ImportTvTimeCubit extends Cubit<ImportTvTimeState> {
         state.copyWith(
           status: ImportTvTimeStatus.completed,
           progress: 1.0,
-          statusMessage: '''Import Completed!
+          statusMessage:
+              '''Import Completed!
 Shows: $totalShows total -> $processedShowsCount added, $showsSkipped skipped, $showsFailed failed
 Movies: $totalMovies total -> $processedMoviesCount added, $moviesSkipped skipped, $moviesFailed failed''',
         ),

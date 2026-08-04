@@ -8,8 +8,7 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthRepository authRepository;
   StreamSubscription? _userSubscription;
 
-  AuthCubit({required this.authRepository})
-      : super(AuthInitial()) {
+  AuthCubit({required this.authRepository}) : super(AuthInitial()) {
     _monitorAuthState();
   }
 

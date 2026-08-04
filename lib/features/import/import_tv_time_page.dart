@@ -12,14 +12,13 @@ class ImportTvTimePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ImportTvTimeCubit(tmdbClient: context.read<TmdbClient>()),
+      create: (context) =>
+          ImportTvTimeCubit(tmdbClient: context.read<TmdbClient>()),
       child: BlocConsumer<ImportTvTimeCubit, ImportTvTimeState>(
         listener: (context, state) {
           if (state.status == ImportTvTimeStatus.completed) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Import completed successfully!'),
-              ),
+              const SnackBar(content: Text('Import completed successfully!')),
             );
 
             Navigator.pop(context);
@@ -63,7 +62,10 @@ class ImportTvTimePage extends StatelessWidget {
                           Text(state.fileName, textAlign: TextAlign.center),
                           AppSpacing.gapH16,
                           FilledButton(
-                            onPressed: state.status == ImportTvTimeStatus.processing ? null : cubit.pickZip,
+                            onPressed:
+                                state.status == ImportTvTimeStatus.processing
+                                ? null
+                                : cubit.pickZip,
                             child: const Text('Select ZIP'),
                           ),
                         ],
@@ -76,7 +78,11 @@ class ImportTvTimePage extends StatelessWidget {
                   if (state.status == ImportTvTimeStatus.processing)
                     Column(
                       children: [
-                        Text(state.statusMessage, textAlign: TextAlign.center, style: AppTextStyles.smBold),
+                        Text(
+                          state.statusMessage,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.smBold,
+                        ),
                         AppSpacing.gapH8,
                         LinearProgressIndicator(value: state.progress),
                       ],
@@ -101,4 +107,3 @@ class ImportTvTimePage extends StatelessWidget {
     );
   }
 }
-

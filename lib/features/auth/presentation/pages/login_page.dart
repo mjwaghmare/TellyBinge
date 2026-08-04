@@ -69,7 +69,9 @@ class LoginPage extends StatelessWidget {
                   if (state is AuthLoading) {
                     return const Center(
                       child: CircularProgressIndicator.adaptive(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                       ),
                     );
                   }
@@ -124,7 +126,7 @@ class LoginPage extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ]
+                        ],
                       ],
                     ),
                   );
@@ -134,10 +136,7 @@ class LoginPage extends StatelessWidget {
               const Text(
                 'By continuing, you agree to our Terms of Service.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textTertiary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
               ),
               AppSpacing.gapH16,
             ],
