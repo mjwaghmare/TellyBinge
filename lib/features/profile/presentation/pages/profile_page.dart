@@ -107,27 +107,63 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return parts.join(' ');
   }
 
+  ({
+    int watchedMoviesCount,
+    int totalMovieMinutes,
+    int watchedShowsCount,
+    int totalEpisodesCount,
+    int totalShowMinutes,
+  }) _calculateProfileStats(
+    MovieWatchlistState watchlistState,
+    TvShowWatchlistState showWatchlistState,
+  ) {
+    int watchedMoviesCount = 0;
+    int totalMovieMinutes = 0;
+    if (watchlistState is MovieWatchlistSuccess) {
+      final watchedMovies = watchlistState.movies
+          .where((m) => m['isWatched'] as bool? ?? false);
+      watchedMoviesCount = watchedMovies.length;
+      totalMovieMinutes = watchedMovies
+          .map((m) => (m['runtime'] as num?)?.toInt() ?? 0)
+          .fold<int>(0, (sum, element) => sum + element);
+    }
+
+    int watchedShowsCount = 0;
+    int totalEpisodesCount = 0;
+    if (showWatchlistState is TvShowWatchlistSuccess) {
+      watchedShowsCount = showWatchlistState.shows.length;
+      totalEpisodesCount = showWatchlistState.shows
+          .map((s) => (List<dynamic>.from(s['watchedEpisodes'] ?? [])).length)
+          .fold<int>(0, (sum, element) => sum + element);
+    }
+
+    final totalShowMinutes = totalEpisodesCount * 45;
+
+    return (
+      watchedMoviesCount: watchedMoviesCount,
+      totalMovieMinutes: totalMovieMinutes,
+      watchedShowsCount: watchedShowsCount,
+      totalEpisodesCount: totalEpisodesCount,
+      totalShowMinutes: totalShowMinutes,
+    );
+  }
+
   void _checkAndUpdateWidgetStats(
     String displayName,
     MovieWatchlistState watchlistState,
     TvShowWatchlistState showWatchlistState,
   ) {
+    final stats = _calculateProfileStats(watchlistState, showWatchlistState);
+
     if (watchlistState is MovieWatchlistSuccess) {
-      _lastWatchedMoviesCount = watchlistState.movies
-          .where((m) => m['isWatched'] as bool? ?? false)
-          .length;
-      _lastTotalMinutes = watchlistState.movies
-          .where((m) => m['isWatched'] as bool? ?? false)
-          .map((m) => (m['runtime'] as num?)?.toInt() ?? 0)
-          .fold<int>(0, (sum, element) => sum + element);
+      _lastWatchedMoviesCount = stats.watchedMoviesCount;
+      _lastTotalMinutes = stats.totalMovieMinutes;
     }
 
     if (showWatchlistState is TvShowWatchlistSuccess) {
-      _lastWatchedShowsCount = showWatchlistState.shows.length;
-      _lastTotalEpisodesCount = showWatchlistState.shows
-          .map((s) => (List<dynamic>.from(s['watchedEpisodes'] ?? [])).length)
-          .fold<int>(0, (sum, element) => sum + element);
-      _lastTotalShowMinutes = _lastTotalEpisodesCount * 45;
+      _lastWatchedShowsCount = stats.watchedShowsCount;
+      _lastTotalEpisodesCount = stats.totalEpisodesCount;
+      _lastTotalShowMinutes = stats.totalShowMinutes;
     }
 
     final userName = displayName.isNotEmpty ? displayName : 'User';
@@ -460,18 +496,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 });
               }
 
-              final totalMinutes = (watchlistState is MovieWatchlistSuccess)
-                  ? watchlistState.movies
-                        .where((m) => m['isWatched'] as bool? ?? false)
-                        .map((m) => (m['runtime'] as num?)?.toInt() ?? 0)
-                        .fold<int>(0, (sum, element) => sum + element)
-                  : 0;
-
-              final totalShowMinutes = (showWatchlistState is TvShowWatchlistSuccess)
-                  ? showWatchlistState.shows
-                        .map((s) => (List<dynamic>.from(s['watchedEpisodes'] ?? [])).length * 45)
-                        .fold<int>(0, (sum, element) => sum + element)
-                  : 0;
+              final stats = _calculateProfileStats(watchlistState, showWatchlistState);
+              final totalMinutes = stats.totalMovieMinutes;
+              final totalShowMinutes = stats.totalShowMinutes;
 
               return NestedScrollView(
                 headerSliverBuilder: (context, innerBoxIsScrolled) {
