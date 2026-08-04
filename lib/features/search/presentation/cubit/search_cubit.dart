@@ -11,109 +11,118 @@ class SearchCubit extends Cubit<SearchState> {
   List<dynamic>? _cachedTrendingTv;
   List<dynamic>? _cachedTrendingMovies;
 
-  String _tvSortBy = 'trending';
+  /// Server-side release-date sorts. TMDB orders and paginates by these, so
+  /// successive pages continue the same global ordering and can simply be
+  /// appended.
+  static const String tvLatestSort = 'first_air_date.desc';
+  static const String movieLatestSort = 'primary_release_date.desc';
+
+  String _tvSortBy = tvLatestSort;
   String? _tvLanguage;
   String? _tvYear;
 
   // Filter state for Movies
-  String _movieSortBy = 'trending';
+  String _movieSortBy = movieLatestSort;
   String? _movieLanguage;
   String? _movieYear;
 
   SearchCubit({required this.tmdbClient}) : super(SearchInitial());
 
-  int _compareReleaseDate(dynamic a, dynamic b) {
-    final dateStrA = (a['release_date'] ?? a['first_air_date'])?.toString();
-    final dateStrB = (b['release_date'] ?? b['first_air_date'])?.toString();
-
-    final dtA = (dateStrA != null && dateStrA.isNotEmpty)
-        ? DateTime.tryParse(dateStrA)
-        : null;
-    final dtB = (dateStrB != null && dateStrB.isNotEmpty)
-        ? DateTime.tryParse(dateStrB)
-        : null;
-
-    if (dtA != null && dtB != null) {
-      final cmp = dtB.compareTo(dtA);
-      if (cmp != 0) return cmp;
-    } else if (dtA != null) {
-      return -1;
-    } else if (dtB != null) {
-      return 1;
-    }
-
-    final rawIdA = a['id'];
-    final rawIdB = b['id'];
-    final idA = (rawIdA is num)
-        ? rawIdA.toInt()
-        : (int.tryParse(rawIdA?.toString() ?? '') ?? 0);
-    final idB = (rawIdB is num)
-        ? rawIdB.toInt()
-        : (int.tryParse(rawIdB?.toString() ?? '') ?? 0);
-    return idB.compareTo(idA);
+  static int? _idOf(dynamic raw) {
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw == null) return null;
+    return int.tryParse(raw.toString());
   }
 
-  /// Sorts media items by release date / first air date descending (latest first).
-  List<dynamic> _sortByReleaseDateDescending(List<dynamic> items) {
-    final sorted = List<dynamic>.from(items);
-    sorted.sort(_compareReleaseDate);
-    return sorted;
-  }
-
-  /// Merges new items incrementally into an existing sorted list,
-  /// deduplicating by item ID and maintaining descending release date order.
-  List<dynamic> _mergeSortedResults(List<dynamic> existing, List<dynamic> newItems) {
+  /// Appends a freshly fetched page, dropping ids already present.
+  ///
+  /// Ordering is whatever the API returned and is never recomputed here. A
+  /// client-side sort is only stable if it uses the same key the server
+  /// paginates by; re-sorting a paginated feed inserts later pages *above* the
+  /// user's scroll position, which reads as the list jumping and every visible
+  /// tile reloading its poster. Sorting is requested from TMDB instead, via
+  /// `sort_by`, so appending preserves a correct global order.
+  List<dynamic> _appendUnique(List<dynamic> existing, List<dynamic> newItems) {
     if (newItems.isEmpty) return existing;
 
-    final existingIds = <int>{};
+    final seen = <int>{};
     for (final item in existing) {
-      final rawId = item['id'];
-      if (rawId is int) {
-        existingIds.add(rawId);
-      } else if (rawId is num) {
-        existingIds.add(rawId.toInt());
-      }
+      final id = _idOf(item['id']);
+      if (id != null) seen.add(id);
     }
 
-    final freshNewItems = <dynamic>[];
-    final seenNewIds = <int>{};
+    final fresh = <dynamic>[];
     for (final item in newItems) {
-      final rawId = item['id'];
-      final id = (rawId is num) ? rawId.toInt() : int.tryParse(rawId?.toString() ?? '');
-      if (id != null && !existingIds.contains(id) && !seenNewIds.contains(id)) {
-        seenNewIds.add(id);
-        freshNewItems.add(item);
+      final id = _idOf(item['id']);
+      if (id == null || !seen.add(id)) continue;
+      fresh.add(item);
+    }
+
+    if (fresh.isEmpty) return existing;
+    return [...existing, ...fresh];
+  }
+
+  /// Resolves which endpoint backs the TV feed for the active filters.
+  ///
+  /// Page 1 and every subsequent page go through here so they always come from
+  /// the same source in the same order — fetching page 1 from `/trending` and
+  /// page 2 from `/discover` would reshuffle the list mid-scroll.
+  Future<List<dynamic>> _fetchTvPage(int page) {
+    final bool noFilters = _tvLanguage == null && _tvYear == null;
+
+    if (noFilters) {
+      if (_tvSortBy == 'trending') {
+        return tmdbClient.getTrendingTvShows(page: page);
+      }
+      if (_tvSortBy == 'airing_today') {
+        return tmdbClient.getAiringTodayTvShows(page: page);
+      }
+      if (_tvSortBy == 'upcoming') {
+        return tmdbClient.getUpcomingTvShows(page: page);
       }
     }
 
-    if (freshNewItems.isEmpty) return existing;
+    final effectiveSortBy = switch (_tvSortBy) {
+      'trending' || 'popularity.desc' => 'popularity.desc',
+      'airing_today' || 'upcoming' => tvLatestSort,
+      _ => _tvSortBy,
+    };
+    return tmdbClient.discoverTvShowsWithFilters(
+      page: page,
+      sortBy: effectiveSortBy,
+      language: _tvLanguage,
+      year: _tvYear,
+    );
+  }
 
-    final sortedNew = _sortByReleaseDateDescending(freshNewItems);
-    if (existing.isEmpty) return sortedNew;
+  /// Movie counterpart of [_fetchTvPage].
+  Future<List<dynamic>> _fetchMoviePage(int page) {
+    final bool noFilters = _movieLanguage == null && _movieYear == null;
 
-    final merged = <dynamic>[];
-    int i = 0, j = 0;
-    while (i < existing.length && j < sortedNew.length) {
-      final cmp = _compareReleaseDate(existing[i], sortedNew[j]);
-      if (cmp <= 0) {
-        merged.add(existing[i]);
-        i++;
-      } else {
-        merged.add(sortedNew[j]);
-        j++;
+    if (noFilters) {
+      if (_movieSortBy == 'trending') {
+        return tmdbClient.getTrendingMovies(page: page);
+      }
+      if (_movieSortBy == 'now_playing') {
+        return tmdbClient.getNowPlayingMovies(page: page);
+      }
+      if (_movieSortBy == 'upcoming') {
+        return tmdbClient.getUpcomingMovies(page: page);
       }
     }
 
-    while (i < existing.length) {
-      merged.add(existing[i]);
-      i++;
-    }
-    while (j < sortedNew.length) {
-      merged.add(sortedNew[j]);
-      j++;
-    }
-
-    return merged;
+    final effectiveSortBy = switch (_movieSortBy) {
+      'trending' || 'popularity.desc' => 'popularity.desc',
+      'now_playing' || 'upcoming' => movieLatestSort,
+      _ => _movieSortBy,
+    };
+    return tmdbClient.discoverMoviesWithFilters(
+      page: page,
+      sortBy: effectiveSortBy,
+      language: _movieLanguage,
+      year: _movieYear,
+    );
   }
 
   // MODIFY: loadTrending with caching to avoid redundant api queries
@@ -136,13 +145,10 @@ class SearchCubit extends Cubit<SearchState> {
     }
     emit(SearchLoading());
     try {
-      final rawTvShows = await tmdbClient.getTrendingTvShows();
+      final tvShows = await _fetchTvPage(1);
       // Stagger by 100ms to prevent simultaneous socket handshakes on startup
       await Future.delayed(const Duration(milliseconds: 100));
-      final rawMovies = await tmdbClient.getTrendingMovies();
-
-      final tvShows = _sortByReleaseDateDescending(rawTvShows);
-      final movies = _sortByReleaseDateDescending(rawMovies);
+      final movies = await _fetchMoviePage(1);
 
       _cachedTrendingTv = tvShows;
       _cachedTrendingMovies = movies;
@@ -216,56 +222,9 @@ class SearchCubit extends Cubit<SearchState> {
         final nextPage =
             (isTvTab ? currentState.tvPage : currentState.moviesPage) + 1;
 
-        final bool tvNoFilters = _tvLanguage == null && _tvYear == null;
-        final bool movieNoFilters =
-            _movieLanguage == null && _movieYear == null;
-
-        List<dynamic> newResults = [];
-
-        if (isTvTab) {
-          if (_tvSortBy == 'trending' && tvNoFilters) {
-            newResults = await tmdbClient.getTrendingTvShows(page: nextPage);
-          } else if (_tvSortBy == 'airing_today' && tvNoFilters) {
-            newResults = await tmdbClient.getAiringTodayTvShows(page: nextPage);
-          } else if (_tvSortBy == 'upcoming' && tvNoFilters) {
-            newResults = await tmdbClient.getUpcomingTvShows(page: nextPage);
-          } else {
-            final effectiveSortBy =
-                (_tvSortBy == 'trending' || _tvSortBy == 'popularity.desc')
-                ? 'popularity.desc'
-                : (_tvSortBy == 'airing_today' || _tvSortBy == 'upcoming'
-                      ? 'first_air_date.desc'
-                      : _tvSortBy);
-            newResults = await tmdbClient.discoverTvShowsWithFilters(
-              page: nextPage,
-              sortBy: effectiveSortBy,
-              language: _tvLanguage,
-              year: _tvYear,
-            );
-          }
-        } else {
-          if (_movieSortBy == 'trending' && movieNoFilters) {
-            newResults = await tmdbClient.getTrendingMovies(page: nextPage);
-          } else if (_movieSortBy == 'now_playing' && movieNoFilters) {
-            newResults = await tmdbClient.getNowPlayingMovies(page: nextPage);
-          } else if (_movieSortBy == 'upcoming' && movieNoFilters) {
-            newResults = await tmdbClient.getUpcomingMovies(page: nextPage);
-          } else {
-            final effectiveSortBy =
-                (_movieSortBy == 'trending' ||
-                    _movieSortBy == 'popularity.desc')
-                ? 'popularity.desc'
-                : (_movieSortBy == 'now_playing' || _movieSortBy == 'upcoming'
-                      ? 'primary_release_date.desc'
-                      : _movieSortBy);
-            newResults = await tmdbClient.discoverMoviesWithFilters(
-              page: nextPage,
-              sortBy: effectiveSortBy,
-              language: _movieLanguage,
-              year: _movieYear,
-            );
-          }
-        }
+        final List<dynamic> newResults = isTvTab
+            ? await _fetchTvPage(nextPage)
+            : await _fetchMoviePage(nextPage);
 
         if (newResults.isEmpty) {
           if (nextPage >= 500) {
@@ -290,10 +249,10 @@ class SearchCubit extends Cubit<SearchState> {
           }
         } else {
           final updatedTv = isTvTab
-              ? _mergeSortedResults(currentState.trendingTv, newResults)
+              ? _appendUnique(currentState.trendingTv, newResults)
               : currentState.trendingTv;
           final updatedMovies = !isTvTab
-              ? _mergeSortedResults(currentState.trendingMovies, newResults)
+              ? _appendUnique(currentState.trendingMovies, newResults)
               : currentState.trendingMovies;
 
           emit(
@@ -346,7 +305,7 @@ class SearchCubit extends Cubit<SearchState> {
             currentState.copyWith(hasReachedMax: true, isLoadingMore: false),
           );
         } else {
-          final updatedResults = _mergeSortedResults(
+          final updatedResults = _appendUnique(
             currentState.results,
             filteredNewResults,
           );
@@ -424,15 +383,16 @@ class SearchCubit extends Cubit<SearchState> {
             .toList();
       }
 
-      final sortedResults = _sortByReleaseDateDescending(filteredResults);
-
+      // Left in TMDB's relevance order. The search endpoint paginates by
+      // relevance and accepts no sort_by, so re-sorting here would reorder the
+      // list every time another page arrives.
       emit(
         SearchResultsSuccess(
-          results: sortedResults,
+          results: filteredResults,
           query: query,
           isTv: isTv,
           page: 1,
-          hasReachedMax: sortedResults.isEmpty,
+          hasReachedMax: filteredResults.isEmpty,
         ),
       );
     } catch (e) {
@@ -450,7 +410,8 @@ class SearchCubit extends Cubit<SearchState> {
 
   void updateTrendingTv(List<dynamic> filteredShows) {
     final currentState = state;
-    final sortedShows = _sortByReleaseDateDescending(filteredShows);
+    // Already in the order TMDB returned it for the active sort.
+    final sortedShows = filteredShows;
     if (currentState is SearchTrendingSuccess) {
       emit(
         currentState.copyWith(
@@ -475,7 +436,8 @@ class SearchCubit extends Cubit<SearchState> {
 
   void updateTrendingMovies(List<dynamic> filteredMovies) {
     final currentState = state;
-    final sortedMovies = _sortByReleaseDateDescending(filteredMovies);
+    // Already in the order TMDB returned it for the active sort.
+    final sortedMovies = filteredMovies;
     if (currentState is SearchTrendingSuccess) {
       emit(
         currentState.copyWith(
@@ -525,7 +487,7 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   void setTvFilters({
-    String sortBy = 'trending',
+    String sortBy = tvLatestSort,
     String? language,
     String? year,
   }) {
@@ -535,7 +497,7 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   void setMovieFilters({
-    String sortBy = 'trending',
+    String sortBy = movieLatestSort,
     String? language,
     String? year,
   }) {
@@ -545,13 +507,13 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   void clearTvFilters() {
-    _tvSortBy = 'trending';
+    _tvSortBy = tvLatestSort;
     _tvLanguage = null;
     _tvYear = null;
   }
 
   void clearMovieFilters() {
-    _movieSortBy = 'trending';
+    _movieSortBy = movieLatestSort;
     _movieLanguage = null;
     _movieYear = null;
   }

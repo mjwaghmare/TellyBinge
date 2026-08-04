@@ -27,6 +27,7 @@ import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/auth/presentation/cubit/auth_state.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/search/presentation/cubit/search_cubit.dart';
+import 'features/search/presentation/cubit/tv_status_cubit.dart';
 import 'features/movies/presentation/cubit/movie_watchlist_cubit.dart';
 import 'features/movies/domain/repositories/movie_watchlist_repository.dart';
 import 'features/movies/data/repositories/movie_watchlist_repository_impl.dart';
@@ -319,6 +320,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           BlocProvider<SearchCubit>(
             create: (context) =>
                 SearchCubit(tmdbClient: context.read<TmdbClient>()),
+          ),
+          BlocProvider<TvStatusCubit>(
+            create: (context) =>
+                TvStatusCubit(tmdbClient: context.read<TmdbClient>()),
           ),
           BlocProvider<MovieWatchlistCubit>(
             create: (context) => MovieWatchlistCubit(

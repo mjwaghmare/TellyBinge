@@ -12,6 +12,7 @@ import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../cubit/search_cubit.dart';
 import '../cubit/search_state.dart';
+import '../cubit/tv_status_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
@@ -37,14 +38,14 @@ class _SearchPageState extends State<SearchPage>
   Timer? _tabTransitionTimer;
 
   // Filter state for TV shows
-  String _selectedSortBy = 'trending';
+  String _selectedSortBy = SearchCubit.tvLatestSort;
   String? _tvLanguage;
   String? _selectedYear;
   bool _hasActiveFilters = false;
   bool _isFetchingTvFilters = false;
 
   // Filter state - Movies
-  String _selectedMovieSortBy = 'trending';
+  String _selectedMovieSortBy = SearchCubit.movieLatestSort;
   String? _movieLanguage;
   String? _selectedMovieYear;
   bool _hasActiveMovieFilters = false;
@@ -54,6 +55,20 @@ class _SearchPageState extends State<SearchPage>
 
   final _FilteredGrid _showsGrid = _FilteredGrid();
   final _FilteredGrid _moviesGrid = _FilteredGrid();
+
+  /// TV search results get the same treatment as trending: a memoized index map
+  /// plus change detection, so status lookups are queued once per new page
+  /// rather than on every rebuild. No exclusions apply here.
+  final _FilteredGrid _showsSearchGrid = _FilteredGrid();
+
+  /// Queues status lookups after the frame, so a build never triggers a fetch.
+  void _queueTvStatuses(Iterable<int> ids) {
+    final pending = ids.toList(growable: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<TvStatusCubit>().resolveAll(pending);
+    });
+  }
 
   void _handleSubTabChange() {
     if (widget.subTabNotifier != null &&
@@ -87,14 +102,14 @@ class _SearchPageState extends State<SearchPage>
     if (needsRefresh) {
       setState(() {
         // TV
-        _selectedSortBy = 'trending';
+        _selectedSortBy = SearchCubit.tvLatestSort;
         _tvLanguage = null;
         _selectedYear = null;
         _hasActiveFilters = false;
         _showsSearchController.clear();
 
         // Movies
-        _selectedMovieSortBy = 'trending';
+        _selectedMovieSortBy = SearchCubit.movieLatestSort;
         _movieLanguage = null;
         _selectedMovieYear = null;
         _hasActiveMovieFilters = false;
@@ -357,12 +372,13 @@ class _SearchPageState extends State<SearchPage>
               _selectedSortBy = sortBy;
               _selectedYear = year;
               _hasActiveFilters =
-                  _selectedSortBy != 'trending' || _selectedYear != null;
+                  _selectedSortBy != SearchCubit.tvLatestSort ||
+                  _selectedYear != null;
             } else {
               _selectedMovieSortBy = sortBy;
               _selectedMovieYear = year;
               _hasActiveMovieFilters =
-                  _selectedMovieSortBy != 'trending' ||
+                  _selectedMovieSortBy != SearchCubit.movieLatestSort ||
                   _selectedMovieYear != null;
             }
           });
@@ -878,6 +894,9 @@ class _SearchPageState extends State<SearchPage>
       // Filter out watchlisted shows from trending
       _showsGrid.update(state.trendingTv, watchlistedIds);
       final filteredTrending = _showsGrid.items;
+      if (_showsGrid.didChange) {
+        _queueTvStatuses(_showsGrid.indexById.keys);
+      }
 
       if (filteredTrending.length < 12 &&
           !state.isLoadingMore &&
@@ -902,14 +921,19 @@ class _SearchPageState extends State<SearchPage>
       );
     } else if (state is SearchResultsSuccess) {
       if (state.isTv) {
+        _showsSearchGrid.update(state.results, const <int>{});
+        if (_showsSearchGrid.didChange) {
+          _queueTvStatuses(_showsSearchGrid.indexById.keys);
+        }
         return _buildGrid(
-          state.results,
+          _showsSearchGrid.items,
           'tv',
           controller: _showsScrollController,
           isLoadingMore: state.isLoadingMore,
           hasLoadMoreError: state.hasLoadMoreError,
           onRetry: () => context.read<SearchCubit>().loadMore(true),
           hasReachedMax: state.hasReachedMax,
+          indexById: _showsSearchGrid.indexById,
         );
       } else {
         // State holds movie search results; shows tab should render shimmer skeleton
@@ -1172,47 +1196,58 @@ class _SearchPageState extends State<SearchPage>
                         Expanded(
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8.0),
-                            child: Container(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? Colors.grey[200]
-                                  : AppColors.surfaceLight,
-                              width: double.infinity,
-                              height: double.infinity,
-                              child: posterPath != null && posterPath.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: _getImageUrl(posterPath),
-                                      fit: BoxFit.cover,
-                                      memCacheWidth: 250,
-                                      placeholder: (context, url) =>
-                                          const SizedBox.shrink(),
-                                      errorWidget: (context, url, error) =>
-                                          Skeleton.ignore(
-                                            child: Icon(
-                                              Icons.movie_creation_outlined,
-                                              size: 32,
-                                              color:
-                                                  Theme.of(
-                                                        context,
-                                                      ).brightness ==
-                                                      Brightness.light
-                                                  ? Colors.grey[500]
-                                                  : AppColors.textTertiary,
-                                            ),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Container(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Colors.grey[200]
+                                      : AppColors.surfaceLight,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  child:
+                                      posterPath != null &&
+                                          posterPath.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: _getImageUrl(posterPath),
+                                          fit: BoxFit.cover,
+                                          memCacheWidth: 250,
+                                          placeholder: (context, url) =>
+                                              const SizedBox.shrink(),
+                                          errorWidget: (context, url, error) =>
+                                              Skeleton.ignore(
+                                                child: Icon(
+                                                  Icons.movie_creation_outlined,
+                                                  size: 32,
+                                                  color:
+                                                      Theme.of(
+                                                            context,
+                                                          ).brightness ==
+                                                          Brightness.light
+                                                      ? Colors.grey[500]
+                                                      : AppColors.textTertiary,
+                                                ),
+                                              ),
+                                        )
+                                      : Skeleton.ignore(
+                                          child: Icon(
+                                            Icons.movie_creation_outlined,
+                                            size: 32,
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Colors.grey[500]
+                                                : AppColors.textTertiary,
                                           ),
-                                    )
-                                  : Skeleton.ignore(
-                                      child: Icon(
-                                        Icons.movie_creation_outlined,
-                                        size: 32,
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Colors.grey[500]
-                                            : AppColors.textTertiary,
-                                      ),
-                                    ),
+                                        ),
+                                ),
+                                if (mediaType == 'tv' &&
+                                    Skeletonizer.maybeOf(context)?.enabled !=
+                                        true)
+                                  _TvStatusPill(tvId: id),
+                              ],
                             ),
                           ),
                         ),
@@ -1424,6 +1459,60 @@ class _SearchPageState extends State<SearchPage>
   }
 }
 
+/// Status pill over a TV poster.
+///
+/// A pure lookup — it never fetches. [TvStatusCubit] resolves statuses in the
+/// background when a page arrives, and the selector narrows the rebuild to this
+/// one show, so a batch of resolutions only repaints the tiles it actually
+/// answered rather than the whole grid.
+class _TvStatusPill extends StatelessWidget {
+  const _TvStatusPill({required this.tvId});
+
+  final int tvId;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<
+      TvStatusCubit,
+      Map<int, TvStatusLabel?>,
+      TvStatusLabel?
+    >(
+      selector: (statuses) => statuses[tvId],
+      builder: (context, label) {
+        if (label == null) {
+          // Kept positioned so the Stack's children stay uniformly positioned.
+          return const Positioned(top: 6, right: 6, child: SizedBox.shrink());
+        }
+        final (String text, Color color) = switch (label) {
+          TvStatusLabel.ended => ('ENDED', AppColors.error),
+          TvStatusLabel.cancelled => ('CANCELLED', AppColors.error),
+          TvStatusLabel.upcoming => ('UPCOMING', AppColors.airing),
+        };
+        return Positioned(
+          top: 6,
+          right: 6,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(4.0),
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                fontSize: 9.0,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Caches the watchlist-filtered list and its id -> index map for one grid.
 ///
 /// Both are O(n) over a trending list that grows with every page fetched, and
@@ -1441,6 +1530,11 @@ class _FilteredGrid {
 
   List<dynamic> get items => _items!;
   Map<int, int> get indexById => _indexById!;
+
+  /// True when the most recent [update] actually recomputed. Lets the caller
+  /// react to a genuinely new list — queueing status lookups, say — without
+  /// firing on every rebuild.
+  bool didChange = false;
 
   static int? _idOf(dynamic raw) {
     if (raw is int) return raw;
@@ -1466,6 +1560,7 @@ class _FilteredGrid {
         identical(_sourceItems, sourceItems) &&
         _excludedIds!.length == excludedIds.length &&
         _excludedIds!.containsAll(excludedIds);
+    didChange = !unchanged;
     if (unchanged) return;
 
     final filtered = <dynamic>[];
