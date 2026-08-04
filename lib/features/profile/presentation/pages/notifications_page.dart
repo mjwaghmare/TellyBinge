@@ -65,6 +65,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   void initState() {
     super.initState();
     _emptyState = _emptyStates[Random().nextInt(_emptyStates.length)];
+    NotificationService().markNotificationsAsRead();
     _fetchReceivedNotifications();
   }
 
@@ -154,7 +155,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
           : _notifications.isEmpty
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl,
+                      vertical: AppSpacing.md,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

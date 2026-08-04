@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/services/notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -356,37 +357,47 @@ class _ProfilePageState extends State<ProfilePage>
         ),
         actions: [
           IconButton(
-            icon: Stack(
-              children: [
-                Icon(
-                  Icons.notifications_outlined,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                  size: 26,
-                ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(AppSpacing.xxs),
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
+            icon: ValueListenableBuilder<bool>(
+              valueListenable: NotificationService().hasUnreadNotifier,
+              builder: (context, hasUnread, child) {
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      Icons.notifications_outlined,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      size: 26,
                     ),
-                    constraints: const BoxConstraints(
-                      minWidth: 8,
-                      minHeight: 8,
-                    ),
-                  ),
-                ),
-              ],
+                    if (hasUnread)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.xxs),
+                          decoration: const BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 8,
+                            minHeight: 8,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationsPage(),
-                ),
-              );
+            onPressed: () async {
+              await NotificationService().markNotificationsAsRead();
+              if (context.mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsPage(),
+                  ),
+                );
+              }
             },
           ),
           IconButton(

@@ -177,7 +177,29 @@ class NotificationService {
       ? 'tvtimeapp://show/$mediaId'
       : 'tvtimeapp://movie/$mediaId';
 
+  /// Reactive notifier for whether unread notifications exist.
+  final ValueNotifier<bool> hasUnreadNotifier = ValueNotifier<bool>(false);
+
+  /// Initializes unread status from SharedPreferences.
+  Future<void> _initUnreadStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    hasUnreadNotifier.value = prefs.getBool('has_unread_notifications') ?? false;
+  }
+
+  /// Sets unread notification state and updates listeners & SharedPreferences.
+  Future<void> _setHasUnread(bool value) async {
+    hasUnreadNotifier.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_unread_notifications', value);
+  }
+
+  /// Marks all notifications as read.
+  Future<void> markNotificationsAsRead() async {
+    await _setHasUnread(false);
+  }
+
   Future<void> initialize() async {
+    await _initUnreadStatus();
     tz.initializeTimeZones();
     try {
       final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
@@ -409,6 +431,7 @@ class NotificationService {
     }
 
     await prefs.setStringList('received_notifications_history', updatedList);
+    await _setHasUnread(true);
   }
 
   /// Retrieves received notifications history (most recent first, max 20).
@@ -442,6 +465,9 @@ class NotificationService {
     }
 
     await prefs.setStringList('received_notifications_history', updatedList);
+    if (updatedList.isEmpty) {
+      await _setHasUnread(false);
+    }
   }
 
   Future<void> cancelNotificationById(int id) async {
@@ -471,6 +497,7 @@ class NotificationService {
     _desired.clear();
     _canceledNotificationIds.clear();
     await cancelAllNotifications();
+    await _setHasUnread(false);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('received_notifications_history');
   }
