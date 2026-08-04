@@ -1460,8 +1460,19 @@ class TvShowStatusOverlay extends StatefulWidget {
 }
 
 class _TvShowStatusOverlayState extends State<TvShowStatusOverlay> {
+  /// Resolved status per show, shared by every tile for the app session.
   static final Map<int, String?> _tvStatusCache = {};
 
+  /// Lookups currently running, so a tile that is rebuilt or scrolled back into
+  /// view joins the existing request instead of firing a duplicate one.
+  static final Map<int, Future<String?>> _inFlight = {};
+
+  /// A tile must stay on screen this long before we spend a lookup on it.
+  /// Flinging past a tile cancels it, which is what keeps fast scrolls cheap:
+  /// each lookup can cost file I/O plus an isolate spawn in the cache layer.
+  static const Duration _settleDelay = Duration(milliseconds: 350);
+
+  Timer? _settleTimer;
   bool _showPill = false;
   bool _loaded = false;
   String _pillText = 'ENDED';
@@ -1470,12 +1481,33 @@ class _TvShowStatusOverlayState extends State<TvShowStatusOverlay> {
   @override
   void initState() {
     super.initState();
+    _resolveStatus();
+  }
+
+  @override
+  void didUpdateWidget(TvShowStatusOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tvId != widget.tvId) {
+      _settleTimer?.cancel();
+      _loaded = false;
+      _showPill = false;
+      _resolveStatus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _settleTimer?.cancel();
+    super.dispose();
+  }
+
+  void _resolveStatus() {
     if (_tvStatusCache.containsKey(widget.tvId)) {
       _applyStatusString(_tvStatusCache[widget.tvId] ?? '');
       _loaded = true;
-    } else {
-      _checkStatus();
+      return;
     }
+    _settleTimer = Timer(_settleDelay, _checkStatus);
   }
 
   void _applyStatusString(String status) {
@@ -1500,23 +1532,29 @@ class _TvShowStatusOverlayState extends State<TvShowStatusOverlay> {
   }
 
   Future<void> _checkStatus() async {
-    try {
-      final tmdbClient = context.read<TmdbClient>();
-      final details = await tmdbClient.getTvShowDetails(widget.tvId);
-      final String status = details['status'] ?? '';
-      _tvStatusCache[widget.tvId] = status;
-      if (!mounted) return;
-      setState(() {
-        _applyStatusString(status);
-        _loaded = true;
-      });
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _loaded = true;
-        });
+    if (!mounted) return;
+    final tvId = widget.tvId;
+    final tmdbClient = context.read<TmdbClient>();
+
+    final future = _inFlight[tvId] ??= () async {
+      try {
+        final details = await tmdbClient.getTvShowDetails(tvId);
+        return details['status'] as String? ?? '';
+      } catch (_) {
+        // Cache the failure too, so a retry does not fire on every rebuild.
+        return null;
       }
-    }
+    }();
+
+    final status = await future;
+    _inFlight.remove(tvId);
+    _tvStatusCache[tvId] = status;
+
+    if (!mounted) return;
+    setState(() {
+      _applyStatusString(status ?? '');
+      _loaded = true;
+    });
   }
 
   @override

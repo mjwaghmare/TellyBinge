@@ -10,6 +10,12 @@ class TmdbCacheManager {
 
   static const int _maxMemoryCacheSize = 50;
 
+  /// Payloads smaller than this are decoded on the calling isolate. `compute`
+  /// spawns a fresh isolate per call, which costs more than decoding a small
+  /// payload inline — and these reads happen per item while scrolling, so the
+  /// spawns land as dropped frames.
+  static const int _isolateDecodeThresholdBytes = 64 * 1024;
+
   /// In-memory cache to avoid repeated file I/O operations
   final Map<String, Map<String, dynamic>> _memoryCache = {};
   final Map<String, int> _memoryCacheTimestamps = {};
@@ -95,7 +101,10 @@ class TmdbCacheManager {
 
       final contents = await file.readAsString();
       final cacheData =
-          await compute(jsonDecode, contents) as Map<String, dynamic>;
+          (contents.length >= _isolateDecodeThresholdBytes
+                  ? await compute(jsonDecode, contents)
+                  : jsonDecode(contents))
+              as Map<String, dynamic>;
 
       final timestamp = cacheData['timestamp'] as int? ?? 0;
       final age = DateTime.now().difference(
