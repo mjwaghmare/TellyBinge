@@ -22,30 +22,98 @@ class SearchCubit extends Cubit<SearchState> {
 
   SearchCubit({required this.tmdbClient}) : super(SearchInitial());
 
+  int _compareReleaseDate(dynamic a, dynamic b) {
+    final dateStrA = (a['release_date'] ?? a['first_air_date'])?.toString();
+    final dateStrB = (b['release_date'] ?? b['first_air_date'])?.toString();
+
+    final dtA = (dateStrA != null && dateStrA.isNotEmpty)
+        ? DateTime.tryParse(dateStrA)
+        : null;
+    final dtB = (dateStrB != null && dateStrB.isNotEmpty)
+        ? DateTime.tryParse(dateStrB)
+        : null;
+
+    if (dtA != null && dtB != null) {
+      final cmp = dtB.compareTo(dtA);
+      if (cmp != 0) return cmp;
+    } else if (dtA != null) {
+      return -1;
+    } else if (dtB != null) {
+      return 1;
+    }
+
+    final rawIdA = a['id'];
+    final rawIdB = b['id'];
+    final idA = (rawIdA is num)
+        ? rawIdA.toInt()
+        : (int.tryParse(rawIdA?.toString() ?? '') ?? 0);
+    final idB = (rawIdB is num)
+        ? rawIdB.toInt()
+        : (int.tryParse(rawIdB?.toString() ?? '') ?? 0);
+    return idB.compareTo(idA);
+  }
+
   /// Sorts media items by release date / first air date descending (latest first).
   List<dynamic> _sortByReleaseDateDescending(List<dynamic> items) {
     final sorted = List<dynamic>.from(items);
-    sorted.sort((a, b) {
-      final dateStrA = (a['release_date'] ?? a['first_air_date'])?.toString();
-      final dateStrB = (b['release_date'] ?? b['first_air_date'])?.toString();
-
-      final dtA = (dateStrA != null && dateStrA.isNotEmpty)
-          ? DateTime.tryParse(dateStrA)
-          : null;
-      final dtB = (dateStrB != null && dateStrB.isNotEmpty)
-          ? DateTime.tryParse(dateStrB)
-          : null;
-
-      if (dtA != null && dtB != null) {
-        return dtB.compareTo(dtA);
-      } else if (dtA != null) {
-        return -1;
-      } else if (dtB != null) {
-        return 1;
-      }
-      return 0;
-    });
+    sorted.sort(_compareReleaseDate);
     return sorted;
+  }
+
+  /// Merges new items incrementally into an existing sorted list,
+  /// deduplicating by item ID and maintaining descending release date order.
+  List<dynamic> _mergeSortedResults(List<dynamic> existing, List<dynamic> newItems) {
+    if (newItems.isEmpty) return existing;
+
+    final existingIds = <int>{};
+    for (final item in existing) {
+      final rawId = item['id'];
+      if (rawId is int) {
+        existingIds.add(rawId);
+      } else if (rawId is num) {
+        existingIds.add(rawId.toInt());
+      }
+    }
+
+    final freshNewItems = <dynamic>[];
+    final seenNewIds = <int>{};
+    for (final item in newItems) {
+      final rawId = item['id'];
+      final id = (rawId is num) ? rawId.toInt() : int.tryParse(rawId?.toString() ?? '');
+      if (id != null && !existingIds.contains(id) && !seenNewIds.contains(id)) {
+        seenNewIds.add(id);
+        freshNewItems.add(item);
+      }
+    }
+
+    if (freshNewItems.isEmpty) return existing;
+
+    final sortedNew = _sortByReleaseDateDescending(freshNewItems);
+    if (existing.isEmpty) return sortedNew;
+
+    final merged = <dynamic>[];
+    int i = 0, j = 0;
+    while (i < existing.length && j < sortedNew.length) {
+      final cmp = _compareReleaseDate(existing[i], sortedNew[j]);
+      if (cmp <= 0) {
+        merged.add(existing[i]);
+        i++;
+      } else {
+        merged.add(sortedNew[j]);
+        j++;
+      }
+    }
+
+    while (i < existing.length) {
+      merged.add(existing[i]);
+      i++;
+    }
+    while (j < sortedNew.length) {
+      merged.add(sortedNew[j]);
+      j++;
+    }
+
+    return merged;
   }
 
   // MODIFY: loadTrending with caching to avoid redundant api queries
@@ -222,31 +290,16 @@ class SearchCubit extends Cubit<SearchState> {
           }
         } else {
           final updatedTv = isTvTab
-              ? (List<dynamic>.from(currentState.trendingTv)
-                  ..addAll(newResults))
+              ? _mergeSortedResults(currentState.trendingTv, newResults)
               : currentState.trendingTv;
           final updatedMovies = !isTvTab
-              ? (List<dynamic>.from(currentState.trendingMovies)
-                  ..addAll(newResults))
+              ? _mergeSortedResults(currentState.trendingMovies, newResults)
               : currentState.trendingMovies;
-
-          // Deduplicate by id
-          final uniqueTv = <int, dynamic>{};
-          for (var item in updatedTv) {
-            uniqueTv[item['id'] as int] = item;
-          }
-          final uniqueMovies = <int, dynamic>{};
-          for (var item in updatedMovies) {
-            uniqueMovies[item['id'] as int] = item;
-          }
-
-          final sortedTv = _sortByReleaseDateDescending(uniqueTv.values.toList());
-          final sortedMovies = _sortByReleaseDateDescending(uniqueMovies.values.toList());
 
           emit(
             currentState.copyWith(
-              trendingTv: sortedTv,
-              trendingMovies: sortedMovies,
+              trendingTv: updatedTv,
+              trendingMovies: updatedMovies,
               tvPage: isTvTab ? nextPage : currentState.tvPage,
               moviesPage: !isTvTab ? nextPage : currentState.moviesPage,
               isLoadingMore: false,
@@ -293,18 +346,14 @@ class SearchCubit extends Cubit<SearchState> {
             currentState.copyWith(hasReachedMax: true, isLoadingMore: false),
           );
         } else {
-          final updatedResults = List<dynamic>.from(currentState.results)
-            ..addAll(filteredNewResults);
-
-          final uniqueResults = <int, dynamic>{};
-          for (var item in updatedResults) {
-            uniqueResults[item['id'] as int] = item;
-          }
-          final deduplicatedList = _sortByReleaseDateDescending(uniqueResults.values.toList());
+          final updatedResults = _mergeSortedResults(
+            currentState.results,
+            filteredNewResults,
+          );
 
           emit(
             currentState.copyWith(
-              results: deduplicatedList,
+              results: updatedResults,
               page: nextPage,
               isLoadingMore: false,
             ),

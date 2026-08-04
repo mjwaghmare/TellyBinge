@@ -1108,161 +1108,162 @@ class _SearchPageState extends State<SearchPage>
         (hasLoadMoreError && onRetry != null) ||
         (hasReachedMax && items.isNotEmpty);
 
-    return Column(
-      children: [
-        Expanded(
-          child: GridView.builder(
-            controller: controller,
-            physics: physics,
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: EdgeInsets.fromLTRB(
-              12.0,
-              12.0,
-              12.0,
-              hasFooter ? 12.0 : AppSpacing.bottomTabPadding,
-            ),
+    final itemIndexMap = <int, int>{};
+    for (int i = 0; i < items.length; i++) {
+      final rawId = items[i]['id'];
+      if (rawId is int) {
+        itemIndexMap[rawId] = i;
+      } else if (rawId is num) {
+        itemIndexMap[rawId.toInt()] = i;
+      } else if (rawId != null) {
+        final parsed = int.tryParse(rawId.toString());
+        if (parsed != null) itemIndexMap[parsed] = i;
+      }
+    }
+
+    return CustomScrollView(
+      controller: controller,
+      physics: physics,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            12.0,
+            12.0,
+            12.0,
+            hasFooter ? 12.0 : AppSpacing.bottomTabPadding,
+          ),
+          sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 8,
               mainAxisSpacing: 12,
               childAspectRatio: 0.52,
             ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final String title = item['name'] ?? item['title'] ?? 'Unknown';
-              final String? posterPath = item['poster_path'];
-              final double voteAverage =
-                  (item['vote_average'] as num?)?.toDouble() ?? 0.0;
-              final int id = item['id'];
-              final String mediaType = item['media_type'] ?? defaultType;
-              final String? dateStr =
-                  item['release_date'] ?? item['first_air_date'];
-              String formattedDate = '';
-              if (dateStr != null && dateStr.isNotEmpty) {
-                try {
-                  final dt = DateTime.parse(dateStr);
-                  const months = [
-                    'JAN',
-                    'FEB',
-                    'MAR',
-                    'APR',
-                    'MAY',
-                    'JUN',
-                    'JUL',
-                    'AUG',
-                    'SEP',
-                    'OCT',
-                    'NOV',
-                    'DEC',
-                  ];
-                  formattedDate = '${months[dt.month - 1]}, ${dt.year}';
-                } catch (_) {
-                  if (dateStr.length >= 4) {
-                    formattedDate = dateStr.substring(0, 4);
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final item = items[index];
+                final String title = item['name'] ?? item['title'] ?? 'Unknown';
+                final String? posterPath = item['poster_path'];
+                final double voteAverage =
+                    (item['vote_average'] as num?)?.toDouble() ?? 0.0;
+                final int id = item['id'];
+                final String mediaType = item['media_type'] ?? defaultType;
+                final String? dateStr =
+                    item['release_date'] ?? item['first_air_date'];
+                String formattedDate = '';
+                if (dateStr != null && dateStr.isNotEmpty) {
+                  try {
+                    final dt = DateTime.parse(dateStr);
+                    const months = [
+                      'JAN',
+                      'FEB',
+                      'MAR',
+                      'APR',
+                      'MAY',
+                      'JUN',
+                      'JUL',
+                      'AUG',
+                      'SEP',
+                      'OCT',
+                      'NOV',
+                      'DEC',
+                    ];
+                    formattedDate = '${months[dt.month - 1]}, ${dt.year}';
+                  } catch (_) {
+                    if (dateStr.length >= 4) {
+                      formattedDate = dateStr.substring(0, 4);
+                    }
                   }
                 }
-              }
 
-              return RepaintBoundary(
-                key: ValueKey('${defaultType}_$id'),
-                child: GestureDetector(
-                  onTap: () => _openDetails(id, mediaType, title),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Poster Image
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Container(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Colors.grey[200]
-                                    : AppColors.surfaceLight,
-                                width: double.infinity,
-                                child: posterPath != null && posterPath.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl: _getImageUrl(posterPath),
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) =>
-                                            const SizedBox.shrink(),
-                                        errorWidget: (context, url, error) =>
-                                            Skeleton.ignore(
-                                              child: Icon(
-                                                Icons.movie_creation_outlined,
-                                                size: 32,
-                                                color:
-                                                    Theme.of(
-                                                          context,
-                                                        ).brightness ==
-                                                        Brightness.light
-                                                    ? Colors.grey[500]
-                                                    : AppColors.textTertiary,
+                return RepaintBoundary(
+                  key: ValueKey('${defaultType}_$id'),
+                  child: GestureDetector(
+                    onTap: () => _openDetails(id, mediaType, title),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Poster Image
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8.0),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Container(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Colors.grey[200]
+                                      : AppColors.surfaceLight,
+                                  width: double.infinity,
+                                  child: posterPath != null && posterPath.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: _getImageUrl(posterPath),
+                                          fit: BoxFit.cover,
+                                          memCacheWidth: 250,
+                                          placeholder: (context, url) =>
+                                              const SizedBox.shrink(),
+                                          errorWidget: (context, url, error) =>
+                                              Skeleton.ignore(
+                                                child: Icon(
+                                                  Icons.movie_creation_outlined,
+                                                  size: 32,
+                                                  color:
+                                                      Theme.of(
+                                                            context,
+                                                          ).brightness ==
+                                                          Brightness.light
+                                                      ? Colors.grey[500]
+                                                      : AppColors.textTertiary,
+                                                ),
                                               ),
-                                            ),
-                                      )
-                                    : Skeleton.ignore(
-                                        child: Icon(
-                                          Icons.movie_creation_outlined,
-                                          size: 32,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Colors.grey[500]
-                                              : AppColors.textTertiary,
+                                        )
+                                      : Skeleton.ignore(
+                                          child: Icon(
+                                            Icons.movie_creation_outlined,
+                                            size: 32,
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Colors.grey[500]
+                                                : AppColors.textTertiary,
+                                          ),
                                         ),
-                                      ),
-                              ),
-                              if (mediaType == 'tv' &&
-                                  Skeletonizer.maybeOf(context)?.enabled != true)
-                                TvShowStatusOverlay(tvId: id, index: index),
-                            ],
+                                ),
+                                if (mediaType == 'tv' &&
+                                    Skeletonizer.maybeOf(context)?.enabled != true)
+                                  TvShowStatusOverlay(tvId: id, index: index),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      // Title
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(height: 6),
+                        // Title
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      // Rating & Release Date row
-                      Row(
-                        children: [
-                          if (voteAverage > 0.0) ...[
-                            Icon(
-                              Icons.star,
-                              color: AppColors.primary,
-                              size: 10.0,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              voteAverage.toStringAsFixed(1),
-                              style: TextStyle(
-                                fontSize: 10.0,
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.color ??
-                                    AppColors.textSecondary,
+                        const SizedBox(height: 2),
+                        // Rating & Release Date row
+                        Row(
+                          children: [
+                            if (voteAverage > 0.0) ...[
+                              Icon(
+                                Icons.star,
+                                color: AppColors.primary,
+                                size: 10.0,
                               ),
-                            ),
-                            if (formattedDate.isNotEmpty) ...[
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 3),
                               Text(
-                                '•',
+                                voteAverage.toStringAsFixed(1),
                                 style: TextStyle(
                                   fontSize: 10.0,
                                   color:
@@ -1272,7 +1273,37 @@ class _SearchPageState extends State<SearchPage>
                                       AppColors.textSecondary,
                                 ),
                               ),
-                              const SizedBox(width: 4),
+                              if (formattedDate.isNotEmpty) ...[
+                                const SizedBox(width: 4),
+                                Text(
+                                  '•',
+                                  style: TextStyle(
+                                    fontSize: 10.0,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.color ??
+                                        AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    formattedDate,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 10.0,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium?.color ??
+                                          AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ] else if (formattedDate.isNotEmpty) ...[
                               Expanded(
                                 child: Text(
                                   formattedDate,
@@ -1289,95 +1320,99 @@ class _SearchPageState extends State<SearchPage>
                                 ),
                               ),
                             ],
-                          ] else if (formattedDate.isNotEmpty) ...[
-                            Expanded(
-                              child: Text(
-                                formattedDate,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 10.0,
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium?.color ??
-                                      AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
                           ],
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+              childCount: items.length,
+              findChildIndexCallback: (Key key) {
+                if (key is ValueKey<String>) {
+                  final keyStr = key.value;
+                  final prefix = '${defaultType}_';
+                  if (keyStr.startsWith(prefix)) {
+                    final id = int.tryParse(keyStr.substring(prefix.length));
+                    if (id != null) return itemIndexMap[id];
+                  }
+                }
+                return null;
+              },
+            ),
           ),
         ),
         if (isLoadingMore)
-          const Padding(
-            padding: EdgeInsets.only(
-              top: 16.0,
-              bottom: AppSpacing.bottomTabPadding,
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: 16.0,
+                bottom: AppSpacing.bottomTabPadding,
+              ),
+              child: Center(child: CircularProgressIndicator.adaptive()),
             ),
-            child: CircularProgressIndicator.adaptive(),
           ),
         if (hasLoadMoreError && onRetry != null)
-          Padding(
-            padding: const EdgeInsets.only(
-              top: 16.0,
-              bottom: AppSpacing.bottomTabPadding,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(
+                top: 16.0,
+                bottom: AppSpacing.bottomTabPadding,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Failed to load more data.',
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.grey[500]
+                          : AppColors.textTertiary,
+                      fontSize: 14.0,
+                    ),
+                  ),
+                  const SizedBox(height: 8.0),
+                  TextButton(
+                    onPressed: onRetry,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                    ),
+                    child: Text(
+                      'Retry',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Failed to load more data.',
+          ),
+        if (hasReachedMax && items.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(
+                top: 16.0,
+                bottom: AppSpacing.bottomTabPadding,
+              ),
+              child: Center(
+                child: Text(
+                  defaultType == 'tv'
+                      ? 'No more shows to load'
+                      : 'No more movies to load',
                   style: TextStyle(
                     color: Theme.of(context).brightness == Brightness.light
                         ? Colors.grey[500]
                         : AppColors.textTertiary,
                     fontSize: 14.0,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 8.0),
-                TextButton(
-                  onPressed: onRetry,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                  ),
-                  child: Text(
-                    'Retry',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14.0,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (hasReachedMax && items.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(
-              top: 16.0,
-              bottom: AppSpacing.bottomTabPadding,
-            ),
-            child: Text(
-              defaultType == 'tv'
-                  ? 'No more shows to load'
-                  : 'No more movies to load',
-              style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey[500]
-                    : AppColors.textTertiary,
-                fontSize: 14.0,
-                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -1478,7 +1513,6 @@ class _TvShowStatusOverlayState extends State<TvShowStatusOverlay> {
         _loaded = true;
       });
     } catch (_) {
-      _tvStatusCache[widget.tvId] = '';
       if (mounted) {
         setState(() {
           _loaded = true;
