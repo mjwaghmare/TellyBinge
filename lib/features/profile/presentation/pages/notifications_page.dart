@@ -1,23 +1,18 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 
-class NotificationItem {
-  final String username;
-  final String actionText;
-  final String? subtitleDetail;
-  final String avatarUrl;
-  final String time;
-  final bool isSystemAlert;
+class SarcasticEmptyState {
+  final String emoji;
+  final String title;
+  final String subtitle;
 
-  const NotificationItem({
-    required this.username,
-    required this.actionText,
-    this.subtitleDetail,
-    required this.avatarUrl,
-    required this.time,
-    this.isSystemAlert = false,
+  const SarcasticEmptyState({
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
   });
 }
 
@@ -29,73 +24,85 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  final List<NotificationItem> _notifications = [
-    const NotificationItem(
-      username: '🍿 Cancel your plans: Stranger Things',
-      actionText: 'Episode S05E01 drops tomorrow.',
-      subtitleDetail: 'Don\'t pretend you had better things to do.',
-      avatarUrl: '',
-      time: '10m ago',
-      isSystemAlert: true,
+  List<ReceivedNotificationItem> _notifications = [];
+  bool _isLoading = true;
+  late SarcasticEmptyState _emptyState;
+
+  static const List<SarcasticEmptyState> _emptyStates = [
+    SarcasticEmptyState(
+      emoji: '🦗',
+      title: 'Crickets in here...',
+      subtitle:
+          'No notifications yet. Either all your shows are on hiatus or you need to touch some grass.',
     ),
-    const NotificationItem(
-      username: '🎬 Clear your calendar: Dune: Part Three',
-      actionText: 'Dune: Part Three premieres in 1 hour.',
-      subtitleDetail: 'Grab the remote and lock the door.',
-      avatarUrl: '',
-      time: '1h ago',
-      isSystemAlert: true,
+    SarcasticEmptyState(
+      emoji: '🍿',
+      title: 'Your notifications are empty!',
+      subtitle:
+          'Empty like your popcorn bucket 5 minutes into the movie. Add some shows to your watchlist!',
     ),
-    const NotificationItem(
-      username: 'moon',
-      actionText: 'followed you back on TV Time',
-      avatarUrl:
-          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80',
-      time: '4 days ago',
+    SarcasticEmptyState(
+      emoji: '😴',
+      title: 'Total radio silence',
+      subtitle:
+          'No pushed episodes, no movie premieres, zero drama. Go rewatch The Office for the 14th time.',
     ),
-    const NotificationItem(
-      username: '🛌 Sleep is overrated: House of the Dragon',
-      actionText: 'Episode S03E01 is airing tomorrow.',
-      subtitleDetail: 'Your pillow can wait.',
-      avatarUrl: '',
-      time: '1 day ago',
-      isSystemAlert: true,
+    SarcasticEmptyState(
+      emoji: '🛋️',
+      title: 'Suspiciously peaceful...',
+      subtitle:
+          'No cliffhangers waiting to ruin your sleep tonight. Enjoy the quiet while it lasts!',
     ),
-    const NotificationItem(
-      username: 'Rebeka',
-      actionText: 'followed you back on TV Time',
-      avatarUrl:
-          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80',
-      time: '25 June 2026',
-    ),
-    const NotificationItem(
-      username: '🍁',
-      actionText: 'followed you on TV Time',
-      avatarUrl:
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80',
-      time: '18 June 2026',
-    ),
-    const NotificationItem(
-      username: 'Ambi',
-      actionText: 'followed you on TV Time',
-      avatarUrl:
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80',
-      time: '14 June 2026',
-    ),
-    const NotificationItem(
-      username: 'Chichan ™',
-      actionText: 'commented the episode S04 | E04',
-      subtitleDetail: 'of FROM',
-      avatarUrl:
-          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80',
-      time: '16 May 2026',
+    SarcasticEmptyState(
+      emoji: '😱',
+      title: 'Nothing to report! Go outside?',
+      subtitle:
+          'Your notification tray is clear. You could actually do something productive... or find new shows.',
     ),
   ];
 
-  void _clearAllNotifications() {
+  @override
+  void initState() {
+    super.initState();
+    _emptyState = _emptyStates[Random().nextInt(_emptyStates.length)];
+    _fetchReceivedNotifications();
+  }
+
+  Future<void> _fetchReceivedNotifications() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final items = await NotificationService().getReceivedNotifications();
+    if (mounted) {
+      setState(() {
+        _notifications = items;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _clearAllNotifications() async {
     setState(() {
       _notifications.clear();
     });
+    await NotificationService().clearAllUserNotifications();
+  }
+
+  Future<void> _removeNotification(String id) async {
+    setState(() {
+      _notifications.removeWhere((item) => item.id == id);
+    });
+    await NotificationService().removeReceivedNotification(id);
+    final intId = int.tryParse(id);
+    if (intId != null) {
+      await NotificationService().cancelNotificationById(intId);
+    }
+  }
+
+  void _onNotificationTap(String? payload) {
+    if (payload != null && payload.isNotEmpty) {
+      NotificationService().onNotificationTap?.call(payload);
+    }
   }
 
   @override
@@ -138,117 +145,127 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
         ],
       ),
-      body: _notifications.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_off_outlined,
-                    size: 64.0,
-                    color: isDark
-                        ? AppColors.textTertiary
-                        : AppColors.lightTextTertiary,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'No Notifications',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'You\'re all caught up! Check back later.',
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: isDark
-                          ? AppColors.textSecondary
-                          : AppColors.lightTextSecondary,
-                    ),
-                  ),
-                ],
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(
-                0,
-                AppSpacing.sm,
-                0,
-                AppSpacing.bottomTabPadding,
-              ),
-              itemCount: _notifications.length,
-              separatorBuilder: (context, index) => Divider(
-                color: Theme.of(context).dividerColor,
-                height: 1,
-                thickness: 0.5,
-              ),
-              itemBuilder: (context, index) {
-                final item = _notifications[index];
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.xs,
+          : _notifications.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _emptyState.emoji,
+                          style: const TextStyle(fontSize: 64.0),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          _emptyState.title,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 20.0,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          _emptyState.subtitle,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            fontStyle: FontStyle.italic,
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : AppColors.lightTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  leading: item.isSystemAlert
-                      ? CircleAvatar(
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    AppSpacing.bottomTabPadding,
+                  ),
+                  itemCount: _notifications.length,
+                  separatorBuilder: (context, index) => Divider(
+                    color: Theme.of(context).dividerColor,
+                    height: 1,
+                    thickness: 0.5,
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = _notifications[index];
+                    return Dismissible(
+                      key: Key('notification_${item.id}'),
+                      direction: DismissDirection.endToStart,
+                      onDismissed: (_) => _removeNotification(item.id),
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: AppSpacing.md),
+                        color: AppColors.error,
+                        child: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.white,
+                        ),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs,
+                          vertical: AppSpacing.xs,
+                        ),
+                        onTap: item.payload != null
+                            ? () => _onNotificationTap(item.payload)
+                            : null,
+                        leading: CircleAvatar(
                           radius: 20.0,
                           backgroundColor: AppColors.primary.withValues(
                             alpha: 0.2,
                           ),
                           child: const Icon(
-                            Icons.notifications_active,
+                            Icons.notifications_active_outlined,
                             color: AppColors.primary,
                             size: 20.0,
                           ),
-                        )
-                      : CircleAvatar(
-                          radius: 20.0,
-                          backgroundColor: isDark
-                              ? AppColors.surfaceElevated
-                              : AppColors.lightSurfaceElevated,
-                          backgroundImage: item.avatarUrl.isNotEmpty
-                              ? CachedNetworkImageProvider(item.avatarUrl)
-                              : null,
                         ),
-                  title: RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 14.0,
-                        height: 1.3,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: '${item.username}\n',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        TextSpan(text: '${item.actionText} '),
-                        if (item.subtitleDetail != null)
-                          TextSpan(
-                            text: item.subtitleDetail,
-                            style: const TextStyle(fontStyle: FontStyle.italic),
+                        title: Text(
+                          item.title,
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
                           ),
-                      ],
-                    ),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      item.time,
-                      style: TextStyle(
-                        color: isDark
-                            ? AppColors.textSecondary
-                            : AppColors.lightTextSecondary,
-                        fontSize: 12.0,
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            item.body,
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppColors.textSecondary
+                                  : AppColors.lightTextSecondary,
+                              fontSize: 13.0,
+                            ),
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.close, size: 18.0),
+                          color: isDark
+                              ? AppColors.textTertiary
+                              : AppColors.lightTextTertiary,
+                          onPressed: () => _removeNotification(item.id),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
     );
   }
 }

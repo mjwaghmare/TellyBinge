@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -6,6 +7,40 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+
+/// Represents a notification that has actually been pushed or received on device.
+class ReceivedNotificationItem {
+  final String id;
+  final String title;
+  final String body;
+  final String? payload;
+  final String timestamp;
+
+  const ReceivedNotificationItem({
+    required this.id,
+    required this.title,
+    required this.body,
+    this.payload,
+    required this.timestamp,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'body': body,
+        'payload': payload,
+        'timestamp': timestamp,
+      };
+
+  factory ReceivedNotificationItem.fromJson(Map<String, dynamic> json) =>
+      ReceivedNotificationItem(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        body: json['body'] as String? ?? '',
+        payload: json['payload'] as String?,
+        timestamp: json['timestamp'] as String? ?? '',
+      );
+}
 
 /// Which watchlist a notification belongs to.
 ///
@@ -54,6 +89,27 @@ class _ScheduledAlert {
   });
 }
 
+/// A pending notification item formatted for presentation in UI views.
+class ScheduledNotificationDisplayItem {
+  final int id;
+  final String title;
+  final String body;
+  final String? payload;
+  final NotificationMedia? media;
+  final int? mediaId;
+  final DateTime? scheduledDate;
+
+  const ScheduledNotificationDisplayItem({
+    required this.id,
+    required this.title,
+    required this.body,
+    this.payload,
+    this.media,
+    this.mediaId,
+    this.scheduledDate,
+  });
+}
+
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -69,30 +125,15 @@ class NotificationService {
     final epText = episodeCode.isNotEmpty
         ? 'Episode $episodeCode'
         : 'New episode';
-    final templates = [
-      (
-        '🍿 Cancel your plans: $showName',
-        '$epText drops {time}. Don\'t pretend you had better things to do.',
-      ),
-      (
-        '🛌 Sleep is overrated: $showName',
-        '$epText is airing {time}. Your pillow can wait.',
-      ),
-      (
-        '⏰ Productivity left the chat: $showName',
-        '$epText lands {time}. Time to ignore your to-do list.',
-      ),
-      (
-        '🙄 Oh look, more drama: $showName',
-        '$epText airs {time}. Try not to scream at your screen.',
-      ),
-      (
-        '🧠 Goodbye braincells: $showName',
-        '$epText arrives {time}. Ready for another cliffhanger?',
-      ),
+    final titles = [
+      '🍿 Cancel your plans: $showName',
+      '🛌 Sleep is overrated: $showName',
+      '⏰ Productivity left the chat: $showName',
+      '🙄 Oh look, more drama: $showName',
+      '🧠 Goodbye braincells: $showName',
     ];
-    final index = showId.abs() % templates.length;
-    return templates[index];
+    final index = showId.abs() % titles.length;
+    return (titles[index], '$epText airs {time}.');
   }
 
   /// Generates a funny, sarcastic, and varied notification title & body
@@ -101,30 +142,15 @@ class NotificationService {
     required int movieId,
     required String movieTitle,
   }) {
-    final templates = [
-      (
-        '🎬 Clear your calendar: $movieTitle',
-        '$movieTitle premieres {time}. Grab the remote and lock the door.',
-      ),
-      (
-        '🍿 Popcorn Emergency: $movieTitle',
-        '$movieTitle releases {time}. Prepare your snacks.',
-      ),
-      (
-        '🛋️ Your couch is calling: $movieTitle',
-        '$movieTitle lands {time}. Get comfortable.',
-      ),
-      (
-        '💸 There goes your free time: $movieTitle',
-        '$movieTitle drops {time}. No excuses, go watch it.',
-      ),
-      (
-        '🌟 Big Screen Energy: $movieTitle',
-        '$movieTitle is releasing {time}. Movie night is scheduled.',
-      ),
+    final titles = [
+      '🎬 Clear your calendar: $movieTitle',
+      '🍿 Popcorn Emergency: $movieTitle',
+      '🛋️ Your couch is calling: $movieTitle',
+      '💸 There goes your free time: $movieTitle',
+      '🌟 Big Screen Energy: $movieTitle',
     ];
-    final index = movieId.abs() % templates.length;
-    return templates[index];
+    final index = movieId.abs() % titles.length;
+    return (titles[index], '$movieTitle premieres {time}.');
   }
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -277,6 +303,12 @@ class NotificationService {
       body: 'If you see this, notifications are working!',
       notificationDetails: platformChannelSpecifics,
     );
+
+    await saveReceivedNotification(
+      id: _testNotificationId.toString(),
+      title: 'Test Notification',
+      body: 'If you see this, notifications are working!',
+    );
   }
 
   Future<void> _scheduleOne({
@@ -320,6 +352,9 @@ class NotificationService {
     );
   }
 
+  /// Track canceled notification IDs for durable suppression across reconciles.
+  final Set<int> _canceledNotificationIds = {};
+
   /// Drops one title's alerts immediately, without waiting for its watchlist
   /// stream to round-trip and trigger a reconcile.
   ///
@@ -328,17 +363,182 @@ class NotificationService {
   /// cleared because the platform no longer matches what reconcile last
   /// scheduled, and without that the next run could no-op on a stale match.
   Future<void> cancelNotification(NotificationMedia media, int id) async {
-    await _notificationsPlugin.cancel(
-      id: _notificationId(media, id, _slotDayBefore),
-    );
-    await _notificationsPlugin.cancel(
-      id: _notificationId(media, id, _slotHourBefore),
-    );
+    final dayBeforeId = _notificationId(media, id, _slotDayBefore);
+    final hourBeforeId = _notificationId(media, id, _slotHourBefore);
+
+    _canceledNotificationIds.add(dayBeforeId);
+    _canceledNotificationIds.add(hourBeforeId);
+
+    if (_desired.containsKey(media)) {
+      _desired[media]!.removeWhere((p) => p.mediaId == id);
+    }
+
+    await _notificationsPlugin.cancel(id: dayBeforeId);
+    await _notificationsPlugin.cancel(id: hourBeforeId);
     _lastScheduledSignature = null;
   }
 
+  static const int _maxReceivedHistory = 20;
+
+  /// Saves a notification that was received/pushed to local history.
+  /// Enforces FIFO rule: max 20 items.
+  Future<void> saveReceivedNotification({
+    required String title,
+    required String body,
+    String? payload,
+    String? id,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawList = prefs.getStringList('received_notifications_history') ?? [];
+
+    final newItem = ReceivedNotificationItem(
+      id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      body: body,
+      payload: payload,
+      timestamp: DateTime.now().toIso8601String(),
+    );
+
+    final updatedList = <String>[
+      jsonEncode(newItem.toJson()),
+      ...rawList,
+    ];
+
+    if (updatedList.length > _maxReceivedHistory) {
+      updatedList.removeRange(_maxReceivedHistory, updatedList.length);
+    }
+
+    await prefs.setStringList('received_notifications_history', updatedList);
+  }
+
+  /// Retrieves received notifications history (most recent first, max 20).
+  Future<List<ReceivedNotificationItem>> getReceivedNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawList = prefs.getStringList('received_notifications_history') ?? [];
+
+    final items = <ReceivedNotificationItem>[];
+    for (final jsonStr in rawList) {
+      try {
+        final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+        items.add(ReceivedNotificationItem.fromJson(map));
+      } catch (_) {}
+    }
+    return items;
+  }
+
+  /// Removes a single received notification by ID from history.
+  Future<void> removeReceivedNotification(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawList = prefs.getStringList('received_notifications_history') ?? [];
+    final updatedList = <String>[];
+
+    for (final jsonStr in rawList) {
+      try {
+        final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+        if (map['id']?.toString() != id) {
+          updatedList.add(jsonStr);
+        }
+      } catch (_) {}
+    }
+
+    await prefs.setStringList('received_notifications_history', updatedList);
+  }
+
+  Future<void> cancelNotificationById(int id) async {
+    _canceledNotificationIds.add(id);
+
+    for (final list in _desired.values) {
+      list.removeWhere((p) =>
+          _notificationId(p.media, p.mediaId, _slotDayBefore) == id ||
+          _notificationId(p.media, p.mediaId, _slotHourBefore) == id);
+    }
+
+    await _notificationsPlugin.cancel(id: id);
+    await removeReceivedNotification(id.toString());
+    _lastScheduledSignature = null;
+  }
+
+  /// Cancels platform notifications and resets the scheduled signature.
+  /// Does NOT mutate _desired.
   Future<void> cancelAllNotifications() async {
     await _notificationsPlugin.cancelAll();
+    _lastScheduledSignature = null;
+  }
+
+  /// Explicit user-intent clear-all flow: wipes desired titles, canceled state,
+  /// platform notifications, and local history.
+  Future<void> clearAllUserNotifications() async {
+    _desired.clear();
+    _canceledNotificationIds.clear();
+    await cancelAllNotifications();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('received_notifications_history');
+  }
+
+  /// Returns all currently scheduled/pending notification items for display.
+  Future<List<ScheduledNotificationDisplayItem>> getPendingNotifications() async {
+    final Map<int, ScheduledNotificationDisplayItem> itemsById = {};
+
+    // 1. Fetch platform-scheduled notification requests from local notifications plugin
+    try {
+      final platformRequests =
+          await _notificationsPlugin.pendingNotificationRequests();
+      for (final req in platformRequests) {
+        if (req.title != null && req.body != null) {
+          itemsById[req.id] = ScheduledNotificationDisplayItem(
+            id: req.id,
+            title: req.title!,
+            body: req.body!,
+            payload: req.payload,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch platform pending notifications: $e');
+    }
+
+    // 2. Supplement with desired notifications from watchlists
+    final now = DateTime.now();
+    for (final entry in _desired.entries) {
+      final media = entry.key;
+      for (final pending in entry.value) {
+        if (pending.releaseDateStr.isEmpty) continue;
+        final releaseDate = _resolveReleaseDate(pending.releaseDateStr);
+        if (releaseDate == null) continue;
+
+        final dayBefore = releaseDate.subtract(const Duration(days: 1));
+        if (dayBefore.isAfter(now)) {
+          final id = _notificationId(media, pending.mediaId, _slotDayBefore);
+          itemsById.putIfAbsent(
+            id,
+            () => ScheduledNotificationDisplayItem(
+              id: id,
+              title: '${pending.title} (Tomorrow)',
+              body: pending.body.replaceAll('{time}', 'tomorrow'),
+              payload: _deepLinkFor(media, pending.mediaId),
+              media: media,
+              mediaId: pending.mediaId,
+              scheduledDate: dayBefore,
+            ),
+          );
+        }
+      }
+    }
+
+    final list = itemsById.values.toList();
+    list.sort((a, b) {
+      if (a.scheduledDate == null && b.scheduledDate == null) return 0;
+      if (a.scheduledDate == null) return 1;
+      if (b.scheduledDate == null) return -1;
+      return a.scheduledDate!.compareTo(b.scheduledDate!);
+    });
+
+    // Soonest first, so the cap drops the most distant alerts rather than
+    // whichever titles happened to sort last in the watchlist.
+    if (list.length > _maxPending) {
+      return list.take(_maxPending).toList();
+    }
+    return list;
   }
 
   /// Wipes all scheduled alerts and the desired set on sign-out.
@@ -350,8 +550,11 @@ class NotificationService {
     _reconcileTimer?.cancel();
     _reconcileTimer = null;
     _desired.clear();
+    _canceledNotificationIds.clear();
     await cancelAllNotifications();
     _lastScheduledSignature = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('received_notifications_history');
   }
 
   /// Turns a TMDB date string into the release moment that alerts are offset
@@ -381,10 +584,9 @@ class NotificationService {
   /// change nothing don't trigger another round of platform calls.
   String? _lastScheduledSignature;
 
-  /// iOS silently discards pending local notifications beyond 64 per app.
-  /// Staying under it deliberately — and picking *which* ones survive by air
-  /// date — beats letting the platform drop an arbitrary tail.
-  static const int _maxPending = 60;
+  /// Max pending notifications allowed. Once limit of 20 is reached,
+  /// older notifications are removed in a FIFO manner.
+  static const int _maxPending = 20;
 
   static const Duration _reconcileDebounce = Duration(milliseconds: 600);
 
@@ -489,18 +691,17 @@ class NotificationService {
         // the release. A title added after that moment has passed simply gets
         // no day-before alert — the hour-before one, if enabled, still fires.
         final dayBefore = releaseDate.subtract(const Duration(days: 1));
-        if (dayBefore.isAfter(now)) {
+        final dayBeforeId = _notificationId(
+          pending.media,
+          pending.mediaId,
+          _slotDayBefore,
+        );
+        if (dayBefore.isAfter(now) && !_canceledNotificationIds.contains(dayBeforeId)) {
           alerts.add(
             _ScheduledAlert(
-              id: _notificationId(
-                pending.media,
-                pending.mediaId,
-                _slotDayBefore,
-              ),
+              id: dayBeforeId,
               title: '${pending.title} (Tomorrow)',
-              body: pending.body
-                  .replaceAll('airing soon', 'airing tomorrow')
-                  .replaceAll('releasing soon', 'releasing tomorrow'),
+              body: pending.body.replaceAll('{time}', 'tomorrow'),
               when: dayBefore,
               payload: _deepLinkFor(pending.media, pending.mediaId),
             ),
@@ -509,18 +710,17 @@ class NotificationService {
 
         if (notify1HourBefore) {
           final hourBefore = releaseDate.subtract(const Duration(hours: 1));
-          if (hourBefore.isAfter(now)) {
+          final hourBeforeId = _notificationId(
+            pending.media,
+            pending.mediaId,
+            _slotHourBefore,
+          );
+          if (hourBefore.isAfter(now) && !_canceledNotificationIds.contains(hourBeforeId)) {
             alerts.add(
               _ScheduledAlert(
-                id: _notificationId(
-                  pending.media,
-                  pending.mediaId,
-                  _slotHourBefore,
-                ),
+                id: hourBeforeId,
                 title: '${pending.title} (In 1 Hour)',
-                body: pending.body
-                    .replaceAll('airing soon', 'airing in 1 hour')
-                    .replaceAll('releasing soon', 'releasing in 1 hour'),
+                body: pending.body.replaceAll('{time}', 'in 1 hour'),
                 when: hourBefore,
                 payload: _deepLinkFor(pending.media, pending.mediaId),
               ),
