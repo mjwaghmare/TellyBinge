@@ -1164,111 +1164,92 @@ class _SearchPageState extends State<SearchPage>
                 }
               }
 
-              return GestureDetector(
-                onTap: () => _openDetails(id, mediaType, title),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Poster Image
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8.0),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Container(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? Colors.grey[200]
-                                  : AppColors.surfaceLight,
-                              width: double.infinity,
-                              child: posterPath != null && posterPath.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: _getImageUrl(posterPath),
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Center(
-                                        child: SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child:
-                                              CircularProgressIndicator.adaptive(
-                                                strokeWidth: 2,
+              return RepaintBoundary(
+                key: ValueKey('${defaultType}_$id'),
+                child: GestureDetector(
+                  onTap: () => _openDetails(id, mediaType, title),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Poster Image
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8.0),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Container(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.grey[200]
+                                    : AppColors.surfaceLight,
+                                width: double.infinity,
+                                child: posterPath != null && posterPath.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: _getImageUrl(posterPath),
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            const SizedBox.shrink(),
+                                        errorWidget: (context, url, error) =>
+                                            Skeleton.ignore(
+                                              child: Icon(
+                                                Icons.movie_creation_outlined,
+                                                size: 32,
+                                                color:
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
+                                                        Brightness.light
+                                                    ? Colors.grey[500]
+                                                    : AppColors.textTertiary,
                                               ),
+                                            ),
+                                      )
+                                    : Skeleton.ignore(
+                                        child: Icon(
+                                          Icons.movie_creation_outlined,
+                                          size: 32,
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Colors.grey[500]
+                                              : AppColors.textTertiary,
                                         ),
                                       ),
-                                      errorWidget: (context, url, error) =>
-                                          Skeleton.ignore(
-                                            child: Icon(
-                                              Icons.movie_creation_outlined,
-                                              size: 32,
-                                              color:
-                                                  Theme.of(
-                                                        context,
-                                                      ).brightness ==
-                                                      Brightness.light
-                                                  ? Colors.grey[500]
-                                                  : AppColors.textTertiary,
-                                            ),
-                                          ),
-                                    )
-                                  : Skeleton.ignore(
-                                      child: Icon(
-                                        Icons.movie_creation_outlined,
-                                        size: 32,
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Colors.grey[500]
-                                            : AppColors.textTertiary,
-                                      ),
-                                    ),
-                            ),
-                            if (mediaType == 'tv' &&
-                                Skeletonizer.maybeOf(context)?.enabled != true)
-                              TvShowStatusOverlay(tvId: id, index: index),
-                          ],
+                              ),
+                              if (mediaType == 'tv' &&
+                                  Skeletonizer.maybeOf(context)?.enabled != true)
+                                TvShowStatusOverlay(tvId: id, index: index),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    // Title
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(height: 6),
+                      // Title
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    // Rating & Release Date row
-                    Row(
-                      children: [
-                        if (voteAverage > 0.0) ...[
-                          Icon(
-                            Icons.star,
-                            color: AppColors.primary,
-                            size: 10.0,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            voteAverage.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 10.0,
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.color ??
-                                  AppColors.textSecondary,
+                      const SizedBox(height: 2),
+                      // Rating & Release Date row
+                      Row(
+                        children: [
+                          if (voteAverage > 0.0) ...[
+                            Icon(
+                              Icons.star,
+                              color: AppColors.primary,
+                              size: 10.0,
                             ),
-                          ),
-                          if (formattedDate.isNotEmpty) ...[
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 3),
                             Text(
-                              '•',
+                              voteAverage.toStringAsFixed(1),
                               style: TextStyle(
                                 fontSize: 10.0,
                                 color:
@@ -1278,7 +1259,37 @@ class _SearchPageState extends State<SearchPage>
                                     AppColors.textSecondary,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            if (formattedDate.isNotEmpty) ...[
+                              const SizedBox(width: 4),
+                              Text(
+                                '•',
+                                style: TextStyle(
+                                  fontSize: 10.0,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color ??
+                                      AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  formattedDate,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10.0,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.color ??
+                                        AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ] else if (formattedDate.isNotEmpty) ...[
                             Expanded(
                               child: Text(
                                 formattedDate,
@@ -1295,26 +1306,10 @@ class _SearchPageState extends State<SearchPage>
                               ),
                             ),
                           ],
-                        ] else if (formattedDate.isNotEmpty) ...[
-                          Expanded(
-                            child: Text(
-                              formattedDate,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 10.0,
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.color ??
-                                    AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
                         ],
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -1432,6 +1427,8 @@ class TvShowStatusOverlay extends StatefulWidget {
 }
 
 class _TvShowStatusOverlayState extends State<TvShowStatusOverlay> {
+  static final Map<int, String?> _tvStatusCache = {};
+
   bool _showPill = false;
   bool _loaded = false;
   String _pillText = 'ENDED';
@@ -1440,40 +1437,48 @@ class _TvShowStatusOverlayState extends State<TvShowStatusOverlay> {
   @override
   void initState() {
     super.initState();
-    _checkStatus();
+    if (_tvStatusCache.containsKey(widget.tvId)) {
+      _applyStatusString(_tvStatusCache[widget.tvId] ?? '');
+      _loaded = true;
+    } else {
+      _checkStatus();
+    }
+  }
+
+  void _applyStatusString(String status) {
+    final normalized = status.toLowerCase();
+    if (normalized == 'ended') {
+      _showPill = true;
+      _pillText = 'ENDED';
+      _pillColor = AppColors.error;
+    } else if (normalized == 'canceled' || normalized == 'cancelled') {
+      _showPill = true;
+      _pillText = 'CANCELLED';
+      _pillColor = AppColors.error;
+    } else if (normalized == 'planned' ||
+        normalized == 'in production' ||
+        normalized == 'post production') {
+      _showPill = true;
+      _pillText = 'UPCOMING';
+      _pillColor = AppColors.airing;
+    } else {
+      _showPill = false;
+    }
   }
 
   Future<void> _checkStatus() async {
-    // Wait for a staggered delay based on item index to prevent parallel network floods/connection resets
-    await Future.delayed(Duration(milliseconds: widget.index * 120));
-    if (!mounted) return;
     try {
       final tmdbClient = context.read<TmdbClient>();
       final details = await tmdbClient.getTvShowDetails(widget.tvId);
       final String status = details['status'] ?? '';
+      _tvStatusCache[widget.tvId] = status;
       if (!mounted) return;
       setState(() {
-        final normalized = status.toLowerCase();
-        if (normalized == 'ended') {
-          _showPill = true;
-          _pillText = 'ENDED';
-          _pillColor = AppColors.error;
-        } else if (normalized == 'canceled' || normalized == 'cancelled') {
-          _showPill = true;
-          _pillText = 'CANCELLED';
-          _pillColor = AppColors.error;
-        } else if (normalized == 'planned' ||
-            normalized == 'in production' ||
-            normalized == 'post production') {
-          _showPill = true;
-          _pillText = 'UPCOMING';
-          _pillColor = AppColors.airing;
-        } else {
-          _showPill = false;
-        }
+        _applyStatusString(status);
         _loaded = true;
       });
     } catch (_) {
+      _tvStatusCache[widget.tvId] = '';
       if (mounted) {
         setState(() {
           _loaded = true;

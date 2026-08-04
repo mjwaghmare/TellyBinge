@@ -22,6 +22,32 @@ class SearchCubit extends Cubit<SearchState> {
 
   SearchCubit({required this.tmdbClient}) : super(SearchInitial());
 
+  /// Sorts media items by release date / first air date descending (latest first).
+  List<dynamic> _sortByReleaseDateDescending(List<dynamic> items) {
+    final sorted = List<dynamic>.from(items);
+    sorted.sort((a, b) {
+      final dateStrA = (a['release_date'] ?? a['first_air_date'])?.toString();
+      final dateStrB = (b['release_date'] ?? b['first_air_date'])?.toString();
+
+      final dtA = (dateStrA != null && dateStrA.isNotEmpty)
+          ? DateTime.tryParse(dateStrA)
+          : null;
+      final dtB = (dateStrB != null && dateStrB.isNotEmpty)
+          ? DateTime.tryParse(dateStrB)
+          : null;
+
+      if (dtA != null && dtB != null) {
+        return dtB.compareTo(dtA);
+      } else if (dtA != null) {
+        return -1;
+      } else if (dtB != null) {
+        return 1;
+      }
+      return 0;
+    });
+    return sorted;
+  }
+
   // MODIFY: loadTrending with caching to avoid redundant api queries
   Future<void> loadTrending() async {
     if (state is SearchTrendingSuccess) {
@@ -42,10 +68,13 @@ class SearchCubit extends Cubit<SearchState> {
     }
     emit(SearchLoading());
     try {
-      final tvShows = await tmdbClient.getTrendingTvShows();
+      final rawTvShows = await tmdbClient.getTrendingTvShows();
       // Stagger by 100ms to prevent simultaneous socket handshakes on startup
       await Future.delayed(const Duration(milliseconds: 100));
-      final movies = await tmdbClient.getTrendingMovies();
+      final rawMovies = await tmdbClient.getTrendingMovies();
+
+      final tvShows = _sortByReleaseDateDescending(rawTvShows);
+      final movies = _sortByReleaseDateDescending(rawMovies);
 
       _cachedTrendingTv = tvShows;
       _cachedTrendingMovies = movies;
@@ -211,10 +240,13 @@ class SearchCubit extends Cubit<SearchState> {
             uniqueMovies[item['id'] as int] = item;
           }
 
+          final sortedTv = _sortByReleaseDateDescending(uniqueTv.values.toList());
+          final sortedMovies = _sortByReleaseDateDescending(uniqueMovies.values.toList());
+
           emit(
             currentState.copyWith(
-              trendingTv: uniqueTv.values.toList(),
-              trendingMovies: uniqueMovies.values.toList(),
+              trendingTv: sortedTv,
+              trendingMovies: sortedMovies,
               tvPage: isTvTab ? nextPage : currentState.tvPage,
               moviesPage: !isTvTab ? nextPage : currentState.moviesPage,
               isLoadingMore: false,
@@ -268,7 +300,7 @@ class SearchCubit extends Cubit<SearchState> {
           for (var item in updatedResults) {
             uniqueResults[item['id'] as int] = item;
           }
-          final deduplicatedList = uniqueResults.values.toList();
+          final deduplicatedList = _sortByReleaseDateDescending(uniqueResults.values.toList());
 
           emit(
             currentState.copyWith(
@@ -343,13 +375,15 @@ class SearchCubit extends Cubit<SearchState> {
             .toList();
       }
 
+      final sortedResults = _sortByReleaseDateDescending(filteredResults);
+
       emit(
         SearchResultsSuccess(
-          results: filteredResults,
+          results: sortedResults,
           query: query,
           isTv: isTv,
           page: 1,
-          hasReachedMax: filteredResults.isEmpty,
+          hasReachedMax: sortedResults.isEmpty,
         ),
       );
     } catch (e) {
@@ -367,22 +401,23 @@ class SearchCubit extends Cubit<SearchState> {
 
   void updateTrendingTv(List<dynamic> filteredShows) {
     final currentState = state;
+    final sortedShows = _sortByReleaseDateDescending(filteredShows);
     if (currentState is SearchTrendingSuccess) {
       emit(
         currentState.copyWith(
-          trendingTv: filteredShows,
+          trendingTv: sortedShows,
           tvPage: 1,
-          tvHasReachedMax: filteredShows.isEmpty,
+          tvHasReachedMax: sortedShows.isEmpty,
         ),
       );
     } else {
       emit(
         SearchTrendingSuccess(
-          trendingTv: filteredShows,
+          trendingTv: sortedShows,
           trendingMovies: _cachedTrendingMovies ?? [],
           tvPage: 1,
           moviesPage: 1,
-          tvHasReachedMax: filteredShows.isEmpty,
+          tvHasReachedMax: sortedShows.isEmpty,
           moviesHasReachedMax: (_cachedTrendingMovies ?? []).isEmpty,
         ),
       );
@@ -391,23 +426,24 @@ class SearchCubit extends Cubit<SearchState> {
 
   void updateTrendingMovies(List<dynamic> filteredMovies) {
     final currentState = state;
+    final sortedMovies = _sortByReleaseDateDescending(filteredMovies);
     if (currentState is SearchTrendingSuccess) {
       emit(
         currentState.copyWith(
-          trendingMovies: filteredMovies,
+          trendingMovies: sortedMovies,
           moviesPage: 1,
-          moviesHasReachedMax: filteredMovies.isEmpty,
+          moviesHasReachedMax: sortedMovies.isEmpty,
         ),
       );
     } else {
       emit(
         SearchTrendingSuccess(
           trendingTv: _cachedTrendingTv ?? [],
-          trendingMovies: filteredMovies,
+          trendingMovies: sortedMovies,
           tvPage: 1,
           moviesPage: 1,
           tvHasReachedMax: (_cachedTrendingTv ?? []).isEmpty,
-          moviesHasReachedMax: filteredMovies.isEmpty,
+          moviesHasReachedMax: sortedMovies.isEmpty,
         ),
       );
     }
