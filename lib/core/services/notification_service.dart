@@ -356,6 +356,12 @@ class NotificationService {
   }
 
   Future<void> sendTestNotification() async {
+    final androidPlugin = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await androidPlugin?.deleteNotificationChannel(channelId: 'test_channel');
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
           'test_channel',
@@ -375,6 +381,8 @@ class NotificationService {
       android: androidPlatformChannelSpecifics,
       iOS: darwinPlatformChannelSpecifics,
     );
+
+    await _notificationsPlugin.cancel(id: _testNotificationId);
 
     await _notificationsPlugin.show(
       id: _testNotificationId,
@@ -744,6 +752,17 @@ class NotificationService {
   Future<void> _reconcileOnce(bool force) async {
     _reconcileTimer?.cancel();
     _reconcileTimer = null;
+
+    if (force) {
+      _lastScheduledSignature = null;
+      final androidPlugin = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await androidPlugin?.deleteNotificationChannel(
+        channelId: 'release_channel',
+      );
+    }
 
     final prefs = await SharedPreferences.getInstance();
     final notificationsEnabled =
