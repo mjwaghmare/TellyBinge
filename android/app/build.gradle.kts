@@ -12,6 +12,9 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // Required by flutter_local_notifications, which uses java.time on APIs
+        // below 26. Without this the build fails at :app:checkDebugAarMetadata.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -49,4 +52,6 @@ flutter {
 dependencies {
     // Coroutines for safe async image loading in the widget provider
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

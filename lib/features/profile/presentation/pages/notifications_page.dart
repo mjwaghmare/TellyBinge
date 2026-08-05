@@ -257,13 +257,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         ),
                       ),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.close, size: 18.0),
-                      color: isDark
-                          ? AppColors.textTertiary
-                          : AppColors.lightTextTertiary,
-                      onPressed: () => _removeNotification(item.id),
-                    ),
                   ),
                 );
               },

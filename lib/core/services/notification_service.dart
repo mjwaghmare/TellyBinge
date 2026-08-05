@@ -168,6 +168,16 @@ class NotificationService {
   static const int _testNotificationId = 1 << 30;
   static const int _reinstallNotificationId = (1 << 30) - 2;
 
+  /// Android status-bar icon. Must live in res/drawable (the plugin looks names
+  /// up with defType "drawable", so res/mipmap entries are invisible to it), and
+  /// must be alpha-only: since API 21 the system discards colour in this slot
+  /// and tints the alpha channel, so an opaque bitmap renders as a solid block.
+  static const String _androidStatusBarIcon = 'ic_stat_notification';
+
+  /// Full-colour logo shown as the notification's large icon. Also a drawable,
+  /// because [DrawableResourceAndroidBitmap] decodes it with BitmapFactory.
+  static const String _androidLargeIcon = 'ic_notification_large';
+
   int _notificationId(NotificationMedia media, int mediaId, int slot) =>
       mediaId * _slotsPerTitle + (media == NotificationMedia.tv ? 0 : 2) + slot;
 
@@ -252,8 +262,10 @@ class NotificationService {
       // Fallback: preserve existing initialized location if platform timezone lookup fails
     }
 
+    // Icon names resolve against res/drawable, not res/mipmap, so the launcher
+    // icon can't be referenced here. See _androidStatusBarIcon.
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_launcher');
+        AndroidInitializationSettings(_androidStatusBarIcon);
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
@@ -350,6 +362,8 @@ class NotificationService {
           'Test Notifications',
           importance: Importance.max,
           priority: Priority.max,
+          icon: _androidStatusBarIcon,
+          largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
         );
     const DarwinNotificationDetails darwinPlatformChannelSpecifics =
         DarwinNotificationDetails(
@@ -394,6 +408,8 @@ class NotificationService {
           'Release Notifications',
           importance: Importance.max,
           priority: Priority.max,
+          icon: _androidStatusBarIcon,
+          largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
         );
     const DarwinNotificationDetails darwinPlatformChannelSpecifics =
         DarwinNotificationDetails(

@@ -31,7 +31,10 @@ class SettingsPage extends StatelessWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        padding: const EdgeInsets.only(
+          top: AppSpacing.md,
+          bottom: AppSpacing.xs,
+        ),
         children: [
           _buildSectionHeader(context, 'Appearance'),
           BlocBuilder<ThemeCubit, ThemeState>(
@@ -223,7 +226,10 @@ class SettingsPage extends StatelessWidget {
             height: AppSpacing.xxl,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+            padding: const EdgeInsets.only(
+              top: AppSpacing.sm,
+              bottom: AppSpacing.xs,
+            ),
             child: FutureBuilder<PackageInfo>(
               future: PackageInfo.fromPlatform(),
               builder: (context, snapshot) {

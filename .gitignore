@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Icon generator output. Source art that gets copied into android/app/src/main/res
+# and ios/Runner/Assets.xcassets; the copies are what ship, so the drop isn't tracked.
+/lib/IconKitchen-Output/

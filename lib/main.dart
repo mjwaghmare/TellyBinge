@@ -466,7 +466,7 @@ class _AuthGateState extends State<AuthGate> {
                     child: Hero(
                       tag: 'app_logo',
                       child: Image.asset(
-                        'assets/images/logo.png',
+                        'assets/images/splash_logo.png',
                         width: 160,
                         height: 160,
                       ),
