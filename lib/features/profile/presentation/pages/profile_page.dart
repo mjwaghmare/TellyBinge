@@ -325,7 +325,7 @@ class _ProfilePageState extends State<ProfilePage>
     final photoURL = user?.photoUrl;
 
     String generateUsername(String name) {
-      if (name.isEmpty || name == 'User') return 'user_tellybinge';
+      if (name.isEmpty || name == 'User') return 'user_popverse';
       // Strip everything except letters and numbers, then lowercase
       String cleanName = name
           .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')

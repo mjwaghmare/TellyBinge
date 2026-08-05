@@ -159,7 +159,7 @@ struct Provider: TimelineProvider {
             date: Date(),
             items: previewItems,
             stats: ProfileStats(
-                userName: "TellyBinge User",
+                userName: "PopVerse User",
                 showsCount: 14,
                 episodesCount: 128,
                 showsFormattedTime: "12d 4h",
@@ -182,7 +182,7 @@ struct Provider: TimelineProvider {
             items = (try? JSONDecoder().decode([UpNextItem].self, from: data)) ?? []
         }
 
-        let userName = userDefaults?.string(forKey: "stats_user_name") ?? "TellyBinge User"
+        let userName = userDefaults?.string(forKey: "stats_user_name") ?? "PopVerse User"
         let showsCount = userDefaults?.integer(forKey: "stats_shows_count") ?? 0
         let episodesCount = userDefaults?.integer(forKey: "stats_episodes_count") ?? 0
         let showsTime = userDefaults?.string(forKey: "stats_shows_time") ?? "0m"
@@ -190,7 +190,7 @@ struct Provider: TimelineProvider {
         let moviesTime = userDefaults?.string(forKey: "stats_movies_time") ?? "0m"
 
         let stats = ProfileStats(
-            userName: userName.isEmpty ? "TellyBinge User" : userName,
+            userName: userName.isEmpty ? "PopVerse User" : userName,
             showsCount: showsCount,
             episodesCount: episodesCount,
             showsFormattedTime: showsTime.isEmpty ? "0m" : showsTime,
@@ -371,7 +371,7 @@ struct UpNextWidgetEntryView : View {
         Group {
             if family == .systemMedium {
                 MediumStatsWidgetView(stats: entry.stats ?? ProfileStats(
-                    userName: "TellyBinge User",
+                    userName: "PopVerse User",
                     showsCount: 0,
                     episodesCount: 0,
                     showsFormattedTime: "0m",

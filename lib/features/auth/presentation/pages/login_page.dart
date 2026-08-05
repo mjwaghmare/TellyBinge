@@ -33,7 +33,7 @@ class LoginPage extends StatelessWidget {
               ),
               AppSpacing.gapH24,
               const Text(
-                'Telly Binge',
+                'PopVerse',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 32,

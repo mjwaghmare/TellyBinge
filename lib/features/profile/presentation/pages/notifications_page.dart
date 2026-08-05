@@ -153,123 +153,121 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
             )
           : _notifications.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xl,
-                      vertical: AppSpacing.md,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _emptyState.emoji,
-                          style: const TextStyle(fontSize: 64.0),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          _emptyState.title,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 20.0,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          _emptyState.subtitle,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14.0,
-                            fontStyle: FontStyle.italic,
-                            color: isDark
-                                ? AppColors.textSecondary
-                                : AppColors.lightTextSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                    AppSpacing.md,
-                    AppSpacing.bottomTabPadding,
-                  ),
-                  itemCount: _notifications.length,
-                  separatorBuilder: (context, index) => Divider(
-                    color: Theme.of(context).dividerColor,
-                    height: 1,
-                    thickness: 0.5,
-                  ),
-                  itemBuilder: (context, index) {
-                    final item = _notifications[index];
-                    return Dismissible(
-                      key: Key('notification_${item.id}'),
-                      direction: DismissDirection.endToStart,
-                      onDismissed: (_) => _removeNotification(item.id),
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: AppSpacing.md),
-                        color: AppColors.error,
-                        child: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.white,
-                        ),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xs,
-                          vertical: AppSpacing.xs,
-                        ),
-                        onTap: item.payload != null
-                            ? () => _onNotificationTap(item.payload)
-                            : null,
-                        leading: CircleAvatar(
-                          radius: 20.0,
-                          backgroundColor: AppColors.primary.withValues(
-                            alpha: 0.2,
-                          ),
-                          child: const Icon(
-                            Icons.notifications_active_outlined,
-                            color: AppColors.primary,
-                            size: 20.0,
-                          ),
-                        ),
-                        title: Text(
-                          item.title,
-                          style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
-                            item.body,
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppColors.textSecondary
-                                  : AppColors.lightTextSecondary,
-                              fontSize: 13.0,
-                            ),
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.close, size: 18.0),
-                          color: isDark
-                              ? AppColors.textTertiary
-                              : AppColors.lightTextTertiary,
-                          onPressed: () => _removeNotification(item.id),
-                        ),
-                      ),
-                    );
-                  },
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xl,
+                  vertical: AppSpacing.md,
                 ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _emptyState.emoji,
+                      style: const TextStyle(fontSize: 64.0),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      _emptyState.title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      _emptyState.subtitle,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14.0,
+                        fontStyle: FontStyle.italic,
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : AppColors.lightTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.bottomTabPadding,
+              ),
+              itemCount: _notifications.length,
+              separatorBuilder: (context, index) => Divider(
+                color: Theme.of(context).dividerColor,
+                height: 1,
+                thickness: 0.5,
+              ),
+              itemBuilder: (context, index) {
+                final item = _notifications[index];
+                return Dismissible(
+                  key: Key('notification_${item.id}'),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (_) => _removeNotification(item.id),
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: AppSpacing.md),
+                    color: AppColors.error,
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.white,
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                      vertical: AppSpacing.xs,
+                    ),
+                    onTap: item.payload != null
+                        ? () => _onNotificationTap(item.payload)
+                        : null,
+                    leading: CircleAvatar(
+                      radius: 20.0,
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                      child: const Icon(
+                        Icons.notifications_active_outlined,
+                        color: AppColors.primary,
+                        size: 20.0,
+                      ),
+                    ),
+                    title: Text(
+                      item.title,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        fontSize: 14.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        item.body,
+                        style: TextStyle(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.lightTextSecondary,
+                          fontSize: 13.0,
+                        ),
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close, size: 18.0),
+                      color: isDark
+                          ? AppColors.textTertiary
+                          : AppColors.lightTextTertiary,
+                      onPressed: () => _removeNotification(item.id),
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

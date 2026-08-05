@@ -9,7 +9,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>TellyBinge</string>
+		<string>PopVerse</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -17,7 +17,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>TellyBinge</string>
+		<string>PopVerse</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -92,9 +92,9 @@
 		<key>GIDClientID</key>
 		<string>236216751300-u1ikv8htj6gg04nl6knudi34nucacl2g.apps.googleusercontent.com</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>TellyBinge needs access to your photo library so you can choose a profile picture.</string>
+		<string>PopVerse needs access to your photo library so you can choose a profile picture.</string>
 		<key>NSCameraUsageDescription</key>
-		<string>TellyBinge needs access to your camera so you can take a profile picture.</string>
+		<string>PopVerse needs access to your camera so you can take a profile picture.</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>fetch</string>

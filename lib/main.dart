@@ -341,7 +341,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         child: BlocBuilder<ThemeCubit, ThemeState>(
           builder: (context, themeState) {
             return MaterialApp(
-              title: 'TellyBinge',
+              title: 'PopVerse',
               themeMode: themeState.isDarkMode
                   ? ThemeMode.dark
                   : ThemeMode.light,

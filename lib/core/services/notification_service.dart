@@ -25,12 +25,12 @@ class ReceivedNotificationItem {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'body': body,
-        'payload': payload,
-        'timestamp': timestamp,
-      };
+    'id': id,
+    'title': title,
+    'body': body,
+    'payload': payload,
+    'timestamp': timestamp,
+  };
 
   factory ReceivedNotificationItem.fromJson(Map<String, dynamic> json) =>
       ReceivedNotificationItem(
@@ -126,11 +126,11 @@ class NotificationService {
         ? 'Episode $episodeCode'
         : 'New episode';
     final titles = [
-      '🍿 Cancel your plans: $showName',
-      '🛌 Sleep is overrated: $showName',
-      '⏰ Productivity left the chat: $showName',
-      '🙄 Oh look, more drama: $showName',
-      '🧠 Goodbye braincells: $showName',
+      '🍿 Up Next: $showName',
+      '⏰ Airing Soon: $showName',
+      '📺 New Episode: $showName',
+      '🍿 Binge Time: $showName',
+      '📺 Ready: $showName',
     ];
     final index = showId.abs() % titles.length;
     return (titles[index], '$epText airs {time}.');
@@ -143,11 +143,11 @@ class NotificationService {
     required String movieTitle,
   }) {
     final titles = [
-      '🎬 Clear your calendar: $movieTitle',
-      '🍿 Popcorn Emergency: $movieTitle',
-      '🛋️ Your couch is calling: $movieTitle',
-      '💸 There goes your free time: $movieTitle',
-      '🌟 Big Screen Energy: $movieTitle',
+      '🎬 Premiere: $movieTitle',
+      '🍿 Release Alert: $movieTitle',
+      '🎬 Movie Night: $movieTitle',
+      '🍿 Coming Soon: $movieTitle',
+      '🌟 Premiering: $movieTitle',
     ];
     final index = movieId.abs() % titles.length;
     return (titles[index], '$movieTitle premieres {time}.');
@@ -184,7 +184,8 @@ class NotificationService {
   /// Initializes unread status from SharedPreferences.
   Future<void> _initUnreadStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    hasUnreadNotifier.value = prefs.getBool('has_unread_notifications') ?? false;
+    hasUnreadNotifier.value =
+        prefs.getBool('has_unread_notifications') ?? false;
   }
 
   /// Sets unread notification state and updates listeners & SharedPreferences.
@@ -228,7 +229,8 @@ class NotificationService {
         await _scheduleOne(
           id: _reinstallNotificationId,
           title: "⏳ Time's Almost Up!",
-          body: "Free profile expires tomorrow. Connect to Xcode and rebuild now! 💻",
+          body:
+              "Free profile expires tomorrow. Connect to Xcode and rebuild now! 💻",
           scheduledDate: reminderDate,
         );
         await prefs.setBool('reinstall_reminder_scheduled', true);
@@ -462,10 +464,7 @@ class NotificationService {
       timestamp: DateTime.now().toIso8601String(),
     );
 
-    final updatedList = <String>[
-      jsonEncode(newItem.toJson()),
-      ...rawList,
-    ];
+    final updatedList = <String>[jsonEncode(newItem.toJson()), ...rawList];
 
     if (updatedList.length > _maxReceivedHistory) {
       updatedList.removeRange(_maxReceivedHistory, updatedList.length);
@@ -515,9 +514,11 @@ class NotificationService {
     _canceledNotificationIds.add(id);
 
     for (final list in _desired.values) {
-      list.removeWhere((p) =>
-          _notificationId(p.media, p.mediaId, _slotDayBefore) == id ||
-          _notificationId(p.media, p.mediaId, _slotHourBefore) == id);
+      list.removeWhere(
+        (p) =>
+            _notificationId(p.media, p.mediaId, _slotDayBefore) == id ||
+            _notificationId(p.media, p.mediaId, _slotHourBefore) == id,
+      );
     }
 
     await _notificationsPlugin.cancel(id: id);
@@ -544,13 +545,14 @@ class NotificationService {
   }
 
   /// Returns all currently scheduled/pending notification items for display.
-  Future<List<ScheduledNotificationDisplayItem>> getPendingNotifications() async {
+  Future<List<ScheduledNotificationDisplayItem>>
+  getPendingNotifications() async {
     final Map<int, ScheduledNotificationDisplayItem> itemsById = {};
 
     // 1. Fetch platform-scheduled notification requests from local notifications plugin
     try {
-      final platformRequests =
-          await _notificationsPlugin.pendingNotificationRequests();
+      final platformRequests = await _notificationsPlugin
+          .pendingNotificationRequests();
       for (final req in platformRequests) {
         if (req.title != null && req.body != null) {
           itemsById[req.id] = ScheduledNotificationDisplayItem(
@@ -764,7 +766,8 @@ class NotificationService {
           pending.mediaId,
           _slotDayBefore,
         );
-        if (dayBefore.isAfter(now) && !_canceledNotificationIds.contains(dayBeforeId)) {
+        if (dayBefore.isAfter(now) &&
+            !_canceledNotificationIds.contains(dayBeforeId)) {
           alerts.add(
             _ScheduledAlert(
               id: dayBeforeId,
@@ -783,7 +786,8 @@ class NotificationService {
             pending.mediaId,
             _slotHourBefore,
           );
-          if (hourBefore.isAfter(now) && !_canceledNotificationIds.contains(hourBeforeId)) {
+          if (hourBefore.isAfter(now) &&
+              !_canceledNotificationIds.contains(hourBeforeId)) {
             alerts.add(
               _ScheduledAlert(
                 id: hourBeforeId,

@@ -1,7 +1,7 @@
-# TellyBinge Design System
+# PopVerse Design System
 
 This document outlines the core visual language, design tokens, typography,
-spacing scale, component patterns, and UI rules for the **TellyBinge** mobile
+spacing scale, component patterns, and UI rules for the **PopVerse** mobile
 application.
 
 ---
