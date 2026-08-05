@@ -1,23 +1,24 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:skeletonizer/skeletonizer.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+
+import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../cubit/show_details_cubit.dart';
-import '../cubit/show_details_state.dart';
+import '../../../../core/widgets/action_circle_button.dart';
+import '../../../../core/widgets/watch_trailer_button.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
-import '../../../../core/widgets/watch_trailer_button.dart';
-import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
-import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
-import '../../../../core/widgets/action_circle_button.dart';
-import '../../../../core/network/tmdb_client.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
+import '../cubit/show_details_cubit.dart';
+import '../cubit/show_details_state.dart';
 
 class ShowDetailsPage extends StatefulWidget {
   final int mediaId;
@@ -56,10 +57,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
           }
         }
       });
-    context.read<ShowDetailsCubit>().loadDetails(
-      widget.mediaId,
-      widget.mediaType,
-    );
+    context.read<ShowDetailsCubit>().loadDetails(widget.mediaId, widget.mediaType);
   }
 
   @override
@@ -92,20 +90,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     if (dateStr == null || dateStr.isEmpty) return 'TBA';
     try {
       final date = DateTime.parse(dateStr);
-      final months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return '${date.day} ${months[date.month - 1]} ${date.year}';
     } catch (_) {
       return dateStr;
@@ -131,11 +116,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     );
   }
 
-  void _showMoreActions({
-    required BuildContext context,
-    required String uid,
-    required bool isStopped,
-  }) {
+  void _showMoreActions({required BuildContext context, required String uid, required bool isStopped}) {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) => CupertinoActionSheet(
@@ -146,15 +127,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               HapticFeedback.mediumImpact();
               Navigator.pop(context);
               if (isStopped) {
-                context.read<TvShowWatchlistCubit>().continueWatchingShow(
-                  uid: uid,
-                  showId: widget.mediaId,
-                );
+                context.read<TvShowWatchlistCubit>().continueWatchingShow(uid: uid, showId: widget.mediaId);
               } else {
-                context.read<TvShowWatchlistCubit>().stopWatchingShow(
-                  uid: uid,
-                  showId: widget.mediaId,
-                );
+                context.read<TvShowWatchlistCubit>().stopWatchingShow(uid: uid, showId: widget.mediaId);
               }
             },
             child: Text(isStopped ? 'Continue watching' : 'Stop watching'),
@@ -164,10 +139,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             onPressed: () {
               HapticFeedback.mediumImpact();
               Navigator.pop(context);
-              context.read<TvShowWatchlistCubit>().removeShow(
-                uid: uid,
-                showId: widget.mediaId,
-              );
+              context.read<TvShowWatchlistCubit>().removeShow(uid: uid, showId: widget.mediaId);
             },
             child: const Text('Remove from watchlist'),
           ),
@@ -204,23 +176,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
       'credits': {
         'cast': List.generate(
           5,
-          (index) => {
-            'id': index + 100,
-            'name': 'Actor Name',
-            'character': 'Character Name',
-            'profile_path': null,
-          },
+          (index) => {'id': index + 100, 'name': 'Actor Name', 'character': 'Character Name', 'profile_path': null},
         ),
       },
       'similar': {
         'results': List.generate(
           4,
-          (index) => {
-            'id': index + 1000,
-            'name': 'Similar Show',
-            'poster_path': null,
-            'vote_average': 8.0,
-          },
+          (index) => {'id': index + 1000, 'name': 'Similar Show', 'poster_path': null, 'vote_average': 8.0},
         ),
       },
     };
@@ -230,44 +192,29 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
   Widget build(BuildContext context) {
     return BlocBuilder<ShowDetailsCubit, ShowDetailsState>(
       builder: (context, state) {
-        final bool isLoading =
-            state is ShowDetailsInitial || state is ShowDetailsLoading;
-        final bool isCastLoading =
-            state is ShowDetailsSuccess && state.isCastLoading;
-        final bool isSimilarLoading =
-            state is ShowDetailsSuccess && state.isSimilarLoading;
+        final bool isLoading = state is ShowDetailsInitial || state is ShowDetailsLoading;
+        final bool isCastLoading = state is ShowDetailsSuccess && state.isCastLoading;
+        final bool isSimilarLoading = state is ShowDetailsSuccess && state.isSimilarLoading;
         final String? error = state is ShowDetailsError ? state.message : null;
 
         if (error != null && state is! ShowDetailsSuccess) {
-          String userFriendlyError =
-              'An unexpected error occurred. Please try again.';
+          String userFriendlyError = 'An unexpected error occurred. Please try again.';
           if (error.contains('404')) {
-            userFriendlyError =
-                'This TV show could not be found or may have been removed.';
-          } else if (error.contains('SocketException') ||
-              error.contains('DioException')) {
-            userFriendlyError =
-                'Please check your internet connection and try again.';
+            userFriendlyError = 'This TV show could not be found or may have been removed.';
+          } else if (error.contains('SocketException') || error.contains('DioException')) {
+            userFriendlyError = 'Please check your internet connection and try again.';
           }
 
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text(widget.title),
-            ),
+            appBar: AppBar(backgroundColor: Theme.of(context).scaffoldBackgroundColor, title: Text(widget.title)),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(32.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      'assets/images/error_devices.png',
-                      width: 140,
-                      height: 140,
-                      fit: BoxFit.contain,
-                    ),
+                    Image.asset('assets/images/error_devices.png', width: 140, height: 140, fit: BoxFit.contain),
                     const SizedBox(height: 32),
                     const Text(
                       'Oops! Something went wrong',
@@ -282,36 +229,19 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     AppSpacing.gapH12,
                     Text(
                       userFriendlyError,
-                      style: const TextStyle(
-                        color: AppColors.textTertiary,
-                        fontSize: 15,
-                        height: 1.4,
-                      ),
+                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 15, height: 1.4),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
-                      onPressed: () => context
-                          .read<ShowDetailsCubit>()
-                          .loadDetails(widget.mediaId, widget.mediaType),
+                      onPressed: () => context.read<ShowDetailsCubit>().loadDetails(widget.mediaId, widget.mediaType),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.xl),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xxl,
-                          vertical: AppSpacing.sm,
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.xl)),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.sm),
                       ),
-                      child: const Text(
-                        'RETRY',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
+                      child: const Text('RETRY', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     ),
                   ],
                 ),
@@ -320,12 +250,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
           );
         }
 
-        final details = isLoading
-            ? _dummyShowDetails()
-            : (state as ShowDetailsSuccess).details;
-        final seasonsData = isLoading
-            ? <int, List<dynamic>>{}
-            : (state as ShowDetailsSuccess).seasonsData;
+        final details = isLoading ? _dummyShowDetails() : (state as ShowDetailsSuccess).details;
+        final seasonsData = isLoading ? <int, List<dynamic>>{} : (state as ShowDetailsSuccess).seasonsData;
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -348,17 +274,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 child: Container(
                   width: 36,
                   height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle),
                   child: IconButton(
                     padding: EdgeInsets.zero,
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 18,
-                      color: Colors.white,
-                    ),
+                    icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -378,9 +297,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     bool isCastLoading = false,
     bool isSimilarLoading = false,
   }) {
-    final Map<String, dynamic> details = isLoading
-        ? _dummyShowDetails()
-        : Map<String, dynamic>.from(rawDetailsData);
+    final Map<String, dynamic> details = isLoading ? _dummyShowDetails() : Map<String, dynamic>.from(rawDetailsData);
 
     if (isCastLoading && !isLoading) {
       details['credits'] = _dummyShowDetails()['credits'];
@@ -392,25 +309,18 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     final String title = details['name'] ?? details['title'] ?? widget.title;
     final String? backdropPath = details['backdrop_path'];
     final String overview = details['overview'] ?? '';
-    final double voteAverage =
-        (details['vote_average'] as num?)?.toDouble() ?? 0.0;
+    final double voteAverage = (details['vote_average'] as num?)?.toDouble() ?? 0.0;
 
     // TV show specific metadata
     final int numberOfSeasons = details['number_of_seasons'] ?? 0;
     final String status = details['status'] ?? '';
     final List<dynamic> networks = details['networks'] ?? [];
-    final String networkName = networks.isNotEmpty
-        ? networks[0]['name'] ?? ''
-        : '';
+    final String networkName = networks.isNotEmpty ? networks[0]['name'] ?? '' : '';
 
     // Trailer specific
     final videos = details['videos']?['results'] as List<dynamic>? ?? [];
-    final youtubeTrailers = videos
-        .where((v) => v['type'] == 'Trailer' && v['site'] == 'YouTube')
-        .toList();
-    final otherTrailers = videos
-        .where((v) => v['type'] == 'Trailer' && v['site'] != 'YouTube')
-        .toList();
+    final youtubeTrailers = videos.where((v) => v['type'] == 'Trailer' && v['site'] == 'YouTube').toList();
+    final otherTrailers = videos.where((v) => v['type'] == 'Trailer' && v['site'] != 'YouTube').toList();
     final Map<String, dynamic>? trailer = youtubeTrailers.isNotEmpty
         ? youtubeTrailers.first
         : (otherTrailers.isNotEmpty ? otherTrailers.first : null);
@@ -428,10 +338,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             return AnimatedOpacity(
               duration: const Duration(milliseconds: 250),
               opacity: isCollapsed ? 1.0 : 0.0,
-              child: Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
             );
           },
         ),
@@ -439,9 +346,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         actions: [
           BlocBuilder<AuthCubit, AuthState>(
             builder: (context, authState) {
-              final uid = authState is Authenticated
-                  ? authState.user.uid
-                  : null;
+              final uid = authState is Authenticated ? authState.user.uid : null;
               return BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
                 builder: (context, watchState) {
                   bool isTracked = false;
@@ -457,16 +362,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   }
                   if (isTracked && uid != null) {
                     return IconButton(
-                      icon: const Icon(
-                        Icons.more_horiz,
-                        size: 28,
-                        color: Colors.white,
-                      ),
-                      onPressed: () => _showMoreActions(
-                        context: context,
-                        uid: uid,
-                        isStopped: isStopped,
-                      ),
+                      icon: const Icon(Icons.more_horiz, size: 28, color: Colors.white),
+                      onPressed: () => _showMoreActions(context: context, uid: uid, isStopped: isStopped),
                     );
                   }
                   return const SizedBox.shrink();
@@ -483,8 +380,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   ? CachedNetworkImage(
                       imageUrl: _getImageUrl(backdropPath, size: 'w780'),
                       fit: BoxFit.cover,
-                      errorWidget: (context, url, error) =>
-                          Container(color: AppColors.surface),
+                      errorWidget: (context, url, error) => Container(color: AppColors.surface),
                     )
                   : Container(color: AppColors.surface),
               DecoratedBox(
@@ -516,11 +412,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
-                              fontSize: 28.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                            style: const TextStyle(fontSize: 28.0, fontWeight: FontWeight.bold, color: Colors.white),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -529,10 +421,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             widget.mediaType == 'tv'
                                 ? '$numberOfSeasons season${numberOfSeasons == 1 ? '' : 's'} • $status • $networkName'
                                 : _getYear(details['release_date']),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13.0,
-                            ),
+                            style: const TextStyle(color: Colors.white70, fontSize: 13.0),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -553,9 +442,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           }
                         }
                         final authState = context.read<AuthCubit>().state;
-                        final uid = authState is Authenticated
-                            ? authState.user.uid
-                            : null;
+                        final uid = authState is Authenticated ? authState.user.uid : null;
 
                         return Column(
                           mainAxisSize: MainAxisSize.min,
@@ -567,33 +454,23 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                 onTap: () {
                                   HapticFeedback.mediumImpact();
                                   if (isAdded) {
-                                    context
-                                        .read<TvShowWatchlistCubit>()
-                                        .toggleFavorite(
-                                          uid: uid,
-                                          showId: widget.mediaId,
-                                          isFavorite: !isFavorite,
-                                        );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Add show to watchlist first',
-                                        ),
-                                      ),
+                                    context.read<TvShowWatchlistCubit>().toggleFavorite(
+                                      uid: uid,
+                                      showId: widget.mediaId,
+                                      isFavorite: !isFavorite,
                                     );
+                                  } else {
+                                    ScaffoldMessenger.of(
+                                      context,
+                                    ).showSnackBar(const SnackBar(content: Text('Add show to watchlist first')));
                                   }
                                 },
                                 activeIcon: Icons.favorite,
                                 inactiveIcon: Icons.favorite_border,
                                 activeIconColor: Colors.red,
                                 inactiveIconColor: Colors.white,
-                                activeBgColor: Colors.grey.withValues(
-                                  alpha: 0.3,
-                                ),
-                                inactiveBgColor: Colors.grey.withValues(
-                                  alpha: 0.3,
-                                ),
+                                activeBgColor: Colors.grey.withValues(alpha: 0.3),
+                                inactiveBgColor: Colors.grey.withValues(alpha: 0.3),
                                 size: 28.0,
                                 iconSize: 16.0,
                               ),
@@ -607,11 +484,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                     color: Colors.yellow,
                                     borderRadius: BorderRadius.circular(2),
                                   ),
-                                  child: Image.asset(
-                                    'assets/images/logo.png',
-                                    height: 16,
-                                    width: 16,
-                                  ),
+                                  child: Image.asset('assets/images/splash_logo.png', height: 16, width: 16),
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
@@ -638,25 +511,19 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     }
 
     Widget buildAboutSection() {
-      final String language = (details['original_language'] as String? ?? '')
-          .toUpperCase();
+      final String language = (details['original_language'] as String? ?? '').toUpperCase();
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [Expanded(child: _buildTrackButton(details))]),
-            const Text(
-              'Show info',
-              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-            ),
+            const Text('Show info', style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold)),
             AppSpacing.gapH4,
             Text(
               '${_getYear(details['first_air_date'] ?? details['release_date'])} • ${_getGenresString(details['genres'])}',
               style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                 fontSize: 13.0,
               ),
               maxLines: 1,
@@ -666,18 +533,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               AppSpacing.gapH4,
               Row(
                 children: [
-                  Icon(
-                    Icons.language,
-                    color: Theme.of(context).disabledColor,
-                    size: 14,
-                  ),
+                  Icon(Icons.language, color: Theme.of(context).disabledColor, size: 14),
                   const SizedBox(width: 6),
                   Text(
                     'Language: $language',
                     style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                       fontSize: 13.0,
                     ),
                   ),
@@ -691,10 +552,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 AppSpacing.gapW8,
                 Text(
                   '${(voteAverage / 2).toStringAsFixed(1)}/5',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13.0,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0),
                 ),
               ],
             ),
@@ -705,10 +563,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             ),
             AppSpacing.gapH24,
             if (trailer != null) ...[
-              WatchTrailerButton(
-                trailer: trailer,
-                allTrailers: youtubeTrailers,
-              ),
+              WatchTrailerButton(trailer: trailer, allTrailers: youtubeTrailers),
               AppSpacing.gapH24,
             ],
 
@@ -717,10 +572,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 (details['credits']['cast'] as List).isNotEmpty) ...[
               const Divider(height: 1, thickness: 0.5),
               AppSpacing.gapH24,
-              const Text(
-                'Cast',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              const Text('Cast', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               AppSpacing.gapH16,
               Skeletonizer(
                 enabled: isCastLoading || isLoading,
@@ -728,14 +580,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   height: 180,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: (details['credits']['cast'] as List)
-                        .take(10)
-                        .length,
+                    itemCount: (details['credits']['cast'] as List).take(10).length,
                     separatorBuilder: (context, index) => AppSpacing.gapW12,
                     itemBuilder: (context, index) {
-                      final cast = (details['credits']['cast'] as List)
-                          .take(10)
-                          .toList();
+                      final cast = (details['credits']['cast'] as List).take(10).toList();
                       final actor = cast[index] as Map<String, dynamic>;
                       final actorName = actor['name'] as String? ?? 'Unknown';
                       final character = actor['character'] as String? ?? '';
@@ -758,10 +606,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 (details['similar']['results'] as List).isNotEmpty) ...[
               const Divider(height: 1, thickness: 0.5),
               AppSpacing.gapH24,
-              const Text(
-                'More Like This',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              const Text('More Like This', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               AppSpacing.gapH16,
               BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
                 builder: (context, watchState) {
@@ -784,15 +629,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       height: 200,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemCount: (details['similar']['results'] as List)
-                            .take(10)
-                            .length,
+                        itemCount: (details['similar']['results'] as List).take(10).length,
                         separatorBuilder: (context, index) => AppSpacing.gapW12,
                         itemBuilder: (context, index) {
-                          final similar =
-                              (details['similar']['results'] as List)
-                                  .take(10)
-                                  .toList();
+                          final similar = (details['similar']['results'] as List).take(10).toList();
                           final item = similar[index] as Map<String, dynamic>;
                           final posterPath = item['poster_path'] as String?;
                           final rawId = item['id'];
@@ -802,8 +642,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           } else if (rawId is String) {
                             simId = int.tryParse(rawId);
                           }
-                          final isAdded =
-                              simId != null && trackedShowIds.contains(simId);
+                          final isAdded = simId != null && trackedShowIds.contains(simId);
 
                           return GestureDetector(
                             onTap: () {
@@ -811,18 +650,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      BlocProvider<ShowDetailsCubit>(
-                                        create: (context) => ShowDetailsCubit(
-                                          tmdbClient: context
-                                              .read<TmdbClient>(),
-                                        ),
-                                        child: ShowDetailsPage(
-                                          mediaId: (item['id'] as num).toInt(),
-                                          title: item['name'] ?? 'Unknown',
-                                          mediaType: 'tv',
-                                        ),
-                                      ),
+                                  builder: (context) => BlocProvider<ShowDetailsCubit>(
+                                    create: (context) => ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+                                    child: ShowDetailsPage(
+                                      mediaId: (item['id'] as num).toInt(),
+                                      title: item['name'] ?? 'Unknown',
+                                      mediaType: 'tv',
+                                    ),
+                                  ),
                                 ),
                               );
                             },
@@ -834,59 +669,32 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                 child: Stack(
                                   children: [
                                     Positioned.fill(
-                                      child:
-                                          posterPath != null &&
-                                              posterPath.isNotEmpty
+                                      child: posterPath != null && posterPath.isNotEmpty
                                           ? CachedNetworkImage(
-                                              imageUrl: _getImageUrl(
-                                                posterPath,
-                                              ),
+                                              imageUrl: _getImageUrl(posterPath),
                                               fit: BoxFit.cover,
-                                              placeholder: (context, url) =>
-                                                  Container(
-                                                    color:
-                                                        AppColors.surfaceLight,
-                                                  ),
-                                              errorWidget:
-                                                  (
-                                                    context,
-                                                    url,
-                                                    error,
-                                                  ) => Container(
-                                                    color:
-                                                        AppColors.surfaceLight,
-                                                    child: const Center(
-                                                      child: Icon(
-                                                        Icons.movie_outlined,
-                                                        color: Colors.white24,
-                                                        size: 40,
-                                                      ),
-                                                    ),
-                                                  ),
+                                              placeholder: (context, url) => Container(color: AppColors.surfaceLight),
+                                              errorWidget: (context, url, error) => Container(
+                                                color: AppColors.surfaceLight,
+                                                child: const Center(
+                                                  child: Icon(Icons.movie_outlined, color: Colors.white24, size: 40),
+                                                ),
+                                              ),
                                             )
                                           : Container(
                                               color: AppColors.surfaceLight,
                                               padding: const EdgeInsets.all(8),
                                               child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
+                                                mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
-                                                  const Icon(
-                                                    Icons.movie_outlined,
-                                                    color: Colors.white24,
-                                                    size: 40,
-                                                  ),
+                                                  const Icon(Icons.movie_outlined, color: Colors.white24, size: 40),
                                                   const SizedBox(height: 8),
                                                   Text(
                                                     item['name'] ?? '',
-                                                    style: const TextStyle(
-                                                      color: Colors.white70,
-                                                      fontSize: 11,
-                                                    ),
+                                                    style: const TextStyle(color: Colors.white70, fontSize: 11),
                                                     maxLines: 2,
                                                     textAlign: TextAlign.center,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
                                                 ],
                                               ),
@@ -898,56 +706,34 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                         right: -5,
                                         child: Container(
                                           color: Colors.transparent,
-                                          padding: const EdgeInsets.only(
-                                            left: 8,
-                                            right: 4,
-                                            bottom: 8,
-                                            top: 0,
-                                          ),
+                                          padding: const EdgeInsets.only(left: 8, right: 4, bottom: 8, top: 0),
                                           child: const Icon(
                                             Icons.bookmark_sharp,
                                             color: AppColors.primary,
                                             size: 40,
                                             shadows: [
-                                              Shadow(
-                                                blurRadius: 4.0,
-                                                color: Colors.black87,
-                                                offset: Offset(0, 2),
-                                              ),
+                                              Shadow(blurRadius: 4.0, color: Colors.black87, offset: Offset(0, 2)),
                                             ],
                                           ),
                                         ),
                                       ),
-                                    if (item['vote_average'] != null &&
-                                        (item['vote_average'] as num) > 0)
+                                    if (item['vote_average'] != null && (item['vote_average'] as num) > 0)
                                       Positioned(
                                         top: 8,
                                         right: isAdded ? 36 : 8,
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
-                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.7,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
+                                            color: Colors.black.withValues(alpha: 0.7),
+                                            borderRadius: BorderRadius.circular(4),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              const Icon(
-                                                Icons.star,
-                                                color: Colors.amber,
-                                                size: 12,
-                                              ),
+                                              const Icon(Icons.star, color: Colors.amber, size: 12),
                                               const SizedBox(width: 4),
                                               Text(
-                                                (item['vote_average'] as num)
-                                                    .toStringAsFixed(1),
+                                                (item['vote_average'] as num).toStringAsFixed(1),
                                                 style: const TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 10,
@@ -985,11 +771,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            _buildSeasonsAccordion(
-              details['seasons'] as List<dynamic>? ?? [],
-              seasonsData,
-              details,
-            ),
+            _buildSeasonsAccordion(details['seasons'] as List<dynamic>? ?? [], seasonsData, details),
             AppSpacing.gapH48,
           ],
         ),
@@ -1078,11 +860,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             padding: const EdgeInsets.only(top: 16.0, bottom: 24.0),
             child: ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please log in to track shows and movies'),
-                  ),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Please log in to track shows and movies')));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.surfaceLight,
@@ -1101,26 +881,18 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             builder: (context, watchState) {
               bool isTracked = false;
               if (watchState is MovieWatchlistSuccess) {
-                isTracked = watchState.movies.any(
-                  (m) => m['id'] == widget.mediaId,
-                );
+                isTracked = watchState.movies.any((m) => m['id'] == widget.mediaId);
               }
 
               return _trackButtonUI(
                 isTracked: isTracked,
                 onPressed: () {
                   if (isTracked) {
-                    context.read<MovieWatchlistCubit>().removeMovie(
-                      uid: uid,
-                      movieId: widget.mediaId,
-                    );
+                    context.read<MovieWatchlistCubit>().removeMovie(uid: uid, movieId: widget.mediaId);
                   } else {
                     final genresList = details['genres'] as List<dynamic>?;
-                    final genresStr =
-                        (genresList != null && genresList.isNotEmpty)
-                        ? genresList
-                              .map((g) => g['name'] as String? ?? '')
-                              .join(', ')
+                    final genresStr = (genresList != null && genresList.isNotEmpty)
+                        ? genresList.map((g) => g['name'] as String? ?? '').join(', ')
                         : '';
                     context.read<MovieWatchlistCubit>().addMovie(
                       uid: uid,
@@ -1143,19 +915,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             builder: (context, watchState) {
               bool isTracked = false;
               if (watchState is TvShowWatchlistSuccess) {
-                isTracked = watchState.shows.any(
-                  (s) => s['id'] == widget.mediaId,
-                );
+                isTracked = watchState.shows.any((s) => s['id'] == widget.mediaId);
               }
 
               return _trackButtonUI(
                 isTracked: isTracked,
                 onPressed: () {
                   if (isTracked) {
-                    context.read<TvShowWatchlistCubit>().removeShow(
-                      uid: uid,
-                      showId: widget.mediaId,
-                    );
+                    context.read<TvShowWatchlistCubit>().removeShow(uid: uid, showId: widget.mediaId);
                   } else {
                     context.read<TvShowWatchlistCubit>().addShow(
                       uid: uid,
@@ -1181,10 +948,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     );
   }
 
-  Widget _trackButtonUI({
-    required bool isTracked,
-    required VoidCallback onPressed,
-  }) {
+  Widget _trackButtonUI({required bool isTracked, required VoidCallback onPressed}) {
     if (isTracked) return const SizedBox(height: 24.0);
 
     return Padding(
@@ -1212,8 +976,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: List.generate(seasons.length, (index) {
           final season = seasons[index];
-          final int seasonNumber =
-              (season['season_number'] as num?)?.toInt() ?? 1;
+          final int seasonNumber = (season['season_number'] as num?)?.toInt() ?? 1;
           final String name = 'Season $seasonNumber';
           final int epCount = (season['episode_count'] as num?)?.toInt() ?? 0;
 
@@ -1230,14 +993,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
                   if (watchState is TvShowWatchlistSuccess) {
                     try {
-                      final showDoc = watchState.shows.firstWhere(
-                        (s) => s['id'] == widget.mediaId,
-                      );
+                      final showDoc = watchState.shows.firstWhere((s) => s['id'] == widget.mediaId);
                       isTracked = true;
                       if (showDoc['watchedEpisodes'] != null) {
-                        watchedEpisodes = List<String>.from(
-                          showDoc['watchedEpisodes'],
-                        );
+                        watchedEpisodes = List<String>.from(showDoc['watchedEpisodes']);
                       }
                     } catch (_) {}
                   }
@@ -1250,30 +1009,23 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
                   List<String> releasedEpisodesKeys = [];
                   if (epCount > 0) {
-                    final totalSeasons =
-                        (showDetails['number_of_seasons'] as num?)?.toInt() ??
-                        0;
+                    final totalSeasons = (showDetails['number_of_seasons'] as num?)?.toInt() ?? 0;
                     if (seasonNumber < totalSeasons) {
                       for (int i = 1; i <= epCount; i++) {
                         releasedEpisodesKeys.add('$seasonNumber-$i');
                       }
                     } else {
                       final episodesForSeason = seasonsData[seasonNumber];
-                      if (episodesForSeason != null &&
-                          episodesForSeason.isNotEmpty) {
+                      if (episodesForSeason != null && episodesForSeason.isNotEmpty) {
                         for (var ep in episodesForSeason) {
                           if (ep is! Map) continue;
-                          final epNum =
-                              (ep['episode_number'] as num?)?.toInt() ?? 0;
+                          final epNum = (ep['episode_number'] as num?)?.toInt() ?? 0;
                           if (epNum > 0) {
                             final airDateStr = ep['air_date'] as String?;
                             if (airDateStr != null && airDateStr.isNotEmpty) {
                               final airDate = DateTime.tryParse(airDateStr);
-                              if (airDate != null &&
-                                  airDate.isBefore(DateTime.now())) {
-                                releasedEpisodesKeys.add(
-                                  '$seasonNumber-$epNum',
-                                );
+                              if (airDate != null && airDate.isBefore(DateTime.now())) {
+                                releasedEpisodesKeys.add('$seasonNumber-$epNum');
                               }
                             }
                           }
@@ -1291,22 +1043,15 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
                   final bool hasAnyReleased = releasedEpisodesKeys.isNotEmpty;
                   final bool allReleasedWatched =
-                      hasAnyReleased &&
-                      (watchedReleasedCount == releasedEpisodesKeys.length);
-                  final bool allWatched =
-                      epCount > 0 && watchedCount >= epCount;
+                      hasAnyReleased && (watchedReleasedCount == releasedEpisodesKeys.length);
+                  final bool allWatched = epCount > 0 && watchedCount >= epCount;
 
-                  final controller = _controllers.putIfAbsent(
-                    seasonNumber,
-                    () => ExpansibleController(),
-                  );
+                  final controller = _controllers.putIfAbsent(seasonNumber, () => ExpansibleController());
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: (_expandedSeasons[seasonNumber] ?? false)
-                          ? Colors.transparent
-                          : AppColors.surface,
+                      color: (_expandedSeasons[seasonNumber] ?? false) ? Colors.transparent : AppColors.surface,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     clipBehavior: Clip.hardEdge,
@@ -1314,32 +1059,20 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       children: [
                         ExpansionTile(
                           controller: controller,
-                          initiallyExpanded:
-                              _expandedSeasons[seasonNumber] ?? false,
-                          key: ValueKey<String>(
-                            'season_${widget.mediaId}_$seasonNumber',
-                          ),
-                          tilePadding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 14.0,
-                          ),
+                          initiallyExpanded: _expandedSeasons[seasonNumber] ?? false,
+                          key: ValueKey<String>('season_${widget.mediaId}_$seasonNumber'),
+                          tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
                           childrenPadding: EdgeInsets.zero,
                           shape: const Border(),
                           collapsedShape: const Border(),
-                          iconColor: Colors
-                              .transparent, // Hide default rotating icon completely
-                          collapsedIconColor: Colors
-                              .transparent, // Hide default rotating icon completely
+                          iconColor: Colors.transparent, // Hide default rotating icon completely
+                          collapsedIconColor: Colors.transparent, // Hide default rotating icon completely
                           title: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(width: 8),
                               Icon(
@@ -1356,10 +1089,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             children: [
                               Text(
                                 '$watchedCount/$epCount',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: Colors.white70, fontSize: 13),
                               ),
                               if (hasAnyReleased) ...[
                                 const SizedBox(width: 12),
@@ -1369,31 +1099,18 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                     if (authState is! Authenticated) {
                                       ScaffoldMessenger.of(
                                         context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Please log in to track episodes',
-                                          ),
-                                        ),
-                                      );
+                                      ).showSnackBar(const SnackBar(content: Text('Please log in to track episodes')));
                                       return;
                                     }
                                     if (!isTracked) {
                                       ScaffoldMessenger.of(
                                         context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Add show to watchlist first',
-                                          ),
-                                        ),
-                                      );
+                                      ).showSnackBar(const SnackBar(content: Text('Add show to watchlist first')));
                                       return;
                                     }
 
                                     final uid = authState.user.uid;
-                                    final cubit = context
-                                        .read<TvShowWatchlistCubit>();
+                                    final cubit = context.read<TvShowWatchlistCubit>();
 
                                     if (allReleasedWatched) {
                                       cubit.unmarkMultipleEpisodesWatched(
@@ -1414,16 +1131,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                     height: 32,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: allReleasedWatched
-                                          ? AppColors.brandGreen
-                                          : AppColors.borderLight,
+                                      color: allReleasedWatched ? AppColors.brandGreen : AppColors.borderLight,
                                     ),
                                     child: Icon(
                                       Icons.check,
                                       size: 20,
-                                      color: allReleasedWatched
-                                          ? Colors.white
-                                          : Colors.grey[400],
+                                      color: allReleasedWatched ? Colors.white : Colors.grey[400],
                                     ),
                                   ),
                                 ),
@@ -1453,20 +1166,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                 }
                               }
 
-                              context
-                                  .read<ShowDetailsCubit>()
-                                  .loadSeasonEpisodes(
-                                    widget.mediaId,
-                                    seasonNumber,
-                                  );
+                              context.read<ShowDetailsCubit>().loadSeasonEpisodes(widget.mediaId, seasonNumber);
                             }
                           },
-                          children: [
-                            _buildEpisodesList(
-                              seasonNumber,
-                              seasonsData[seasonNumber],
-                            ),
-                          ],
+                          children: [_buildEpisodesList(seasonNumber, seasonsData[seasonNumber])],
                         ),
 
                         // Progress bar pinned to absolute bottom
@@ -1480,27 +1183,17 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                 Container(
                                   height: 4,
                                   width: double.infinity,
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.2,
-                                  ), // Light yellow track
+                                  color: AppColors.primary.withValues(alpha: 0.2), // Light yellow track
                                 ),
                                 TweenAnimationBuilder<double>(
                                   duration: const Duration(milliseconds: 800),
                                   curve: Curves.easeOutCubic,
-                                  tween: Tween<double>(
-                                    begin: 0.0,
-                                    end: watchedCount / epCount,
-                                  ),
+                                  tween: Tween<double>(begin: 0.0, end: watchedCount / epCount),
                                   builder: (context, value, child) {
                                     return FractionallySizedBox(
                                       alignment: Alignment.centerLeft,
                                       widthFactor: value,
-                                      child: Container(
-                                        height: 4,
-                                        color: allWatched
-                                            ? Colors.green
-                                            : AppColors.primary,
-                                      ),
+                                      child: Container(height: 4, color: allWatched ? Colors.green : AppColors.primary),
                                     );
                                   },
                                 ),
@@ -1534,9 +1227,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surfaceDarkAlt,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -1545,33 +1236,18 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             children: [
               if (stillPath != null && stillPath.isNotEmpty)
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                   child: CachedNetworkImage(
                     imageUrl: _getImageUrl(stillPath, size: 'w780'),
                     fit: BoxFit.cover,
                     height: 220,
                     width: double.infinity,
-                    errorWidget: (context, url, error) => const SizedBox(
-                      height: 220,
-                      child: Icon(
-                        Icons.tv,
-                        size: 50,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
+                    errorWidget: (context, url, error) =>
+                        const SizedBox(height: 220, child: Icon(Icons.tv, size: 50, color: AppColors.textTertiary)),
                   ),
                 )
               else
-                const SizedBox(
-                  height: 100,
-                  child: Icon(
-                    Icons.tv,
-                    size: 50,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
+                const SizedBox(height: 100, child: Icon(Icons.tv, size: 50, color: AppColors.textTertiary)),
 
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
@@ -1587,22 +1263,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             children: [
                               Text(
                                 name,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                                 maxLines: 2,
                               ),
                               if (voteCount > 0) ...[
                                 AppSpacing.gapH4,
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.star,
-                                      color: Colors.amber,
-                                      size: 16,
-                                    ),
+                                    const Icon(Icons.star, color: Colors.amber, size: 16),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${voteAverage.toStringAsFixed(1)}/10 ($voteCount)',
@@ -1619,33 +1287,16 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           ),
                         ),
                         AppSpacing.gapW12,
-                        Text(
-                          airDate,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
+                        Text(airDate, style: const TextStyle(fontSize: 14, color: AppColors.textTertiary)),
                       ],
                     ),
                     AppSpacing.gapH16,
                     if (overview.isNotEmpty)
-                      Text(
-                        overview,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                          height: 1.5,
-                        ),
-                      )
+                      Text(overview, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5))
                     else
                       const Text(
                         'No description available.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textTertiary,
-                          fontStyle: FontStyle.italic,
-                        ),
+                        style: TextStyle(fontSize: 14, color: AppColors.textTertiary, fontStyle: FontStyle.italic),
                       ),
                   ],
                 ),
@@ -1677,10 +1328,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     if (episodes.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(AppSpacing.md),
-        child: Text(
-          'No episodes listed for this season.',
-          style: TextStyle(color: AppColors.textTertiary),
-        ),
+        child: Text('No episodes listed for this season.', style: TextStyle(color: AppColors.textTertiary)),
       );
     }
 
@@ -1692,8 +1340,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
       itemCount: episodes.length,
       itemBuilder: (context, index) {
         final ep = episodes[index];
-        final int epNum =
-            (ep['episode_number'] as num?)?.toInt() ?? (index + 1);
+        final int epNum = (ep['episode_number'] as num?)?.toInt() ?? (index + 1);
         final String name = ep['name'] ?? 'Episode $epNum';
         String airDate = ep['air_date'] ?? 'No Air Date';
         bool isReleased = false;
@@ -1702,9 +1349,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         if (airDate != 'No Air Date' && airDate.isNotEmpty) {
           try {
             final date = DateTime.parse(airDate);
-            isReleased = date.isBefore(
-              DateTime.now().add(const Duration(days: 1)),
-            );
+            isReleased = date.isBefore(DateTime.now().add(const Duration(days: 1)));
             if (!isReleased) {
               daysUntilRelease = date.difference(DateTime.now()).inDays;
             }
@@ -1715,22 +1360,17 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         }
         final String? stillPath = ep['still_path'];
         final String overview = ep['overview'] ?? '';
-        final double voteAverage =
-            (ep['vote_average'] as num?)?.toDouble() ?? 0.0;
+        final double voteAverage = (ep['vote_average'] as num?)?.toDouble() ?? 0.0;
         final int voteCount = (ep['vote_count'] as num?)?.toInt() ?? 0;
         final String episodeKey = '$seasonNumber-$epNum';
 
         // Format season/episode as S01 | E02
-        final String seasonLabel =
-            'S${seasonNumber.toString().padLeft(2, '0')}';
+        final String seasonLabel = 'S${seasonNumber.toString().padLeft(2, '0')}';
         final String episodeLabel = 'E${epNum.toString().padLeft(2, '0')}';
 
         return Container(
           margin: const EdgeInsets.only(left: 2.0, right: 2.0, bottom: 10.0),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceDarkAlt,
-            borderRadius: BorderRadius.circular(8.0),
-          ),
+          decoration: BoxDecoration(color: AppColors.surfaceDarkAlt, borderRadius: BorderRadius.circular(8.0)),
           clipBehavior: Clip.hardEdge,
           child: InkWell(
             onTap: () => _showEpisodeDetailsBottomSheet(
@@ -1756,21 +1396,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       ? CachedNetworkImage(
                           imageUrl: _getImageUrl(stillPath, size: 'w300'),
                           fit: BoxFit.cover,
-                          errorWidget: (context, url, error) => const Center(
-                            child: Icon(
-                              Icons.tv,
-                              size: 24,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
+                          errorWidget: (context, url, error) =>
+                              const Center(child: Icon(Icons.tv, size: 24, color: AppColors.textTertiary)),
                         )
-                      : const Center(
-                          child: Icon(
-                            Icons.tv,
-                            size: 24,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
+                      : const Center(child: Icon(Icons.tv, size: 24, color: AppColors.textTertiary)),
                 ),
                 const SizedBox(width: 14),
                 // Episode info
@@ -1793,27 +1422,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13.0,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: const TextStyle(fontSize: 13.0, color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.calendar_today,
-                            size: 11,
-                            color: AppColors.textTertiary,
-                          ),
+                          const Icon(Icons.calendar_today, size: 11, color: AppColors.textTertiary),
                           const SizedBox(width: 4),
-                          Text(
-                            airDate,
-                            style: const TextStyle(
-                              fontSize: 11.0,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
+                          Text(airDate, style: const TextStyle(fontSize: 11.0, color: AppColors.textTertiary)),
                         ],
                       ),
                       BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
@@ -1822,36 +1438,21 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           String? watchedAtStr;
                           if (watchState is TvShowWatchlistSuccess) {
                             try {
-                              final showDoc = watchState.shows.firstWhere(
-                                (s) => s['id'] == widget.mediaId,
-                              );
+                              final showDoc = watchState.shows.firstWhere((s) => s['id'] == widget.mediaId);
                               if (showDoc['watchedEpisodes'] != null) {
-                                final watchedEpisodes = List<String>.from(
-                                  showDoc['watchedEpisodes'],
-                                );
-                                isWatched = watchedEpisodes.contains(
-                                  episodeKey,
-                                );
+                                final watchedEpisodes = List<String>.from(showDoc['watchedEpisodes']);
+                                isWatched = watchedEpisodes.contains(episodeKey);
 
                                 // Try to get exact episode watched date
-                                if (isWatched &&
-                                    showDoc.containsKey(
-                                      'episodeWatchedDates',
-                                    )) {
-                                  final datesMap =
-                                      showDoc['episodeWatchedDates']
-                                          as Map<String, dynamic>?;
-                                  if (datesMap != null &&
-                                      datesMap.containsKey(episodeKey)) {
-                                    watchedAtStr =
-                                        datesMap[episodeKey] as String?;
+                                if (isWatched && showDoc.containsKey('episodeWatchedDates')) {
+                                  final datesMap = showDoc['episodeWatchedDates'] as Map<String, dynamic>?;
+                                  if (datesMap != null && datesMap.containsKey(episodeKey)) {
+                                    watchedAtStr = datesMap[episodeKey] as String?;
                                   }
                                 }
                               }
                               // Fallback to show-level date if episode date is not available
-                              watchedAtStr ??=
-                                  showDoc['watchedAt'] as String? ??
-                                  showDoc['addedAt'] as String?;
+                              watchedAtStr ??= showDoc['watchedAt'] as String? ?? showDoc['addedAt'] as String?;
                             } catch (e) {
                               // Ignore
                             }
@@ -1861,20 +1462,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             padding: const EdgeInsets.only(top: 4.0),
                             child: Row(
                               children: [
-                                const Icon(
-                                  Icons.remove_red_eye_outlined,
-                                  color: Colors.greenAccent,
-                                  size: 11,
-                                ),
+                                const Icon(Icons.remove_red_eye_outlined, color: Colors.greenAccent, size: 11),
                                 const SizedBox(width: 4),
                                 Text(
-                                  watchedAtStr != null
-                                      ? _formatDate(watchedAtStr)
-                                      : 'Watched',
-                                  style: const TextStyle(
-                                    color: Colors.greenAccent,
-                                    fontSize: 11.0,
-                                  ),
+                                  watchedAtStr != null ? _formatDate(watchedAtStr) : 'Watched',
+                                  style: const TextStyle(color: Colors.greenAccent, fontSize: 11.0),
                                 ),
                               ],
                             ),
@@ -1889,10 +1481,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 if (isReleased)
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, authState) {
-                      return BlocBuilder<
-                        TvShowWatchlistCubit,
-                        TvShowWatchlistState
-                      >(
+                      return BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
                         builder: (context, watchState) {
                           bool isTracked = false;
                           bool isWatched = false;
@@ -1900,70 +1489,50 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
                           if (watchState is TvShowWatchlistSuccess) {
                             try {
-                              final showDoc = watchState.shows.firstWhere(
-                                (s) => s['id'] == widget.mediaId,
-                              );
+                              final showDoc = watchState.shows.firstWhere((s) => s['id'] == widget.mediaId);
                               isTracked = true;
                               if (showDoc['watchedEpisodes'] != null) {
-                                watchedEpisodes = List<String>.from(
-                                  showDoc['watchedEpisodes'],
-                                );
-                                isWatched = watchedEpisodes.contains(
-                                  episodeKey,
-                                );
+                                watchedEpisodes = List<String>.from(showDoc['watchedEpisodes']);
+                                isWatched = watchedEpisodes.contains(episodeKey);
                               }
                             } catch (e) {
                               // Show not found in watchlist
                             }
                           }
 
-                          final isLoadingThisEp = _loadingEpisodeKeys.contains(
-                            episodeKey,
-                          );
+                          final isLoadingThisEp = _loadingEpisodeKeys.contains(episodeKey);
 
                           return GestureDetector(
                             onTap: () async {
                               if (isLoadingThisEp) return;
                               HapticFeedback.lightImpact();
                               if (authState is! Authenticated) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Please log in to track episodes',
-                                    ),
-                                  ),
-                                );
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(const SnackBar(content: Text('Please log in to track episodes')));
                                 return;
                               }
 
                               if (!isTracked) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Add show to watchlist first',
-                                    ),
-                                  ),
-                                );
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(const SnackBar(content: Text('Add show to watchlist first')));
                                 return;
                               }
 
                               final uid = authState.user.uid;
-                              final cubit = context
-                                  .read<TvShowWatchlistCubit>();
+                              final cubit = context.read<TvShowWatchlistCubit>();
 
                               if (!isWatched) {
-                                final showState = context
-                                    .read<ShowDetailsCubit>()
-                                    .state;
+                                final showState = context.read<ShowDetailsCubit>().state;
                                 if (showState is ShowDetailsSuccess) {
                                   final details = showState.details;
-                                  final unwatchedPrev =
-                                      _getUnwatchedPreviousEpisodes(
-                                        details,
-                                        seasonNumber,
-                                        epNum,
-                                        watchedEpisodes,
-                                      );
+                                  final unwatchedPrev = _getUnwatchedPreviousEpisodes(
+                                    details,
+                                    seasonNumber,
+                                    epNum,
+                                    watchedEpisodes,
+                                  );
                                   if (unwatchedPrev.isNotEmpty) {
                                     showDialog(
                                       context: context,
@@ -1975,9 +1544,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                         ),
                                         content: Text(
                                           'You have ${unwatchedPrev.length} unwatched previous episodes. Would you like to mark them as watched too?',
-                                          style: const TextStyle(
-                                            color: AppColors.textSecondary,
-                                          ),
+                                          style: const TextStyle(color: AppColors.textSecondary),
                                         ),
                                         actions: [
                                           TextButton(
@@ -1985,9 +1552,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                               Navigator.pop(ctx);
                                               if (!mounted) return;
                                               setState(() {
-                                                _loadingEpisodeKeys.add(
-                                                  episodeKey,
-                                                );
+                                                _loadingEpisodeKeys.add(episodeKey);
                                               });
                                               try {
                                                 await cubit.toggleEpisodeWatched(
@@ -1995,67 +1560,49 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                   showId: widget.mediaId,
                                                   episodeKey: episodeKey,
                                                   isWatched: true,
-                                                  showName: details['name']
-                                                      ?.toString(),
-                                                  showPoster:
-                                                      details['poster_path']
-                                                          ?.toString(),
+                                                  showName: details['name']?.toString(),
+                                                  showPoster: details['poster_path']?.toString(),
                                                   episodeTitle:
-                                                      ep['name']?.toString() ??
-                                                      'Episode ${ep['episode_number']}',
+                                                      ep['name']?.toString() ?? 'Episode ${ep['episode_number']}',
                                                 );
                                               } finally {
                                                 if (mounted) {
                                                   setState(() {
-                                                    _loadingEpisodeKeys.remove(
-                                                      episodeKey,
-                                                    );
+                                                    _loadingEpisodeKeys.remove(episodeKey);
                                                   });
                                                 }
                                               }
                                             },
                                             child: const Text(
                                               'No, just this one',
-                                              style: TextStyle(
-                                                color: AppColors.textTertiary,
-                                              ),
+                                              style: TextStyle(color: AppColors.textTertiary),
                                             ),
                                           ),
                                           TextButton(
                                             onPressed: () async {
                                               Navigator.pop(ctx);
                                               if (!mounted) return;
-                                              final allToMark = [
-                                                ...unwatchedPrev,
-                                                episodeKey,
-                                              ];
+                                              final allToMark = [...unwatchedPrev, episodeKey];
                                               setState(() {
-                                                _loadingEpisodeKeys.addAll(
-                                                  allToMark,
-                                                );
+                                                _loadingEpisodeKeys.addAll(allToMark);
                                               });
                                               try {
-                                                await cubit
-                                                    .markMultipleEpisodesWatched(
-                                                      uid: uid,
-                                                      showId: widget.mediaId,
-                                                      episodeKeys: allToMark,
-                                                    );
+                                                await cubit.markMultipleEpisodesWatched(
+                                                  uid: uid,
+                                                  showId: widget.mediaId,
+                                                  episodeKeys: allToMark,
+                                                );
                                               } finally {
                                                 if (mounted) {
                                                   setState(() {
-                                                    _loadingEpisodeKeys
-                                                        .removeAll(allToMark);
+                                                    _loadingEpisodeKeys.removeAll(allToMark);
                                                   });
                                                 }
                                               }
                                             },
                                             child: const Text(
                                               'Yes, mark all',
-                                              style: TextStyle(
-                                                color: AppColors.primary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ],
@@ -2066,12 +1613,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                 }
                               }
 
-                              final showState = context
-                                  .read<ShowDetailsCubit>()
-                                  .state;
-                              final details = showState is ShowDetailsSuccess
-                                  ? showState.details
-                                  : null;
+                              final showState = context.read<ShowDetailsCubit>().state;
+                              final details = showState is ShowDetailsSuccess ? showState.details : null;
 
                               setState(() {
                                 _loadingEpisodeKeys.add(episodeKey);
@@ -2084,11 +1627,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                   episodeKey: episodeKey,
                                   isWatched: !isWatched,
                                   showName: details?['name']?.toString(),
-                                  showPoster: details?['poster_path']
-                                      ?.toString(),
-                                  episodeTitle:
-                                      ep['name']?.toString() ??
-                                      'Episode ${ep['episode_number']}',
+                                  showPoster: details?['poster_path']?.toString(),
+                                  episodeTitle: ep['name']?.toString() ?? 'Episode ${ep['episode_number']}',
                                 );
                               } finally {
                                 if (mounted) {
@@ -2103,25 +1643,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                               height: 36,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isWatched
-                                    ? Colors.green
-                                    : Colors.transparent,
-                                border: Border.all(
-                                  color: isWatched
-                                      ? Colors.green
-                                      : Colors.white38,
-                                  width: 2,
-                                ),
+                                color: isWatched ? Colors.green : Colors.transparent,
+                                border: Border.all(color: isWatched ? Colors.green : Colors.white38, width: 2),
                               ),
                               child: isLoadingThisEp
                                   ? const CircularProgressIndicator.adaptive()
-                                  : Icon(
-                                      Icons.check,
-                                      size: 20,
-                                      color: isWatched
-                                          ? Colors.white
-                                          : Colors.white38,
-                                    ),
+                                  : Icon(Icons.check, size: 20, color: isWatched ? Colors.white : Colors.white38),
                             ),
                           );
                         },
@@ -2145,15 +1672,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        (daysUntilRelease > 0 ? daysUntilRelease : 1) == 1
-                            ? 'DAY'
-                            : 'DAYS',
+                        (daysUntilRelease > 0 ? daysUntilRelease : 1) == 1 ? 'DAY' : 'DAYS',
                         textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 10.0,
-                          letterSpacing: 1.0,
-                        ),
+                        style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.0, letterSpacing: 1.0),
                       ),
                     ],
                   ),
@@ -2175,10 +1696,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     return GestureDetector(
       child: Container(
         width: 120,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.white10,
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Colors.white10),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
@@ -2191,9 +1709,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 fit: BoxFit.cover,
                 errorWidget: (context, url, error) => Container(
                   color: Colors.grey[800],
-                  child: const Center(
-                    child: Icon(Icons.person, color: Colors.white24, size: 40),
-                  ),
+                  child: const Center(child: Icon(Icons.person, color: Colors.white24, size: 40)),
                 ),
               )
             else
@@ -2201,9 +1717,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 width: 120,
                 height: 180,
                 color: Colors.grey[800],
-                child: const Center(
-                  child: Icon(Icons.person, color: Colors.white24, size: 40),
-                ),
+                child: const Center(child: Icon(Icons.person, color: Colors.white24, size: 40)),
               ),
             // Gradient for text readability
             Positioned(
@@ -2213,10 +1727,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               height: 70,
               child: Container(
                 decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(8),
-                    bottomRight: Radius.circular(8),
-                  ),
+                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -2234,11 +1745,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 children: [
                   Text(
                     realName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -2269,15 +1776,8 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: _tabBar,
-    );
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(color: Theme.of(context).scaffoldBackgroundColor, child: _tabBar);
   }
 
   @override
