@@ -4,6 +4,37 @@ import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 
+/// Regex matching a single leading emoji (including compound sequences with
+/// ZWJ, skin-tone modifiers, variation selectors, and keycap sequences).
+final RegExp _leadingEmojiRegex = RegExp(
+  r'^('
+  r'[\u{1F1E6}-\u{1F1FF}]{2}'                       // Regional indicator (flags)
+  r'|[\u{1F3FB}-\u{1F3FF}]'                          // Skin tone modifiers
+  r'|[\u{1F300}-\u{1F5FF}]'                          // Misc Symbols & Pictographs
+  r'|[\u{1F600}-\u{1F64F}]'                          // Emoticons
+  r'|[\u{1F680}-\u{1F6FF}]'                          // Transport & Map
+  r'|[\u{1F900}-\u{1F9FF}]'                          // Supplemental Symbols
+  r'|[\u{1FA00}-\u{1FA6F}]'                          // Chess Symbols
+  r'|[\u{1FA70}-\u{1FAFF}]'                          // Symbols Extended-A
+  r'|[\u{2600}-\u{26FF}]'                            // Misc symbols
+  r'|[\u{2700}-\u{27BF}]'                            // Dingbats
+  r'|[\u{FE00}-\u{FE0F}]'                            // Variation Selectors
+  r'|[\u{231A}-\u{231B}]'                            // Watch, Hourglass
+  r'|[\u{23E9}-\u{23F3}]'                            // Media controls
+  r'|[\u{23F8}-\u{23FA}]'                            // Media controls 2
+  r'|[\u{200D}]'                                     // ZWJ
+  r'|[0-9#*]\u{FE0F}?\u{20E3}'                      // Keycap sequences
+  r'|[\u{E0020}-\u{E007F}]'                          // Tags
+  r')+',
+  unicode: true,
+);
+
+/// Extracts the leading emoji character(s) from [text], or returns `null`.
+String? _extractLeadingEmoji(String text) {
+  final match = _leadingEmojiRegex.firstMatch(text);
+  return match?.group(0);
+}
+
 class SarcasticEmptyState {
   final String emoji;
   final String title;
@@ -228,14 +259,29 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     onTap: item.payload != null
                         ? () => _onNotificationTap(item.payload)
                         : null,
-                    leading: CircleAvatar(
-                      radius: 20.0,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                      child: const Icon(
-                        Icons.notifications_active_outlined,
-                        color: AppColors.primary,
-                        size: 20.0,
-                      ),
+                    leading: Builder(
+                      builder: (context) {
+                        final emoji = _extractLeadingEmoji(item.title);
+                        if (emoji != null) {
+                          return CircleAvatar(
+                            radius: 20.0,
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                            child: Text(
+                              emoji,
+                              style: const TextStyle(fontSize: 22.0),
+                            ),
+                          );
+                        }
+                        return CircleAvatar(
+                          radius: 20.0,
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                          child: const Icon(
+                            Icons.notifications_active_outlined,
+                            color: AppColors.primary,
+                            size: 20.0,
+                          ),
+                        );
+                      },
                     ),
                     title: Text(
                       item.title,

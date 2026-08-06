@@ -24,22 +24,15 @@ class ReceivedNotificationItem {
     required this.timestamp,
   });
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'body': body,
-    'payload': payload,
-    'timestamp': timestamp,
-  };
+  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'body': body, 'payload': payload, 'timestamp': timestamp};
 
-  factory ReceivedNotificationItem.fromJson(Map<String, dynamic> json) =>
-      ReceivedNotificationItem(
-        id: json['id'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        body: json['body'] as String? ?? '',
-        payload: json['payload'] as String?,
-        timestamp: json['timestamp'] as String? ?? '',
-      );
+  factory ReceivedNotificationItem.fromJson(Map<String, dynamic> json) => ReceivedNotificationItem(
+    id: json['id'] as String? ?? '',
+    title: json['title'] as String? ?? '',
+    body: json['body'] as String? ?? '',
+    payload: json['payload'] as String?,
+    timestamp: json['timestamp'] as String? ?? '',
+  );
 }
 
 /// Which watchlist a notification belongs to.
@@ -122,16 +115,8 @@ class NotificationService {
     required String showName,
     required String episodeCode,
   }) {
-    final epText = episodeCode.isNotEmpty
-        ? 'Episode $episodeCode'
-        : 'New episode';
-    final titles = [
-      '🍿 Up Next: $showName',
-      '⏰ Airing Soon: $showName',
-      '📺 New Episode: $showName',
-      '🍿 Binge Time: $showName',
-      '📺 Ready: $showName',
-    ];
+    final epText = episodeCode.isNotEmpty ? 'Episode $episodeCode' : 'New episode';
+    final titles = ['🍿 $showName', '⏰ $showName', '📺 $showName', '🍿 $showName', '📺 $showName'];
     final index = showId.abs() % titles.length;
     return (titles[index], '$epText airs {time}.');
   }
@@ -142,19 +127,12 @@ class NotificationService {
     required int movieId,
     required String movieTitle,
   }) {
-    final titles = [
-      '🎬 Premiere: $movieTitle',
-      '🍿 Release Alert: $movieTitle',
-      '🎬 Movie Night: $movieTitle',
-      '🍿 Coming Soon: $movieTitle',
-      '🌟 Premiering: $movieTitle',
-    ];
+    final titles = ['🎬 $movieTitle', '🍿 $movieTitle', '🎬 $movieTitle', '🍿 $movieTitle', '🌟 $movieTitle'];
     final index = movieId.abs() % titles.length;
     return (titles[index], '$movieTitle premieres {time}.');
   }
 
-  final FlutterLocalNotificationsPlugin _notificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
 
   /// Each title reserves this many notification ids: two per media kind, one
   /// for the day-before alert and one for the optional hour-before alert.
@@ -184,9 +162,7 @@ class NotificationService {
   /// Matches the scheme the home-screen widget already uses, so notification
   /// taps route through the same handler.
   String _deepLinkFor(NotificationMedia media, int mediaId) =>
-      media == NotificationMedia.tv
-      ? 'tvtimeapp://show/$mediaId'
-      : 'tvtimeapp://movie/$mediaId';
+      media == NotificationMedia.tv ? 'tvtimeapp://show/$mediaId' : 'tvtimeapp://movie/$mediaId';
 
   /// Reactive notifier for whether unread notifications exist.
   final ValueNotifier<bool> hasUnreadNotifier = ValueNotifier<bool>(false);
@@ -194,8 +170,7 @@ class NotificationService {
   /// Initializes unread status from SharedPreferences.
   Future<void> _initUnreadStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    hasUnreadNotifier.value =
-        prefs.getBool('has_unread_notifications') ?? false;
+    hasUnreadNotifier.value = prefs.getBool('has_unread_notifications') ?? false;
   }
 
   /// Sets unread notification state and updates listeners & SharedPreferences.
@@ -225,8 +200,7 @@ class NotificationService {
       await prefs.setInt('app_install_timestamp', installTimestamp);
     }
 
-    final alreadyScheduled =
-        prefs.getBool('reinstall_reminder_scheduled') ?? false;
+    final alreadyScheduled = prefs.getBool('reinstall_reminder_scheduled') ?? false;
     if (alreadyScheduled) {
       return;
     }
@@ -239,8 +213,7 @@ class NotificationService {
         await _scheduleOne(
           id: _reinstallNotificationId,
           title: "⏳ Time's Almost Up!",
-          body:
-              "Free profile expires tomorrow. Connect to Xcode and rebuild now! 💻",
+          body: "Free profile expires tomorrow. Connect to Xcode and rebuild now! 💻",
           scheduledDate: reminderDate,
         );
         await prefs.setBool('reinstall_reminder_scheduled', true);
@@ -264,21 +237,20 @@ class NotificationService {
 
     // Icon names resolve against res/drawable, not res/mipmap, so the launcher
     // icon can't be referenced here. See _androidStatusBarIcon.
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings(_androidStatusBarIcon);
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
+      _androidStatusBarIcon,
+    );
 
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-          requestAlertPermission: false,
-          requestBadgePermission: false,
-          requestSoundPermission: false,
-        );
+    const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
 
-    const InitializationSettings initializationSettings =
-        InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsIOS,
-        );
+    const InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
 
     await _notificationsPlugin.initialize(
       settings: initializationSettings,
@@ -303,8 +275,7 @@ class NotificationService {
   /// A cold launch has no live callback to fire, so the launch details have to
   /// be read once the app is up and routed manually.
   Future<String?> takeLaunchPayload() async {
-    final details = await _notificationsPlugin
-        .getNotificationAppLaunchDetails();
+    final details = await _notificationsPlugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp != true) return null;
     final payload = details?.notificationResponse?.payload;
     return (payload == null || payload.isEmpty) ? null : payload;
@@ -314,15 +285,11 @@ class NotificationService {
   /// tell the difference between "user turned it on" and "the OS said no".
   Future<bool> requestPermissions() async {
     final iosGranted = await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >()
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(alert: true, badge: true, sound: true);
 
     final androidGranted = await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
 
     // Exactly one implementation resolves per platform; the other is null.
@@ -335,19 +302,14 @@ class NotificationService {
   /// settings long after enabling them here, and nothing in the app would
   /// otherwise notice.
   Future<bool> hasSystemPermission() async {
-    final ios = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
+    final ios = _notificationsPlugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
     if (ios != null) {
       final options = await ios.checkPermissions();
       return options?.isEnabled ?? false;
     }
 
     final android = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (android != null) {
       return await android.areNotificationsEnabled() ?? false;
     }
@@ -357,26 +319,22 @@ class NotificationService {
 
   Future<void> sendTestNotification() async {
     final androidPlugin = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.deleteNotificationChannel(channelId: 'test_channel');
 
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-          'test_channel',
-          'Test Notifications',
-          importance: Importance.max,
-          priority: Priority.max,
-          icon: _androidStatusBarIcon,
-          largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
-        );
-    const DarwinNotificationDetails darwinPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        );
+    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'test_channel',
+      'Test Notifications',
+      importance: Importance.max,
+      priority: Priority.max,
+      icon: _androidStatusBarIcon,
+      largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
+    );
+    const DarwinNotificationDetails darwinPlatformChannelSpecifics = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: darwinPlatformChannelSpecifics,
@@ -410,21 +368,19 @@ class NotificationService {
       return;
     }
 
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-          'release_channel',
-          'Release Notifications',
-          importance: Importance.max,
-          priority: Priority.max,
-          icon: _androidStatusBarIcon,
-          largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
-        );
-    const DarwinNotificationDetails darwinPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        );
+    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'release_channel',
+      'Release Notifications',
+      importance: Importance.max,
+      priority: Priority.max,
+      icon: _androidStatusBarIcon,
+      largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
+    );
+    const DarwinNotificationDetails darwinPlatformChannelSpecifics = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: darwinPlatformChannelSpecifics,
@@ -569,14 +525,12 @@ class NotificationService {
   }
 
   /// Returns all currently scheduled/pending notification items for display.
-  Future<List<ScheduledNotificationDisplayItem>>
-  getPendingNotifications() async {
+  Future<List<ScheduledNotificationDisplayItem>> getPendingNotifications() async {
     final Map<int, ScheduledNotificationDisplayItem> itemsById = {};
 
     // 1. Fetch platform-scheduled notification requests from local notifications plugin
     try {
-      final platformRequests = await _notificationsPlugin
-          .pendingNotificationRequests();
+      final platformRequests = await _notificationsPlugin.pendingNotificationRequests();
       for (final req in platformRequests) {
         if (req.title != null && req.body != null) {
           itemsById[req.id] = ScheduledNotificationDisplayItem(
@@ -756,17 +710,12 @@ class NotificationService {
     if (force) {
       _lastScheduledSignature = null;
       final androidPlugin = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
-      await androidPlugin?.deleteNotificationChannel(
-        channelId: 'release_channel',
-      );
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.deleteNotificationChannel(channelId: 'release_channel');
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final notificationsEnabled =
-        prefs.getBool('notifications_enabled') ?? false;
+    final notificationsEnabled = prefs.getBool('notifications_enabled') ?? false;
 
     // The in-app preference is necessary but not sufficient — a user who
     // revoked notifications in system settings keeps the toggle showing "on",
@@ -796,13 +745,8 @@ class NotificationService {
         // the release. A title added after that moment has passed simply gets
         // no day-before alert — the hour-before one, if enabled, still fires.
         final dayBefore = releaseDate.subtract(const Duration(days: 1));
-        final dayBeforeId = _notificationId(
-          pending.media,
-          pending.mediaId,
-          _slotDayBefore,
-        );
-        if (dayBefore.isAfter(now) &&
-            !_canceledNotificationIds.contains(dayBeforeId)) {
+        final dayBeforeId = _notificationId(pending.media, pending.mediaId, _slotDayBefore);
+        if (dayBefore.isAfter(now) && !_canceledNotificationIds.contains(dayBeforeId)) {
           alerts.add(
             _ScheduledAlert(
               id: dayBeforeId,
@@ -816,13 +760,8 @@ class NotificationService {
 
         if (notify1HourBefore) {
           final hourBefore = releaseDate.subtract(const Duration(hours: 1));
-          final hourBeforeId = _notificationId(
-            pending.media,
-            pending.mediaId,
-            _slotHourBefore,
-          );
-          if (hourBefore.isAfter(now) &&
-              !_canceledNotificationIds.contains(hourBeforeId)) {
+          final hourBeforeId = _notificationId(pending.media, pending.mediaId, _slotHourBefore);
+          if (hourBefore.isAfter(now) && !_canceledNotificationIds.contains(hourBeforeId)) {
             alerts.add(
               _ScheduledAlert(
                 id: hourBeforeId,
@@ -842,9 +781,7 @@ class NotificationService {
     alerts.sort((a, b) => a.when.compareTo(b.when));
     final capped = alerts.take(_maxPending).toList();
 
-    final signature = capped
-        .map((a) => '${a.id}@${a.when.millisecondsSinceEpoch}')
-        .join(',');
+    final signature = capped.map((a) => '${a.id}@${a.when.millisecondsSinceEpoch}').join(',');
     if (!force && signature == _lastScheduledSignature) return;
 
     // Clear and rebuild. Cancelling wholesale is what makes stale alerts —
