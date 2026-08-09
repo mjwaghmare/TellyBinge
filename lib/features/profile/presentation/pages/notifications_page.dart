@@ -1,5 +1,7 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -8,23 +10,23 @@ import '../../../../core/theme/app_spacing.dart';
 /// ZWJ, skin-tone modifiers, variation selectors, and keycap sequences).
 final RegExp _leadingEmojiRegex = RegExp(
   r'^('
-  r'[\u{1F1E6}-\u{1F1FF}]{2}'                       // Regional indicator (flags)
-  r'|[\u{1F3FB}-\u{1F3FF}]'                          // Skin tone modifiers
-  r'|[\u{1F300}-\u{1F5FF}]'                          // Misc Symbols & Pictographs
-  r'|[\u{1F600}-\u{1F64F}]'                          // Emoticons
-  r'|[\u{1F680}-\u{1F6FF}]'                          // Transport & Map
-  r'|[\u{1F900}-\u{1F9FF}]'                          // Supplemental Symbols
-  r'|[\u{1FA00}-\u{1FA6F}]'                          // Chess Symbols
-  r'|[\u{1FA70}-\u{1FAFF}]'                          // Symbols Extended-A
-  r'|[\u{2600}-\u{26FF}]'                            // Misc symbols
-  r'|[\u{2700}-\u{27BF}]'                            // Dingbats
-  r'|[\u{FE00}-\u{FE0F}]'                            // Variation Selectors
-  r'|[\u{231A}-\u{231B}]'                            // Watch, Hourglass
-  r'|[\u{23E9}-\u{23F3}]'                            // Media controls
-  r'|[\u{23F8}-\u{23FA}]'                            // Media controls 2
-  r'|[\u{200D}]'                                     // ZWJ
-  r'|[0-9#*]\u{FE0F}?\u{20E3}'                      // Keycap sequences
-  r'|[\u{E0020}-\u{E007F}]'                          // Tags
+  r'[\u{1F1E6}-\u{1F1FF}]{2}' // Regional indicator (flags)
+  r'|[\u{1F3FB}-\u{1F3FF}]' // Skin tone modifiers
+  r'|[\u{1F300}-\u{1F5FF}]' // Misc Symbols & Pictographs
+  r'|[\u{1F600}-\u{1F64F}]' // Emoticons
+  r'|[\u{1F680}-\u{1F6FF}]' // Transport & Map
+  r'|[\u{1F900}-\u{1F9FF}]' // Supplemental Symbols
+  r'|[\u{1FA00}-\u{1FA6F}]' // Chess Symbols
+  r'|[\u{1FA70}-\u{1FAFF}]' // Symbols Extended-A
+  r'|[\u{2600}-\u{26FF}]' // Misc symbols
+  r'|[\u{2700}-\u{27BF}]' // Dingbats
+  r'|[\u{FE00}-\u{FE0F}]' // Variation Selectors
+  r'|[\u{231A}-\u{231B}]' // Watch, Hourglass
+  r'|[\u{23E9}-\u{23F3}]' // Media controls
+  r'|[\u{23F8}-\u{23FA}]' // Media controls 2
+  r'|[\u{200D}]' // ZWJ
+  r'|[0-9#*]\u{FE0F}?\u{20E3}' // Keycap sequences
+  r'|[\u{E0020}-\u{E007F}]' // Tags
   r')+',
   unicode: true,
 );
@@ -40,11 +42,7 @@ class SarcasticEmptyState {
   final String title;
   final String subtitle;
 
-  const SarcasticEmptyState({
-    required this.emoji,
-    required this.title,
-    required this.subtitle,
-  });
+  const SarcasticEmptyState({required this.emoji, required this.title, required this.subtitle});
 }
 
 class NotificationsPage extends StatefulWidget {
@@ -63,32 +61,27 @@ class _NotificationsPageState extends State<NotificationsPage> {
     SarcasticEmptyState(
       emoji: '🦗',
       title: 'Crickets in here...',
-      subtitle:
-          'No notifications yet. Either all your shows are on hiatus or you need to touch some grass.',
+      subtitle: 'No notifications yet. Either all your shows are on hiatus or you need to touch some grass.',
     ),
     SarcasticEmptyState(
       emoji: '🍿',
       title: 'Your notifications are empty!',
-      subtitle:
-          'Empty like your popcorn bucket 5 minutes into the movie. Add some shows to your watchlist!',
+      subtitle: 'Empty like your popcorn bucket 5 minutes into the movie. Add some shows to your watchlist!',
     ),
     SarcasticEmptyState(
       emoji: '😴',
       title: 'Total radio silence',
-      subtitle:
-          'No pushed episodes, no movie premieres, zero drama. Go rewatch The Office for the 14th time.',
+      subtitle: 'No pushed episodes, no movie premieres, zero drama. Go rewatch The Office for the 14th time.',
     ),
     SarcasticEmptyState(
       emoji: '🛋️',
       title: 'Suspiciously peaceful...',
-      subtitle:
-          'No cliffhangers waiting to ruin your sleep tonight. Enjoy the quiet while it lasts!',
+      subtitle: 'No cliffhangers waiting to ruin your sleep tonight. Enjoy the quiet while it lasts!',
     ),
     SarcasticEmptyState(
       emoji: '😱',
       title: 'Nothing to report! Go outside?',
-      subtitle:
-          'Your notification tray is clear. You could actually do something productive... or find new shows.',
+      subtitle: 'Your notification tray is clear. You could actually do something productive... or find new shows.',
     ),
   ];
 
@@ -147,10 +140,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -168,35 +158,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
               onPressed: _clearAllNotifications,
               child: const Text(
                 'Clear all',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.0,
-                ),
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14.0),
               ),
             ),
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              ),
-            )
+          ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)))
           : _notifications.isEmpty
           ? Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xl,
-                  vertical: AppSpacing.md,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      _emptyState.emoji,
-                      style: const TextStyle(fontSize: 64.0),
-                    ),
+                    Text(_emptyState.emoji, style: const TextStyle(fontSize: 64.0)),
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       _emptyState.title,
@@ -214,9 +190,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       style: TextStyle(
                         fontSize: 14.0,
                         fontStyle: FontStyle.italic,
-                        color: isDark
-                            ? AppColors.textSecondary
-                            : AppColors.lightTextSecondary,
+                        color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -246,15 +220,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     background: Container(
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.delete_outline,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                      decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
                     ),
                     child: Material(
                       color: Theme.of(context).cardColor,
@@ -266,9 +233,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-                            ),
+                            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,10 +247,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 ),
                                 alignment: Alignment.center,
                                 child: emoji != null
-                                    ? Text(
-                                        emoji,
-                                        style: const TextStyle(fontSize: 22.0),
-                                      )
+                                    ? Text(emoji, style: const TextStyle(fontSize: 22.0))
                                     : const Icon(
                                         Icons.notifications_active_rounded,
                                         color: AppColors.primary,
@@ -316,9 +278,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                           Text(
                                             formattedTime,
                                             style: TextStyle(
-                                              color: isDark
-                                                  ? AppColors.textTertiary
-                                                  : AppColors.lightTextSecondary,
+                                              color: isDark ? AppColors.textTertiary : AppColors.lightTextSecondary,
                                               fontSize: 11.0,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -330,9 +290,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     Text(
                                       item.body,
                                       style: TextStyle(
-                                        color: isDark
-                                            ? AppColors.textSecondary
-                                            : AppColors.lightTextSecondary,
+                                        color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
                                         fontSize: 13.0,
                                         height: 1.35,
                                       ),
@@ -381,6 +339,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       final now = DateTime.now();
       final difference = now.difference(dateTime);
 
+      if (difference.isNegative) {
+        return '${dateTime.day}/${dateTime.month}';
+      }
       if (difference.inSeconds < 60) {
         return 'Just now';
       } else if (difference.inMinutes < 60) {

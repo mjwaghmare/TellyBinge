@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import '../utils/executable_stat/executable_stat.dart';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -193,12 +195,7 @@ class NotificationService {
     }
 
     final prefs = await SharedPreferences.getInstance();
-
-    int? installTimestamp = prefs.getInt('app_install_timestamp');
-    if (installTimestamp == null) {
-      installTimestamp = DateTime.now().millisecondsSinceEpoch;
-      await prefs.setInt('app_install_timestamp', installTimestamp);
-    }
+    final installTimestamp = await getAppInstallTimestamp();
 
     final alreadyScheduled = prefs.getBool('reinstall_reminder_scheduled') ?? false;
     if (alreadyScheduled) {
@@ -225,20 +222,30 @@ class NotificationService {
     }
   }
 
-  /// Returns the app install timestamp in milliseconds since epoch,
-  /// initializing it if it hasn't been set yet.
+  /// Returns the actual build/deployment timestamp of the app executable.
+  /// Falls back to the persisted app install timestamp if file stat is unavailable.
   Future<int> getAppInstallTimestamp() async {
     final prefs = await SharedPreferences.getInstance();
     int? installTimestamp = prefs.getInt('app_install_timestamp');
+
+    final buildTime = getExecutableModifiedTimestamp();
+    if (buildTime != null && buildTime > 0) {
+      if (installTimestamp == null || buildTime > installTimestamp) {
+        installTimestamp = buildTime;
+        await prefs.setInt('app_install_timestamp', installTimestamp);
+      }
+    }
+
     if (installTimestamp == null) {
       installTimestamp = DateTime.now().millisecondsSinceEpoch;
       await prefs.setInt('app_install_timestamp', installTimestamp);
     }
+
     return installTimestamp;
   }
 
   /// Returns the estimated free Apple Developer profile expiration date
-  /// (7 days from app installation/rebuild).
+  /// (7 days from app build/installation).
   Future<DateTime> getProfileExpirationDate() async {
     final timestamp = await getAppInstallTimestamp();
     final installDate = DateTime.fromMillisecondsSinceEpoch(timestamp);
@@ -262,6 +269,7 @@ class NotificationService {
 
   Future<void> initialize() async {
     await _initUnreadStatus();
+    await getAppInstallTimestamp();
     tz.initializeTimeZones();
     try {
       final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
