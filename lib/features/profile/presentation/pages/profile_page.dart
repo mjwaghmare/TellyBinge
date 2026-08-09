@@ -46,6 +46,7 @@ class HorizontalItem {
   final String? watchedAt;
   final int watchedCount;
   final int totalEpisodes;
+  final String? category;
 
   HorizontalItem({
     required this.movieId,
@@ -61,6 +62,7 @@ class HorizontalItem {
     this.watchedAt,
     this.watchedCount = 0,
     this.totalEpisodes = 0,
+    this.category,
   });
 }
 
@@ -482,6 +484,7 @@ class _ProfilePageState extends State<ProfilePage>
                           isWatched: m['isWatched'] as bool? ?? false,
                           isMovie: true,
                           addedAt: m['addedAt'] as String?,
+                          watchedAt: m['watchedAt'] as String?,
                         ),
                       )
                       .toList();
@@ -562,55 +565,84 @@ class _ProfilePageState extends State<ProfilePage>
                   );
                 }
 
-                if (_movieSortOption == 'Alphabetical') {
-                  displayedMovies.sort(
-                    (a, b) =>
-                        a.title.toLowerCase().compareTo(b.title.toLowerCase()),
-                  );
-                } else if (_movieSortOption == 'Last Added') {
-                  displayedMovies.sort((a, b) {
-                    final dateA = _parseDate(a.addedAt ?? '');
-                    final dateB = _parseDate(b.addedAt ?? '');
-                    if (dateA == null && dateB == null) return 0;
-                    if (dateA == null) return 1;
-                    if (dateB == null) return -1;
-                    return dateB.compareTo(dateA);
-                  });
-                } else if (_movieSortOption == 'Last Watched') {
-                  displayedMovies.sort((a, b) {
-                    final dateA = _parseDate(a.watchedAt ?? a.addedAt ?? '');
-                    final dateB = _parseDate(b.watchedAt ?? b.addedAt ?? '');
-                    if (dateA == null && dateB == null) return 0;
-                    if (dateA == null) return 1;
-                    if (dateB == null) return -1;
-                    return dateB.compareTo(dateA);
-                  });
-                }
+                // Sort movies: status priority (when All: Not Watched -> Watched) + user sort option
+                final bool groupMoviesByStatus = _movieProgressOption == 'All';
 
-                if (_showSortOption == 'Alphabetical') {
-                  displayedShows.sort(
-                    (a, b) =>
-                        a.title.toLowerCase().compareTo(b.title.toLowerCase()),
-                  );
-                } else if (_showSortOption == 'Last added') {
-                  displayedShows.sort((a, b) {
+                displayedMovies.sort((a, b) {
+                  // Primary: group by status when showing all (Not Watched first, then Watched)
+                  if (groupMoviesByStatus) {
+                    final priorityA = a.isWatched ? 1 : 0;
+                    final priorityB = b.isWatched ? 1 : 0;
+                    final cmp = priorityA.compareTo(priorityB);
+                    if (cmp != 0) return cmp;
+                  }
+
+                  // Secondary: user-chosen sort option
+                  if (_movieSortOption == 'Alphabetical') {
+                    return a.title
+                        .toLowerCase()
+                        .compareTo(b.title.toLowerCase());
+                  } else if (_movieSortOption == 'Last Added') {
                     final dateA = _parseDate(a.addedAt ?? '');
                     final dateB = _parseDate(b.addedAt ?? '');
                     if (dateA == null && dateB == null) return 0;
                     if (dateA == null) return 1;
                     if (dateB == null) return -1;
                     return dateB.compareTo(dateA);
-                  });
-                } else if (_showSortOption == 'Last watched') {
-                  displayedShows.sort((a, b) {
+                  } else if (_movieSortOption == 'Last Watched') {
                     final dateA = _parseDate(a.watchedAt ?? a.addedAt ?? '');
                     final dateB = _parseDate(b.watchedAt ?? b.addedAt ?? '');
                     if (dateA == null && dateB == null) return 0;
                     if (dateA == null) return 1;
                     if (dateB == null) return -1;
                     return dateB.compareTo(dateA);
-                  });
-                }
+                  }
+                  return 0;
+                });
+
+                // Sort shows: category priority (when All) + user sort option
+                const categoryPriority = <String, int>{
+                  'WATCH_NEXT': 0,
+                  'HAVENT_STARTED': 1,
+                  'UP_TO_DATE': 2,
+                  'STOPPED': 3,
+                  'FINISHED': 4,
+                };
+                final bool groupByCategory = _showProgressOption == 'All';
+
+                displayedShows.sort((a, b) {
+                  // Primary: group by category priority when showing all
+                  if (groupByCategory) {
+                    final catA = a.isStopped ? 'STOPPED' : (a.category ?? '');
+                    final catB = b.isStopped ? 'STOPPED' : (b.category ?? '');
+                    final priorityA = categoryPriority[catA] ?? 5;
+                    final priorityB = categoryPriority[catB] ?? 5;
+                    final cmp = priorityA.compareTo(priorityB);
+                    if (cmp != 0) return cmp;
+                  }
+
+                  // Secondary: user-chosen sort option
+                  if (_showSortOption == 'Alphabetical') {
+                    return a.title
+                        .toLowerCase()
+                        .compareTo(b.title.toLowerCase());
+                  } else if (_showSortOption == 'Last added') {
+                    final dateA = _parseDate(a.addedAt ?? '');
+                    final dateB = _parseDate(b.addedAt ?? '');
+                    if (dateA == null && dateB == null) return 0;
+                    if (dateA == null) return 1;
+                    if (dateB == null) return -1;
+                    return dateB.compareTo(dateA);
+                  } else if (_showSortOption == 'Last watched') {
+                    final dateA = _parseDate(a.watchedAt ?? a.addedAt ?? '');
+                    final dateB = _parseDate(b.watchedAt ?? b.addedAt ?? '');
+                    if (dateA == null && dateB == null) return 0;
+                    if (dateA == null) return 1;
+                    if (dateB == null) return -1;
+                    return dateB.compareTo(dateA);
+                  }
+                  return 0;
+                });
 
                 final stats = _calculateProfileStats(
                   watchlistState,
@@ -773,10 +805,15 @@ class _ProfilePageState extends State<ProfilePage>
                           backgroundColor: Colors.transparent,
                           body: Skeletonizer(
                             enabled: isLoadingShows || _isFilteringShows,
-                            child: _buildGrid(
-                              displayedShows,
-                              'No shows matched your filter.',
-                            ),
+                            child: _showProgressOption == 'All'
+                                ? _buildGroupedShowsGrid(
+                                    displayedShows,
+                                    'No shows matched your filter.',
+                                  )
+                                : _buildGrid(
+                                    displayedShows,
+                                    'No shows matched your filter.',
+                                  ),
                           ),
                           floatingActionButton: Builder(
                             builder: (context) {
@@ -893,10 +930,15 @@ class _ProfilePageState extends State<ProfilePage>
                           backgroundColor: Colors.transparent,
                           body: Skeletonizer(
                             enabled: isLoadingMovies || _isFilteringMovies,
-                            child: _buildGrid(
-                              displayedMovies,
-                              'No movies matched your filter.',
-                            ),
+                            child: _movieProgressOption == 'All'
+                                ? _buildGroupedMoviesGrid(
+                                    displayedMovies,
+                                    'No movies matched your filter.',
+                                  )
+                                : _buildGrid(
+                                    displayedMovies,
+                                    'No movies matched your filter.',
+                                  ),
                           ),
                           floatingActionButton: Builder(
                             builder: (context) {
@@ -1060,6 +1102,249 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  Widget _buildSectionHeader({
+    required String label,
+    required Color dotColor,
+    required int count,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 20, 8, 10),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: dotColor,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.light
+                  ? AppColors.lightTextPrimary
+                  : AppColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 2,
+            ),
+            decoration: BoxDecoration(
+              color: dotColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                color: dotColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: Theme.of(context).brightness == Brightness.light
+                  ? AppColors.borderLight
+                  : AppColors.borderDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildGridRows(List<HorizontalItem> items) {
+    final rows = <Widget>[];
+    for (int i = 0; i < items.length; i += 3) {
+      final rowItems = items.sublist(i, min(i + 3, items.length));
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1.0),
+          child: Row(
+            children: [
+              for (int j = 0; j < 3; j++)
+                Expanded(
+                  child: j < rowItems.length
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 1.0),
+                          child: AspectRatio(
+                            aspectRatio: 2 / 3,
+                            child: _buildGridItem(rowItems[j]),
+                          ),
+                        )
+                      : const SizedBox(),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+    return rows;
+  }
+
+  Widget _buildGroupedMoviesGrid(
+    List<HorizontalItem> items,
+    String emptyMessage,
+  ) {
+    if (items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
+          child: Text(
+            emptyMessage,
+            style: TextStyle(
+              color: Theme.of(context).disabledColor,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final notWatched = items.where((m) => !m.isWatched).toList();
+    final watched = items.where((m) => m.isWatched).toList();
+
+    final children = <Widget>[];
+
+    if (notWatched.isNotEmpty) {
+      children.add(
+        _buildSectionHeader(
+          label: 'Not Watched',
+          dotColor: AppColors.primary,
+          count: notWatched.length,
+        ),
+      );
+      children.addAll(_buildGridRows(notWatched));
+    }
+
+    if (watched.isNotEmpty) {
+      children.add(
+        _buildSectionHeader(
+          label: 'Watched',
+          dotColor: AppColors.success,
+          count: watched.length,
+        ),
+      );
+      children.addAll(_buildGridRows(watched));
+    }
+
+    children.add(const SizedBox(height: 160));
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 2),
+      itemCount: children.length,
+      itemBuilder: (context, index) => children[index],
+    );
+  }
+
+  Color _categoryDotColor(String category) {
+    switch (category) {
+      case 'WATCH_NEXT':
+        return AppColors.primary;
+      case 'HAVENT_STARTED':
+        return AppColors.textTertiary;
+      case 'UP_TO_DATE':
+        return AppColors.success;
+      case 'STOPPED':
+        return AppColors.error;
+      case 'FINISHED':
+        return AppColors.airing;
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  static const _categoryLabels = <String, String>{
+    'WATCH_NEXT': 'In Progress',
+    'HAVENT_STARTED': 'Haven\'t Started',
+    'UP_TO_DATE': 'Up to Date',
+    'STOPPED': 'Stopped Watching',
+    'FINISHED': 'Finished',
+  };
+
+  static const _categoryOrder = <String>[
+    'WATCH_NEXT',
+    'HAVENT_STARTED',
+    'UP_TO_DATE',
+    'STOPPED',
+    'FINISHED',
+  ];
+
+  Widget _buildGroupedShowsGrid(
+    List<HorizontalItem> items,
+    String emptyMessage,
+  ) {
+    if (items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
+          child: Text(
+            emptyMessage,
+            style: TextStyle(
+              color: Theme.of(context).disabledColor,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Group items by category (stopped shows override to STOPPED)
+    final grouped = <String, List<HorizontalItem>>{};
+    for (final item in items) {
+      final key = item.isStopped ? 'STOPPED' : (item.category ?? '');
+      (grouped[key] ??= []).add(item);
+    }
+
+    final children = <Widget>[];
+    for (final category in _categoryOrder) {
+      final group = grouped[category];
+      if (group == null || group.isEmpty) continue;
+
+      final label = _categoryLabels[category] ?? category;
+
+      // Section header
+      children.add(
+        _buildSectionHeader(
+          label: label,
+          dotColor: _categoryDotColor(category),
+          count: group.length,
+        ),
+      );
+
+      // Lazily virtualized 3-item rows
+      children.addAll(_buildGridRows(group));
+    }
+
+    // Handle items with unknown categories
+    final uncategorised = grouped.entries
+        .where((e) => !_categoryOrder.contains(e.key))
+        .expand((e) => e.value)
+        .toList();
+    if (uncategorised.isNotEmpty) {
+      children.addAll(_buildGridRows(uncategorised));
+    }
+
+    children.add(const SizedBox(height: 160));
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 2),
+      itemCount: children.length,
+      itemBuilder: (context, index) => children[index],
+    );
+  }
+
   Widget _buildGrid(List<HorizontalItem> items, String emptyMessage) {
     if (items.isEmpty) {
       return Center(
@@ -1075,256 +1360,233 @@ class _ProfilePageState extends State<ProfilePage>
         ),
       );
     }
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(2.0, 2.0, 2.0, 160.0),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 2.0,
-        mainAxisSpacing: 2.0,
-        childAspectRatio: 2 / 3,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return CupertinoContextMenu(
-          actions: <Widget>[
-            CupertinoContextMenuAction(
-              onPressed: () {
-                HapticFeedback.mediumImpact();
-                Navigator.pop(context);
-                final authState = context.read<AuthCubit>().state;
-                final uid = authState is Authenticated
-                    ? authState.user.uid
-                    : null;
-                if (uid != null) {
-                  if (item.isMovie) {
-                    context.read<MovieWatchlistCubit>().toggleFavorite(
-                      uid: uid,
-                      movieId: item.movieId,
-                      isFavorite: !item.isFavorite,
-                    );
-                  } else {
-                    context.read<TvShowWatchlistCubit>().toggleFavorite(
-                      uid: uid,
-                      showId: item.movieId,
-                      isFavorite: !item.isFavorite,
-                    );
-                  }
-                }
-              },
-              child: Text(
-                item.isFavorite ? 'Remove from Favorites' : 'Mark as Favorite',
-              ),
-            ),
-            CupertinoContextMenuAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                HapticFeedback.mediumImpact();
-                Navigator.pop(context);
-                final authState = context.read<AuthCubit>().state;
-                final uid = authState is Authenticated
-                    ? authState.user.uid
-                    : null;
-                if (uid != null) {
-                  if (item.isMovie) {
-                    context.read<MovieWatchlistCubit>().removeMovie(
-                      uid: uid,
-                      movieId: item.movieId,
-                    );
-                  } else {
-                    context.read<TvShowWatchlistCubit>().removeShow(
-                      uid: uid,
-                      showId: item.movieId,
-                    );
-                  }
-                }
-              },
-              child: const Text('Remove'),
-            ),
-          ],
-          child: GestureDetector(
-            onTap: () {
-              if (item.movieId <= 0) return;
+    final rows = _buildGridRows(items);
+    rows.add(const SizedBox(height: 160));
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 2),
+      itemCount: rows.length,
+      itemBuilder: (context, index) => rows[index],
+    );
+  }
+
+  Widget _buildGridItem(HorizontalItem item) {
+    return CupertinoContextMenu(
+      actions: <Widget>[
+        CupertinoContextMenuAction(
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            Navigator.pop(context);
+            final authState = context.read<AuthCubit>().state;
+            final uid = authState is Authenticated
+                ? authState.user.uid
+                : null;
+            if (uid != null) {
               if (item.isMovie) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        MovieDetailsPage(movieId: item.movieId),
-                  ),
+                context.read<MovieWatchlistCubit>().toggleFavorite(
+                  uid: uid,
+                  movieId: item.movieId,
+                  isFavorite: !item.isFavorite,
                 );
               } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BlocProvider<ShowDetailsCubit>(
-                      create: (context) => ShowDetailsCubit(
-                        tmdbClient: context.read<TmdbClient>(),
+                context.read<TvShowWatchlistCubit>().toggleFavorite(
+                  uid: uid,
+                  showId: item.movieId,
+                  isFavorite: !item.isFavorite,
+                );
+              }
+            }
+          },
+          child: Text(
+            item.isFavorite ? 'Remove from Favorites' : 'Mark as Favorite',
+          ),
+        ),
+        CupertinoContextMenuAction(
+          isDestructiveAction: true,
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            Navigator.pop(context);
+            final authState = context.read<AuthCubit>().state;
+            final uid = authState is Authenticated
+                ? authState.user.uid
+                : null;
+            if (uid != null) {
+              if (item.isMovie) {
+                context.read<MovieWatchlistCubit>().removeMovie(
+                  uid: uid,
+                  movieId: item.movieId,
+                );
+              } else {
+                context.read<TvShowWatchlistCubit>().removeShow(
+                  uid: uid,
+                  showId: item.movieId,
+                );
+              }
+            }
+          },
+          child: const Text('Remove'),
+        ),
+      ],
+      child: GestureDetector(
+        onTap: () {
+          if (item.movieId <= 0) return;
+          if (item.isMovie) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    MovieDetailsPage(movieId: item.movieId),
+              ),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BlocProvider<ShowDetailsCubit>(
+                  create: (context) => ShowDetailsCubit(
+                    tmdbClient: context.read<TmdbClient>(),
+                  ),
+                  child: ShowDetailsPage(
+                    mediaId: item.movieId,
+                    mediaType: 'tv',
+                    title: item.title,
+                  ),
+                ),
+              ),
+            );
+          }
+        },
+        child: SizedBox(
+          width: 150,
+          height: 225,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              item.imageUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: item.imageUrl,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 360,
+                      placeholder: (context, url) =>
+                          Container(color: AppColors.surface),
+                      errorWidget: (context, url, error) => Container(
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                            ? Colors.grey[200]
+                            : AppColors.surface,
+                        child: Center(
+                          child: Icon(
+                            Icons.movie_outlined,
+                            color:
+                                Theme.of(context).brightness ==
+                                    Brightness.light
+                                ? Colors.grey[500]
+                                : AppColors.textTertiary,
+                          ),
+                        ),
                       ),
-                      child: ShowDetailsPage(
-                        mediaId: item.movieId,
-                        mediaType: 'tv',
-                        title: item.title,
+                    )
+                  : Container(
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                          ? Colors.grey[200]
+                          : AppColors.surface,
+                      child: Center(
+                        child: Icon(
+                          Icons.movie_outlined,
+                          color:
+                              Theme.of(context).brightness ==
+                                  Brightness.light
+                              ? Colors.grey[500]
+                              : AppColors.textTertiary,
+                        ),
+                      ),
+                    ),
+              if (item.isFavorite)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.favorite,
+                      color: Colors.red,
+                      size: 16,
+                    ),
+                  ),
+                ),
+
+              if (!item.isMovie && item.totalEpisodes > 0) ...[
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    value: (item.watchedCount / item.totalEpisodes).clamp(
+                      0.0,
+                      1.0,
+                    ),
+                    minHeight: 6.0,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${item.watchedCount.clamp(0, item.totalEpisodes)}/${item.totalEpisodes}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                );
-              }
-            },
-            child: SizedBox(
-              width: 150,
-              height: 225,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  item.imageUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: item.imageUrl,
-                          fit: BoxFit.cover,
-                          memCacheWidth: 360,
-                          placeholder: (context, url) =>
-                              Container(color: AppColors.surface),
-                          errorWidget: (context, url, error) => Container(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                ? Colors.grey[200]
-                                : AppColors.surface,
-                            child: Center(
-                              child: Icon(
-                                Icons.movie_outlined,
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Colors.grey[500]
-                                    : AppColors.textTertiary,
-                              ),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                              ? Colors.grey[200]
-                              : AppColors.surface,
-                          child: Center(
-                            child: Icon(
-                              Icons.movie_outlined,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? Colors.grey[500]
-                                  : AppColors.textTertiary,
-                            ),
-                          ),
-                        ),
-                  if (item.isFavorite)
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.favorite,
-                          color: Colors.red,
-                          size: 16,
-                        ),
+                ),
+              ],
+              if (item.isStopped)
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    child: Text(
+                      'STOPPED',
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        fontSize: 9.0,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                  // ADD: Watched Eye Icon for Movies and TV Shows with unknown totalEpisodes
-                  if (item.isWatched &&
-                      (item.isMovie || item.totalEpisodes == 0))
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.remove_red_eye,
-                          color: Colors.green,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  // ADD: Progress Indicator for TV Shows
-                  if (!item.isMovie && item.totalEpisodes > 0) ...[
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: LinearProgressIndicator(
-                        value: (item.watchedCount / item.totalEpisodes).clamp(
-                          0.0,
-                          1.0,
-                        ),
-                        minHeight: 6.0,
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '${item.watchedCount.clamp(0, item.totalEpisodes)}/${item.totalEpisodes}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                  // ADD: STOPPED badge — top-right pill matching explore tab badge style
-                  if (item.isStopped)
-                    Positioned(
-                      top: 6,
-                      right: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(4.0),
-                        ),
-                        child: Text(
-                          'STOPPED',
-                          style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                            fontSize: 9.0,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+                  ),
+                ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -1352,6 +1614,7 @@ class _ProfilePageState extends State<ProfilePage>
       watchedAt: watchedAt,
       watchedCount: (s['watchedEpisodes'] as List?)?.length ?? 0,
       totalEpisodes: (s['totalEpisodes'] as num?)?.toInt() ?? 0,
+      category: s['category'] as String?,
     );
   }
 

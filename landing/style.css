@@ -192,6 +192,15 @@ body {
     flex-direction: column;
 }
 
+.app-screen-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    border-radius: 20px;
+    display: block;
+}
+
 .screen-header {
     background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
     color: var(--text-dark);
