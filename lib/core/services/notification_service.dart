@@ -220,12 +220,13 @@ class NotificationService {
       } catch (e) {
         debugPrint('Failed to schedule reinstall reminder: $e');
       }
+    } else {
+      await prefs.setBool('reinstall_reminder_scheduled', true);
     }
   }
 
   Future<void> initialize() async {
     await _initUnreadStatus();
-    await scheduleReinstallReminderIfNeeded();
     tz.initializeTimeZones();
     try {
       final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
@@ -261,6 +262,8 @@ class NotificationService {
         }
       },
     );
+
+    await scheduleReinstallReminderIfNeeded();
   }
 
   /// Invoked with a `tvtimeapp://…` deep link when the user taps a scheduled
