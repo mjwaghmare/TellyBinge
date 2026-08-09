@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../cubit/settings_cubit.dart';
 import '../../../../core/theme/cubit/theme_cubit.dart';
 import '../../../import/import_tv_time_page.dart';
+import '../widgets/profile_expiration_card.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -221,6 +222,9 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
+          Divider(color: Theme.of(context).dividerColor, height: 32),
+          _buildSectionHeader(context, 'Free Profile Expiry'),
+          const ProfileExpirationCard(),
           Divider(
             color: Theme.of(context).dividerColor,
             height: AppSpacing.xxl,

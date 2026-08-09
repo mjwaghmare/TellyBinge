@@ -225,6 +225,41 @@ class NotificationService {
     }
   }
 
+  /// Returns the app install timestamp in milliseconds since epoch,
+  /// initializing it if it hasn't been set yet.
+  Future<int> getAppInstallTimestamp() async {
+    final prefs = await SharedPreferences.getInstance();
+    int? installTimestamp = prefs.getInt('app_install_timestamp');
+    if (installTimestamp == null) {
+      installTimestamp = DateTime.now().millisecondsSinceEpoch;
+      await prefs.setInt('app_install_timestamp', installTimestamp);
+    }
+    return installTimestamp;
+  }
+
+  /// Returns the estimated free Apple Developer profile expiration date
+  /// (7 days from app installation/rebuild).
+  Future<DateTime> getProfileExpirationDate() async {
+    final timestamp = await getAppInstallTimestamp();
+    final installDate = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    return installDate.add(const Duration(days: 7));
+  }
+
+  /// Resets the app install timestamp to now (used when app is rebuilt)
+  /// and updates scheduled notifications accordingly.
+  Future<DateTime> resetAppInstallTimestamp() async {
+    final prefs = await SharedPreferences.getInstance();
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    await prefs.setInt('app_install_timestamp', nowMs);
+    await prefs.setBool('reinstall_reminder_scheduled', false);
+
+    await cancelNotificationById(_reinstallNotificationId);
+    await scheduleReinstallReminderIfNeeded();
+
+    return DateTime.fromMillisecondsSinceEpoch(nowMs).add(const Duration(days: 7));
+  }
+
+
   Future<void> initialize() async {
     await _initUnreadStatus();
     tz.initializeTimeZones();
@@ -345,17 +380,20 @@ class NotificationService {
 
     await _notificationsPlugin.cancel(id: _testNotificationId);
 
+    const title = '🔔 Test Notification';
+    const body = 'Notifications are enabled and active! You will receive show & movie release alerts. 🍿';
+
     await _notificationsPlugin.show(
       id: _testNotificationId,
-      title: 'Test Notification',
-      body: 'If you see this, notifications are working!',
+      title: title,
+      body: body,
       notificationDetails: platformChannelSpecifics,
     );
 
     await saveReceivedNotification(
       id: _testNotificationId.toString(),
-      title: 'Test Notification',
-      body: 'If you see this, notifications are working!',
+      title: title,
+      body: body,
     );
   }
 

@@ -223,7 +223,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 ),
               ),
             )
-          : ListView.separated(
+          : ListView.builder(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
                 AppSpacing.sm,
@@ -231,75 +231,139 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 AppSpacing.bottomTabPadding,
               ),
               itemCount: _notifications.length,
-              separatorBuilder: (context, index) => Divider(
-                color: Theme.of(context).dividerColor,
-                height: 1,
-                thickness: 0.5,
-              ),
               itemBuilder: (context, index) {
                 final item = _notifications[index];
-                return Dismissible(
-                  key: Key('notification_${item.id}'),
-                  direction: DismissDirection.endToStart,
-                  onDismissed: (_) => _removeNotification(item.id),
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: AppSpacing.md),
-                    color: AppColors.error,
-                    child: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.white,
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: AppSpacing.xs,
-                    ),
-                    onTap: item.payload != null
-                        ? () => _onNotificationTap(item.payload)
-                        : null,
-                    leading: Builder(
-                      builder: (context) {
-                        final emoji = _extractLeadingEmoji(item.title);
-                        if (emoji != null) {
-                          return CircleAvatar(
-                            radius: 20.0,
-                            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                            child: Text(
-                              emoji,
-                              style: const TextStyle(fontSize: 22.0),
-                            ),
-                          );
-                        }
-                        return CircleAvatar(
-                          radius: 20.0,
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                          child: const Icon(
-                            Icons.notifications_active_outlined,
-                            color: AppColors.primary,
-                            size: 20.0,
-                          ),
-                        );
-                      },
-                    ),
-                    title: Text(
-                      item.title,
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 14.0,
-                        fontWeight: FontWeight.bold,
+                final hasPayload = item.payload != null && item.payload!.isNotEmpty;
+                final formattedTime = _formatTimestamp(item.timestamp);
+                final emoji = _extractLeadingEmoji(item.title);
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: Dismissible(
+                    key: Key('notification_${item.id}'),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (_) => _removeNotification(item.id),
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.white,
+                        size: 22,
                       ),
                     ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        item.body,
-                        style: TextStyle(
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : AppColors.lightTextSecondary,
-                          fontSize: 13.0,
+                    child: Material(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: hasPayload ? () => _onNotificationTap(item.payload) : null,
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                alignment: Alignment.center,
+                                child: emoji != null
+                                    ? Text(
+                                        emoji,
+                                        style: const TextStyle(fontSize: 22.0),
+                                      )
+                                    : const Icon(
+                                        Icons.notifications_active_rounded,
+                                        color: AppColors.primary,
+                                        size: 22.0,
+                                      ),
+                              ),
+                              AppSpacing.gapW12,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            item.title,
+                                            style: TextStyle(
+                                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                                              fontSize: 14.0,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        if (formattedTime.isNotEmpty) ...[
+                                          AppSpacing.gapW8,
+                                          Text(
+                                            formattedTime,
+                                            style: TextStyle(
+                                              color: isDark
+                                                  ? AppColors.textTertiary
+                                                  : AppColors.lightTextSecondary,
+                                              fontSize: 11.0,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4.0),
+                                    Text(
+                                      item.body,
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? AppColors.textSecondary
+                                            : AppColors.lightTextSecondary,
+                                        fontSize: 13.0,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                    if (hasPayload) ...[
+                                      const SizedBox(height: 8.0),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text(
+                                            'Tap to view',
+                                            style: TextStyle(
+                                              color: AppColors.primary,
+                                              fontSize: 11.0,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4.0),
+                                          const Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            size: 10.0,
+                                            color: AppColors.primary,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -308,5 +372,28 @@ class _NotificationsPageState extends State<NotificationsPage> {
               },
             ),
     );
+  }
+
+  String _formatTimestamp(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return '';
+    try {
+      final dateTime = DateTime.parse(isoString).toLocal();
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+
+      if (difference.inSeconds < 60) {
+        return 'Just now';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes}m ago';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays}d ago';
+      } else {
+        return '${dateTime.day}/${dateTime.month}';
+      }
+    } catch (_) {
+      return '';
+    }
   }
 }
