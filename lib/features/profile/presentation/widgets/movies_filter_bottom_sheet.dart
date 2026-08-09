@@ -34,7 +34,12 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
     'Last Watched',
     'Alphabetical',
   ];
-  final List<String> _progressOptions = ['All', 'Watched', 'Not watched'];
+  final List<String> _progressOptions = [
+    'All',
+    'Not watched',
+    'Upcoming',
+    'Watched',
+  ];
 
   @override
   Widget build(BuildContext context) {

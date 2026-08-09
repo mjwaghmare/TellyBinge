@@ -467,7 +467,25 @@ class _ProfilePageState extends State<ProfilePage>
                         .toList();
                   } else if (_movieProgressOption == 'Not watched') {
                     filteredMovies = filteredMovies
-                        .where((m) => !(m['isWatched'] as bool? ?? false))
+                        .where((m) {
+                          final isWatched = m['isWatched'] as bool? ?? false;
+                          if (isWatched) return false;
+                          final dateStr = m['releaseDate'] as String? ?? '';
+                          final date = _parseDate(dateStr);
+                          if (date == null) return false;
+                          return !date.isAfter(DateTime.now());
+                        })
+                        .toList();
+                  } else if (_movieProgressOption == 'Upcoming') {
+                    filteredMovies = filteredMovies
+                        .where((m) {
+                          final isWatched = m['isWatched'] as bool? ?? false;
+                          if (isWatched) return false;
+                          final dateStr = m['releaseDate'] as String? ?? '';
+                          final date = _parseDate(dateStr);
+                          if (date == null) return true;
+                          return date.isAfter(DateTime.now());
+                        })
                         .toList();
                   }
 
@@ -565,14 +583,14 @@ class _ProfilePageState extends State<ProfilePage>
                   );
                 }
 
-                // Sort movies: status priority (when All: Not Watched -> Watched) + user sort option
+                // Sort movies: status priority (when All: Not Watched -> Upcoming -> Watched) + user sort option
                 final bool groupMoviesByStatus = _movieProgressOption == 'All';
 
                 displayedMovies.sort((a, b) {
-                  // Primary: group by status when showing all (Not Watched first, then Watched)
+                  // Primary: group by status when showing all (Not Watched first, then Upcoming, then Watched)
                   if (groupMoviesByStatus) {
-                    final priorityA = a.isWatched ? 1 : 0;
-                    final priorityB = b.isWatched ? 1 : 0;
+                    final priorityA = _getMovieCategoryRank(a);
+                    final priorityB = _getMovieCategoryRank(b);
                     final cmp = priorityA.compareTo(priorityB);
                     if (cmp != 0) return cmp;
                   }
@@ -1193,6 +1211,19 @@ class _ProfilePageState extends State<ProfilePage>
     return rows;
   }
 
+  bool _isUpcomingMovie(HorizontalItem m) {
+    if (m.isWatched) return false;
+    final date = _parseDate(m.releaseDate);
+    if (date == null) return true;
+    return date.isAfter(DateTime.now());
+  }
+
+  int _getMovieCategoryRank(HorizontalItem m) {
+    if (m.isWatched) return 2;
+    if (_isUpcomingMovie(m)) return 1;
+    return 0;
+  }
+
   Widget _buildGroupedMoviesGrid(
     List<HorizontalItem> items,
     String emptyMessage,
@@ -1212,7 +1243,12 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
-    final notWatched = items.where((m) => !m.isWatched).toList();
+    final notWatched = items
+        .where((m) => !m.isWatched && !_isUpcomingMovie(m))
+        .toList();
+    final upcoming = items
+        .where((m) => !m.isWatched && _isUpcomingMovie(m))
+        .toList();
     final watched = items.where((m) => m.isWatched).toList();
 
     final children = <Widget>[];
@@ -1226,6 +1262,17 @@ class _ProfilePageState extends State<ProfilePage>
         ),
       );
       children.addAll(_buildGridRows(notWatched));
+    }
+
+    if (upcoming.isNotEmpty) {
+      children.add(
+        _buildSectionHeader(
+          label: 'Upcoming',
+          dotColor: AppColors.airing,
+          count: upcoming.length,
+        ),
+      );
+      children.addAll(_buildGridRows(upcoming));
     }
 
     if (watched.isNotEmpty) {
