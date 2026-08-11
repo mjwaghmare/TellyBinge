@@ -37,6 +37,34 @@ class _SearchPageState extends State<SearchPage>
   bool _isTabChanging = false;
   Timer? _tabTransitionTimer;
 
+  static final Map<String, String> _gridFormattedDateCache = {};
+
+  static String _formatGridDateCached(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '';
+    return _gridFormattedDateCache.putIfAbsent(dateStr, () {
+      try {
+        final dt = DateTime.parse(dateStr);
+        const months = [
+          'JAN',
+          'FEB',
+          'MAR',
+          'APR',
+          'MAY',
+          'JUN',
+          'JUL',
+          'AUG',
+          'SEP',
+          'OCT',
+          'NOV',
+          'DEC',
+        ];
+        return '${months[dt.month - 1]}, ${dt.year}';
+      } catch (_) {
+        return dateStr.length >= 4 ? dateStr.substring(0, 4) : '';
+      }
+    });
+  }
+
   // Filter state for TV shows
   String _selectedSortBy = SearchCubit.tvLatestSort;
   String? _tvLanguage;
@@ -357,53 +385,7 @@ class _SearchPageState extends State<SearchPage>
     }
   }
 
-  void _showFilterBottomSheet(bool isTv) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _FilterBottomSheet(
-        isTv: isTv,
-        selectedSortBy: isTv ? _selectedSortBy : _selectedMovieSortBy,
-        selectedYear: isTv ? _selectedYear : _selectedMovieYear,
-        onApply: (sortBy, year) {
-          setState(() {
-            if (isTv) {
-              _selectedSortBy = sortBy;
-              _selectedYear = year;
-              _hasActiveFilters =
-                  _selectedSortBy != SearchCubit.tvLatestSort ||
-                  _selectedYear != null;
-            } else {
-              _selectedMovieSortBy = sortBy;
-              _selectedMovieYear = year;
-              _hasActiveMovieFilters =
-                  _selectedMovieSortBy != SearchCubit.movieLatestSort ||
-                  _selectedMovieYear != null;
-            }
-          });
 
-          if (isTv) {
-            // Update cubit with TV filter state for pagination
-            context.read<SearchCubit>().setTvFilters(
-              sortBy: sortBy,
-              language: _tvLanguage,
-              year: year,
-            );
-            _applyFiltersToTrending();
-          } else {
-            // Update cubit with movie filter state for pagination
-            context.read<SearchCubit>().setMovieFilters(
-              sortBy: sortBy,
-              language: _movieLanguage,
-              year: year,
-            );
-            _applyMovieFiltersToTrending();
-          }
-        },
-      ),
-    );
-  }
 
   void _onScroll(bool isTv) {
     final controller = isTv ? _showsScrollController : _moviesScrollController;
@@ -561,18 +543,6 @@ class _SearchPageState extends State<SearchPage>
                               );
                             },
                           ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.tune,
-                            color:
-                                (isTv
-                                    ? _hasActiveFilters
-                                    : _hasActiveMovieFilters)
-                                ? AppColors.primary
-                                : AppColors.textTertiary,
-                          ),
-                          onPressed: () => _showFilterBottomSheet(isTv),
-                        ),
                       ],
                     );
                   },
@@ -1159,31 +1129,7 @@ class _SearchPageState extends State<SearchPage>
                 final String mediaType = item['media_type'] ?? defaultType;
                 final String? dateStr =
                     item['release_date'] ?? item['first_air_date'];
-                String formattedDate = '';
-                if (dateStr != null && dateStr.isNotEmpty) {
-                  try {
-                    final dt = DateTime.parse(dateStr);
-                    const months = [
-                      'JAN',
-                      'FEB',
-                      'MAR',
-                      'APR',
-                      'MAY',
-                      'JUN',
-                      'JUL',
-                      'AUG',
-                      'SEP',
-                      'OCT',
-                      'NOV',
-                      'DEC',
-                    ];
-                    formattedDate = '${months[dt.month - 1]}, ${dt.year}';
-                  } catch (_) {
-                    if (dateStr.length >= 4) {
-                      formattedDate = dateStr.substring(0, 4);
-                    }
-                  }
-                }
+                final String formattedDate = _formatGridDateCached(dateStr);
 
                 return RepaintBoundary(
                   key: ValueKey('${defaultType}_$id'),
@@ -1576,413 +1522,5 @@ class _FilteredGrid {
     _excludedIds = excludedIds;
     _items = filtered;
     _indexById = index;
-  }
-}
-
-class _FilterBottomSheet extends StatefulWidget {
-  final bool isTv;
-  final String selectedSortBy;
-  final String? selectedYear;
-  final Function(String sortBy, String? year) onApply;
-
-  const _FilterBottomSheet({
-    required this.isTv,
-    required this.selectedSortBy,
-    this.selectedYear,
-    required this.onApply,
-  });
-
-  @override
-  State<_FilterBottomSheet> createState() => _FilterBottomSheetState();
-}
-
-class _FilterBottomSheetState extends State<_FilterBottomSheet> {
-  late String _currentSortBy;
-  late Map<String, String> _sortOptions;
-
-  /// Matches the oldest decade the picker previously offered, and the floor
-  /// Surprise Me uses.
-  static const int _minYear = 1990;
-
-  /// Derived from the clock, never hardcoded — the old chip list had to be
-  /// hand-edited every January to stay current.
-  ///
-  /// Floored above [_minYear] because RangeSlider asserts on `max <= min` and
-  /// on zero divisions; a device whose clock is set before 1991 would otherwise
-  /// crash the filter sheet outright.
-  static int get _maxYear {
-    final year = DateTime.now().year;
-    return year > _minYear ? year : _minYear + 1;
-  }
-
-  static RangeValues get _fullRange =>
-      RangeValues(_minYear.toDouble(), _maxYear.toDouble());
-
-  late RangeValues _yearRange;
-
-  /// The filter value handed back to the caller. A full-span selection means
-  /// "no year filter": returning null keeps the query free of date bounds, so
-  /// pre-1990 titles stay reachable exactly as they were under "Any Year", and
-  /// `hasSpecificFilters` in TmdbClient stays false rather than silently
-  /// dropping vote_count.gte to 0 on every request.
-  String? get _currentYear {
-    final start = _yearRange.start.round();
-    final end = _yearRange.end.round();
-    if (start <= _minYear && end >= _maxYear) return null;
-    return '$start-$end';
-  }
-
-  /// Inverse of [_currentYear], tolerant of the decade ("2020s") and single-year
-  /// ("2026") forms the chip list used to produce.
-  static RangeValues _rangeFromFilter(String? value) {
-    if (value == null || value.isEmpty) return _fullRange;
-
-    int? start;
-    int? end;
-    if (value.contains('-')) {
-      final parts = value.split('-');
-      if (parts.length == 2) {
-        start = int.tryParse(parts[0].trim());
-        end = int.tryParse(parts[1].trim());
-      }
-    } else if (value.endsWith('s')) {
-      start = int.tryParse(value.substring(0, value.length - 1));
-      if (start != null) end = start + 9;
-    } else {
-      start = int.tryParse(value);
-      end = start;
-    }
-
-    if (start == null || end == null) return _fullRange;
-    if (start > end) {
-      final swap = start;
-      start = end;
-      end = swap;
-    }
-    return RangeValues(
-      start.clamp(_minYear, _maxYear).toDouble(),
-      end.clamp(_minYear, _maxYear).toDouble(),
-    );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _currentSortBy = widget.selectedSortBy;
-    _yearRange = _rangeFromFilter(widget.selectedYear);
-
-    _sortOptions = widget.isTv
-        ? {
-            'Trending': 'trending',
-            'Latest': 'first_air_date.desc',
-            'Popular': 'popularity.desc',
-            'Airing Today': 'airing_today',
-            'Upcoming': 'upcoming',
-          }
-        : {
-            'Trending': 'trending',
-            'Latest': 'primary_release_date.desc',
-            'Popular': 'popularity.desc',
-            'In Theaters': 'now_playing',
-            'Upcoming': 'upcoming',
-          };
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        8.0,
-      ),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-
-  /// Two-thumb year picker. Snaps per year rather than per decade so a single
-  /// year stays selectable (the chip list's 2022–2026 entries), while the tick
-  /// row underneath keeps the decade framing. A single continuous range can't
-  /// overlap itself, which the old year/decade chips could.
-  Widget _buildYearRangeSlider(bool isDark) {
-    final start = _yearRange.start.round();
-    final end = _yearRange.end.round();
-    final isFullRange = _currentYear == null;
-
-    // Decade marks, plus the current year so the right end of the track is
-    // labelled. Dropped when a decade boundary already sits near it, which
-    // happens on turn-of-decade years.
-    final decades = <int>[
-      for (var y = _minYear; y <= _maxYear; y += 10)
-        if (_maxYear - y >= 4) y,
-      _maxYear,
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isFullRange
-                    ? 'Any Year'
-                    : (start == end ? '$start' : '$start – $end'),
-                style: TextStyle(
-                  color: isFullRange
-                      ? (isDark ? Colors.white70 : Colors.black54)
-                      : AppColors.primary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (!isFullRange)
-                GestureDetector(
-                  onTap: () => setState(() => _yearRange = _fullRange),
-                  child: Text(
-                    'Any Year',
-                    style: TextStyle(
-                      color: isDark ? Colors.white54 : Colors.black45,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          RangeSlider(
-            values: _yearRange,
-            min: _minYear.toDouble(),
-            max: _maxYear.toDouble(),
-            divisions: _maxYear - _minYear,
-            labels: RangeLabels('$start', '$end'),
-            activeColor: AppColors.primary,
-            inactiveColor: isDark ? Colors.white24 : Colors.black26,
-            onChanged: (values) => setState(() => _yearRange = values),
-          ),
-          // Positioned proportionally rather than evenly spaced: the final
-          // stretch is a partial decade (2020→2026 today), so an even Row would
-          // put each label somewhere the track doesn't actually sit.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final span = (_maxYear - _minYear).toDouble();
-                return SizedBox(
-                  height: 14,
-                  child: Stack(
-                    children: [
-                      for (final tick in decades)
-                        Positioned(
-                          left:
-                              (((tick - _minYear) / span) *
-                                          constraints.maxWidth -
-                                      14)
-                                  .clamp(0.0, constraints.maxWidth - 28),
-                          child: SizedBox(
-                            width: 28,
-                            child: Text(
-                              '$tick',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: isDark ? Colors.white38 : Colors.black38,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasActiveFilter =
-        _currentSortBy != 'trending' || _currentYear != null;
-
-    return Material(
-      color:
-          Theme.of(context).bottomSheetTheme.backgroundColor ??
-          (isDark ? AppColors.surface : Colors.white),
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 10),
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 38,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.black26,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Title Header & Reset Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Filter & Sort',
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.titleLarge?.color,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (hasActiveFilter)
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _currentSortBy = 'trending';
-                            _yearRange = _fullRange;
-                          });
-                          widget.onApply('trending', null);
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          'Reset',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              AppSpacing.gapH12,
-              Divider(color: Theme.of(context).dividerColor, height: 1),
-
-              AppSpacing.gapH8,
-              // Sort by Section
-              _buildSectionHeader('Sort by'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
-                  children: _sortOptions.entries.map((entry) {
-                    final label = entry.key;
-                    final value = entry.value;
-                    final isSelected = _currentSortBy == value;
-
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () {
-                        setState(() {
-                          _currentSortBy = value;
-                        });
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 9.0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary
-                              : (isDark
-                                    ? AppColors.surfaceLight
-                                    : Colors.grey.shade200),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : (isDark ? Colors.white12 : Colors.black12),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: isSelected
-                                ? Colors.black
-                                : (isDark ? Colors.white : Colors.black87),
-                            fontSize: 13,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-
-              AppSpacing.gapH16,
-              // Release Year Section
-              _buildSectionHeader('Release Year'),
-              _buildYearRangeSlider(isDark),
-
-              const SizedBox(height: 24),
-              // Apply Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      widget.onApply(_currentSortBy, _currentYear);
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSpacing.xl),
-                      ),
-                    ),
-                    child: const Text(
-                      'APPLY FILTERS',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              AppSpacing.gapH8,
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

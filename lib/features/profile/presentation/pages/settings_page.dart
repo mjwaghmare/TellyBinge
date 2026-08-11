@@ -8,7 +8,6 @@ import 'package:flutter/services.dart';
 import '../cubit/settings_cubit.dart';
 import '../../../../core/theme/cubit/theme_cubit.dart';
 import '../../../import/import_tv_time_page.dart';
-import '../widgets/profile_expiration_card.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -72,39 +71,6 @@ class SettingsPage extends StatelessWidget {
                     },
                   ),
                 ],
-              );
-            },
-          ),
-          Divider(color: Theme.of(context).dividerColor, height: 32),
-          _buildSectionHeader(context, 'Content & Privacy'),
-          BlocBuilder<SettingsCubit, SettingsState>(
-            builder: (context, state) {
-              return SwitchListTile.adaptive(
-                secondary: Icon(
-                  Icons.explicit,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-                title: Text(
-                  'Allow Adult Content',
-                  style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  'Show 18+ movies and TV shows in search and discover.',
-                  style: TextStyle(
-                    color: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                    fontSize: 13,
-                  ),
-                ),
-                value: state.allowAdultContent,
-                onChanged: (bool value) {
-                  HapticFeedback.lightImpact();
-                  context.read<SettingsCubit>().toggleAdultContent(value);
-                },
               );
             },
           ),
@@ -222,9 +188,6 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
-          Divider(color: Theme.of(context).dividerColor, height: 32),
-          _buildSectionHeader(context, 'Free Profile Expiry'),
-          const ProfileExpirationCard(),
           Divider(
             color: Theme.of(context).dividerColor,
             height: AppSpacing.xxl,

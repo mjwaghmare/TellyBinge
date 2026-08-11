@@ -896,9 +896,9 @@ class TmdbClient {
       return 100;
     } else if (sortBy == 'first_air_date.desc' ||
         sortBy == 'primary_release_date.desc') {
-      // Newest-first legitimately surfaces titles that haven't accumulated
-      // votes yet, so only stub entries with none at all are excluded.
-      return 1;
+      // Newest-first legitimately surfaces titles that have accumulated genuine votes,
+      // excluding obscure 0-vote or fake 1-vote stub entries.
+      return 5;
     } else if (sortBy == 'popularity.desc') {
       // 1 rather than 0 — TMDB carries a long tail of zero-vote stub entries,
       // and Surprise Me pages randomly as deep as page 500, so it reads

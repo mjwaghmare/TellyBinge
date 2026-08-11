@@ -24,6 +24,7 @@ import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../widgets/shows_filter_bottom_sheet.dart';
 import '../widgets/movies_filter_bottom_sheet.dart';
+import '../widgets/profile_expiration_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../cubit/profile_heatmap_cubit.dart';
@@ -358,6 +359,7 @@ class _ProfilePageState extends State<ProfilePage>
           ),
         ),
         actions: [
+          const ProfileExpirationIndicator(),
           IconButton(
             icon: ValueListenableBuilder<bool>(
               valueListenable: NotificationService().hasUnreadNotifier,

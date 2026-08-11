@@ -78,6 +78,20 @@ class MoviesPageState extends State<MoviesPage> {
     };
   }
 
+  static final Map<String, DateTime?> _dateCache = {};
+  static final Map<String, String> _formattedDateCache = {};
+
+  static DateTime? _parseDateCached(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+    return _dateCache.putIfAbsent(dateStr, () {
+      try {
+        return DateTime.parse(dateStr);
+      } catch (_) {
+        return null;
+      }
+    });
+  }
+
   String _formatRuntime(int? minutes) {
     if (minutes == null || minutes == 0) return '';
     final h = minutes ~/ 60;
@@ -87,33 +101,25 @@ class MoviesPageState extends State<MoviesPage> {
   }
 
   String? _calculateDaysLeft(String releaseDateStr) {
-    if (releaseDateStr.isEmpty) return null;
-    try {
-      final releaseDate = DateTime.parse(releaseDateStr);
-      final difference = releaseDate.difference(DateTime.now()).inDays;
-      return difference > 0 ? difference.toString() : null;
-    } catch (_) {
-      return null;
-    }
+    final releaseDate = _parseDateCached(releaseDateStr);
+    if (releaseDate == null) return null;
+    final difference = releaseDate.difference(DateTime.now()).inDays;
+    return difference > 0 ? difference.toString() : null;
   }
 
   String _getUpcomingGroup(String releaseDateStr) {
-    if (releaseDateStr.isEmpty) return 'LATER';
-    try {
-      final releaseDate = DateTime.parse(releaseDateStr);
-      final diff = releaseDate.difference(DateTime.now()).inDays;
-      if (diff <= 7) return 'THIS WEEK';
-      return 'LATER';
-    } catch (_) {
-      return 'LATER';
-    }
+    final releaseDate = _parseDateCached(releaseDateStr);
+    if (releaseDate == null) return 'LATER';
+    final diff = releaseDate.difference(DateTime.now()).inDays;
+    return diff <= 7 ? 'THIS WEEK' : 'LATER';
   }
 
   String _formatReleaseDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return '';
-    try {
-      final date = DateTime.parse(dateStr);
-      final months = [
+    return _formattedDateCache.putIfAbsent(dateStr, () {
+      final date = _parseDateCached(dateStr);
+      if (date == null) return dateStr;
+      const months = [
         'Jan',
         'Feb',
         'Mar',
@@ -128,9 +134,7 @@ class MoviesPageState extends State<MoviesPage> {
         'Dec',
       ];
       return '${months[date.month - 1]} ${date.day}, ${date.year}';
-    } catch (_) {
-      return dateStr;
-    }
+    });
   }
 
   @override
@@ -159,13 +163,8 @@ class MoviesPageState extends State<MoviesPage> {
 
           for (final movie in state.movies) {
             final releaseDateStr = getMovieReleaseDate(movie);
-            bool released = false;
-            if (releaseDateStr.isNotEmpty) {
-              try {
-                final releaseDate = DateTime.parse(releaseDateStr);
-                released = releaseDate.isBefore(now);
-              } catch (_) {}
-            }
+            final releaseDate = _parseDateCached(releaseDateStr);
+            final released = releaseDate != null && releaseDate.isBefore(now);
 
             if (released) {
               watchlist.add(movie);
@@ -176,32 +175,20 @@ class MoviesPageState extends State<MoviesPage> {
 
           // Sort watchlist by release date descending (newest released first)
           watchlist.sort((a, b) {
-            final aStr = getMovieReleaseDate(a);
-            final bStr = getMovieReleaseDate(b);
-            if (aStr.isEmpty) return 1;
-            if (bStr.isEmpty) return -1;
-            try {
-              final aDate = DateTime.parse(aStr);
-              final bDate = DateTime.parse(bStr);
-              return bDate.compareTo(aDate);
-            } catch (_) {
-              return 0;
-            }
+            final aDate = _parseDateCached(getMovieReleaseDate(a));
+            final bDate = _parseDateCached(getMovieReleaseDate(b));
+            if (aDate == null) return 1;
+            if (bDate == null) return -1;
+            return bDate.compareTo(aDate);
           });
 
           // Sort upcoming by release date ascending (soonest to release first)
           upcoming.sort((a, b) {
-            final aStr = getMovieReleaseDate(a);
-            final bStr = getMovieReleaseDate(b);
-            if (aStr.isEmpty) return 1;
-            if (bStr.isEmpty) return -1;
-            try {
-              final aDate = DateTime.parse(aStr);
-              final bDate = DateTime.parse(bStr);
-              return aDate.compareTo(bDate);
-            } catch (_) {
-              return 0;
-            }
+            final aDate = _parseDateCached(getMovieReleaseDate(a));
+            final bDate = _parseDateCached(getMovieReleaseDate(b));
+            if (aDate == null) return 1;
+            if (bDate == null) return -1;
+            return aDate.compareTo(bDate);
           });
         }
 
