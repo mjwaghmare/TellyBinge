@@ -97,6 +97,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     }
   }
 
+  String _formatVoteCount(int count) {
+    if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}K ratings';
+    }
+    return '$count ratings';
+  }
+
+
 
 
   void _showMoreActions({required BuildContext context, required String uid, required bool isStopped}) {
@@ -293,6 +301,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     final String? backdropPath = details['backdrop_path'];
     final String overview = details['overview'] ?? '';
     final double voteAverage = (details['vote_average'] as num?)?.toDouble() ?? 0.0;
+    final int voteCount = (details['vote_count'] as num?)?.toInt() ?? 0;
 
     // TV show specific metadata
     final int numberOfSeasons = details['number_of_seasons'] ?? 0;
@@ -541,6 +550,16 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   '${voteAverage.toStringAsFixed(1)} / 10',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
                 ),
+                if (voteCount > 0) ...[
+                  AppSpacing.gapW8,
+                  Text(
+                    '(${_formatVoteCount(voteCount)})',
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                      fontSize: 13.0,
+                    ),
+                  ),
+                ],
               ],
             ),
             AppSpacing.gapH12,

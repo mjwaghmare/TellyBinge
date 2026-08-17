@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:skeletonizer/skeletonizer.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -35,18 +36,10 @@ class MoviesPageState extends State<MoviesPage> {
 
   void scrollToTop() {
     if (watchlistScrollController.hasClients) {
-      watchlistScrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      watchlistScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     }
     if (upcomingScrollController.hasClients) {
-      upcomingScrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      upcomingScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     }
   }
 
@@ -104,12 +97,8 @@ class MoviesPageState extends State<MoviesPage> {
     final releaseDate = _parseDateCached(releaseDateStr);
     if (releaseDate == null) return null;
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final targetDate = DateTime(
-      releaseDate.year,
-      releaseDate.month,
-      releaseDate.day,
-    );
+    final today = DateTime.utc(now.year, now.month, now.day);
+    final targetDate = DateTime.utc(releaseDate.year, releaseDate.month, releaseDate.day);
     final difference = targetDate.difference(today).inDays;
     return difference > 0 ? difference.toString() : null;
   }
@@ -118,12 +107,8 @@ class MoviesPageState extends State<MoviesPage> {
     final releaseDate = _parseDateCached(releaseDateStr);
     if (releaseDate == null) return 'LATER';
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final targetDate = DateTime(
-      releaseDate.year,
-      releaseDate.month,
-      releaseDate.day,
-    );
+    final today = DateTime.utc(now.year, now.month, now.day);
+    final targetDate = DateTime.utc(releaseDate.year, releaseDate.month, releaseDate.day);
     final diff = targetDate.difference(today).inDays;
     return diff <= 7 ? 'THIS WEEK' : 'LATER';
   }
@@ -133,20 +118,7 @@ class MoviesPageState extends State<MoviesPage> {
     return _formattedDateCache.putIfAbsent(dateStr, () {
       final date = _parseDateCached(dateStr);
       if (date == null) return dateStr;
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return '${months[date.month - 1]} ${date.day}, ${date.year}';
     });
   }
@@ -160,17 +132,13 @@ class MoviesPageState extends State<MoviesPage> {
       builder: (context, state) {
         List<Map<String, dynamic>> watchlist = [];
         List<Map<String, dynamic>> upcoming = [];
-        bool isLoading =
-            state is MovieWatchlistLoading || state is MovieWatchlistInitial;
+        bool isLoading = state is MovieWatchlistLoading || state is MovieWatchlistInitial;
 
         if (state is MovieWatchlistSuccess) {
           final now = DateTime.now();
 
           String getMovieReleaseDate(Map<String, dynamic> movie) {
-            return (movie['releaseDate'] ??
-                        movie['release_date'] ??
-                        movie['firstAirDate'] ??
-                        movie['first_air_date'])
+            return (movie['releaseDate'] ?? movie['release_date'] ?? movie['firstAirDate'] ?? movie['first_air_date'])
                     as String? ??
                 '';
           }
@@ -180,12 +148,8 @@ class MoviesPageState extends State<MoviesPage> {
             final releaseDate = _parseDateCached(releaseDateStr);
             bool released = false;
             if (releaseDate != null) {
-              final today = DateTime(now.year, now.month, now.day);
-              final relDay = DateTime(
-                releaseDate.year,
-                releaseDate.month,
-                releaseDate.day,
-              );
+              final today = DateTime.utc(now.year, now.month, now.day);
+              final relDay = DateTime.utc(releaseDate.year, releaseDate.month, releaseDate.day);
               released = !relDay.isAfter(today);
             }
 
@@ -257,9 +221,7 @@ class MoviesPageState extends State<MoviesPage> {
         height: 30,
         width: 30,
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.light
-              ? Colors.grey[200]
-              : AppColors.surfaceLight,
+          color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(6.0),
         ),
         child: Icon(
@@ -271,15 +233,9 @@ class MoviesPageState extends State<MoviesPage> {
     );
   }
 
-  Widget _buildWatchListView(
-    List<Map<String, dynamic>> items,
-    bool isLoading,
-    String? uid,
-  ) {
+  Widget _buildWatchListView(List<Map<String, dynamic>> items, bool isLoading, String? uid) {
     if (!isLoading && items.isEmpty) {
-      return _buildEmptyState(
-        'Your watchlist is empty.\nAdd movies from the Explore tab.',
-      );
+      return _buildEmptyState('Your watchlist is empty.\nAdd movies from the Explore tab.');
     }
 
     final watchedHistory = items.where((i) => i['isWatched'] == true).toList();
@@ -303,9 +259,7 @@ class MoviesPageState extends State<MoviesPage> {
     final watchNext = items.where((i) => i['isWatched'] != true).toList();
 
     // Generate dummy skeleton data if loading
-    final displayWatchedHistory = isLoading
-        ? <Map<String, dynamic>>[]
-        : watchedHistory;
+    final displayWatchedHistory = isLoading ? <Map<String, dynamic>>[] : watchedHistory;
     final displayWatchNext = isLoading
         ? List.generate(
             4,
@@ -331,12 +285,7 @@ class MoviesPageState extends State<MoviesPage> {
         center: _watchNextKey,
         slivers: [
           if (displayWatchedHistory.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Opacity(
-                opacity: 0.5,
-                child: _buildCenteredHeaderRow('WATCHED HISTORY'),
-              ),
-            ),
+            SliverToBoxAdapter(child: Opacity(opacity: 0.5, child: _buildCenteredHeaderRow('WATCHED HISTORY'))),
             if (_isGridView)
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -347,22 +296,11 @@ class MoviesPageState extends State<MoviesPage> {
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => RepaintBoundary(
-                      key: ValueKey(
-                        'history_${displayWatchedHistory[index]['id']}',
-                      ),
-                      child: Opacity(
-                        opacity: 0.5,
-                        child: _buildMovieGridCard(
-                          displayWatchedHistory[index],
-                          uid,
-                        ),
-                      ),
+                      key: ValueKey('history_${displayWatchedHistory[index]['id']}'),
+                      child: Opacity(opacity: 0.5, child: _buildMovieGridCard(displayWatchedHistory[index], uid)),
                     ),
                     childCount: displayWatchedHistory.length,
-                    findChildIndexCallback: _findChildIndex(
-                      'history_',
-                      watchedHistoryIndexMap,
-                    ),
+                    findChildIndexCallback: _findChildIndex('history_', watchedHistoryIndexMap),
                   ),
                 ),
               )
@@ -370,22 +308,11 @@ class MoviesPageState extends State<MoviesPage> {
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => RepaintBoundary(
-                    key: ValueKey(
-                      'history_${displayWatchedHistory[index]['id']}',
-                    ),
-                    child: Opacity(
-                      opacity: 0.5,
-                      child: _buildMovieProgressCard(
-                        displayWatchedHistory[index],
-                        uid,
-                      ),
-                    ),
+                    key: ValueKey('history_${displayWatchedHistory[index]['id']}'),
+                    child: Opacity(opacity: 0.5, child: _buildMovieProgressCard(displayWatchedHistory[index], uid)),
                   ),
                   childCount: displayWatchedHistory.length,
-                  findChildIndexCallback: _findChildIndex(
-                    'history_',
-                    watchedHistoryIndexMap,
-                  ),
+                  findChildIndexCallback: _findChildIndex('history_', watchedHistoryIndexMap),
                 ),
               ),
             const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
@@ -399,26 +326,17 @@ class MoviesPageState extends State<MoviesPage> {
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     sliver: SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            childAspectRatio: 2 / 3,
-                          ),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        childAspectRatio: 2 / 3,
+                      ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => RepaintBoundary(
-                          key: ValueKey(
-                            'next_${displayWatchNext[index]['id']}',
-                          ),
-                          child: _buildMovieGridCard(
-                            displayWatchNext[index],
-                            uid,
-                          ),
+                          key: ValueKey('next_${displayWatchNext[index]['id']}'),
+                          child: _buildMovieGridCard(displayWatchNext[index], uid),
                         ),
                         childCount: displayWatchNext.length,
-                        findChildIndexCallback: _findChildIndex(
-                          'next_',
-                          watchNextIndexMap,
-                        ),
+                        findChildIndexCallback: _findChildIndex('next_', watchNextIndexMap),
                       ),
                     ),
                   )
@@ -427,40 +345,25 @@ class MoviesPageState extends State<MoviesPage> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) => RepaintBoundary(
                         key: ValueKey('next_${displayWatchNext[index]['id']}'),
-                        child: _buildMovieProgressCard(
-                          displayWatchNext[index],
-                          uid,
-                        ),
+                        child: _buildMovieProgressCard(displayWatchNext[index], uid),
                       ),
                       childCount: displayWatchNext.length,
-                      findChildIndexCallback: _findChildIndex(
-                        'next_',
-                        watchNextIndexMap,
-                      ),
+                      findChildIndexCallback: _findChildIndex('next_', watchNextIndexMap),
                     ),
                   ),
                 const SliverToBoxAdapter(child: SizedBox(height: 32.0)),
               ],
             ),
           ] else ...[
-            SliverToBoxAdapter(
-              key: _watchNextKey,
-              child: const SizedBox.shrink(),
-            ),
+            SliverToBoxAdapter(key: _watchNextKey, child: const SizedBox.shrink()),
           ],
-          const SliverPadding(
-            padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-          ),
+          const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding)),
         ],
       ),
     );
   }
 
-  Widget _buildUpcomingView(
-    List<Map<String, dynamic>> items,
-    bool isLoading,
-    String? uid,
-  ) {
+  Widget _buildUpcomingView(List<Map<String, dynamic>> items, bool isLoading, String? uid) {
     if (!isLoading && items.isEmpty) {
       return _buildEmptyState('No upcoming movies added.');
     }
@@ -475,9 +378,7 @@ class MoviesPageState extends State<MoviesPage> {
               'id': index,
               'title': 'Loading Movie Title',
               'genres': 'Family, Musical',
-              'releaseDate': DateTime.now()
-                  .add(const Duration(days: 4))
-                  .toIso8601String(),
+              'releaseDate': DateTime.now().add(const Duration(days: 4)).toIso8601String(),
               'posterPath': '',
             },
           )
@@ -508,25 +409,17 @@ class MoviesPageState extends State<MoviesPage> {
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 12.0),
                       sliver: SliverGrid(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              childAspectRatio: 2 / 3,
-                            ),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 2 / 3,
+                        ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) => RepaintBoundary(
                             key: ValueKey('upcoming_${grouped[index]['id']}'),
-                            child: _buildMovieGridCard(
-                              grouped[index],
-                              uid,
-                              isUpcoming: true,
-                            ),
+                            child: _buildMovieGridCard(grouped[index], uid, isUpcoming: true),
                           ),
                           childCount: grouped.length,
-                          findChildIndexCallback: _findChildIndex(
-                            'upcoming_',
-                            groupedIndexMap,
-                          ),
+                          findChildIndexCallback: _findChildIndex('upcoming_', groupedIndexMap),
                         ),
                       ),
                     )
@@ -538,10 +431,7 @@ class MoviesPageState extends State<MoviesPage> {
                           child: _buildUpcomingMovieCard(grouped[index], uid),
                         ),
                         childCount: grouped.length,
-                        findChildIndexCallback: _findChildIndex(
-                          'upcoming_',
-                          groupedIndexMap,
-                        ),
+                        findChildIndexCallback: _findChildIndex('upcoming_', groupedIndexMap),
                       ),
                     ),
                   const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
@@ -549,9 +439,7 @@ class MoviesPageState extends State<MoviesPage> {
               ),
             ];
           }),
-          const SliverPadding(
-            padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-          ),
+          const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding)),
         ],
       ),
     );
@@ -560,30 +448,21 @@ class MoviesPageState extends State<MoviesPage> {
   Widget _buildEmptyState(String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          32.0,
-          32.0,
-          32.0,
-          AppSpacing.bottomTabPadding,
-        ),
+        padding: const EdgeInsets.fromLTRB(32.0, 32.0, 32.0, AppSpacing.bottomTabPadding),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.movie_filter_outlined,
               size: 64,
-              color: Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey[500]
-                  : AppColors.textTertiary,
+              color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
             ),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color:
-                    Theme.of(context).textTheme.bodyMedium?.color ??
-                    AppColors.textSecondary,
+                color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textSecondary,
                 fontSize: 14.0,
                 height: 1.4,
               ),
@@ -597,14 +476,9 @@ class MoviesPageState extends State<MoviesPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
-                child: Text(
-                  'ADD MOVIES',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                ),
+                child: Text('ADD MOVIES', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -621,22 +495,15 @@ class MoviesPageState extends State<MoviesPage> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 12.0),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14.0,
-                vertical: 6.0,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey[200]
-                    : AppColors.surfaceLight,
+                color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(20.0),
               ),
               child: Text(
                 title,
                 style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
+                  color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
                   fontSize: 10.0,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
@@ -660,17 +527,13 @@ class MoviesPageState extends State<MoviesPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? Colors.grey[200]
-            : AppColors.surfaceLight,
+        color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20.0),
       ),
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(
-            context,
-          ).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
+          color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
           fontSize: 10.0,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.0,
@@ -707,21 +570,14 @@ class MoviesPageState extends State<MoviesPage> {
                   setState(() => isMarkingAsWatched = true);
                   await Future.delayed(const Duration(milliseconds: 500));
                   if (context.mounted) {
-                    context.read<MovieWatchlistCubit>().toggleWatched(
-                      uid: uid,
-                      movieId: movieId,
-                      isWatched: true,
-                    );
+                    context.read<MovieWatchlistCubit>().toggleWatched(uid: uid, movieId: movieId, isWatched: true);
                   }
                 }
               } else {
                 setState(() => isRemoving = true);
                 await Future.delayed(const Duration(milliseconds: 500));
                 if (context.mounted) {
-                  context.read<MovieWatchlistCubit>().removeMovie(
-                    uid: uid,
-                    movieId: movieId,
-                  );
+                  context.read<MovieWatchlistCubit>().removeMovie(uid: uid, movieId: movieId);
                 }
               }
             }
@@ -739,10 +595,7 @@ class MoviesPageState extends State<MoviesPage> {
           },
           background: Container(
             margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-            decoration: BoxDecoration(
-              color: AppColors.error,
-              borderRadius: BorderRadius.circular(6.0),
-            ),
+            decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(6.0)),
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: 24.0),
             child: Row(
@@ -752,22 +605,14 @@ class MoviesPageState extends State<MoviesPage> {
                 SizedBox(width: 10),
                 Text(
                   'REMOVE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    letterSpacing: 1.2,
-                  ),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2),
                 ),
               ],
             ),
           ),
           secondaryBackground: Container(
             margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-            decoration: BoxDecoration(
-              color: AppColors.success,
-              borderRadius: BorderRadius.circular(6.0),
-            ),
+            decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(6.0)),
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 24.0),
             child: Row(
@@ -776,51 +621,27 @@ class MoviesPageState extends State<MoviesPage> {
               children: const [
                 Text(
                   'WATCHED',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    letterSpacing: 1.2,
-                  ),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2),
                 ),
                 SizedBox(width: 10),
-                Icon(
-                  Icons.check_circle_outline_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 28),
               ],
             ),
           ),
           child: GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                CupertinoPageRoute(
-                  builder: (context) => MovieDetailsPage(movieId: movieId),
-                ),
-              );
+              Navigator.push(context, CupertinoPageRoute(builder: (context) => MovieDetailsPage(movieId: movieId)));
             },
             child: Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 12.0,
-                vertical: 6.0,
-              ),
+              margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
               clipBehavior: Clip.antiAlias,
               height: 96.0,
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(6.0),
-              ),
+              decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(6.0)),
               child: (isMarkingAsWatched || isRemoving)
                   ? Center(
                       child: CircularProgressIndicator.adaptive(
                         strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation(
-                          isMarkingAsWatched
-                              ? AppColors.brandGreen
-                              : AppColors.error,
-                        ),
+                        valueColor: AlwaysStoppedAnimation(isMarkingAsWatched ? AppColors.brandGreen : AppColors.error),
                       ),
                     )
                   : Row(
@@ -834,42 +655,30 @@ class MoviesPageState extends State<MoviesPage> {
                                   height: 96.0,
                                   fit: BoxFit.cover,
                                   memCacheWidth: 300,
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                        width: 100,
-                                        height: 96.0,
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Colors.grey[200]
-                                            : AppColors.surfaceLight,
-                                        child: const Skeleton.ignore(
-                                          child: Icon(
-                                            Icons.movie_outlined,
-                                            color: AppColors.textTertiary,
-                                          ),
-                                        ),
-                                      ),
+                                  errorWidget: (context, url, error) => Container(
+                                    width: 100,
+                                    height: 96.0,
+                                    color: Theme.of(context).brightness == Brightness.light
+                                        ? Colors.grey[200]
+                                        : AppColors.surfaceLight,
+                                    child: const Skeleton.ignore(
+                                      child: Icon(Icons.movie_outlined, color: AppColors.textTertiary),
+                                    ),
+                                  ),
                                   placeholder: (context, url) => Container(
                                     width: 100,
                                     height: 96.0,
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.light
+                                    color: Theme.of(context).brightness == Brightness.light
                                         ? Colors.grey[200]
                                         : AppColors.surfaceLight,
                                     child: Center(
                                       child: SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child:
-                                            CircularProgressIndicator.adaptive(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  const AlwaysStoppedAnimation(
-                                                    AppColors.primary,
-                                                  ),
-                                            ),
+                                        child: CircularProgressIndicator.adaptive(
+                                          strokeWidth: 2,
+                                          valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -877,28 +686,18 @@ class MoviesPageState extends State<MoviesPage> {
                               : Container(
                                   width: 100,
                                   height: 96.0,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.light
+                                  color: Theme.of(context).brightness == Brightness.light
                                       ? Colors.grey[200]
                                       : AppColors.surfaceLight,
                                   child: const Skeleton.ignore(
-                                    child: Icon(
-                                      Icons.movie_outlined,
-                                      color: AppColors.textTertiary,
-                                    ),
+                                    child: Icon(Icons.movie_outlined, color: AppColors.textTertiary),
                                   ),
                                 ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              16.0,
-                              8.0,
-                              4.0,
-                              8.0,
-                            ),
+                            padding: const EdgeInsets.fromLTRB(16.0, 8.0, 4.0, 8.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -908,9 +707,7 @@ class MoviesPageState extends State<MoviesPage> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).textTheme.bodyLarge?.color,
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
                                     fontSize: 15.0,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -920,18 +717,12 @@ class MoviesPageState extends State<MoviesPage> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     if (voteAverage > 0.0) ...[
-                                      Icon(
-                                        Icons.star,
-                                        color: AppColors.primary,
-                                        size: 13,
-                                      ),
+                                      Icon(Icons.star, color: AppColors.primary, size: 13),
                                       const SizedBox(width: 4),
                                       Text(
                                         voteAverage.toStringAsFixed(1),
                                         style: TextStyle(
-                                          color: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium?.color,
+                                          color: Theme.of(context).textTheme.bodyMedium?.color,
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -940,11 +731,9 @@ class MoviesPageState extends State<MoviesPage> {
                                         Text(
                                           ' • ',
                                           style: TextStyle(
-                                            color: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium
-                                                ?.color
-                                                ?.withValues(alpha: 0.6),
+                                            color: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                                             fontSize: 11.5,
                                           ),
                                         ),
@@ -953,9 +742,7 @@ class MoviesPageState extends State<MoviesPage> {
                                       Text(
                                         _formatRuntime(runtime),
                                         style: TextStyle(
-                                          color: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium?.color,
+                                          color: Theme.of(context).textTheme.bodyMedium?.color,
                                           fontSize: 11.5,
                                         ),
                                       ),
@@ -966,11 +753,7 @@ class MoviesPageState extends State<MoviesPage> {
                                   Text(
                                     _formatReleaseDate(releaseDate),
                                     style: TextStyle(
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.color
-                                          ?.withValues(alpha: 0.6),
+                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                                       fontSize: 11.5,
                                     ),
                                   ),
@@ -982,11 +765,7 @@ class MoviesPageState extends State<MoviesPage> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.color
-                                          ?.withValues(alpha: 0.6),
+                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                                       fontSize: 11.5,
                                     ),
                                   ),
@@ -1005,17 +784,13 @@ class MoviesPageState extends State<MoviesPage> {
                                 } else {
                                   setState(() => isRemoving = true);
                                 }
-                                await Future.delayed(
-                                  const Duration(milliseconds: 600),
-                                );
+                                await Future.delayed(const Duration(milliseconds: 600));
                                 if (context.mounted) {
-                                  context
-                                      .read<MovieWatchlistCubit>()
-                                      .toggleWatched(
-                                        uid: uid,
-                                        movieId: movieId,
-                                        isWatched: !isWatched,
-                                      );
+                                  context.read<MovieWatchlistCubit>().toggleWatched(
+                                    uid: uid,
+                                    movieId: movieId,
+                                    isWatched: !isWatched,
+                                  );
                                 }
                               }
                             },
@@ -1027,16 +802,13 @@ class MoviesPageState extends State<MoviesPage> {
                                 shape: BoxShape.circle,
                                 color: isWatched
                                     ? AppColors.success
-                                    : (Theme.of(context).brightness ==
-                                              Brightness.light
+                                    : (Theme.of(context).brightness == Brightness.light
                                           ? Colors.transparent
                                           : Colors.white),
                                 border: isWatched
                                     ? null
                                     : Border.all(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.light
+                                        color: Theme.of(context).brightness == Brightness.light
                                             ? Colors.grey[400]!
                                             : Colors.transparent,
                                         width: 1.5,
@@ -1050,8 +822,7 @@ class MoviesPageState extends State<MoviesPage> {
                                         size: 20,
                                         color: isWatched
                                             ? Colors.white
-                                            : (Theme.of(context).brightness ==
-                                                      Brightness.light
+                                            : (Theme.of(context).brightness == Brightness.light
                                                   ? Colors.grey[500]
                                                   : AppColors.textTertiary),
                                       ),
@@ -1082,21 +853,13 @@ class MoviesPageState extends State<MoviesPage> {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (context) => MovieDetailsPage(movieId: movieId),
-          ),
-        );
+        Navigator.push(context, CupertinoPageRoute(builder: (context) => MovieDetailsPage(movieId: movieId)));
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
         clipBehavior: Clip.antiAlias,
         height: 96.0,
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(8.0),
-        ),
+        decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(8.0)),
         child: Row(
           children: [
             ClipRRect(
@@ -1108,8 +871,7 @@ class MoviesPageState extends State<MoviesPage> {
                       height: 96.0,
                       fit: BoxFit.cover,
                       memCacheWidth: 390,
-                      errorWidget: (context, url, error) =>
-                          _buildBlueClapperboardPlaceholder(),
+                      errorWidget: (context, url, error) => _buildBlueClapperboardPlaceholder(),
                       placeholder: (context, url) => Container(
                         width: 130,
                         height: 96.0,
@@ -1122,9 +884,7 @@ class MoviesPageState extends State<MoviesPage> {
                             height: 20,
                             child: CircularProgressIndicator.adaptive(
                               strokeWidth: 2,
-                              valueColor: const AlwaysStoppedAnimation(
-                                AppColors.primary,
-                              ),
+                              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
                             ),
                           ),
                         ),
@@ -1160,9 +920,7 @@ class MoviesPageState extends State<MoviesPage> {
                           Text(
                             voteAverage.toStringAsFixed(1),
                             style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.color,
+                              color: Theme.of(context).textTheme.bodyMedium?.color,
                               fontSize: 11.5,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1171,11 +929,7 @@ class MoviesPageState extends State<MoviesPage> {
                             Text(
                               ' • ',
                               style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.color
-                                    ?.withValues(alpha: 0.6),
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                                 fontSize: 11.5,
                               ),
                             ),
@@ -1183,12 +937,7 @@ class MoviesPageState extends State<MoviesPage> {
                         if (runtime != null && runtime > 0)
                           Text(
                             _formatRuntime(runtime),
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.color,
-                              fontSize: 11.5,
-                            ),
+                            style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 11.5),
                           ),
                       ],
                     ),
@@ -1197,9 +946,7 @@ class MoviesPageState extends State<MoviesPage> {
                       Text(
                         _formatReleaseDate(releaseDate),
                         style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                           fontSize: 11.5,
                         ),
                       ),
@@ -1211,9 +958,7 @@ class MoviesPageState extends State<MoviesPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                           fontSize: 11.5,
                         ),
                       ),
@@ -1255,9 +1000,7 @@ class MoviesPageState extends State<MoviesPage> {
                       daysLeft == '1' ? 'DAY' : 'DAYS',
                       textAlign: TextAlign.right,
                       style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                         fontSize: 10.0,
                         letterSpacing: 1.0,
                       ),
@@ -1268,12 +1011,9 @@ class MoviesPageState extends State<MoviesPage> {
                       height: 36,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Theme.of(context).brightness == Brightness.light
-                            ? Colors.transparent
-                            : Colors.white,
+                        color: Theme.of(context).brightness == Brightness.light ? Colors.transparent : Colors.white,
                         border: Border.all(
-                          color:
-                              Theme.of(context).brightness == Brightness.light
+                          color: Theme.of(context).brightness == Brightness.light
                               ? Colors.grey[400]!
                               : Colors.transparent,
                           width: 1.5,
@@ -1283,8 +1023,7 @@ class MoviesPageState extends State<MoviesPage> {
                         child: Icon(
                           Icons.check,
                           size: 20,
-                          color:
-                              Theme.of(context).brightness == Brightness.light
+                          color: Theme.of(context).brightness == Brightness.light
                               ? Colors.grey[500]
                               : AppColors.textTertiary,
                         ),
@@ -1300,30 +1039,18 @@ class MoviesPageState extends State<MoviesPage> {
     );
   }
 
-  Widget _buildMovieGridCard(
-    Map<String, dynamic> item,
-    String? uid, {
-    bool isUpcoming = false,
-  }) {
+  Widget _buildMovieGridCard(Map<String, dynamic> item, String? uid, {bool isUpcoming = false}) {
     final posterPath = item['posterPath'] as String?;
     final movieId = (item['id'] as num?)?.toInt() ?? 0;
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (context) => MovieDetailsPage(movieId: movieId),
-          ),
-        );
+        Navigator.push(context, CupertinoPageRoute(builder: (context) => MovieDetailsPage(movieId: movieId)));
       },
       child: Container(
         margin: const EdgeInsets.all(4.0),
         clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8.0),
-          color: Theme.of(context).cardColor,
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.0), color: Theme.of(context).cardColor),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -1342,9 +1069,7 @@ class MoviesPageState extends State<MoviesPage> {
                           height: 20,
                           child: CircularProgressIndicator.adaptive(
                             strokeWidth: 2,
-                            valueColor: const AlwaysStoppedAnimation(
-                              AppColors.primary,
-                            ),
+                            valueColor: const AlwaysStoppedAnimation(AppColors.primary),
                           ),
                         ),
                       ),
@@ -1362,13 +1087,8 @@ class MoviesPageState extends State<MoviesPage> {
                     ),
                   )
                 : Container(
-                    color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.grey[200]
-                        : AppColors.surfaceLight,
-                    child: Icon(
-                      Icons.movie_creation_outlined,
-                      color: AppColors.textTertiary,
-                    ),
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
+                    child: Icon(Icons.movie_creation_outlined, color: AppColors.textTertiary),
                   ),
             if (item['releaseDate'] != null) ...[
               Positioned(
@@ -1402,27 +1122,10 @@ class MoviesPageState extends State<MoviesPage> {
 
                     final now = DateTime.now();
                     final today = DateTime(now.year, now.month, now.day);
-                    final targetDate = DateTime(
-                      relDate.year,
-                      relDate.month,
-                      relDate.day,
-                    );
+                    final targetDate = DateTime(relDate.year, relDate.month, relDate.day);
                     final daysLeft = targetDate.difference(today).inDays;
 
-                    final months = [
-                      'Jan',
-                      'Feb',
-                      'Mar',
-                      'Apr',
-                      'May',
-                      'Jun',
-                      'Jul',
-                      'Aug',
-                      'Sep',
-                      'Oct',
-                      'Nov',
-                      'Dec',
-                    ];
+                    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                     final dayStr = relDate.day.toString().padLeft(2, '0');
                     final monthStr = months[relDate.month - 1];
 
@@ -1437,13 +1140,7 @@ class MoviesPageState extends State<MoviesPage> {
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
                               height: 1.0,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(0, 1),
-                                  blurRadius: 4.0,
-                                  color: Colors.black54,
-                                ),
-                              ],
+                              shadows: [Shadow(offset: Offset(0, 1), blurRadius: 4.0, color: Colors.black54)],
                             ),
                           ),
                           Text(
@@ -1453,13 +1150,7 @@ class MoviesPageState extends State<MoviesPage> {
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(0, 1),
-                                  blurRadius: 4.0,
-                                  color: Colors.black54,
-                                ),
-                              ],
+                              shadows: [Shadow(offset: Offset(0, 1), blurRadius: 4.0, color: Colors.black54)],
                             ),
                           ),
                         ],
@@ -1476,13 +1167,7 @@ class MoviesPageState extends State<MoviesPage> {
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
                               height: 1.0,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(0, 1),
-                                  blurRadius: 4.0,
-                                  color: Colors.black54,
-                                ),
-                              ],
+                              shadows: [Shadow(offset: Offset(0, 1), blurRadius: 4.0, color: Colors.black54)],
                             ),
                           ),
                           Text(
@@ -1492,13 +1177,7 @@ class MoviesPageState extends State<MoviesPage> {
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(0, 1),
-                                  blurRadius: 4.0,
-                                  color: Colors.black54,
-                                ),
-                              ],
+                              shadows: [Shadow(offset: Offset(0, 1), blurRadius: 4.0, color: Colors.black54)],
                             ),
                           ),
                         ],
@@ -1520,13 +1199,7 @@ class MoviesPageState extends State<MoviesPage> {
       height: 96.0,
       color: AppColors.accentBlue.withValues(alpha: 0.85),
       child: Center(
-        child: Skeleton.ignore(
-          child: Icon(
-            Icons.movie_creation_outlined,
-            color: Colors.white70,
-            size: 32,
-          ),
-        ),
+        child: Skeleton.ignore(child: Icon(Icons.movie_creation_outlined, color: Colors.white70, size: 32)),
       ),
     );
   }
@@ -1544,11 +1217,7 @@ class _MovieStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => 48.0;
 
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return SizedBox.expand(child: child);
   }
 

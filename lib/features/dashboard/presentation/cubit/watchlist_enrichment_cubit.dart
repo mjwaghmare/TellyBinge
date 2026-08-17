@@ -28,7 +28,10 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     if (dateStr == null || dateStr.isEmpty) return false;
     try {
       final date = DateTime.parse(dateStr);
-      final diff = DateTime.now().difference(date).inDays;
+      final now = DateTime.now();
+      final today = DateTime.utc(now.year, now.month, now.day);
+      final airDay = DateTime.utc(date.year, date.month, date.day);
+      final diff = today.difference(airDay).inDays;
       return diff >= -7 && diff <= 7;
     } catch (_) {
       return false;
@@ -55,8 +58,8 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         final airDate = DateTime.tryParse(upcomingAirDateStr);
         if (airDate != null) {
           final now = DateTime.now();
-          final today = DateTime(now.year, now.month, now.day);
-          final airDay = DateTime(airDate.year, airDate.month, airDate.day);
+          final today = DateTime.utc(now.year, now.month, now.day);
+          final airDay = DateTime.utc(airDate.year, airDate.month, airDate.day);
           if (!airDay.isAfter(today)) {
             return false;
           }
@@ -240,7 +243,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
 
       int airedUnwatchedCount = 0;
       final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
+      final today = DateTime.utc(now.year, now.month, now.day);
 
       // Local cache to avoid fetching the same season twice
       final fetchedSeasons = <int, Map<String, dynamic>>{};
@@ -299,7 +302,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
                 if (airDateStr != null && airDateStr.isNotEmpty) {
                   try {
                     final airDate = DateTime.parse(airDateStr);
-                    final airDay = DateTime(
+                    final airDay = DateTime.utc(
                       airDate.year,
                       airDate.month,
                       airDate.day,
