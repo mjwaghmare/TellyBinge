@@ -7,7 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
-/// A card widget displaying a live reverse countdown timer for the 7-day
+/// A card widget displaying a live reverse countdown timer for the 6-day
 /// free Apple Developer provisioning profile expiration.
 class ProfileExpirationCard extends StatefulWidget {
   const ProfileExpirationCard({super.key});
@@ -179,7 +179,7 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
           ),
           AppSpacing.gapH16,
           Text(
-            'Free 7-day Apple Developer provisioning profile. Connect to Xcode and rebuild before the timer reaches zero to prevent app launch failure.',
+            'Free 6-day Apple Developer provisioning profile. Connect to Xcode and rebuild before the timer reaches zero to prevent app launch failure.',
             style: TextStyle(
               color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
               fontSize: 12,

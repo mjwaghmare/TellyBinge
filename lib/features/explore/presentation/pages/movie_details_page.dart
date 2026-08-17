@@ -804,24 +804,26 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 // Rating row
                                 Row(
                                   children: [
-                                    ..._buildStars(
-                                      voteAverage / 2,
-                                    ), // TMDb is out of 10, convert to 5
-                                    AppSpacing.gapW8,
+                                    const Icon(
+                                      Icons.star,
+                                      color: AppColors.primary,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      '${(voteAverage / 2).toStringAsFixed(1)}/5',
+                                      '${voteAverage.toStringAsFixed(1)} / 10',
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 12,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     AppSpacing.gapW8,
                                     Text(
-                                      _formatVoteCount(voteCount),
+                                      '(${_formatVoteCount(voteCount)})',
                                       style: const TextStyle(
                                         color: Colors.white54,
-                                        fontSize: 12,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ],
@@ -1094,19 +1096,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     );
   }
 
-  List<Widget> _buildStars(double rating) {
-    final List<Widget> stars = [];
-    for (int i = 1; i <= 5; i++) {
-      if (rating >= i) {
-        stars.add(const Icon(Icons.star, color: Colors.amber, size: 16));
-      } else if (rating >= i - 0.5) {
-        stars.add(const Icon(Icons.star_half, color: Colors.amber, size: 16));
-      } else {
-        stars.add(const Icon(Icons.star_border, color: Colors.amber, size: 16));
-      }
-    }
-    return stars;
-  }
+
 
   String _formatVoteCount(int count) {
     if (count >= 1000) {

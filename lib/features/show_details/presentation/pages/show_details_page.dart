@@ -97,24 +97,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     }
   }
 
-  Widget _buildStarRating(double ratingOutOf10) {
-    final double ratingOutOf5 = ratingOutOf10 / 2;
-    int fullStars = ratingOutOf5.floor();
-    bool hasHalfStar = (ratingOutOf5 - fullStars) >= 0.5;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(5, (index) {
-        if (index < fullStars) {
-          return const Icon(Icons.star, color: Colors.yellow, size: 16);
-        } else if (index == fullStars && hasHalfStar) {
-          return const Icon(Icons.star_half, color: Colors.yellow, size: 16);
-        } else {
-          return Icon(Icons.star_border, color: Colors.grey.shade700, size: 16);
-        }
-      }),
-    );
-  }
 
   void _showMoreActions({required BuildContext context, required String uid, required bool isStopped}) {
     showCupertinoModalPopup(
@@ -548,11 +531,15 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             AppSpacing.gapH12,
             Row(
               children: [
-                _buildStarRating(voteAverage),
-                AppSpacing.gapW8,
+                const Icon(
+                  Icons.star,
+                  color: AppColors.primary,
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
                 Text(
-                  '${(voteAverage / 2).toStringAsFixed(1)}/5',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0),
+                  '${voteAverage.toStringAsFixed(1)} / 10',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
                 ),
               ],
             ),

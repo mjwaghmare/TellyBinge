@@ -103,14 +103,28 @@ class MoviesPageState extends State<MoviesPage> {
   String? _calculateDaysLeft(String releaseDateStr) {
     final releaseDate = _parseDateCached(releaseDateStr);
     if (releaseDate == null) return null;
-    final difference = releaseDate.difference(DateTime.now()).inDays;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final targetDate = DateTime(
+      releaseDate.year,
+      releaseDate.month,
+      releaseDate.day,
+    );
+    final difference = targetDate.difference(today).inDays;
     return difference > 0 ? difference.toString() : null;
   }
 
   String _getUpcomingGroup(String releaseDateStr) {
     final releaseDate = _parseDateCached(releaseDateStr);
     if (releaseDate == null) return 'LATER';
-    final diff = releaseDate.difference(DateTime.now()).inDays;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final targetDate = DateTime(
+      releaseDate.year,
+      releaseDate.month,
+      releaseDate.day,
+    );
+    final diff = targetDate.difference(today).inDays;
     return diff <= 7 ? 'THIS WEEK' : 'LATER';
   }
 
@@ -164,7 +178,16 @@ class MoviesPageState extends State<MoviesPage> {
           for (final movie in state.movies) {
             final releaseDateStr = getMovieReleaseDate(movie);
             final releaseDate = _parseDateCached(releaseDateStr);
-            final released = releaseDate != null && releaseDate.isBefore(now);
+            bool released = false;
+            if (releaseDate != null) {
+              final today = DateTime(now.year, now.month, now.day);
+              final relDay = DateTime(
+                releaseDate.year,
+                releaseDate.month,
+                releaseDate.day,
+              );
+              released = !relDay.isAfter(today);
+            }
 
             if (released) {
               watchlist.add(movie);

@@ -15,10 +15,10 @@ void callbackDispatcher() {
         // For now, returning true to acknowledge task completion.
         log('Sync watchlist dates task completed.');
       }
-      return Future.value(true);
+      return true;
     } catch (err) {
       log('Background Task Failed: $err');
-      return Future.value(false);
+      return false;
     }
   });
 }

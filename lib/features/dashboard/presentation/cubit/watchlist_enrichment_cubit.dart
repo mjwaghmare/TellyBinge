@@ -49,6 +49,20 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     try {
       if (showData['totalEpisodes'] == null) return false;
 
+      // Bypass 6-hour cache if show has an upcoming episode scheduled for today or earlier
+      final upcomingAirDateStr = showData['upcomingAirDate'] as String?;
+      if (upcomingAirDateStr != null && upcomingAirDateStr.isNotEmpty) {
+        final airDate = DateTime.tryParse(upcomingAirDateStr);
+        if (airDate != null) {
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final airDay = DateTime(airDate.year, airDate.month, airDate.day);
+          if (!airDay.isAfter(today)) {
+            return false;
+          }
+        }
+      }
+
       final lastEnriched = DateTime.parse(lastEnrichedStr);
       final age = DateTime.now().difference(lastEnriched);
       return age.inHours < 6;
@@ -284,7 +298,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
                 final airDateStr = ep['air_date'] as String?;
                 if (airDateStr != null && airDateStr.isNotEmpty) {
                   try {
-                    final airDate = DateTime.parse(airDateStr).toLocal();
+                    final airDate = DateTime.parse(airDateStr);
                     final airDay = DateTime(
                       airDate.year,
                       airDate.month,

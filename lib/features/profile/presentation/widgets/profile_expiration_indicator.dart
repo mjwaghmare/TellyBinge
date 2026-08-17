@@ -29,7 +29,7 @@ class _ProfileExpirationIndicatorState
   Timer? _timer;
   bool _isLoading = true;
 
-  static const int _totalSecondsIn7Days = 7 * 24 * 60 * 60; // 604,800 seconds
+  static const int _totalSecondsIn6Days = 6 * 24 * 60 * 60; // 518,400 seconds
 
   @override
   void initState() {
@@ -131,7 +131,7 @@ class _ProfileExpirationIndicatorState
 
     final remainingSeconds = isExpired
         ? 0
-        : difference.inSeconds.clamp(0, _totalSecondsIn7Days);
+        : difference.inSeconds.clamp(0, _totalSecondsIn6Days);
     final days = isExpired ? 0 : difference.inDays;
     final hours = isExpired ? 0 : (difference.inHours % 24);
     final minutes = isExpired ? 0 : (difference.inMinutes % 60);
@@ -147,7 +147,7 @@ class _ProfileExpirationIndicatorState
     }
 
     // Label formatting:
-    // - 7d, 6d ... 1d (when days >= 1)
+    // - 6d, 5d ... 1d (when days >= 1)
     // - 23h ... 1h (when days == 0 and hours >= 1)
     // - 60m, 59m ... 10m ... 1m (when under 60 mins)
     // - 0m (when expired)
@@ -164,8 +164,8 @@ class _ProfileExpirationIndicatorState
       label = '1m';
     }
 
-    // Progress ratio: 1.0 (7 days left) down to 0.0 (0 days left)
-    final double progress = (remainingSeconds / _totalSecondsIn7Days).clamp(
+    // Progress ratio: 1.0 (6 days left) down to 0.0 (0 days left)
+    final double progress = (remainingSeconds / _totalSecondsIn6Days).clamp(
       0.0,
       1.0,
     );

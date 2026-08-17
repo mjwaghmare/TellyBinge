@@ -187,7 +187,7 @@ class NotificationService {
     await _setHasUnread(false);
   }
 
-  /// Schedules a 6th-day reinstall reminder notification ONLY on iOS Release builds
+  /// Schedules a 5th-day reinstall reminder notification ONLY on iOS Release builds
   /// for free-tier personal developer provisioning expiration.
   Future<void> scheduleReinstallReminderIfNeeded() async {
     if (!kReleaseMode || defaultTargetPlatform != TargetPlatform.iOS) {
@@ -203,7 +203,7 @@ class NotificationService {
     }
 
     final installDate = DateTime.fromMillisecondsSinceEpoch(installTimestamp);
-    final reminderDate = installDate.add(const Duration(days: 6));
+    final reminderDate = installDate.add(const Duration(days: 5));
 
     if (reminderDate.isAfter(DateTime.now())) {
       try {
@@ -245,11 +245,11 @@ class NotificationService {
   }
 
   /// Returns the estimated free Apple Developer profile expiration date
-  /// (7 days from app build/installation).
+  /// (6 days from app build/installation).
   Future<DateTime> getProfileExpirationDate() async {
     final timestamp = await getAppInstallTimestamp();
     final installDate = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return installDate.add(const Duration(days: 7));
+    return installDate.add(const Duration(days: 6));
   }
 
   /// Resets the app install timestamp to now (used when app is rebuilt)
@@ -263,7 +263,7 @@ class NotificationService {
     await cancelNotificationById(_reinstallNotificationId);
     await scheduleReinstallReminderIfNeeded();
 
-    return DateTime.fromMillisecondsSinceEpoch(nowMs).add(const Duration(days: 7));
+    return DateTime.fromMillisecondsSinceEpoch(nowMs).add(const Duration(days: 6));
   }
 
 
