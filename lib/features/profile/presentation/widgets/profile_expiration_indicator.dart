@@ -202,6 +202,7 @@ class _ProfileExpirationIndicatorState
                         fontWeight: FontWeight.bold,
                         color: indicatorColor,
                         letterSpacing: -0.3,
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                   ),

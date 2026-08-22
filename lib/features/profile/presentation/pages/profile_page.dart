@@ -359,7 +359,8 @@ class _ProfilePageState extends State<ProfilePage>
           ),
         ),
         actions: [
-          const ProfileExpirationIndicator(),
+          if (defaultTargetPlatform == TargetPlatform.iOS)
+            const ProfileExpirationIndicator(),
           IconButton(
             icon: ValueListenableBuilder<bool>(
               valueListenable: NotificationService().hasUnreadNotifier,

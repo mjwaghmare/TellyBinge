@@ -51,8 +51,7 @@ widgets are strictly prohibited.
 
 ## 2. 🔤 Typography System
 
-Typography is driven globally by **Google Fonts Nunito** and system fallback
-via `AppTextStyles` in
+Typography is driven globally by **Google Fonts Plus Jakarta Sans** via `AppTheme` and `AppTextStyles` in
 [`lib/core/theme/app_text_styles.dart`](lib/core/theme/app_text_styles.dart).
 
 | Style Token | Font Size | Weight | Line Height / Case | Common Usage |
@@ -68,6 +67,9 @@ via `AppTextStyles` in
 | `AppTextStyles.lg` | 20.0pt | SemiBold (w600) | Regular | AppBar titles, modal headers |
 | `AppTextStyles.xl` | 24.0pt | Bold (w700) | Regular | Page hero titles |
 | `AppTextStyles.xxl` | 32.0pt | Bold (w700) | Regular | Hero stats numbers |
+
+### Tabular Figures (`FontFeature.tabularFigures()`)
+For live countdown timers, ratings, and stats counters, always apply `.withTabularFigures()` or `fontFeatures: const [FontFeature.tabularFigures()]` to ensure fixed-width digits and prevent UI jitter as numerical values update.
 
 ---
 

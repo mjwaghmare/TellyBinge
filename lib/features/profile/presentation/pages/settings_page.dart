@@ -7,7 +7,7 @@ import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter/services.dart';
 import '../cubit/settings_cubit.dart';
 import '../../../../core/theme/cubit/theme_cubit.dart';
-import '../../../import/import_tv_time_page.dart';
+// import '../../../import/import_tv_time_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -155,6 +155,7 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
+          /*
           Divider(color: Theme.of(context).dividerColor, height: 32),
           _buildSectionHeader(context, 'Data & Import'),
           ListTile(
@@ -188,6 +189,7 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
+          */
           Divider(
             color: Theme.of(context).dividerColor,
             height: AppSpacing.xxl,

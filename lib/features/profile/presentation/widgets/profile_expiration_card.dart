@@ -211,10 +211,10 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
         children: [
           Text(
             value,
-            style: AppTextStyles.lg.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
+            style: AppTextStyles.lg.withTabularFigures().copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
           ),
           const SizedBox(height: 2),
           Text(

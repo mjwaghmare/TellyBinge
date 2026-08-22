@@ -19,7 +19,7 @@ class AppTheme {
       scaffoldBackgroundColor: scaffoldBg,
       cardColor: cardBg,
       dividerColor: dividerBg,
-      textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme).apply(
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme).apply(
         bodyColor: AppColors.textPrimary,
         displayColor: AppColors.textPrimary,
       ),
@@ -143,7 +143,7 @@ class AppTheme {
       scaffoldBackgroundColor: scaffoldBg,
       cardColor: cardBg,
       dividerColor: dividerBg,
-      textTheme: GoogleFonts.nunitoTextTheme(ThemeData.light().textTheme).apply(
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.light().textTheme).apply(
         bodyColor: AppColors.lightTextPrimary,
         displayColor: AppColors.lightTextPrimary,
       ),

@@ -1,97 +1,92 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
   AppTextStyles._();
 
-  static const String fontFamily =
-      'Roboto'; // Standard system font, can fall back
+  static String? get fontFamily => GoogleFonts.plusJakartaSans().fontFamily;
 
-  static const TextStyle xs = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12.0,
-    fontWeight: FontWeight.normal,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get xs => GoogleFonts.plusJakartaSans(
+        fontSize: 12.0,
+        fontWeight: FontWeight.normal,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle xsMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12.0,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get xsMedium => GoogleFonts.plusJakartaSans(
+        fontSize: 12.0,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle sm = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14.0,
-    fontWeight: FontWeight.normal,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get sm => GoogleFonts.plusJakartaSans(
+        fontSize: 14.0,
+        fontWeight: FontWeight.normal,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle smMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14.0,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get smMedium => GoogleFonts.plusJakartaSans(
+        fontSize: 14.0,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle smBold = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14.0,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get smBold => GoogleFonts.plusJakartaSans(
+        fontSize: 14.0,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle md = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16.0,
-    fontWeight: FontWeight.normal,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get md => GoogleFonts.plusJakartaSans(
+        fontSize: 16.0,
+        fontWeight: FontWeight.normal,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle mdMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16.0,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get mdMedium => GoogleFonts.plusJakartaSans(
+        fontSize: 16.0,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle mdBold = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16.0,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get mdBold => GoogleFonts.plusJakartaSans(
+        fontSize: 16.0,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle lg = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 20.0,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get lg => GoogleFonts.plusJakartaSans(
+        fontSize: 20.0,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle xl = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 24.0,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get xl => GoogleFonts.plusJakartaSans(
+        fontSize: 24.0,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle xsBold = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12.0,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get xsBold => GoogleFonts.plusJakartaSans(
+        fontSize: 12.0,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle xxl = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 32.0,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get xxl => GoogleFonts.plusJakartaSans(
+        fontSize: 32.0,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 }
 
 extension TextStyleColorX on TextStyle {
   TextStyle withColor(Color color) => copyWith(color: color);
+  TextStyle withTabularFigures() => copyWith(
+        fontFeatures: [
+          ...?fontFeatures,
+          const FontFeature.tabularFigures(),
+        ],
+      );
 }
+

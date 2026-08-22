@@ -46,7 +46,7 @@ class ImportTvTimePage extends StatelessWidget {
 
                   AppSpacing.gapH16,
 
-                  const Text(
+                  Text(
                     'Import your TV Time GDPR backup',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.lg,
