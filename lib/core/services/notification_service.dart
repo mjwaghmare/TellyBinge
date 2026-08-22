@@ -147,6 +147,8 @@ class NotificationService {
   /// largest TMDB id today is around 1.5M, so ×4 stays under 7M.
   static const int _testNotificationId = 1 << 30;
   static const int _reinstallNotificationId = (1 << 30) - 2;
+  static const int _reinstallNotificationId24h = (1 << 30) - 3;
+  static const Duration _profileExpirationDuration = Duration(days: 6);
 
   /// Android status-bar icon. Must live in res/drawable (the plugin looks names
   /// up with defType "drawable", so res/mipmap entries are invisible to it), and
@@ -187,8 +189,9 @@ class NotificationService {
     await _setHasUnread(false);
   }
 
-  /// Schedules a 5th-day reinstall reminder notification ONLY on iOS Release builds
+  /// Schedules reinstall reminder notifications ONLY on iOS Release builds
   /// for free-tier personal developer provisioning expiration.
+  /// Schedules Day 5 (48h left) and Day 6 (24h left) notifications.
   Future<void> scheduleReinstallReminderIfNeeded() async {
     if (!kReleaseMode || defaultTargetPlatform != TargetPlatform.iOS) {
       return;
@@ -196,6 +199,13 @@ class NotificationService {
 
     final prefs = await SharedPreferences.getInstance();
     final installTimestamp = await getAppInstallTimestamp();
+    final lastScheduledBuild = prefs.getInt('reinstall_reminder_build_ts') ?? 0;
+
+    // Reset scheduled flag if a new build timestamp is detected
+    if (installTimestamp > lastScheduledBuild) {
+      await prefs.setBool('reinstall_reminder_scheduled', false);
+      await prefs.setInt('reinstall_reminder_build_ts', installTimestamp);
+    }
 
     final alreadyScheduled = prefs.getBool('reinstall_reminder_scheduled') ?? false;
     if (alreadyScheduled) {
@@ -203,22 +213,57 @@ class NotificationService {
     }
 
     final installDate = DateTime.fromMillisecondsSinceEpoch(installTimestamp);
-    final reminderDate = installDate.add(const Duration(days: 5));
+    final expirationDate = installDate.add(_profileExpirationDuration);
+    final now = DateTime.now();
 
-    if (reminderDate.isAfter(DateTime.now())) {
-      try {
+    // 48h left (2 days before expiration) and 24h left (1 day before expiration)
+    final reminderDate48h = expirationDate.subtract(const Duration(days: 2));
+    final reminderDate24h = expirationDate.subtract(const Duration(days: 1));
+
+    try {
+      if (reminderDate48h.isAfter(now)) {
         await _scheduleOne(
           id: _reinstallNotificationId,
-          title: "⏳ Time's Almost Up!",
-          body: "Free profile expires tomorrow. Connect to Xcode and rebuild now! 💻",
-          scheduledDate: reminderDate,
+          title: "⏳ 2 Days Left on Free Profile",
+          body: "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
+          scheduledDate: reminderDate48h,
         );
-        await prefs.setBool('reinstall_reminder_scheduled', true);
-      } catch (e) {
-        debugPrint('Failed to schedule reinstall reminder: $e');
+      } else if (reminderDate48h.isBefore(now) && reminderDate24h.isAfter(now)) {
+        await saveReceivedNotification(
+          id: _reinstallNotificationId.toString(),
+          title: "⏳ 2 Days Left on Free Profile",
+          body: "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
+        );
       }
-    } else {
+
+      if (reminderDate24h.isAfter(now)) {
+        await _scheduleOne(
+          id: _reinstallNotificationId24h,
+          title: "🚨 Profile Expires Tomorrow!",
+          body: "Free developer profile expires in 24 hours. Rebuild with Xcode today to keep the app working! 💻",
+          scheduledDate: reminderDate24h,
+        );
+      } else {
+        if (expirationDate.isAfter(now)) {
+          const title = "🚨 Profile Expires Very Soon!";
+          const body = "Free developer profile expires in less than 24 hours! Connect to Xcode and rebuild now. 💻";
+          await _scheduleOne(
+            id: _reinstallNotificationId24h,
+            title: title,
+            body: body,
+            scheduledDate: now.add(const Duration(minutes: 1)),
+          );
+          await saveReceivedNotification(
+            id: _reinstallNotificationId24h.toString(),
+            title: title,
+            body: body,
+          );
+        }
+      }
+
       await prefs.setBool('reinstall_reminder_scheduled', true);
+    } catch (e) {
+      debugPrint('Failed to schedule reinstall reminders: $e');
     }
   }
 
@@ -249,7 +294,7 @@ class NotificationService {
   Future<DateTime> getProfileExpirationDate() async {
     final timestamp = await getAppInstallTimestamp();
     final installDate = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return installDate.add(const Duration(days: 6));
+    return installDate.add(_profileExpirationDuration);
   }
 
   /// Resets the app install timestamp to now (used when app is rebuilt)
@@ -261,9 +306,10 @@ class NotificationService {
     await prefs.setBool('reinstall_reminder_scheduled', false);
 
     await cancelNotificationById(_reinstallNotificationId);
+    await cancelNotificationById(_reinstallNotificationId24h);
     await scheduleReinstallReminderIfNeeded();
 
-    return DateTime.fromMillisecondsSinceEpoch(nowMs).add(const Duration(days: 6));
+    return DateTime.fromMillisecondsSinceEpoch(nowMs).add(_profileExpirationDuration);
   }
 
 
@@ -275,6 +321,13 @@ class NotificationService {
       final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
       final String timeZoneName = timeZoneInfo.identifier;
       tz.setLocalLocation(tz.getLocation(timeZoneName));
+
+      final prefs = await SharedPreferences.getInstance();
+      final lastTz = prefs.getString('last_active_timezone');
+      if (lastTz != null && lastTz != timeZoneName) {
+        _lastScheduledSignature = null;
+      }
+      await prefs.setString('last_active_timezone', timeZoneName);
     } catch (_) {
       // Fallback: preserve existing initialized location if platform timezone lookup fails
     }
@@ -412,8 +465,9 @@ class NotificationService {
     required DateTime scheduledDate,
     String? payload,
   }) async {
+    final now = DateTime.now();
     // Don't schedule in the past
-    if (scheduledDate.isBefore(DateTime.now())) {
+    if (scheduledDate.isBefore(now)) {
       return;
     }
 
@@ -435,15 +489,38 @@ class NotificationService {
       iOS: darwinPlatformChannelSpecifics,
     );
 
-    await _notificationsPlugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-      notificationDetails: platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      payload: payload,
-    );
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+        notificationDetails: platformChannelSpecifics,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: payload,
+      );
+    } catch (_) {
+      // Fallback for Android 12+ (API 31+) if exact alarm permission is revoked by system/user
+      await _notificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+        notificationDetails: platformChannelSpecifics,
+        androidScheduleMode: AndroidScheduleMode.inexact,
+        payload: payload,
+      );
+    }
+
+    // Log to history inbox ONLY if scheduled for immediate firing (within 2 minutes)
+    if (!scheduledDate.isAfter(now.add(const Duration(minutes: 2)))) {
+      await saveReceivedNotification(
+        id: id.toString(),
+        title: title,
+        body: body,
+        payload: payload,
+      );
+    }
   }
 
   /// Track canceled notification IDs for durable suppression across reconciles.
@@ -475,7 +552,7 @@ class NotificationService {
   static const int _maxReceivedHistory = 20;
 
   /// Saves a notification that was received/pushed to local history.
-  /// Enforces FIFO rule: max 20 items.
+  /// Enforces strict FIFO rule with deduplication: max 20 items (oldest evicted).
   Future<void> saveReceivedNotification({
     required String title,
     required String body,
@@ -485,15 +562,27 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     final rawList = prefs.getStringList('received_notifications_history') ?? [];
 
+    final itemId = id ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+    // Filter out duplicate ID if it already exists in history
+    final filteredList = rawList.where((jsonStr) {
+      try {
+        final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+        return map['id']?.toString() != itemId;
+      } catch (_) {
+        return true;
+      }
+    }).toList();
+
     final newItem = ReceivedNotificationItem(
-      id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: itemId,
       title: title,
       body: body,
       payload: payload,
       timestamp: DateTime.now().toIso8601String(),
     );
 
-    final updatedList = <String>[jsonEncode(newItem.toJson()), ...rawList];
+    final updatedList = <String>[jsonEncode(newItem.toJson()), ...filteredList];
 
     if (updatedList.length > _maxReceivedHistory) {
       updatedList.removeRange(_maxReceivedHistory, updatedList.length);

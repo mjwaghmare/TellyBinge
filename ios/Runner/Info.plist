@@ -82,7 +82,7 @@
 				<key>CFBundleTypeRole</key>
 				<string>Editor</string>
 				<key>CFBundleURLName</key>
-				<string>com.tvtime.replica.tvtimeapp</string>
+				<string>com.mwstudio.popverse</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
 					<string>tvtimeapp</string>

@@ -47,6 +47,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '236216751300',
     projectId: 'tvtimeapp-replica-2026',
     storageBucket: 'tvtimeapp-replica-2026.firebasestorage.app',
-    iosBundleId: 'com.tvtime.replica.tvtimeapp',
+    iosBundleId: 'com.mwstudio.popverse',
   );
 }

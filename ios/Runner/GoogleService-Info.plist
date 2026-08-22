@@ -3,9 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>236216751300-u1ikv8htj6gg04nl6knudi34nucacl2g.apps.googleusercontent.com</string>
+	<string>236216751300-t3uu9nmgfg155v7danm6ucqs8bonc3t7.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.236216751300-u1ikv8htj6gg04nl6knudi34nucacl2g</string>
+	<string>com.googleusercontent.apps.236216751300-t3uu9nmgfg155v7danm6ucqs8bonc3t7</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>236216751300-ve4q611qh1l3vjvuspjc44jrjp2gl2c3.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyCDCtf374atqQhY8bPSYjtb3AXk3KTcdRU</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.tvtime.replica.tvtimeapp</string>
+	<string>com.mwstudio.popverse</string>
 	<key>PROJECT_ID</key>
 	<string>tvtimeapp-replica-2026</string>
 	<key>STORAGE_BUCKET</key>
@@ -29,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:236216751300:ios:42f4a5e39bdf15cd3de591</string>
+	<string>1:236216751300:ios:8f52c0a372b5ba3f3de591</string>
 </dict>
 </plist>

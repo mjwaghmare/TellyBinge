@@ -1,4 +1,4 @@
-package com.tvtime.replica.tvtimeapp
+package com.mwstudio.popverse
 
 import io.flutter.embedding.android.FlutterActivity
 
