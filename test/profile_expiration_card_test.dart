@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tvtimeapp/features/profile/presentation/widgets/profile_expiration_card.dart';
+import 'package:popverse/features/profile/presentation/widgets/profile_expiration_card.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
