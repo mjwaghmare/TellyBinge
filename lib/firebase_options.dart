@@ -35,7 +35,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCLLGu6119YQBmxLwBfsfJIfu7tdeHRxM0',
-    appId: '1:236216751300:android:cd25754eb50930ff3de591',
+    appId: '1:236216751300:android:17549003f35847783de591',
     messagingSenderId: '236216751300',
     projectId: 'tvtimeapp-replica-2026',
     storageBucket: 'tvtimeapp-replica-2026.firebasestorage.app',
@@ -43,7 +43,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCDCtf374atqQhY8bPSYjtb3AXk3KTcdRU',
-    appId: '1:236216751300:ios:42f4a5e39bdf15cd3de591',
+    appId: '1:236216751300:ios:8f52c0a372b5ba3f3de591',
     messagingSenderId: '236216751300',
     projectId: 'tvtimeapp-replica-2026',
     storageBucket: 'tvtimeapp-replica-2026.firebasestorage.app',
