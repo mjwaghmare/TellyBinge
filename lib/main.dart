@@ -66,7 +66,10 @@ void main() async {
 
   // Initialize Google Sign-In
   try {
-    await GoogleSignIn.instance.initialize();
+    await GoogleSignIn.instance.initialize(
+      serverClientId:
+          '236216751300-nvkb8jbs3u64as2jbgt4ad2rlhb9r6c5.apps.googleusercontent.com',
+    );
   } catch (e) {
     debugPrint('Warning: Could not initialize Google Sign-In: $e');
   }
