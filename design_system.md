@@ -16,16 +16,16 @@ widgets are strictly prohibited.
 ### Brand Colors
 | Token Name | Hex Value | Preview | Usage |
 | :--- | :--- | :--- | :--- |
-| `AppColors.primary` | `#FFC107` | 🟡 Amber | Primary buttons, active tab indicators, key accents |
-| `AppColors.primaryDark` | `#FF8F00` | 🟠 Dark Amber | Pressed states, secondary brand accents |
-| `AppColors.primaryLight` | `#FFD54F` | 💛 Light Amber | Highlights, badge background accents |
+| `AppColors.primary` | `#8B5CF6` | 🟣 Electric Violet | Primary buttons, active tab indicators, key accents |
+| `AppColors.primaryDark` | `#6D28D9` | 🪻 Dark Violet | Pressed states, secondary brand accents |
+| `AppColors.primaryLight` | `#A78BFA` | 💜 Light Violet | Highlights, badge background accents |
 
 ### Accent & Status Tokens
 | Token Name | Hex Value | Usage |
 | :--- | :--- | :--- |
 | `AppColors.brandGreen` | `#6B8E23` | TV Time green watch progress badges & checkmarks |
 | `AppColors.accentBlue` | `#1E88E5` | Placeholder media icons & secondary action accents |
-| `AppColors.watched` | `#FFC107` | Watch progress bar fill |
+| `AppColors.watched` | `#8B5CF6` | Watch progress bar fill |
 | `AppColors.airing` | `#2196F3` | Airing status tags for TV shows |
 | `AppColors.ended` | `#757575` | Muted neutral grey status tag for ended shows |
 | `AppColors.error` | `#E53935` | Destructive buttons, error alerts, removing items |
@@ -45,7 +45,7 @@ widgets are strictly prohibited.
 | `AppColors.textPrimary` | `#FFFFFF` | `#1F2937` | Primary body text and headers |
 | `AppColors.textSecondary` | `#B0B0B0` | `#6B7280` | Subtitles, metadata, secondary text |
 | `AppColors.textTertiary` | `#757575` | `#9CA3AF` | Inactive icons, subtle text, placeholder hints |
-| `AppColors.textOnPrimary` | `#000000` | `#000000` | Text rendered on top of `AppColors.primary` |
+| `AppColors.textOnPrimary` | `#FFFFFF` | `#FFFFFF` | Text rendered on top of `AppColors.primary` |
 
 ---
 

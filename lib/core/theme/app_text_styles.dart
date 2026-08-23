@@ -78,6 +78,16 @@ class AppTextStyles {
         fontWeight: FontWeight.bold,
         color: AppColors.textPrimary,
       );
+
+  /// Onboarding / login hero headline. Tighter leading and negative tracking
+  /// than the scale below it, so a multi-line headline reads as one block.
+  static TextStyle get display => GoogleFonts.plusJakartaSans(
+        fontSize: 38.0,
+        fontWeight: FontWeight.w800,
+        height: 1.05,
+        letterSpacing: -0.5,
+        color: AppColors.textPrimary,
+      );
 }
 
 extension TextStyleColorX on TextStyle {

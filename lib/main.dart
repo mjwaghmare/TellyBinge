@@ -25,7 +25,7 @@ import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/auth/presentation/cubit/auth_state.dart';
-import 'features/auth/presentation/pages/login_page.dart';
+import 'features/onboarding/presentation/pages/onboarding_gate.dart';
 import 'features/search/presentation/cubit/search_cubit.dart';
 import 'features/search/presentation/cubit/tv_status_cubit.dart';
 import 'features/movies/presentation/cubit/movie_watchlist_cubit.dart';
@@ -445,10 +445,10 @@ class _AuthGateState extends State<AuthGate> {
         if (state is Authenticated) {
           return const ShellNavigationPage();
         } else if (state is Unauthenticated || state is AuthLoginLoading) {
-          return const LoginPage();
+          return const OnboardingGate();
         } else if (state is AuthError) {
-          // If error occurs, fall back to login page
-          return const LoginPage();
+          // If error occurs, fall back to the login page
+          return const OnboardingGate();
         } else {
           // Loading states: keep showing the splash screen UI seamlessly
           return Scaffold(

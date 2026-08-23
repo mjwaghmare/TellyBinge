@@ -4,9 +4,9 @@ class AppColors {
   AppColors._();
 
   // 1. Primary Brand Accent Tokens
-  static const Color primary = Color(0xFFFFC107); // Signature Amber Yellow
-  static const Color primaryDark = Color(0xFFFF8F00); // Darker Amber accent
-  static const Color primaryLight = Color(0xFFFFD54F); // Lighter Amber accent
+  static const Color primary = Color(0xFF8B5CF6); // Electric Violet
+  static const Color primaryDark = Color(0xFF6D28D9); // Dark Violet accent
+  static const Color primaryLight = Color(0xFFA78BFA); // Light Violet accent
 
   // 2. 3-Tier Surface Hierarchy (Dark Mode)
   static const Color darkBackground = Color(0xFF0D0D0D); // Level 0: Canvas
@@ -26,7 +26,7 @@ class AppColors {
   ); // Level 2: Modals
 
   // 3. Status & Functional Tokens
-  static const Color watched = primary; // Amber Yellow watch indicator
+  static const Color watched = primary; // Violet watch indicator
   static const Color airing = Color(0xFF2196F3); // Blue for airing shows
   static const Color ended = Color(0xFF757575); // Neutral Grey for ended shows
   static const Color error = Color(0xFFE53935); // Red for error/destructive
@@ -42,7 +42,7 @@ class AppColors {
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFB0B0B0);
   static const Color textTertiary = Color(0xFF8E8E93);
-  static const Color textOnPrimary = Color(0xFF000000);
+  static const Color textOnPrimary = Color(0xFFFFFFFF);
 
   // Text Tokens (Light Mode)
   static const Color lightTextPrimary = Color(0xFF1F2937);
@@ -58,12 +58,13 @@ class AppColors {
     Color(0xFF26A641),
     Color(0xFF39D353),
   ];
-  static const List<Color> heatmapYellowScale = [
-    Color(0xFF3E2D00),
-    Color(0xFF7C5A00),
-    Color(0xFFB98700),
+  static const List<Color> heatmapVioletScale = [
+    Color(0xFF1E1B4B),
+    Color(0xFF5B21B6),
+    Color(0xFF7C3AED),
     primary,
   ];
+  static const List<Color> heatmapYellowScale = heatmapVioletScale;
 
   // Dynamic Theme Helpers
   static bool isLight(BuildContext context) =>
