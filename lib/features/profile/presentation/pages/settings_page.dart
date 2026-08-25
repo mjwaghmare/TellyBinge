@@ -7,6 +7,7 @@ import '../../../../core/theme/app_spacing.dart';
 import 'package:flutter/services.dart';
 import '../cubit/settings_cubit.dart';
 import '../../../../core/theme/cubit/theme_cubit.dart';
+import 'delete_account_page.dart';
 // import '../../../import/import_tv_time_page.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -152,6 +153,45 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ],
                 ],
+              );
+            },
+          ),
+          Divider(color: Theme.of(context).dividerColor, height: 32),
+          _buildSectionHeader(context, 'Account'),
+          ListTile(
+            leading: const Icon(
+              Icons.delete_outline_rounded,
+              color: AppColors.error,
+            ),
+            title: const Text(
+              'Delete Account',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle: Text(
+              'Permanently delete your account and data',
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                fontSize: 13,
+              ),
+            ),
+            trailing: Icon(
+              Icons.chevron_right,
+              color: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+            ),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DeleteAccountPage(),
+                ),
               );
             },
           ),

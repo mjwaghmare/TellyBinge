@@ -4,5 +4,6 @@ abstract class AuthRepository {
   Stream<UserModel?> get user;
   Future<UserModel?> signInWithGoogle();
   Future<void> signOut();
+  Future<void> deleteAccount();
   Future<UserModel?> getCurrentUser();
 }

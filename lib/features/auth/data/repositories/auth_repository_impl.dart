@@ -73,6 +73,37 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  @override
+  Future<void> deleteAccount() async {
+    final firebaseUser = _firebaseAuth.currentUser;
+    if (firebaseUser == null) return;
+    final uid = firebaseUser.uid;
+
+    // 1. Delete user profile document from Firestore
+    try {
+      await _firestore.collection('users').doc(uid).delete();
+    } catch (e) {
+      // Continue even if Firestore doc deletion fails
+    }
+
+    // 2. Delete Firebase Auth user
+    try {
+      await firebaseUser.delete();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        throw Exception('For security, please sign out and sign in again before deleting your account.');
+      }
+      throw Exception('Account deletion failed: ${e.message ?? e.code}');
+    } catch (e) {
+      throw Exception('Account deletion failed: $e');
+    }
+
+    // 3. Clear Google Sign-In local session
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
+  }
+
   Future<UserModel?> _getUserFromFirestore(String uid) async {
     try {
       // 1. Try to fetch from local offline cache first (Instant startup)
