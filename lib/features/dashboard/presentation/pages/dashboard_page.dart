@@ -20,6 +20,7 @@ import '../widgets/episode_progress_card.dart';
 import '../widgets/watched_episode_card.dart';
 import '../widgets/upcoming_episode_card.dart';
 import '../models/enriched_show.dart';
+import '../../domain/models/watch_history_item.dart';
 import '../../../../core/services/widget_service.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -337,7 +338,7 @@ class DashboardPageState extends State<DashboardPage> {
       children: [
         BlocBuilder<WatchHistoryCubit, WatchHistoryState>(
           builder: (context, historyState) {
-            List<Map<String, dynamic>> history = [];
+            List<WatchHistoryItem> history = [];
             if (historyState is WatchHistoryLoaded) {
               history = historyState.history;
             }
@@ -357,14 +358,14 @@ class DashboardPageState extends State<DashboardPage> {
                       SliverPadding(
                         padding: const EdgeInsets.only(bottom: 24.0, top: 4.0),
                         sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
+                           delegate: SliverChildBuilderDelegate((
                             context,
                             index,
                           ) {
                             final item = history[index];
                             return WatchedEpisodeCard(
-                              key: ValueKey('history_${item['id']}'),
-                              historyEvent: item,
+                              key: ValueKey('history_${item.id}'),
+                              item: item,
                             );
                           }, childCount: history.length),
                         ),

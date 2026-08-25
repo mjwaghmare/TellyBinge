@@ -5,12 +5,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../../../features/auth/presentation/cubit/auth_state.dart';
+import '../../domain/models/watch_history_item.dart';
 import '../cubit/tv_show_watchlist_cubit.dart';
 
 class WatchedEpisodeCard extends StatefulWidget {
-  final Map<String, dynamic> historyEvent;
+  final WatchHistoryItem item;
 
-  const WatchedEpisodeCard({super.key, required this.historyEvent});
+  const WatchedEpisodeCard({super.key, required this.item});
 
   @override
   State<WatchedEpisodeCard> createState() => _WatchedEpisodeCardState();
@@ -30,7 +31,7 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
   @override
   void didUpdateWidget(WatchedEpisodeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.historyEvent != oldWidget.historyEvent) {
+    if (widget.item != oldWidget.item) {
       if (_isReverting) {
         _revertTimer?.cancel();
         final elapsed = _revertStartTime != null
@@ -69,8 +70,8 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
     if (authState is Authenticated) {
       context.read<TvShowWatchlistCubit>().toggleEpisodeWatched(
         uid: authState.user.uid,
-        showId: widget.historyEvent['showId'] as int,
-        episodeKey: widget.historyEvent['episodeKey'] as String,
+        showId: widget.item.showId,
+        episodeKey: widget.item.episodeKey,
         isWatched: false,
       );
     }
@@ -78,29 +79,18 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
 
   @override
   Widget build(BuildContext context) {
-    final posterPath = widget.historyEvent['showPoster'] as String?;
+    final posterPath = widget.item.showPoster;
     final imageUrl = (posterPath != null && posterPath.isNotEmpty)
         ? 'https://image.tmdb.org/t/p/w500$posterPath'
         : null;
 
     final showName =
-        widget.historyEvent['showName']?.toString().toUpperCase() ?? 'UNKNOWN';
+        widget.item.showName.isNotEmpty
+            ? widget.item.showName.toUpperCase()
+            : 'UNKNOWN';
 
-    // Parse episodeKey like "1-4" to "S01 | E04"
-    final epKey = widget.historyEvent['episodeKey']?.toString() ?? '';
-    String displayCode = epKey;
-    if (epKey.contains('-')) {
-      final parts = epKey.split('-');
-      if (parts.length == 2) {
-        final s =
-            int.tryParse(parts[0])?.toString().padLeft(2, '0') ?? parts[0];
-        final e =
-            int.tryParse(parts[1])?.toString().padLeft(2, '0') ?? parts[1];
-        displayCode = 'S$s | E$e';
-      }
-    }
-
-    final episodeTitle = widget.historyEvent['episodeTitle']?.toString() ?? '';
+    final displayCode = widget.item.displayCode;
+    final episodeTitle = widget.item.episodeTitle;
 
     return Opacity(
       opacity: _isReverting ? 0.3 : 0.6,

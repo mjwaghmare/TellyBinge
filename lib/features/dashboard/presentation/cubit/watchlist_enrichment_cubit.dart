@@ -1,17 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../data/repositories/tv_watchlist_repository_impl.dart';
+import '../../domain/repositories/tv_watchlist_repository.dart';
 import 'watchlist_enrichment_state.dart';
 
 class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
   final TmdbClient tmdbClient;
-  final FirebaseFirestore _firestore;
+  final TvWatchlistRepository _repository;
 
   WatchlistEnrichmentCubit({
     required this.tmdbClient,
-    FirebaseFirestore? firestore,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+    TvWatchlistRepository? repository,
+  }) : _repository = repository ?? TvWatchlistRepositoryImpl(),
        super(WatchlistEnrichmentInitial());
 
   /// Tracks which show IDs have already been enriched in this session
@@ -484,12 +485,11 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         'lastEnrichedAt': DateTime.now().toIso8601String(),
       };
 
-      await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('shows')
-          .doc(showId.toString())
-          .update(enrichmentData);
+      await _repository.updateShowEnrichment(
+        uid: uid,
+        showId: showId,
+        enrichmentData: enrichmentData,
+      );
 
       // Mark as enriched to prevent redundant fetches
       _enrichedShowIds.add(showId);

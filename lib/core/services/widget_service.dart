@@ -8,7 +8,6 @@ import '../../firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../features/dashboard/data/repositories/tv_watchlist_repository_impl.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../features/dashboard/presentation/cubit/watchlist_enrichment_cubit.dart';
 import '../../core/network/tmdb_client.dart';
 import '../../features/dashboard/presentation/models/enriched_show.dart';
@@ -140,16 +139,12 @@ class WidgetService {
     } catch (e) {
       log('Error saving current_uid: $e');
     }
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
-        .orderBy('addedAt', descending: true)
-        .get()
-        .timeout(_backgroundOpTimeout);
-
-    final shows = snapshot.docs.map((doc) => doc.data()).toList();
-    await syncWatchlistDataToWidget(shows, immediate: immediate);
+    final repo = TvWatchlistRepositoryImpl();
+    final shows = await repo.getShows(uid: uid).timeout(_backgroundOpTimeout);
+    await syncWatchlistDataToWidget(
+      shows.map((s) => s.toMap()).toList(),
+      immediate: immediate,
+    );
   }
 
   static Future<void> syncWatchlistDataToWidget(
@@ -364,29 +359,24 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
       return;
     }
 
-    final showDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
-        .doc(showId.toString())
-        .get()
+    final repo = TvWatchlistRepositoryImpl();
+    final showItem = await repo
+        .getShow(uid: uid, showId: showId)
         .timeout(WidgetService._backgroundOpTimeout);
 
     String? showName;
     String? showPoster;
     String? episodeTitle;
 
-    if (showDoc.exists) {
-      final showData = showDoc.data()!;
-      showName = showData['name'] as String?;
-      showPoster = showData['posterPath'] as String?;
-      final enriched = EnrichedShow.fromShowData(showData);
+    if (showItem != null) {
+      showName = showItem.name;
+      showPoster = showItem.posterPath;
+      final enriched = EnrichedShow.fromShowData(showItem.toMap());
       episodeTitle = enriched.episodeTitle.isNotEmpty
           ? enriched.episodeTitle
           : enriched.episodeCode;
     }
 
-    final repo = TvWatchlistRepositoryImpl();
     await repo
         .toggleEpisodeWatched(
           uid: uid,
@@ -403,8 +393,8 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
       'Background: Marked episode $episodeKey as watched for show $showId ($showName)',
     );
 
-    if (showDoc.exists) {
-      final showMap = Map<String, dynamic>.from(showDoc.data()!);
+    if (showItem != null) {
+      final showMap = showItem.toMap();
       final watchedList = List<String>.from(showMap['watchedEpisodes'] ?? []);
       if (!watchedList.contains(episodeKey)) {
         watchedList.add(episodeKey);
@@ -423,23 +413,19 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
           'S${tSeason.toString().padLeft(2, '0')} | E${tEpisode.toString().padLeft(2, '0')}';
       showMap['nextEpisodeTitle'] = 'Episode $tEpisode';
 
-      final allShowsSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('shows')
-          .orderBy('addedAt', descending: true)
-          .get()
+      final allShows = await repo
+          .getShows(uid: uid)
           .timeout(WidgetService._backgroundOpTimeout);
 
-      final allShows = allShowsSnapshot.docs.map((doc) {
-        if (doc.id == showId.toString()) {
+      final updatedShows = allShows.map((doc) {
+        if (doc.id.toString() == showId.toString()) {
           return showMap;
         }
-        return doc.data();
+        return doc.toMap();
       }).toList();
 
       // Immediate widget sync with optimistic data
-      await WidgetService.syncWatchlistDataToWidget(allShows, immediate: true);
+      await WidgetService.syncWatchlistDataToWidget(updatedShows, immediate: true);
 
       // Async TMDB enrichment — only if dotenv loaded (API key available)
       if (dotenvAvailable) {

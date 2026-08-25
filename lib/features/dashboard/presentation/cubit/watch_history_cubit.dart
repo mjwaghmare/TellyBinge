@@ -1,9 +1,12 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/repositories/watch_history_repository_impl.dart';
+import '../../domain/repositories/watch_history_repository.dart';
+
+import '../../domain/models/watch_history_item.dart';
 
 abstract class WatchHistoryState extends Equatable {
   const WatchHistoryState();
@@ -17,7 +20,7 @@ class WatchHistoryInitial extends WatchHistoryState {}
 class WatchHistoryLoading extends WatchHistoryState {}
 
 class WatchHistoryLoaded extends WatchHistoryState {
-  final List<Map<String, dynamic>> history;
+  final List<WatchHistoryItem> history;
 
   const WatchHistoryLoaded(this.history);
 
@@ -35,12 +38,12 @@ class WatchHistoryError extends WatchHistoryState {
 }
 
 class WatchHistoryCubit extends Cubit<WatchHistoryState> {
-  final FirebaseFirestore _firestore;
+  final WatchHistoryRepository _repository;
   StreamSubscription? _historySubscription;
   String? _currentUid;
 
-  WatchHistoryCubit({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance,
+  WatchHistoryCubit({WatchHistoryRepository? repository})
+    : _repository = repository ?? WatchHistoryRepositoryImpl(),
       super(WatchHistoryInitial());
 
   void init(String uid) {
@@ -56,26 +59,11 @@ class WatchHistoryCubit extends Cubit<WatchHistoryState> {
     emit(WatchHistoryLoading());
 
     try {
-      final sevenDaysAgo = DateTime.now()
-          .subtract(const Duration(days: 7))
-          .toIso8601String();
-
-      _historySubscription = _firestore
-          .collection('users')
-          .doc(_currentUid)
-          .collection('history')
-          .where('watchedAt', isGreaterThan: sevenDaysAgo)
-          .orderBy('watchedAt', descending: true)
-          .snapshots()
+      _historySubscription = _repository
+          .watchRecentHistory(_currentUid!, days: 7)
           .listen(
-            (snapshot) {
+            (history) {
               if (isClosed) return;
-              final history = snapshot.docs.map((doc) {
-                final data = doc.data();
-                data['id'] = doc.id;
-                return data;
-              }).toList();
-
               emit(WatchHistoryLoaded(history));
             },
             onError: (e) {
@@ -97,3 +85,4 @@ class WatchHistoryCubit extends Cubit<WatchHistoryState> {
     return super.close();
   }
 }
+

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../domain/models/tv_show_watchlist_item.dart';
 import '../../domain/repositories/tv_watchlist_repository.dart';
 
 class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
@@ -203,4 +204,50 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
         .doc(showId.toString())
         .update({'isFavorite': isFavorite});
   }
+
+  @override
+  Future<void> updateShowEnrichment({
+    required String uid,
+    required int showId,
+    required Map<String, dynamic> enrichmentData,
+  }) async {
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('shows')
+        .doc(showId.toString())
+        .update(enrichmentData);
+  }
+
+  @override
+  Future<TvShowWatchlistItem?> getShow({
+    required String uid,
+    required int showId,
+  }) async {
+    final doc = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('shows')
+        .doc(showId.toString())
+        .get();
+    return doc.exists && doc.data() != null
+        ? TvShowWatchlistItem.fromMap(doc.data()!)
+        : null;
+  }
+
+  @override
+  Future<List<TvShowWatchlistItem>> getShows({required String uid}) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('shows')
+        .orderBy('addedAt', descending: true)
+        .get();
+    return snapshot.docs
+        .map((doc) => TvShowWatchlistItem.fromMap(doc.data()))
+        .toList();
+  }
 }
+
+
+

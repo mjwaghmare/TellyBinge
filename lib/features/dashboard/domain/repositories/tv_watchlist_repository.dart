@@ -1,3 +1,5 @@
+import '../models/tv_show_watchlist_item.dart';
+
 abstract class TvWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid);
   Future<void> addShow({
@@ -36,4 +38,17 @@ abstract class TvWatchlistRepository {
     required int showId,
     required bool isFavorite,
   });
+  Future<void> updateShowEnrichment({
+    required String uid,
+    required int showId,
+    required Map<String, dynamic> enrichmentData,
+  });
+  Future<TvShowWatchlistItem?> getShow({
+    required String uid,
+    required int showId,
+  });
+  Future<List<TvShowWatchlistItem>> getShows({required String uid});
 }
+
+
+
