@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../widgets/app_banner.dart';
 import 'tmdb_cache_manager.dart';
 
 class TmdbClient {
@@ -12,10 +11,6 @@ class TmdbClient {
   /// Cached API key to avoid reading dotenv on every request
   late final String? _apiKey;
   bool allowAdultContent = false;
-
-  void _showSlowNetworkWarning() {
-    AppBanner.showSlowNetworkBanner();
-  }
 
   TmdbClient({Dio? dio}) : _dio = dio ?? Dio() {
     _apiKey = dotenv.env['TMDB_API_KEY'];
@@ -65,120 +60,112 @@ class TmdbClient {
     Map<String, dynamic>? queryParameters,
     int maxRetries = 3,
   }) async {
-    final slowNetworkTimer = Timer(
-      const Duration(seconds: 20),
-      _showSlowNetworkWarning,
-    );
     final overallDeadline = DateTime.now().add(const Duration(seconds: 45));
 
-    try {
-      for (int retry = 0; retry < maxRetries; retry++) {
-        Duration remaining = overallDeadline.difference(DateTime.now());
+    for (int retry = 0; retry < maxRetries; retry++) {
+      Duration remaining = overallDeadline.difference(DateTime.now());
+      if (remaining.isNegative || remaining == Duration.zero) {
+        throw TimeoutException(
+          'Overall request deadline exceeded across retries',
+        );
+      }
+
+      bool timerFired = false;
+      final cancelToken = CancelToken();
+      final timer = Timer(remaining, () {
+        timerFired = true;
+        cancelToken.cancel('Deadline exceeded');
+      });
+
+      try {
+        final response = await _dio.get(
+          path,
+          queryParameters: queryParameters,
+          cancelToken: cancelToken,
+        );
+        timer.cancel();
+        if (timerFired || DateTime.now().isAfter(overallDeadline)) {
+          throw TimeoutException(
+            'Overall request deadline exceeded across retries',
+          );
+        }
+        return response;
+      } on DioException catch (e) {
+        timer.cancel();
+        if (CancelToken.isCancel(e)) {
+          throw TimeoutException(
+            'Overall request deadline exceeded across retries',
+          );
+        }
+
+        // Don't retry on client errors (4xx) except 429 (Rate Limit)
+        if (e.response != null) {
+          final statusCode = e.response?.statusCode ?? 500;
+          if (statusCode >= 400 && statusCode < 500 && statusCode != 429) {
+            rethrow;
+          }
+        }
+
+        if (retry == maxRetries - 1) rethrow;
+
+        // Always delay before retry — use shorter delay for connection resets
+        final errorString = e.toString();
+        final isConnectionReset =
+            errorString.contains('Connection reset by peer') ||
+            errorString.contains('SocketException') ||
+            errorString.contains('errno = 54');
+        final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
+
+        remaining = overallDeadline.difference(DateTime.now());
         if (remaining.isNegative || remaining == Duration.zero) {
           throw TimeoutException(
             'Overall request deadline exceeded across retries',
           );
         }
 
-        bool timerFired = false;
-        final cancelToken = CancelToken();
-        final timer = Timer(remaining, () {
-          timerFired = true;
-          cancelToken.cancel('Deadline exceeded');
-        });
+        final desiredDelay = Duration(milliseconds: delayMs);
+        final actualDelay = desiredDelay > remaining
+            ? remaining
+            : desiredDelay;
+        await Future.delayed(actualDelay);
 
-        try {
-          final response = await _dio.get(
-            path,
-            queryParameters: queryParameters,
-            cancelToken: cancelToken,
+        if (DateTime.now().isAfter(overallDeadline)) {
+          throw TimeoutException(
+            'Overall request deadline exceeded across retries',
           );
-          timer.cancel();
-          if (timerFired || DateTime.now().isAfter(overallDeadline)) {
-            throw TimeoutException(
-              'Overall request deadline exceeded across retries',
-            );
-          }
-          return response;
-        } on DioException catch (e) {
-          timer.cancel();
-          if (CancelToken.isCancel(e)) {
-            throw TimeoutException(
-              'Overall request deadline exceeded across retries',
-            );
-          }
+        }
+      } catch (e) {
+        timer.cancel();
+        if (retry == maxRetries - 1) rethrow;
 
-          // Don't retry on client errors (4xx) except 429 (Rate Limit)
-          if (e.response != null) {
-            final statusCode = e.response?.statusCode ?? 500;
-            if (statusCode >= 400 && statusCode < 500 && statusCode != 429) {
-              rethrow;
-            }
-          }
+        final errorString = e.toString();
+        final isConnectionReset =
+            errorString.contains('Connection reset by peer') ||
+            errorString.contains('SocketException') ||
+            errorString.contains('errno = 54');
+        final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
 
-          if (retry == maxRetries - 1) rethrow;
+        remaining = overallDeadline.difference(DateTime.now());
+        if (remaining.isNegative || remaining == Duration.zero) {
+          throw TimeoutException(
+            'Overall request deadline exceeded across retries',
+          );
+        }
 
-          // Always delay before retry — use shorter delay for connection resets
-          final errorString = e.toString();
-          final isConnectionReset =
-              errorString.contains('Connection reset by peer') ||
-              errorString.contains('SocketException') ||
-              errorString.contains('errno = 54');
-          final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
+        final desiredDelay = Duration(milliseconds: delayMs);
+        final actualDelay = desiredDelay > remaining
+            ? remaining
+            : desiredDelay;
+        await Future.delayed(actualDelay);
 
-          remaining = overallDeadline.difference(DateTime.now());
-          if (remaining.isNegative || remaining == Duration.zero) {
-            throw TimeoutException(
-              'Overall request deadline exceeded across retries',
-            );
-          }
-
-          final desiredDelay = Duration(milliseconds: delayMs);
-          final actualDelay = desiredDelay > remaining
-              ? remaining
-              : desiredDelay;
-          await Future.delayed(actualDelay);
-
-          if (DateTime.now().isAfter(overallDeadline)) {
-            throw TimeoutException(
-              'Overall request deadline exceeded across retries',
-            );
-          }
-        } catch (e) {
-          timer.cancel();
-          if (retry == maxRetries - 1) rethrow;
-
-          final errorString = e.toString();
-          final isConnectionReset =
-              errorString.contains('Connection reset by peer') ||
-              errorString.contains('SocketException') ||
-              errorString.contains('errno = 54');
-          final delayMs = isConnectionReset ? 200 : 500 * (retry + 1);
-
-          remaining = overallDeadline.difference(DateTime.now());
-          if (remaining.isNegative || remaining == Duration.zero) {
-            throw TimeoutException(
-              'Overall request deadline exceeded across retries',
-            );
-          }
-
-          final desiredDelay = Duration(milliseconds: delayMs);
-          final actualDelay = desiredDelay > remaining
-              ? remaining
-              : desiredDelay;
-          await Future.delayed(actualDelay);
-
-          if (DateTime.now().isAfter(overallDeadline)) {
-            throw TimeoutException(
-              'Overall request deadline exceeded across retries',
-            );
-          }
+        if (DateTime.now().isAfter(overallDeadline)) {
+          throw TimeoutException(
+            'Overall request deadline exceeded across retries',
+          );
         }
       }
-      throw Exception('Unreachable');
-    } finally {
-      slowNetworkTimer.cancel();
     }
+    throw Exception('Unreachable');
   }
 
   /// Search movies, TV shows, and people
