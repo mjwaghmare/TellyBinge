@@ -2,8 +2,12 @@
 *.class
 *.log
 *.pyc
-*.swp
+*.sw[a-p]
 .DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
 .atom/
 .build/
 .buildlog/
@@ -12,38 +16,60 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+key.properties
+*.jks
+*.keystore
+*.p12
+*.key
+*.mobileprovision
+
+# IntelliJ / Android Studio
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
+# VS Code
+*.code-workspace
 #.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
 
-# Symbolication related
-app.*.symbols
+# Build Outputs & Direct Binaries
+*.apk
+*.aab
+*.ipa
+*.xcarchive
 
-# Obfuscation related
+# Symbolication & Crash Reporting
+app.*.symbols
 app.*.map.json
+*.dSYM.zip
+*.dSYM/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
 
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
 /android/app/release
 
-# Icon generator output. Source art that gets copied into android/app/src/main/res
-# and ios/Runner/Assets.xcassets; the copies are what ship, so the drop isn't tracked.
+# Icon generator output
 /lib/IconKitchen-Output/
