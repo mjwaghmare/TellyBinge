@@ -18,6 +18,7 @@ class TrackingSlide extends StatelessWidget {
           'Tap an episode and PopVerse advances your season, your progress '
           'bar, and your stats in one move.',
       child: OnboardingCard(
+        padding: AppSpacing.allSM,
         child: Column(
           children: [
             _EpisodeRow(
@@ -25,15 +26,9 @@ class TrackingSlide extends StatelessWidget {
               subtitle: 'Watched · Aug 14',
               isWatched: true,
             ),
-            AppSpacing.gapH16,
+            AppSpacing.gapH12,
             _EpisodeRow(
-              title: 'S2 · E7 Chikhai Bardo',
-              subtitle: 'Watched · Aug 18',
-              isWatched: true,
-            ),
-            AppSpacing.gapH16,
-            _EpisodeRow(
-              title: 'S2 · E8 Sweet Vitriol',
+              title: 'S2 · E7 Sweet Vitriol',
               subtitle: 'Airs Sep 17',
               isWatched: false,
             ),
@@ -51,7 +46,7 @@ class _EpisodeRow extends StatelessWidget {
     required this.isWatched,
   });
 
-  static const double _markerSize = 28.0;
+  static const double _markerSize = 24.0;
 
   final String title;
   final String subtitle;
@@ -74,7 +69,7 @@ class _EpisodeRow extends StatelessWidget {
           child: isWatched
               ? const Icon(
                   Icons.check,
-                  size: AppSpacing.md,
+                  size: AppSpacing.sm,
                   color: AppColors.textOnPrimary,
                 )
               : null,
@@ -111,44 +106,11 @@ class NotificationsSlide extends StatelessWidget {
   Widget build(BuildContext context) {
     return const OnboardingSlide(
       badge: 'Notifications',
-      title: 'A nudge the morning it airs',
+      title: 'Dodge the spoilers, catch every drop the moment it airs',
       body:
-          'Follow a show and we watch the air dates for you — episode drops, '
-          'premieres, and finales.',
-      child: Column(
-        children: [
-          _NotificationPreview(),
-          AppSpacing.gapH12,
-          Row(
-            children: [
-              Expanded(
-                child: _AlertTypeChip(
-                  label: 'Episodes',
-                  color: AppColors.airing,
-                ),
-              ),
-              AppSpacing.gapW8,
-              Expanded(
-                child: _AlertTypeChip(
-                  label: 'Premieres',
-                  color: AppColors.primary,
-                ),
-              ),
-              AppSpacing.gapW8,
-              Expanded(
-                child: _AlertTypeChip(
-                  label: 'Finales',
-                  color: AppColors.success,
-                ),
-              ),
-            ],
-          ),
-          AppSpacing.gapH12,
-          OnboardingNote(
-            text: 'All three are on by default — mute any of them in Settings.',
-          ),
-        ],
-      ),
+          'Get instant alerts when new episodes and finales drop so '
+          'you’re always first to watch.',
+      child: _NotificationPreview(),
     );
   }
 }
@@ -156,16 +118,17 @@ class NotificationsSlide extends StatelessWidget {
 class _NotificationPreview extends StatelessWidget {
   const _NotificationPreview();
 
-  static const double _iconSize = 40.0;
+  static const double _iconSize = 36.0;
 
   @override
   Widget build(BuildContext context) {
     return OnboardingCard(
+      padding: AppSpacing.allSM,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(10.0),
+            borderRadius: BorderRadius.circular(8.0),
             child: Image.asset(
               'assets/images/splash_logo.png',
               width: _iconSize,
@@ -189,49 +152,13 @@ class _NotificationPreview extends StatelessWidget {
                 ),
                 AppSpacing.gapH4,
                 Text(
-                  "Severance S2 E8 just landed. You're 1 episode from the "
-                  'finale.',
+                  "Severance S2 E8 just landed. You're 1 episode from the finale.",
                   style: AppTextStyles.sm
                       .withColor(AppColors.textSecondary)
                       .copyWith(height: 1.4),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AlertTypeChip extends StatelessWidget {
-  const _AlertTypeChip({required this.label, required this.color});
-
-  static const double _dotSize = 8.0;
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return OnboardingCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: AppSpacing.sm,
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: _dotSize,
-            height: _dotSize,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-          ),
-          AppSpacing.gapH8,
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.xsMedium,
           ),
         ],
       ),
@@ -247,141 +174,37 @@ class StatsSlide extends StatelessWidget {
   Widget build(BuildContext context) {
     return const OnboardingSlide(
       badge: 'Your stats',
-      title: 'Twelve weeks of you, in amber',
+      title: 'Zero spoilers, zero FOMO — always know where you stand',
       body:
-          'Every marked episode fills a square. Streaks, hours, and totals '
-          'build themselves.',
-      child: Column(
+          'Build your watch streak, hit your milestones, and stay ahead '
+          'of what everyone is talking about.',
+      child: Row(
         children: [
-          OnboardingCard(
-            child: Column(
-              children: [
-                _ActivityHeatmap(),
-                AppSpacing.gapH12,
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _HeatmapCaption(text: '312 episodes'),
-                    _HeatmapCaption(text: '21-day streak', isStreak: true),
-                  ],
-                ),
-              ],
+          Expanded(
+            child: _StatTile(
+              value: '14',
+              label: 'Shows added',
+              color: AppColors.primary,
             ),
           ),
-          AppSpacing.gapH12,
-          Row(
-            children: [
-              Expanded(
-                child: _StatTile(
-                  value: '14',
-                  label: 'Shows added',
-                  color: AppColors.primary,
-                ),
-              ),
-              AppSpacing.gapW8,
-              Expanded(
-                child: _StatTile(
-                  value: '312',
-                  label: 'Episodes watched',
-                  color: AppColors.success,
-                ),
-              ),
-              AppSpacing.gapW8,
-              Expanded(
-                child: _StatTile(
-                  value: '9',
-                  label: 'Movies watched',
-                  color: AppColors.airing,
-                ),
-              ),
-            ],
+          AppSpacing.gapW8,
+          Expanded(
+            child: _StatTile(
+              value: '312',
+              label: 'Episodes',
+              color: AppColors.success,
+            ),
+          ),
+          AppSpacing.gapW8,
+          Expanded(
+            child: _StatTile(
+              value: '9',
+              label: 'Movies',
+              color: AppColors.airing,
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Twelve weeks (columns) by seven days (rows) of sample activity. Fixed rather
-/// than randomised so the illustration is identical on every run — this is
-/// artwork, not the user's real history, which lands once they start tracking.
-///
-/// Each character is an intensity from 0 (no episodes) to 4 (a heavy day).
-const List<String> _sampleActivityWeeks = [
-  '001202300411',
-  '120033104022',
-  '203114002340',
-  '011240321003',
-  '330021140230',
-  '102403012341',
-  '021130204012',
-];
-
-class _ActivityHeatmap extends StatelessWidget {
-  const _ActivityHeatmap();
-
-  static const double _cellGap = 3.0;
-  static const double _cellRadius = 2.0;
-
-  @override
-  Widget build(BuildContext context) {
-    final columnCount = _sampleActivityWeeks.first.length;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cell =
-            (constraints.maxWidth - _cellGap * (columnCount - 1)) / columnCount;
-
-        return Column(
-          children: [
-            for (var row = 0; row < _sampleActivityWeeks.length; row++) ...[
-              if (row > 0) const SizedBox(height: _cellGap),
-              Row(
-                children: [
-                  for (var column = 0; column < columnCount; column++) ...[
-                    if (column > 0) const SizedBox(width: _cellGap),
-                    SizedBox(
-                      width: cell,
-                      height: cell,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: _colorFor(
-                            _sampleActivityWeeks[row].codeUnitAt(column) - 0x30,
-                          ),
-                          borderRadius: BorderRadius.circular(_cellRadius),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ],
-        );
-      },
-    );
-  }
-
-  Color _colorFor(int intensity) => intensity <= 0
-      ? AppColors.heatmapEmptyDark
-      : AppColors.heatmapYellowScale[intensity - 1];
-}
-
-class _HeatmapCaption extends StatelessWidget {
-  const _HeatmapCaption({required this.text, this.isStreak = false});
-
-  final String text;
-  final bool isStreak;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style:
-          (isStreak
-                  ? AppTextStyles.xsBold.withColor(AppColors.success)
-                  : AppTextStyles.xs.withColor(AppColors.textTertiary))
-              .withTabularFigures(),
     );
   }
 }

@@ -29,17 +29,32 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
+  void continueAsGuest() {
+    emit(AuthGuest());
+  }
+
   Future<void> signInWithGoogle() async {
-    emit(AuthLoginLoading());
+    final wasGuest = state is AuthGuest ||
+        (state is AuthLoginLoading && (state as AuthLoginLoading).isGuest);
+    emit(AuthLoginLoading(isGuest: wasGuest));
     try {
       final user = await authRepository.signInWithGoogle();
       if (user == null) {
-        emit(Unauthenticated()); // User cancelled login
+        if (wasGuest) {
+          emit(AuthGuest());
+        } else {
+          emit(Unauthenticated()); // User cancelled login
+        }
       } else {
         emit(Authenticated(user));
       }
     } catch (e) {
-      emit(AuthError(e.toString()));
+      if (wasGuest) {
+        emit(AuthError(e.toString(), isGuest: true));
+        emit(AuthGuest());
+      } else {
+        emit(AuthError(e.toString()));
+      }
     }
   }
 

@@ -6,20 +6,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 class OnboardingStorage {
   const OnboardingStorage(this._prefs);
 
-  static const String _seenKey = 'has_seen_onboarding';
+  static const String seenKey = 'has_seen_onboarding';
 
   final SharedPreferences _prefs;
 
-  bool get hasSeenOnboarding => _prefs.getBool(_seenKey) ?? false;
+  bool get hasSeenOnboarding => _prefs.getBool(seenKey) ?? false;
 
   /// Writing is fire-and-forget from the caller's point of view: the carousel
   /// dismisses on the same frame either way, and a failed write only costs the
   /// user seeing the intro once more.
   Future<void> markSeen() async {
     try {
-      await _prefs.setBool(_seenKey, true);
+      await _prefs.setBool(seenKey, true);
     } catch (e) {
-      debugPrint('OnboardingStorage: failed to persist $_seenKey: $e');
+      debugPrint('OnboardingStorage: failed to persist $seenKey: $e');
+    }
+  }
+
+  Future<void> reset() async {
+    try {
+      await _prefs.setBool(seenKey, false);
+    } catch (e) {
+      debugPrint('OnboardingStorage: failed to reset $seenKey: $e');
     }
   }
 }

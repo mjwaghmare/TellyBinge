@@ -13,6 +13,7 @@ import '../../../../core/widgets/action_circle_button.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
+import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
@@ -866,13 +867,19 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             padding: const EdgeInsets.only(top: 16.0, bottom: 24.0),
             child: ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(
+                AuthRequiredBottomSheet.show(
                   context,
-                ).showSnackBar(const SnackBar(content: Text('Please log in to track shows and movies')));
+                  title: 'Sign in to Track',
+                  subtitle:
+                      'Sign in to add shows and movies to your personal watchlist.',
+                  icon: widget.mediaType == 'movie'
+                      ? Icons.movie_filter_rounded
+                      : Icons.tv_rounded,
+                );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.surfaceLight,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textOnPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
               ),
               child: const Text('Login to Track'),
@@ -1103,9 +1110,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                   onTap: () {
                                     HapticFeedback.lightImpact();
                                     if (authState is! Authenticated) {
-                                      ScaffoldMessenger.of(
+                                      AuthRequiredBottomSheet.show(
                                         context,
-                                      ).showSnackBar(const SnackBar(content: Text('Please log in to track episodes')));
+                                        title: 'Sign in to Track Episodes',
+                                        subtitle:
+                                            'Keep track of episodes you have watched and see your progress.',
+                                        icon: Icons.check_circle_outline_rounded,
+                                      );
                                       return;
                                     }
                                     if (!isTracked) {
@@ -1513,9 +1524,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                               if (isLoadingThisEp) return;
                               HapticFeedback.lightImpact();
                               if (authState is! Authenticated) {
-                                ScaffoldMessenger.of(
+                                AuthRequiredBottomSheet.show(
                                   context,
-                                ).showSnackBar(const SnackBar(content: Text('Please log in to track episodes')));
+                                  title: 'Sign in to Track Episodes',
+                                  subtitle:
+                                      'Keep track of episodes you have watched and see your progress.',
+                                  icon: Icons.check_circle_outline_rounded,
+                                );
                                 return;
                               }
 

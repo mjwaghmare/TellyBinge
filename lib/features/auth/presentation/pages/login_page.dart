@@ -191,10 +191,6 @@ class _OrDivider extends StatelessWidget {
   }
 }
 
-/// Guest browsing has no backing implementation yet — every screen behind the
-/// shell is keyed on an authenticated Firebase uid — so this entry point is
-/// present for the designed layout but announces itself as unfinished rather
-/// than dropping the user into a broken session.
 class _BrowseWithoutAccountButton extends StatelessWidget {
   const _BrowseWithoutAccountButton();
 
@@ -203,18 +199,7 @@ class _BrowseWithoutAccountButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: TextButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'Browsing without an account is coming soon.',
-                ),
-                backgroundColor: AppColors.surfaceElevated,
-              ),
-            );
-        },
+        onPressed: () => context.read<AuthCubit>().continueAsGuest(),
         style: TextButton.styleFrom(
           minimumSize: const Size.fromHeight(48.0),
           foregroundColor: AppColors.textPrimary,

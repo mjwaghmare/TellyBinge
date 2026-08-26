@@ -13,66 +13,42 @@ import '../features/search/presentation/widgets/surprise_me_sheet.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 
 import '../features/profile/presentation/cubit/profile_heatmap_cubit.dart';
+import '../features/auth/presentation/widgets/auth_required_view.dart';
 import 'package:lottie/lottie.dart';
 
 class ShellNavigationPage extends StatefulWidget {
-  const ShellNavigationPage({super.key});
+  final int initialIndex;
+
+  const ShellNavigationPage({super.key, this.initialIndex = 0});
 
   @override
   State<ShellNavigationPage> createState() => _ShellNavigationPageState();
 }
 
 class _ShellNavigationPageState extends State<ShellNavigationPage> {
-  final ValueNotifier<int> _tabNotifier = ValueNotifier<int>(0);
+  late final ValueNotifier<int> _tabNotifier;
   final ValueNotifier<int> _exploreSubTabNotifier = ValueNotifier<int>(0);
   final GlobalKey<DashboardPageState> _dashboardKey =
       GlobalKey<DashboardPageState>();
   final GlobalKey<MoviesPageState> _moviesKey = GlobalKey<MoviesPageState>();
-  late final List<Widget> _pages;
+  bool _hasStartedWatchers = false;
 
   @override
   void initState() {
     super.initState();
+    _tabNotifier = ValueNotifier<int>(widget.initialIndex);
 
-    // Start listening to the user's movie watchlist updates
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
-      context.read<MovieWatchlistCubit>().watchWatchlist(authState.user.uid);
-      context.read<TvShowWatchlistCubit>().watchWatchlist(authState.user.uid);
+      _startWatchers(authState.user.uid);
     }
+  }
 
-    _pages = [
-      DashboardPage(
-        key: _dashboardKey,
-        onNavigateToExplore: () {
-          setState(() {
-            _tabNotifier.value =
-                2; // Switch bottom navigation to Explore (SearchPage)
-          });
-          _exploreSubTabNotifier.value =
-              0; // Select the TV SHOWS sub-tab inside Explore (0 for TV, 1 for Movies)
-        },
-      ),
-      MoviesPage(
-        key: _moviesKey,
-        onNavigateToExplore: () {
-          setState(() {
-            _tabNotifier.value =
-                2; // Switch bottom navigation to Explore (SearchPage)
-          });
-          _exploreSubTabNotifier.value =
-              1; // Select the MOVIES sub-tab inside Explore
-        },
-      ),
-      SearchPage(
-        subTabNotifier: _exploreSubTabNotifier,
-        mainTabNotifier: _tabNotifier,
-      ),
-      BlocProvider<ProfileHeatmapCubit>(
-        create: (context) => ProfileHeatmapCubit(),
-        child: ProfilePage(tabNotifier: _tabNotifier),
-      ),
-    ];
+  void _startWatchers(String uid) {
+    if (_hasStartedWatchers) return;
+    _hasStartedWatchers = true;
+    context.read<MovieWatchlistCubit>().watchWatchlist(uid);
+    context.read<TvShowWatchlistCubit>().watchWatchlist(uid);
   }
 
   @override
@@ -109,31 +85,112 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
-      body: IndexedStack(index: _tabNotifier.value, children: _pages),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showSurpriseMeSheet,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        highlightElevation: 0,
-        tooltip: 'Surprise Me',
-        child: Transform.scale(
-          scale: 1.7,
-          child: Lottie.asset(
-            'assets/lottie/dice.json',
-            fit: BoxFit.contain,
-            animate: false,
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.casino, color: Colors.black, size: 32),
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _CustomGlowBottomBar(
-        currentIndex: _tabNotifier.value,
-        onTap: _onItemTapped,
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, authState) {
+        if (authState is Authenticated) {
+          _startWatchers(authState.user.uid);
+        } else {
+          _hasStartedWatchers = false;
+        }
+      },
+      child: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, authState) {
+          final isAuthenticated = authState is Authenticated;
+
+          final pages = [
+            isAuthenticated
+                ? DashboardPage(
+                    key: _dashboardKey,
+                    onNavigateToExplore: () {
+                      setState(() {
+                        _tabNotifier.value = 2;
+                      });
+                      _exploreSubTabNotifier.value = 0;
+                    },
+                  )
+                : const AuthRequiredView(
+                    icon: Icons.tv_rounded,
+                    title: 'Track TV Shows',
+                    subtitle:
+                        'Never miss an episode. Track what you watch, get countdowns, and stay up to date.',
+                    features: [
+                      'Personalized episode watchlist',
+                      'Release dates & countdowns',
+                      'Smart notifications for new episodes',
+                    ],
+                  ),
+            isAuthenticated
+                ? MoviesPage(
+                    key: _moviesKey,
+                    onNavigateToExplore: () {
+                      setState(() {
+                        _tabNotifier.value = 2;
+                      });
+                      _exploreSubTabNotifier.value = 1;
+                    },
+                  )
+                : const AuthRequiredView(
+                    icon: Icons.movie_filter_rounded,
+                    title: 'Movie Watchlist',
+                    subtitle:
+                        'Keep track of movies you want to see and rate movies you have watched.',
+                    features: [
+                      'Build your custom movie watchlist',
+                      'Release calendars & premiere alerts',
+                      'Mark movies watched and rate them',
+                    ],
+                  ),
+            SearchPage(
+              subTabNotifier: _exploreSubTabNotifier,
+              mainTabNotifier: _tabNotifier,
+            ),
+            isAuthenticated
+                ? BlocProvider<ProfileHeatmapCubit>(
+                    create: (context) => ProfileHeatmapCubit(),
+                    child: ProfilePage(tabNotifier: _tabNotifier),
+                  )
+                : const AuthRequiredView(
+                    icon: Icons.person_rounded,
+                    title: 'Your Profile & Stats',
+                    subtitle:
+                        'Sign in to see your watching habits, total watch time, and achievements.',
+                    features: [
+                      'Detailed watch time stats & breakdown',
+                      'Personal watch history calendar & heatmap',
+                      'Custom badges & milestones',
+                    ],
+                  ),
+          ];
+
+          return Scaffold(
+            extendBody: true,
+            resizeToAvoidBottomInset: false,
+            body: IndexedStack(index: _tabNotifier.value, children: pages),
+            floatingActionButton: FloatingActionButton(
+              onPressed: _showSurpriseMeSheet,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              highlightElevation: 0,
+              tooltip: 'Surprise Me',
+              child: Transform.scale(
+                scale: 1.7,
+                child: Lottie.asset(
+                  'assets/lottie/dice.json',
+                  fit: BoxFit.contain,
+                  animate: false,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.casino, color: Colors.black, size: 32),
+                ),
+              ),
+            ),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerDocked,
+            bottomNavigationBar: _CustomGlowBottomBar(
+              currentIndex: _tabNotifier.value,
+              onTap: _onItemTapped,
+            ),
+          );
+        },
       ),
     );
   }
