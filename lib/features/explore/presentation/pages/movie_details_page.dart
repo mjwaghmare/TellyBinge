@@ -37,7 +37,8 @@ class MovieDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<MovieDetailsCubit>(
       create: (context) =>
-          MovieDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+          MovieDetailsCubit(tmdbClient: context.read<TmdbClient>())
+            ..loadMovieDetails(movieId),
       child: MovieDetailsView(
         movieId: movieId,
         title: title,
@@ -70,12 +71,6 @@ class MovieDetailsView extends StatefulWidget {
 }
 
 class _MovieDetailsViewState extends State<MovieDetailsView> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<MovieDetailsCubit>().loadMovieDetails(widget.movieId);
-  }
-
   Map<String, dynamic> _dummyMovieData() {
     return {
       'title': widget.title ?? 'Loading Movie Details',
@@ -369,7 +364,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             ? authState.user.uid
             : null;
 
-        final movie = isLoading ? _dummyMovieData() : movieData!;
+        final movie = isLoading ? _dummyMovieData() : (movieData ?? _dummyMovieData());
         final title = movie['title'] as String? ?? 'Unknown';
         final backdropPath = movie['backdrop_path'] as String?;
         final releaseDate = movie['release_date'] as String?;
@@ -933,37 +928,34 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.md),
-                                  Skeletonizer(
-                                    enabled: isCastLoading || isLoading,
-                                    child: SizedBox(
-                                      height: 180,
-                                      child: ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: cast.length,
-                                        separatorBuilder: (context, index) =>
-                                            const SizedBox(width: 12),
-                                        itemBuilder: (context, index) {
-                                          final actor =
-                                              cast[index]
-                                                  as Map<String, dynamic>;
-                                          final actorName =
-                                              actor['name'] as String? ?? '';
-                                          final character =
-                                              actor['character'] as String? ??
-                                              '';
-                                          final profilePath =
-                                              actor['profile_path'] as String?;
-                                          return _buildCastCard(
-                                            imageUrl: _getImageUrl(
-                                              profilePath,
-                                              size: 'w185',
-                                            ),
-                                            realName: actorName,
-                                            characterName: character
-                                                .toUpperCase(),
-                                          );
-                                        },
-                                      ),
+                                  SizedBox(
+                                    height: 180,
+                                    child: ListView.separated(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: cast.length,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(width: 12),
+                                      itemBuilder: (context, index) {
+                                        final actor =
+                                            cast[index]
+                                                as Map<String, dynamic>;
+                                        final actorName =
+                                            actor['name'] as String? ?? '';
+                                        final character =
+                                            actor['character'] as String? ??
+                                            '';
+                                        final profilePath =
+                                            actor['profile_path'] as String?;
+                                        return _buildCastCard(
+                                          imageUrl: _getImageUrl(
+                                            profilePath,
+                                            size: 'w185',
+                                          ),
+                                          realName: actorName,
+                                          characterName: character
+                                              .toUpperCase(),
+                                        );
+                                      },
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.lg),
@@ -987,40 +979,37 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.md),
-                                  Skeletonizer(
-                                    enabled: isCollectionLoading || isLoading,
-                                    child: SizedBox(
-                                      height: 200,
-                                      child: ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount:
-                                            visibleCollectionParts.length,
-                                        separatorBuilder: (context, index) =>
-                                            const SizedBox(width: 14),
-                                        itemBuilder: (context, index) {
-                                          final data = _parseRecommendationData(
-                                            visibleCollectionParts[index],
-                                          );
-                                          if (data == null) {
-                                            return const SizedBox.shrink();
-                                          }
+                                  SizedBox(
+                                    height: 200,
+                                    child: ListView.separated(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount:
+                                          visibleCollectionParts.length,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(width: 14),
+                                      itemBuilder: (context, index) {
+                                        final data = _parseRecommendationData(
+                                          visibleCollectionParts[index],
+                                        );
+                                        if (data == null) {
+                                          return const SizedBox.shrink();
+                                        }
 
-                                          return _buildRecommendationCard(
-                                            movieId: data.id,
-                                            posterPath: data.posterPath,
-                                            title: data.title,
-                                            releaseDate: data.releaseDate,
-                                            voteAverage: data.voteAverage,
-                                            backdropPath: data.backdropPath,
-                                            runtime: 0,
-                                            genres: '',
-                                            isAdded: watchlistedIds.contains(
-                                              data.id,
-                                            ),
-                                            uid: uid,
-                                          );
-                                        },
-                                      ),
+                                        return _buildRecommendationCard(
+                                          movieId: data.id,
+                                          posterPath: data.posterPath,
+                                          title: data.title,
+                                          releaseDate: data.releaseDate,
+                                          voteAverage: data.voteAverage,
+                                          backdropPath: data.backdropPath,
+                                          runtime: 0,
+                                          genres: '',
+                                          isAdded: watchlistedIds.contains(
+                                            data.id,
+                                          ),
+                                          uid: uid,
+                                        );
+                                      },
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.lg),
@@ -1044,16 +1033,14 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.md),
-                                  Skeletonizer(
-                                    enabled: isSimilarLoading || isLoading,
-                                    child: SizedBox(
-                                      height: 200,
-                                      child: ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: visibleSimilarMovies.length,
-                                        separatorBuilder: (context, index) =>
-                                            const SizedBox(width: 14),
-                                        itemBuilder: (context, index) {
+                                  SizedBox(
+                                    height: 200,
+                                    child: ListView.separated(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: visibleSimilarMovies.length,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(width: 14),
+                                      itemBuilder: (context, index) {
                                           final rec =
                                               visibleSimilarMovies[index]
                                                   as Map<String, dynamic>;
@@ -1099,9 +1086,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                         },
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.lg),
-                                ],
+                                    const SizedBox(height: AppSpacing.lg),
+                                  ],
                               ],
                             ),
                           ),

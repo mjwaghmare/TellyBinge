@@ -47,39 +47,44 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
 
         Future<Map<String, dynamic>> fetchCollection() async {
           if (belongsToCollection != null &&
+              belongsToCollection is Map &&
               belongsToCollection['id'] != null) {
-            final collectionId = belongsToCollection['id'] as int;
-            try {
-              final collectionDetails = await tmdbClient.getCollectionDetails(
-                collectionId,
-              );
-              final parts = collectionDetails['parts'] as List<dynamic>? ?? [];
-              final filteredParts = parts
-                  .where((item) => item['id'] != movieId)
-                  .toList();
+            final collectionId =
+                (belongsToCollection['id'] as num?)?.toInt() ?? 0;
+            if (collectionId > 0) {
+              try {
+                final collectionDetails = await tmdbClient.getCollectionDetails(
+                  collectionId,
+                );
+                final parts =
+                    collectionDetails['parts'] as List<dynamic>? ?? [];
+                final filteredParts = parts
+                    .where((item) => (item['id'] as num?)?.toInt() != movieId)
+                    .toList();
 
-              filteredParts.sort((a, b) {
-                final aDateStr = a['release_date'] as String? ?? '';
-                final bDateStr = b['release_date'] as String? ?? '';
-                if (aDateStr.isEmpty) return 1;
-                if (bDateStr.isEmpty) return -1;
-                try {
-                  return DateTime.parse(
-                    bDateStr,
-                  ).compareTo(DateTime.parse(aDateStr));
-                } catch (_) {
-                  return 0;
-                }
-              });
+                filteredParts.sort((a, b) {
+                  final aDateStr = a['release_date'] as String? ?? '';
+                  final bDateStr = b['release_date'] as String? ?? '';
+                  if (aDateStr.isEmpty) return 1;
+                  if (bDateStr.isEmpty) return -1;
+                  try {
+                    return DateTime.parse(
+                      bDateStr,
+                    ).compareTo(DateTime.parse(aDateStr));
+                  } catch (_) {
+                    return 0;
+                  }
+                });
 
-              final collectionName =
-                  belongsToCollection['name'] as String? ?? 'Franchise';
-              return {
-                'parts': filteredParts,
-                'title': 'More from $collectionName',
-              };
-            } catch (e) {
-              return {'parts': [], 'title': 'Franchise'};
+                final collectionName =
+                    belongsToCollection['name'] as String? ?? 'Franchise';
+                return {
+                  'parts': filteredParts,
+                  'title': 'More from $collectionName',
+                };
+              } catch (e) {
+                return {'parts': [], 'title': 'Franchise'};
+              }
             }
           }
           return {'parts': [], 'title': 'Franchise'};
@@ -88,42 +93,10 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
         Future<List<dynamic>> fetchSimilar() async {
           try {
             final rawSimilar = await tmdbClient.getSimilarMovies(movieId);
-            List<dynamic> similarMovies = List<dynamic>.from(rawSimilar);
-            similarMovies.removeWhere((m) => m['id'] == movieId);
-
-            if (similarMovies.length < 5) {
-              try {
-                final genres = movieDetails['genres'] as List<dynamic>? ?? [];
-                final genreIds = <int>[];
-                for (var g in genres) {
-                  if (g is Map && g['id'] != null) {
-                    final rawId = g['id'];
-                    if (rawId is num) {
-                      genreIds.add(rawId.toInt());
-                    } else if (rawId is String) {
-                      final parsed = int.tryParse(rawId);
-                      if (parsed != null) genreIds.add(parsed);
-                    }
-                  }
-                }
-                final fallback = await tmdbClient.discoverMoviesWithFilters(
-                  genreIds: genreIds.isNotEmpty ? genreIds : null,
-                  sortBy: 'popularity.desc',
-                );
-                for (var f in fallback) {
-                  if (f is Map && f['id'] != null) {
-                    final fId = f['id'];
-                    if (!similarMovies.any((m) => m['id'] == fId) &&
-                        fId != movieId) {
-                      similarMovies.add(f);
-                    }
-                  }
-                }
-              } catch (_) {
-                // Ignore fallback failure so fetched similarMovies are preserved
-              }
-            }
-
+            final similarMovies = List<dynamic>.from(rawSimilar);
+            similarMovies.removeWhere(
+              (m) => (m['id'] as num?)?.toInt() == movieId,
+            );
             return similarMovies;
           } catch (e) {
             return [];
@@ -144,7 +117,7 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
               if (s != null) {
                 emit(
                   s.copyWith(
-                    movieCredits: {'cast': [], 'crew': []},
+                    movieCredits: const {'cast': [], 'crew': []},
                     isCastLoading: false,
                   ),
                 );
@@ -157,9 +130,9 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
               final s = getSuccessState();
               if (s != null) {
                 final collectionParts =
-                    collectionResult['parts'] as List<dynamic>;
+                    collectionResult['parts'] as List<dynamic>? ?? [];
                 final collectionSectionTitle =
-                    collectionResult['title'] as String;
+                    collectionResult['title'] as String? ?? 'Franchise';
                 emit(
                   s.copyWith(
                     collectionParts: collectionParts,

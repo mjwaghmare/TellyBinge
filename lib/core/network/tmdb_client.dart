@@ -356,7 +356,8 @@ class TmdbClient {
         maxAge: const Duration(days: 30),
       );
       if (expiredData != null) return expiredData;
-      throw Exception('Failed to fetch movie credits: $e');
+      debugPrint('Error fetching movie credits: $e');
+      return {'cast': [], 'crew': []};
     }
   }
 
@@ -377,7 +378,8 @@ class TmdbClient {
         maxAge: const Duration(days: 30),
       );
       if (expiredData != null) return expiredData;
-      throw Exception('Failed to fetch collection details: $e');
+      debugPrint('Error fetching collection details: $e');
+      return {'parts': []};
     }
   }
 
