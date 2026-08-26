@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
@@ -1134,7 +1133,13 @@ class _SearchPageState extends State<SearchPage>
                 return RepaintBoundary(
                   key: ValueKey('${defaultType}_$id'),
                   child: GestureDetector(
-                    onTap: () => _openDetails(id, mediaType, title),
+                    onTap: () => _openDetails(
+                      id,
+                      mediaType,
+                      title,
+                      posterPath: posterPath,
+                      backdropPath: item['backdrop_path'] as String?,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1378,12 +1383,23 @@ class _SearchPageState extends State<SearchPage>
     );
   }
 
-  void _openDetails(int mediaId, String mediaType, String title) {
+  void _openDetails(
+    int mediaId,
+    String mediaType,
+    String title, {
+    String? posterPath,
+    String? backdropPath,
+  }) {
     if (mediaType == 'movie') {
       Navigator.push(
         context,
-        CupertinoPageRoute(
-          builder: (context) => MovieDetailsPage(movieId: mediaId),
+        MaterialPageRoute(
+          builder: (context) => MovieDetailsPage(
+            movieId: mediaId,
+            title: title,
+            posterPath: posterPath,
+            backdropPath: backdropPath,
+          ),
         ),
       );
     } else {

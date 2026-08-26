@@ -4,33 +4,43 @@ import 'movie_details_state.dart';
 
 class MovieDetailsCubit extends Cubit<MovieDetailsState> {
   final TmdbClient tmdbClient;
+  int _loadGeneration = 0;
 
   MovieDetailsCubit({required this.tmdbClient}) : super(MovieDetailsInitial());
 
   Future<void> loadMovieDetails(int movieId) async {
+    final capturedGeneration = ++_loadGeneration;
     emit(MovieDetailsLoading());
 
-    // Retry up to 3 times to handle flaky network connections
-    for (int attempt = 1; attempt <= 3; attempt++) {
-      try {
-        // Fetch main details first
-        final movieDetails = await tmdbClient.getMovieDetails(movieId);
+    try {
+      // Fetch main details first
+      final movieDetails = await tmdbClient.getMovieDetails(movieId);
 
-        // EMIT EARLY: So the UI loads instantly with primary details!
-        if (!isClosed) {
-          emit(
-            MovieDetailsSuccess(
-              movieDetails: movieDetails,
-              movieCredits: const {'cast': [], 'crew': []},
-              similarMovies: const [],
-              collectionParts: const [],
-              collectionSectionTitle: 'Franchise',
-              isCastLoading: true,
-              isCollectionLoading: true,
-              isSimilarLoading: true,
-            ),
-          );
+      if (_loadGeneration != capturedGeneration || isClosed) return;
+
+      // EMIT EARLY: So the UI loads instantly with primary details!
+      emit(
+        MovieDetailsSuccess(
+          movieDetails: movieDetails,
+          movieCredits: const {'cast': [], 'crew': []},
+          similarMovies: const [],
+          collectionParts: const [],
+          collectionSectionTitle: 'Franchise',
+          isCastLoading: true,
+          isCollectionLoading: true,
+          isSimilarLoading: true,
+        ),
+      );
+
+      // Helper to get current success state
+      MovieDetailsSuccess? getSuccessState() {
+        if (isClosed ||
+            state is! MovieDetailsSuccess ||
+            _loadGeneration != capturedGeneration) {
+          return null;
         }
+        return state as MovieDetailsSuccess;
+      }
 
         // Now fire off the secondary requests independently without blocking the UI
         final belongsToCollection = movieDetails['belongs_to_collection'];
@@ -120,12 +130,6 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
           }
         }
 
-        // Helper to get current success state
-        MovieDetailsSuccess? getSuccessState() {
-          if (isClosed || state is! MovieDetailsSuccess) return null;
-          return state as MovieDetailsSuccess;
-        }
-
         // 1. Fetch Cast
         tmdbClient
             .getMovieCredits(movieId)
@@ -191,15 +195,9 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
                 emit(s.copyWith(isSimilarLoading: false));
               }
             });
-
-        // Successfully initiated, break the retry loop
-        return;
-      } catch (e) {
-        if (attempt == 3) {
-          if (!isClosed) emit(MovieDetailsError(e.toString()));
-        } else {
-          await Future.delayed(Duration(milliseconds: 500 * attempt));
-        }
+    } catch (e) {
+      if (!isClosed && _loadGeneration == capturedGeneration) {
+        emit(MovieDetailsError(e.toString()));
       }
     }
   }

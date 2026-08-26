@@ -768,7 +768,12 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => MovieDetailsPage(movieId: id as int),
+                  builder: (context) => MovieDetailsPage(
+                    movieId: id as int,
+                    title: title,
+                    posterPath: posterPath as String?,
+                    backdropPath: item['backdrop_path'] as String?,
+                  ),
                 ),
               );
             }

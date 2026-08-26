@@ -19,11 +19,17 @@ import '../cubit/movie_details_state.dart';
 
 class MovieDetailsPage extends StatelessWidget {
   final int movieId;
+  final String? title;
+  final String? posterPath;
+  final String? backdropPath;
   final bool fromRecommendation;
 
   const MovieDetailsPage({
     super.key,
     required this.movieId,
+    this.title,
+    this.posterPath,
+    this.backdropPath,
     this.fromRecommendation = false,
   });
 
@@ -34,6 +40,9 @@ class MovieDetailsPage extends StatelessWidget {
           MovieDetailsCubit(tmdbClient: context.read<TmdbClient>()),
       child: MovieDetailsView(
         movieId: movieId,
+        title: title,
+        posterPath: posterPath,
+        backdropPath: backdropPath,
         fromRecommendation: fromRecommendation,
       ),
     );
@@ -42,11 +51,17 @@ class MovieDetailsPage extends StatelessWidget {
 
 class MovieDetailsView extends StatefulWidget {
   final int movieId;
+  final String? title;
+  final String? posterPath;
+  final String? backdropPath;
   final bool fromRecommendation;
 
   const MovieDetailsView({
     super.key,
     required this.movieId,
+    this.title,
+    this.posterPath,
+    this.backdropPath,
     this.fromRecommendation = false,
   });
 
@@ -63,8 +78,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
 
   Map<String, dynamic> _dummyMovieData() {
     return {
-      'title': 'Loading Movie Title Here',
-      'backdrop_path': '',
+      'title': widget.title ?? 'Loading Movie Details',
+      'poster_path': widget.posterPath,
+      'backdrop_path': widget.backdropPath ?? '',
       'release_date': '2026-06-19',
       'genres': [
         {'name': 'Action'},
@@ -1272,9 +1288,14 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
       onTap: () {
         Navigator.push(
           context,
-          CupertinoPageRoute(
-            builder: (context) =>
-                MovieDetailsPage(movieId: movieId, fromRecommendation: true),
+          MaterialPageRoute(
+            builder: (context) => MovieDetailsPage(
+              movieId: movieId,
+              title: title,
+              posterPath: posterPath,
+              backdropPath: backdropPath,
+              fromRecommendation: true,
+            ),
           ),
         );
       },

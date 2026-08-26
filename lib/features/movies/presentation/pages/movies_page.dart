@@ -1,5 +1,4 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -630,7 +629,16 @@ class MoviesPageState extends State<MoviesPage> {
           ),
           child: GestureDetector(
             onTap: () {
-              Navigator.push(context, CupertinoPageRoute(builder: (context) => MovieDetailsPage(movieId: movieId)));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MovieDetailsPage(
+                    movieId: movieId,
+                    title: title,
+                    posterPath: posterPath,
+                  ),
+                ),
+              );
             },
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
@@ -853,7 +861,16 @@ class MoviesPageState extends State<MoviesPage> {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, CupertinoPageRoute(builder: (context) => MovieDetailsPage(movieId: movieId)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MovieDetailsPage(
+              movieId: movieId,
+              title: title,
+              posterPath: posterPath,
+            ),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
@@ -1043,9 +1060,20 @@ class MoviesPageState extends State<MoviesPage> {
     final posterPath = item['posterPath'] as String?;
     final movieId = (item['id'] as num?)?.toInt() ?? 0;
 
+    final title = item['title'] as String? ?? 'Movie';
+
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, CupertinoPageRoute(builder: (context) => MovieDetailsPage(movieId: movieId)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MovieDetailsPage(
+              movieId: movieId,
+              title: title,
+              posterPath: posterPath,
+            ),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.all(4.0),
