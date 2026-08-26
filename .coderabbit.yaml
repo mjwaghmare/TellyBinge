@@ -1,0 +1,264 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "en-US"
+early_access: false
+
+reviews:
+  # More comprehensive reviews and stricter feedback.
+  profile: "assertive"
+
+  # Submit "Request changes" when meaningful issues are found.
+  request_changes_workflow: true
+
+  # PR summary and review status.
+  high_level_summary: true
+  review_status: true
+
+  # Disable unnecessary decorative output.
+  poem: false
+  in_progress_fortune: false
+
+  auto_review:
+    # Automatically review new and updated PRs.
+    enabled: true
+
+    # Review new commits incrementally.
+    auto_incremental_review: true
+
+    # Prevent excessive reviews on very large/active PRs.
+    auto_pause_after_reviewed_commits: 10
+
+    # Do not review draft PRs.
+    drafts: false
+
+    # Skip these PR titles.
+    ignore_title_keywords:
+      - "WIP"
+      - "[skip review]"
+      - "DO NOT REVIEW"
+
+    # Ignore automated dependency PRs.
+    ignore_usernames:
+      - "dependabot[bot]"
+      - "renovate[bot]"
+
+    # Optional label to skip CodeRabbit.
+    labels:
+      - "!do-not-review"
+
+  # Exclude generated and dependency/build artifacts.
+  path_filters:
+    - "!**/build/**"
+    - "!**/.dart_tool/**"
+    - "!**/*.g.dart"
+    - "!**/*.freezed.dart"
+    - "!**/Pods/**"
+    - "!**/.gradle/**"
+    - "!**/DerivedData/**"
+    - "!**/*.lock"
+    - "!**/generated_plugin_registrant.dart"
+
+  path_instructions:
+    # ============================================================
+    # FLUTTER / DART APPLICATION CODE
+    # ============================================================
+    - path: "lib/**/*.dart"
+      instructions: |
+        Review this as production Flutter/Dart code.
+
+        Focus on correctness first. Report issues that could cause crashes,
+        incorrect behavior, data corruption, security vulnerabilities,
+        memory leaks, race conditions, or performance problems.
+
+        Architecture and maintainability:
+        - Flag unnecessary coupling, duplicated logic, dead code, and overly complex implementations.
+        - Prefer simple, idiomatic, type-safe Dart and Flutter APIs.
+        - Check null safety and unsafe assumptions.
+        - Flag deprecated APIs and recommend the current stable replacement.
+        - Prefer built-in Flutter/Dart capabilities over unnecessary dependencies.
+        - Ensure separation of concerns and avoid business logic leaking into UI layers.
+        - Flag unnecessary abstractions and overengineering.
+
+        Flutter performance:
+        - Identify unnecessary widget rebuilds.
+        - Check expensive work inside build methods.
+        - Flag repeated calculations, allocations, parsing, or sorting during rebuilds.
+        - Prefer lazy rendering for large lists and collections.
+        - Check for inefficient widget trees and avoid unnecessary rebuild propagation.
+        - Flag synchronous CPU-intensive work that could block the UI isolate.
+        - Check image, cache, and collection handling for unnecessary memory usage.
+
+        Memory and resource management:
+        - Ensure AnimationController, TextEditingController, ScrollController,
+          FocusNode, StreamSubscription, Timer, ChangeNotifier, and other
+          disposable resources are properly disposed or cancelled.
+        - Detect listeners or callbacks that can outlive their owners.
+        - Flag potential memory leaks and retained references.
+
+        Async and lifecycle safety:
+        - Check async error handling and failure paths.
+        - Detect race conditions and unsafe concurrent state updates.
+        - Check BuildContext usage after async gaps.
+        - Ensure mounted or equivalent lifecycle checks where required.
+        - Avoid unhandled Futures.
+        - Check cancellation and cleanup for long-running async work where applicable.
+        - Ensure loading, error, empty, and retry states are handled when relevant.
+
+        State management:
+        - Flag unnecessary rebuilds caused by overly broad state subscriptions.
+        - Detect invalid or inconsistent state transitions.
+        - Check for duplicate sources of truth.
+        - Ensure state updates cannot occur after disposal.
+        - Prefer immutable state where appropriate.
+
+        Security and privacy:
+        - Flag hardcoded secrets, API keys, tokens, passwords, or credentials.
+        - Flag sensitive information written to logs.
+        - Check insecure local storage of authentication or sensitive data.
+        - Validate and safely handle untrusted input.
+        - Flag insecure authentication, authorization, or network implementations.
+        - Avoid exposing internal errors or sensitive information to users.
+
+        Review quality:
+        - Prioritize high-confidence, actionable findings.
+        - Avoid purely subjective comments.
+        - Do not suggest changes solely for stylistic preference.
+        - Do not recommend adding dependencies unless there is a clear production benefit.
+
+    # ============================================================
+    # TESTS
+    # ============================================================
+    - path: "test/**/*.dart"
+      instructions: |
+        Review tests for production reliability.
+
+        Check:
+        - Important success, failure, and edge cases.
+        - Correct async testing.
+        - Deterministic tests without unnecessary delays or timing dependencies.
+        - Proper setup and cleanup of resources.
+        - Tests that verify meaningful behavior rather than implementation details.
+        - Missing error and boundary scenarios.
+        - Clear, maintainable test names and structure.
+
+        Flag flaky tests and unnecessary mocking.
+
+    # ============================================================
+    # WIDGET / UI TESTS
+    # ============================================================
+    - path: "integration_test/**/*.dart"
+      instructions: |
+        Review integration tests for realistic user flows, deterministic behavior,
+        correct async synchronization, cleanup, and coverage of critical failure paths.
+
+    # ============================================================
+    # NETWORK / API CODE
+    # ============================================================
+    - path: "lib/**/{api,network,data,repository,repositories}/**/*.dart"
+      instructions: |
+        Pay special attention to:
+        - Timeout and cancellation handling.
+        - HTTP error handling.
+        - Retry behavior and prevention of retry loops.
+        - Response validation and safe parsing.
+        - Authentication and token handling.
+        - Sensitive data exposure.
+        - Race conditions caused by concurrent requests.
+        - Cache consistency and stale data handling.
+        - Proper mapping between network and domain models.
+
+    # ============================================================
+    # LOCAL STORAGE / DATABASE
+    # ============================================================
+    - path: "lib/**/{storage,database,cache}/**/*.dart"
+      instructions: |
+        Review for:
+        - Sensitive data stored insecurely.
+        - Missing error handling.
+        - Cache invalidation issues.
+        - Data corruption risks.
+        - Inefficient reads or writes.
+        - Missing migration or backward compatibility considerations.
+        - Unbounded cache growth.
+
+    # ============================================================
+    # AUTHENTICATION / SECURITY
+    # ============================================================
+    - path: "lib/**/{auth,authentication,security}/**/*.dart"
+      instructions: |
+        Apply strict security review.
+
+        Check:
+        - Authentication and authorization correctness.
+        - Secure token handling and storage.
+        - Token expiration and refresh race conditions.
+        - Session invalidation.
+        - Sensitive data exposure in logs or errors.
+        - Missing input validation.
+        - Unsafe assumptions about client-side security.
+
+    # ============================================================
+    # ANDROID
+    # ============================================================
+    - path: "android/**"
+      instructions: |
+        Review Android changes for production readiness.
+
+        Check:
+        - Permission handling and least privilege.
+        - Exported Android components.
+        - Intent and deep link security.
+        - Secret exposure in Gradle files or resources.
+        - Release build configuration.
+        - Dependency and plugin compatibility.
+        - Performance-impacting native code.
+        - Backward compatibility.
+
+    # ============================================================
+    # iOS
+    # ============================================================
+    - path: "ios/**"
+      instructions: |
+        Review iOS changes for production readiness.
+
+        Check:
+        - Sensitive data and secret exposure.
+        - ATS and network security configuration.
+        - Privacy permissions and usage descriptions.
+        - URL scheme and deep link security.
+        - Memory and lifecycle issues in native code.
+        - Release build configuration.
+        - Dependency compatibility.
+
+    # ============================================================
+    # GITHUB ACTIONS / CI-CD
+    # ============================================================
+    - path: ".github/**"
+      instructions: |
+        Review CI/CD changes for:
+        - Supply-chain security.
+        - Pinned or trusted GitHub Actions.
+        - Excessive workflow permissions.
+        - Secret exposure.
+        - Unsafe pull request handling.
+        - Reliable caching.
+        - Correct build, test, and release behavior.
+
+    # ============================================================
+    # PROJECT CONFIGURATION
+    # ============================================================
+    - path: "pubspec.yaml"
+      instructions: |
+        Review dependency and project configuration changes.
+
+        Check:
+        - Unnecessary dependencies.
+        - Deprecated or risky packages.
+        - Version compatibility.
+        - Duplicate packages providing overlapping functionality.
+        - Dependency changes that affect app size, performance, security,
+          platform compatibility, or maintainability.
+
+chat:
+  # Respond when @coderabbitai is mentioned in PR comments.
+  auto_reply: true

@@ -81,10 +81,23 @@ void main() async {
     debugPrint('Warning: Could not load .env file: $e');
   }
 
-  // Load settings for OLED theme
+  // Load settings for theme
   final settingsStorage = SettingsStorage();
   final settings = await settingsStorage.readSettings();
-  final isDarkInitial = settings['dark_mode'] as bool? ?? true;
+  final themeModeStr = settings['theme_mode'] as String?;
+  final ThemeMode initialThemeMode;
+  if (themeModeStr == 'system') {
+    initialThemeMode = ThemeMode.system;
+  } else if (themeModeStr == 'light') {
+    initialThemeMode = ThemeMode.light;
+  } else if (themeModeStr == 'dark') {
+    initialThemeMode = ThemeMode.dark;
+  } else {
+    final isDarkLegacy = settings['dark_mode'] as bool?;
+    initialThemeMode = isDarkLegacy == null
+        ? ThemeMode.system
+        : (isDarkLegacy ? ThemeMode.dark : ThemeMode.light);
+  }
   final isOledInitial = settings['oled_dark_mode'] as bool? ?? false;
 
   final prefs = await SharedPreferences.getInstance();
@@ -92,7 +105,7 @@ void main() async {
   runApp(
     MyApp(
       settingsStorage: settingsStorage,
-      isDarkInitial: isDarkInitial,
+      initialThemeMode: initialThemeMode,
       isOledInitial: isOledInitial,
       prefs: prefs,
     ),
@@ -101,14 +114,14 @@ void main() async {
 
 class MyApp extends StatefulWidget {
   final SettingsStorage settingsStorage;
-  final bool isDarkInitial;
+  final ThemeMode initialThemeMode;
   final bool isOledInitial;
   final SharedPreferences prefs;
 
   const MyApp({
     super.key,
     required this.settingsStorage,
-    required this.isDarkInitial,
+    required this.initialThemeMode,
     required this.isOledInitial,
     required this.prefs,
   });
@@ -314,7 +327,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           BlocProvider<ThemeCubit>(
             create: (context) => ThemeCubit(
               storage: context.read<SettingsStorage>(),
-              isDarkInitial: widget.isDarkInitial,
+              initialThemeMode: widget.initialThemeMode,
               isOledInitial: widget.isOledInitial,
             ),
           ),
@@ -347,9 +360,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           builder: (context, themeState) {
             return MaterialApp(
               title: 'PopVerse',
-              themeMode: themeState.isDarkMode
-                  ? ThemeMode.dark
-                  : ThemeMode.light,
+              themeMode: themeState.themeMode,
               darkTheme: AppTheme.darkTheme(),
               theme: AppTheme.lightTheme(),
               navigatorKey: navigatorKey,

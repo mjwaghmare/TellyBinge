@@ -1,15 +1,21 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../storage/settings_storage.dart';
 
 class ThemeState extends Equatable {
-  final bool isDarkMode;
+  final ThemeMode themeMode;
   final bool isOledDarkMode;
 
-  const ThemeState({required this.isDarkMode, required this.isOledDarkMode});
+  const ThemeState({
+    required this.themeMode,
+    required this.isOledDarkMode,
+  });
+
+  bool get isDarkMode => themeMode == ThemeMode.dark;
 
   @override
-  List<Object?> get props => [isDarkMode, isOledDarkMode];
+  List<Object?> get props => [themeMode, isOledDarkMode];
 }
 
 class ThemeCubit extends Cubit<ThemeState> {
@@ -17,19 +23,31 @@ class ThemeCubit extends Cubit<ThemeState> {
 
   ThemeCubit({
     required this.storage,
-    required bool isDarkInitial,
+    required ThemeMode initialThemeMode,
     required bool isOledInitial,
   }) : super(
-         ThemeState(isDarkMode: isDarkInitial, isOledDarkMode: isOledInitial),
+         ThemeState(themeMode: initialThemeMode, isOledDarkMode: isOledInitial),
        );
 
+  Future<void> setThemeMode(ThemeMode mode) async {
+    final modeString = switch (mode) {
+      ThemeMode.system => 'system',
+      ThemeMode.dark => 'dark',
+      ThemeMode.light => 'light',
+    };
+    await storage.writeSetting('theme_mode', modeString);
+    await storage.writeSetting('dark_mode', mode == ThemeMode.dark);
+    emit(ThemeState(themeMode: mode, isOledDarkMode: state.isOledDarkMode));
+  }
+
   Future<void> toggleDarkMode(bool value) async {
-    await storage.writeSetting('dark_mode', value);
-    emit(ThemeState(isDarkMode: value, isOledDarkMode: state.isOledDarkMode));
+    final mode = value ? ThemeMode.dark : ThemeMode.light;
+    await setThemeMode(mode);
   }
 
   Future<void> toggleOledDarkMode(bool value) async {
     await storage.writeSetting('oled_dark_mode', value);
-    emit(ThemeState(isDarkMode: state.isDarkMode, isOledDarkMode: value));
+    emit(ThemeState(themeMode: state.themeMode, isOledDarkMode: value));
   }
 }
+
