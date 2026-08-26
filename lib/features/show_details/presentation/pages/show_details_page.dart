@@ -863,27 +863,22 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
         if (authState is! Authenticated) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 16.0, bottom: 24.0),
-            child: ElevatedButton(
-              onPressed: () {
-                AuthRequiredBottomSheet.show(
-                  context,
-                  title: 'Sign in to Track',
-                  subtitle:
-                      'Sign in to add shows and movies to your personal watchlist.',
-                  icon: widget.mediaType == 'movie'
-                      ? Icons.movie_filter_rounded
-                      : Icons.tv_rounded,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textOnPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-              ),
-              child: const Text('Login to Track'),
-            ),
+          return _trackButtonUI(
+            isTracked: false,
+            onPressed: () {
+              AuthRequiredBottomSheet.show(
+                context,
+                title: widget.mediaType == 'movie'
+                    ? 'Sign in to Track Movies'
+                    : 'Sign in to Track Shows',
+                subtitle: widget.mediaType == 'movie'
+                    ? 'Sign in to add movies to your personal watchlist.'
+                    : 'Sign in to add shows to your personal watchlist.',
+                icon: widget.mediaType == 'movie'
+                    ? Icons.movie_filter_rounded
+                    : Icons.tv_rounded,
+              );
+            },
           );
         }
 
