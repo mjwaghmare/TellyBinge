@@ -165,169 +165,178 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)))
-          : _notifications.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(_emptyState.emoji, style: const TextStyle(fontSize: 64.0)),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      _emptyState.title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      _emptyState.subtitle,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14.0,
-                        fontStyle: FontStyle.italic,
-                        color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.bottomTabPadding,
-              ),
-              itemCount: _notifications.length,
-              itemBuilder: (context, index) {
-                final item = _notifications[index];
-                final hasPayload = item.payload != null && item.payload!.isNotEmpty;
-                final formattedTime = _formatTimestamp(item.timestamp);
-                final emoji = _extractLeadingEmoji(item.title);
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: Dismissible(
-                    key: Key('notification_${item.id}'),
-                    direction: DismissDirection.endToStart,
-                    onDismissed: (_) => _removeNotification(item.id),
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: AppSpacing.md),
-                      decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
-                    ),
-                    child: Material(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(12),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: hasPayload ? () => _onNotificationTap(item.payload) : null,
-                        child: Container(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+          : RefreshIndicator(
+              onRefresh: _fetchReceivedNotifications,
+              color: AppColors.primary,
+              child: _notifications.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(10),
+                              Text(_emptyState.emoji, style: const TextStyle(fontSize: 64.0)),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                _emptyState.title,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 20.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
                                 ),
-                                alignment: Alignment.center,
-                                child: emoji != null
-                                    ? Text(emoji, style: const TextStyle(fontSize: 22.0))
-                                    : const Icon(
-                                        Icons.notifications_active_rounded,
-                                        color: AppColors.primary,
-                                        size: 22.0,
-                                      ),
                               ),
-                              AppSpacing.gapW12,
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            item.title,
-                                            style: TextStyle(
-                                              color: Theme.of(context).textTheme.bodyLarge?.color,
-                                              fontSize: 14.0,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                        if (formattedTime.isNotEmpty) ...[
-                                          AppSpacing.gapW8,
-                                          Text(
-                                            formattedTime,
-                                            style: TextStyle(
-                                              color: isDark ? AppColors.textTertiary : AppColors.lightTextSecondary,
-                                              fontSize: 11.0,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4.0),
-                                    Text(
-                                      item.body,
-                                      style: TextStyle(
-                                        color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
-                                        fontSize: 13.0,
-                                        height: 1.35,
-                                      ),
-                                    ),
-                                    if (hasPayload) ...[
-                                      const SizedBox(height: 8.0),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Text(
-                                            'Tap to view',
-                                            style: TextStyle(
-                                              color: AppColors.primary,
-                                              fontSize: 11.0,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 4.0),
-                                          const Icon(
-                                            Icons.arrow_forward_ios_rounded,
-                                            size: 10.0,
-                                            color: AppColors.primary,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ],
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                _emptyState.subtitle,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14.0,
+                                  fontStyle: FontStyle.italic,
+                                  color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
                                 ),
                               ),
                             ],
                           ),
                         ),
+                      ],
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        AppSpacing.bottomTabPadding,
                       ),
+                      itemCount: _notifications.length,
+                      itemBuilder: (context, index) {
+                        final item = _notifications[index];
+                        final hasPayload = item.payload != null && item.payload!.isNotEmpty;
+                        final formattedTime = _formatTimestamp(item.timestamp);
+                        final emoji = _extractLeadingEmoji(item.title);
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: Dismissible(
+                            key: Key('notification_${item.id}'),
+                            direction: DismissDirection.endToStart,
+                            onDismissed: (_) => _removeNotification(item.id),
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: AppSpacing.md),
+                              decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(12)),
+                              child: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
+                            ),
+                            child: Material(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: hasPayload ? () => _onNotificationTap(item.payload) : null,
+                                child: Container(
+                                  padding: const EdgeInsets.all(AppSpacing.md),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 42,
+                                        height: 42,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: emoji != null
+                                            ? Text(emoji, style: const TextStyle(fontSize: 22.0))
+                                            : const Icon(
+                                                Icons.notifications_active_rounded,
+                                                color: AppColors.primary,
+                                                size: 22.0,
+                                              ),
+                                      ),
+                                      AppSpacing.gapW12,
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    item.title,
+                                                    style: TextStyle(
+                                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                                      fontSize: 14.0,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                if (formattedTime.isNotEmpty) ...[
+                                                  AppSpacing.gapW8,
+                                                  Text(
+                                                    formattedTime,
+                                                    style: TextStyle(
+                                                      color: isDark ? AppColors.textTertiary : AppColors.lightTextSecondary,
+                                                      fontSize: 11.0,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4.0),
+                                            Text(
+                                              item.body,
+                                              style: TextStyle(
+                                                color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+                                                fontSize: 13.0,
+                                                height: 1.35,
+                                              ),
+                                            ),
+                                            if (hasPayload) ...[
+                                              const SizedBox(height: 8.0),
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Text(
+                                                    'Tap to view',
+                                                    style: TextStyle(
+                                                      color: AppColors.primary,
+                                                      fontSize: 11.0,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 4.0),
+                                                  const Icon(
+                                                    Icons.arrow_forward_ios_rounded,
+                                                    size: 10.0,
+                                                    color: AppColors.primary,
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                );
-              },
             ),
     );
   }

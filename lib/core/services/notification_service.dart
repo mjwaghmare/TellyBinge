@@ -37,6 +37,39 @@ class ReceivedNotificationItem {
   );
 }
 
+/// Internal model for keeping track of alerts scheduled with the platform.
+class _ScheduledRegistryItem {
+  final String id;
+  final String title;
+  final String body;
+  final String? payload;
+  final DateTime scheduledDate;
+
+  const _ScheduledRegistryItem({
+    required this.id,
+    required this.title,
+    required this.body,
+    this.payload,
+    required this.scheduledDate,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'body': body,
+    'payload': payload,
+    'scheduledDate': scheduledDate.toIso8601String(),
+  };
+
+  factory _ScheduledRegistryItem.fromJson(Map<String, dynamic> json) => _ScheduledRegistryItem(
+    id: json['id'] as String? ?? '',
+    title: json['title'] as String? ?? '',
+    body: json['body'] as String? ?? '',
+    payload: json['payload'] as String?,
+    scheduledDate: DateTime.tryParse(json['scheduledDate'] as String? ?? '') ?? DateTime.now(),
+  );
+}
+
 /// Which watchlist a notification belongs to.
 ///
 /// TMDB numbers TV shows and movies in separate namespaces that overlap — id
@@ -315,6 +348,7 @@ class NotificationService {
 
   Future<void> initialize() async {
     await _initUnreadStatus();
+    await promoteFiredNotifications();
     await getAppInstallTimestamp();
     tz.initializeTimeZones();
     try {
@@ -352,6 +386,7 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: (response) {
+        promoteFiredNotifications();
         final payload = response.payload;
         if (payload != null && payload.isNotEmpty) {
           onNotificationTap?.call(payload);
@@ -511,21 +546,18 @@ class NotificationService {
         payload: payload,
       );
     }
-
-    // Log to history inbox ONLY if scheduled for immediate firing (within 2 minutes)
-    if (!scheduledDate.isAfter(now.add(const Duration(minutes: 2)))) {
-      await saveReceivedNotification(
-        id: id.toString(),
-        title: title,
-        body: body,
-        payload: payload,
-      );
-    }
   }
 
   /// Track canceled notification IDs for durable suppression across reconciles.
   final Set<int> _canceledNotificationIds = {};
 
+  /// Drops one title's alerts immediately, without waiting for its watchlist
+  /// stream to round-trip and trigger a reconcile.
+  ///
+  /// Reconcile would cancel these anyway once the title leaves the submitted
+  /// list; this just makes removal feel instant. The stored signature is
+  /// cleared because the platform no longer matches what reconcile last
+  /// scheduled, and without that the next run could no-op on a stale match.
   /// Drops one title's alerts immediately, without waiting for its watchlist
   /// stream to round-trip and trigger a reconcile.
   ///
@@ -546,10 +578,72 @@ class NotificationService {
 
     await _notificationsPlugin.cancel(id: dayBeforeId);
     await _notificationsPlugin.cancel(id: hourBeforeId);
+    await _removeFromScheduledRegistry([dayBeforeId.toString(), hourBeforeId.toString()]);
     _lastScheduledSignature = null;
   }
 
   static const int _maxReceivedHistory = 20;
+
+  Future<void> _removeFromScheduledRegistry(List<String> idsToRemove) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rawList = prefs.getStringList('scheduled_notifications_registry') ?? [];
+      if (rawList.isEmpty) return;
+
+      final idSet = idsToRemove.toSet();
+      final updatedList = rawList.where((jsonStr) {
+        try {
+          final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+          return !idSet.contains(map['id']?.toString());
+        } catch (_) {
+          return true;
+        }
+      }).toList();
+
+      await prefs.setStringList('scheduled_notifications_registry', updatedList);
+    } catch (_) {}
+  }
+
+  /// Scans the scheduled notifications registry and moves any alerts whose
+  /// scheduled fire time has passed (<= now) into the received notifications history.
+  Future<void> promoteFiredNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rawList = prefs.getStringList('scheduled_notifications_registry') ?? [];
+      if (rawList.isEmpty) return;
+
+      final now = DateTime.now();
+      final remaining = <String>[];
+      bool hasPromoted = false;
+
+      for (final jsonStr in rawList) {
+        try {
+          final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+          final item = _ScheduledRegistryItem.fromJson(map);
+          if (!item.scheduledDate.isAfter(now)) {
+            await saveReceivedNotification(
+              id: item.id,
+              title: item.title,
+              body: item.body,
+              payload: item.payload,
+              timestamp: item.scheduledDate.toIso8601String(),
+            );
+            hasPromoted = true;
+          } else {
+            remaining.add(jsonStr);
+          }
+        } catch (_) {
+          // Drop corrupted item
+        }
+      }
+
+      if (hasPromoted || remaining.length != rawList.length) {
+        await prefs.setStringList('scheduled_notifications_registry', remaining);
+      }
+    } catch (e) {
+      debugPrint('Failed to promote fired scheduled notifications: $e');
+    }
+  }
 
   /// Saves a notification that was received/pushed to local history.
   /// Enforces strict FIFO rule with deduplication: max 20 items (oldest evicted).
@@ -558,6 +652,7 @@ class NotificationService {
     required String body,
     String? payload,
     String? id,
+    String? timestamp,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final rawList = prefs.getStringList('received_notifications_history') ?? [];
@@ -579,21 +674,37 @@ class NotificationService {
       title: title,
       body: body,
       payload: payload,
-      timestamp: DateTime.now().toIso8601String(),
+      timestamp: timestamp ?? DateTime.now().toIso8601String(),
     );
 
     final updatedList = <String>[jsonEncode(newItem.toJson()), ...filteredList];
 
-    if (updatedList.length > _maxReceivedHistory) {
-      updatedList.removeRange(_maxReceivedHistory, updatedList.length);
+    // Sort by timestamp descending so the most recently aired appear at the top
+    final parsedItems = <ReceivedNotificationItem>[];
+    for (final jsonStr in updatedList) {
+      try {
+        parsedItems.add(ReceivedNotificationItem.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>));
+      } catch (_) {}
     }
+    parsedItems.sort((a, b) {
+      final dateA = DateTime.tryParse(a.timestamp) ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final dateB = DateTime.tryParse(b.timestamp) ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return dateB.compareTo(dateA);
+    });
 
-    await prefs.setStringList('received_notifications_history', updatedList);
+    final sortedJsonList = parsedItems
+        .take(_maxReceivedHistory)
+        .map((e) => jsonEncode(e.toJson()))
+        .toList();
+
+    await prefs.setStringList('received_notifications_history', sortedJsonList);
     await _setHasUnread(true);
   }
 
   /// Retrieves received notifications history (most recent first, max 20).
+  /// Automatically runs promotion first so any newly fired alerts are included.
   Future<List<ReceivedNotificationItem>> getReceivedNotifications() async {
+    await promoteFiredNotifications();
     final prefs = await SharedPreferences.getInstance();
     final rawList = prefs.getStringList('received_notifications_history') ?? [];
 
@@ -641,6 +752,7 @@ class NotificationService {
 
     await _notificationsPlugin.cancel(id: id);
     await removeReceivedNotification(id.toString());
+    await _removeFromScheduledRegistry([id.toString()]);
     _lastScheduledSignature = null;
   }
 
@@ -660,6 +772,7 @@ class NotificationService {
     await _setHasUnread(false);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('received_notifications_history');
+    await prefs.remove('scheduled_notifications_registry');
   }
 
   /// Returns all currently scheduled/pending notification items for display.
@@ -741,6 +854,7 @@ class NotificationService {
     _lastScheduledSignature = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('received_notifications_history');
+    await prefs.remove('scheduled_notifications_registry');
   }
 
   /// Turns a TMDB date string into the release moment that alerts are offset
@@ -868,6 +982,9 @@ class NotificationService {
       return;
     }
 
+    // Preserve any alert that just reached or passed its fire time before rebuilding
+    await promoteFiredNotifications();
+
     final notify1HourBefore = prefs.getBool('notify_1_hour_before') ?? false;
     final now = DateTime.now();
 
@@ -942,6 +1059,18 @@ class NotificationService {
         debugPrint('Failed to schedule notification ${alert.id}: $e');
       }
     }
+
+    // Keep the scheduled registry in sync with newly scheduled items
+    final registryList = capped
+        .map((alert) => jsonEncode(_ScheduledRegistryItem(
+              id: alert.id.toString(),
+              title: alert.title,
+              body: alert.body,
+              payload: alert.payload,
+              scheduledDate: alert.when,
+            ).toJson()))
+        .toList();
+    await prefs.setStringList('scheduled_notifications_registry', registryList);
 
     _lastScheduledSignature = signature;
   }
