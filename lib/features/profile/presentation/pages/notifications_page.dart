@@ -55,6 +55,7 @@ class NotificationsPage extends StatefulWidget {
 class _NotificationsPageState extends State<NotificationsPage> {
   List<ReceivedNotificationItem> _notifications = [];
   bool _isLoading = true;
+  String? _errorMessage;
   late SarcasticEmptyState _emptyState;
 
   static const List<SarcasticEmptyState> _emptyStates = [
@@ -89,26 +90,42 @@ class _NotificationsPageState extends State<NotificationsPage> {
   void initState() {
     super.initState();
     _emptyState = _emptyStates[Random().nextInt(_emptyStates.length)];
-    NotificationService().markNotificationsAsRead();
     _fetchReceivedNotifications();
   }
 
   Future<void> _fetchReceivedNotifications() async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
-    final items = await NotificationService().getReceivedNotifications();
-    if (mounted) {
-      setState(() {
-        _notifications = items;
-        _isLoading = false;
-      });
+    try {
+      final items = await NotificationService().getReceivedNotifications();
+      if (mounted) {
+        setState(() {
+          _notifications = items;
+          _isLoading = false;
+          _errorMessage = null;
+        });
+      }
+      try {
+        await NotificationService().markNotificationsAsRead();
+      } catch (e) {
+        debugPrint('Failed to mark notifications as read: $e');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to load notifications. Please try again.';
+        });
+      }
     }
   }
 
   Future<void> _clearAllNotifications() async {
     setState(() {
       _notifications.clear();
+      _errorMessage = null;
     });
     await NotificationService().clearAllUserNotifications();
   }
@@ -168,7 +185,54 @@ class _NotificationsPageState extends State<NotificationsPage> {
           : RefreshIndicator(
               onRefresh: _fetchReceivedNotifications,
               color: AppColors.primary,
-              child: _notifications.isEmpty
+              child: _errorMessage != null
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline_rounded, size: 54.0, color: AppColors.error),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                'Could not load notifications',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                _errorMessage!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13.0,
+                                  color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              ElevatedButton.icon(
+                                onPressed: _fetchReceivedNotifications,
+                                icon: const Icon(Icons.refresh_rounded, size: 18),
+                                label: const Text('Retry'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : _notifications.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       children: [

@@ -204,6 +204,22 @@ class NotificationService {
   /// Reactive notifier for whether unread notifications exist.
   final ValueNotifier<bool> hasUnreadNotifier = ValueNotifier<bool>(false);
 
+  /// Single service-level operation queue to serialize all registry and history mutations.
+  Future<void> _operationQueue = Future<void>.value();
+
+  Future<T> _synchronized<T>(Future<T> Function() action) {
+    final completer = Completer<T>();
+    _operationQueue = _operationQueue.then((_) async {
+      try {
+        final result = await action();
+        completer.complete(result);
+      } catch (e, st) {
+        completer.completeError(e, st);
+      }
+    });
+    return completer.future;
+  }
+
   /// Initializes unread status from SharedPreferences.
   Future<void> _initUnreadStatus() async {
     final prefs = await SharedPreferences.getInstance();
@@ -253,14 +269,16 @@ class NotificationService {
     final reminderDate48h = expirationDate.subtract(const Duration(days: 2));
     final reminderDate24h = expirationDate.subtract(const Duration(days: 1));
 
+    bool allScheduled = true;
     try {
       if (reminderDate48h.isAfter(now)) {
-        await _scheduleOne(
+        final success = await _scheduleOne(
           id: _reinstallNotificationId,
           title: "⏳ 2 Days Left on Free Profile",
           body: "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
           scheduledDate: reminderDate48h,
         );
+        if (!success) allScheduled = false;
       } else if (reminderDate48h.isBefore(now) && reminderDate24h.isAfter(now)) {
         await saveReceivedNotification(
           id: _reinstallNotificationId.toString(),
@@ -270,22 +288,24 @@ class NotificationService {
       }
 
       if (reminderDate24h.isAfter(now)) {
-        await _scheduleOne(
+        final success = await _scheduleOne(
           id: _reinstallNotificationId24h,
           title: "🚨 Profile Expires Tomorrow!",
           body: "Free developer profile expires in 24 hours. Rebuild with Xcode today to keep the app working! 💻",
           scheduledDate: reminderDate24h,
         );
+        if (!success) allScheduled = false;
       } else {
         if (expirationDate.isAfter(now)) {
           const title = "🚨 Profile Expires Very Soon!";
           const body = "Free developer profile expires in less than 24 hours! Connect to Xcode and rebuild now. 💻";
-          await _scheduleOne(
+          final success = await _scheduleOne(
             id: _reinstallNotificationId24h,
             title: title,
             body: body,
             scheduledDate: now.add(const Duration(minutes: 1)),
           );
+          if (!success) allScheduled = false;
           await saveReceivedNotification(
             id: _reinstallNotificationId24h.toString(),
             title: title,
@@ -294,7 +314,9 @@ class NotificationService {
         }
       }
 
-      await prefs.setBool('reinstall_reminder_scheduled', true);
+      if (allScheduled) {
+        await prefs.setBool('reinstall_reminder_scheduled', true);
+      }
     } catch (e) {
       debugPrint('Failed to schedule reinstall reminders: $e');
     }
@@ -493,7 +515,7 @@ class NotificationService {
     );
   }
 
-  Future<void> _scheduleOne({
+  Future<bool> _scheduleOne({
     required int id,
     required String title,
     required String body,
@@ -503,7 +525,7 @@ class NotificationService {
     final now = DateTime.now();
     // Don't schedule in the past
     if (scheduledDate.isBefore(now)) {
-      return;
+      return false;
     }
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
@@ -534,17 +556,24 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: payload,
       );
+      return true;
     } catch (_) {
-      // Fallback for Android 12+ (API 31+) if exact alarm permission is revoked by system/user
-      await _notificationsPlugin.zonedSchedule(
-        id: id,
-        title: title,
-        body: body,
-        scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-        notificationDetails: platformChannelSpecifics,
-        androidScheduleMode: AndroidScheduleMode.inexact,
-        payload: payload,
-      );
+      try {
+        // Fallback for Android 12+ (API 31+) if exact alarm permission is revoked by system/user
+        await _notificationsPlugin.zonedSchedule(
+          id: id,
+          title: title,
+          body: body,
+          scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+          notificationDetails: platformChannelSpecifics,
+          androidScheduleMode: AndroidScheduleMode.inexact,
+          payload: payload,
+        );
+        return true;
+      } catch (e) {
+        debugPrint('Failed to schedule notification $id: $e');
+        return false;
+      }
     }
   }
 
@@ -553,19 +582,7 @@ class NotificationService {
 
   /// Drops one title's alerts immediately, without waiting for its watchlist
   /// stream to round-trip and trigger a reconcile.
-  ///
-  /// Reconcile would cancel these anyway once the title leaves the submitted
-  /// list; this just makes removal feel instant. The stored signature is
-  /// cleared because the platform no longer matches what reconcile last
-  /// scheduled, and without that the next run could no-op on a stale match.
-  /// Drops one title's alerts immediately, without waiting for its watchlist
-  /// stream to round-trip and trigger a reconcile.
-  ///
-  /// Reconcile would cancel these anyway once the title leaves the submitted
-  /// list; this just makes removal feel instant. The stored signature is
-  /// cleared because the platform no longer matches what reconcile last
-  /// scheduled, and without that the next run could no-op on a stale match.
-  Future<void> cancelNotification(NotificationMedia media, int id) async {
+  Future<void> cancelNotification(NotificationMedia media, int id) => _synchronized(() async {
     final dayBeforeId = _notificationId(media, id, _slotDayBefore);
     final hourBeforeId = _notificationId(media, id, _slotHourBefore);
 
@@ -578,13 +595,13 @@ class NotificationService {
 
     await _notificationsPlugin.cancel(id: dayBeforeId);
     await _notificationsPlugin.cancel(id: hourBeforeId);
-    await _removeFromScheduledRegistry([dayBeforeId.toString(), hourBeforeId.toString()]);
+    await _removeFromScheduledRegistryDirect([dayBeforeId.toString(), hourBeforeId.toString()]);
     _lastScheduledSignature = null;
-  }
+  });
 
   static const int _maxReceivedHistory = 20;
 
-  Future<void> _removeFromScheduledRegistry(List<String> idsToRemove) async {
+  Future<void> _removeFromScheduledRegistryDirect(List<String> idsToRemove) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final rawList = prefs.getStringList('scheduled_notifications_registry') ?? [];
@@ -606,7 +623,11 @@ class NotificationService {
 
   /// Scans the scheduled notifications registry and moves any alerts whose
   /// scheduled fire time has passed (<= now) into the received notifications history.
-  Future<void> promoteFiredNotifications() async {
+  Future<void> promoteFiredNotifications() => _synchronized(() async {
+    await _promoteFiredNotificationsDirect();
+  });
+
+  Future<void> _promoteFiredNotificationsDirect() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final rawList = prefs.getStringList('scheduled_notifications_registry') ?? [];
@@ -621,8 +642,9 @@ class NotificationService {
           final map = jsonDecode(jsonStr) as Map<String, dynamic>;
           final item = _ScheduledRegistryItem.fromJson(map);
           if (!item.scheduledDate.isAfter(now)) {
-            await saveReceivedNotification(
-              id: item.id,
+            final occurrenceId = '${item.id}_${item.scheduledDate.millisecondsSinceEpoch}';
+            await _saveReceivedNotificationDirect(
+              id: occurrenceId,
               title: item.title,
               body: item.body,
               payload: item.payload,
@@ -648,6 +670,22 @@ class NotificationService {
   /// Saves a notification that was received/pushed to local history.
   /// Enforces strict FIFO rule with deduplication: max 20 items (oldest evicted).
   Future<void> saveReceivedNotification({
+    required String title,
+    required String body,
+    String? payload,
+    String? id,
+    String? timestamp,
+  }) => _synchronized(() async {
+    await _saveReceivedNotificationDirect(
+      title: title,
+      body: body,
+      payload: payload,
+      id: id,
+      timestamp: timestamp,
+    );
+  });
+
+  Future<void> _saveReceivedNotificationDirect({
     required String title,
     required String body,
     String? payload,
@@ -703,8 +741,8 @@ class NotificationService {
 
   /// Retrieves received notifications history (most recent first, max 20).
   /// Automatically runs promotion first so any newly fired alerts are included.
-  Future<List<ReceivedNotificationItem>> getReceivedNotifications() async {
-    await promoteFiredNotifications();
+  Future<List<ReceivedNotificationItem>> getReceivedNotifications() => _synchronized(() async {
+    await _promoteFiredNotificationsDirect();
     final prefs = await SharedPreferences.getInstance();
     final rawList = prefs.getStringList('received_notifications_history') ?? [];
 
@@ -716,10 +754,14 @@ class NotificationService {
       } catch (_) {}
     }
     return items;
-  }
+  });
 
   /// Removes a single received notification by ID from history.
-  Future<void> removeReceivedNotification(String id) async {
+  Future<void> removeReceivedNotification(String id) => _synchronized(() async {
+    await _removeReceivedNotificationDirect(id);
+  });
+
+  Future<void> _removeReceivedNotificationDirect(String id) async {
     final prefs = await SharedPreferences.getInstance();
     final rawList = prefs.getStringList('received_notifications_history') ?? [];
     final updatedList = <String>[];
@@ -727,7 +769,7 @@ class NotificationService {
     for (final jsonStr in rawList) {
       try {
         final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-        if (map['id']?.toString() != id) {
+        if (map['id']?.toString() != id && !map['id']!.toString().startsWith('${id}_')) {
           updatedList.add(jsonStr);
         }
       } catch (_) {}
@@ -739,7 +781,7 @@ class NotificationService {
     }
   }
 
-  Future<void> cancelNotificationById(int id) async {
+  Future<void> cancelNotificationById(int id) => _synchronized(() async {
     _canceledNotificationIds.add(id);
 
     for (final list in _desired.values) {
@@ -751,29 +793,30 @@ class NotificationService {
     }
 
     await _notificationsPlugin.cancel(id: id);
-    await removeReceivedNotification(id.toString());
-    await _removeFromScheduledRegistry([id.toString()]);
+    await _removeReceivedNotificationDirect(id.toString());
+    await _removeFromScheduledRegistryDirect([id.toString()]);
     _lastScheduledSignature = null;
-  }
+  });
 
   /// Cancels platform notifications and resets the scheduled signature.
   /// Does NOT mutate _desired.
-  Future<void> cancelAllNotifications() async {
+  Future<void> cancelAllNotifications() => _synchronized(() async {
     await _notificationsPlugin.cancelAll();
     _lastScheduledSignature = null;
-  }
+  });
 
   /// Explicit user-intent clear-all flow: wipes desired titles, canceled state,
   /// platform notifications, and local history.
-  Future<void> clearAllUserNotifications() async {
+  Future<void> clearAllUserNotifications() => _synchronized(() async {
     _desired.clear();
     _canceledNotificationIds.clear();
-    await cancelAllNotifications();
+    await _notificationsPlugin.cancelAll();
+    _lastScheduledSignature = null;
     await _setHasUnread(false);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('received_notifications_history');
     await prefs.remove('scheduled_notifications_registry');
-  }
+  });
 
   /// Returns all currently scheduled/pending notification items for display.
   Future<List<ScheduledNotificationDisplayItem>> getPendingNotifications() async {
@@ -845,17 +888,17 @@ class NotificationService {
   /// Without this the previous account's watchlist keeps firing notifications
   /// on a shared device: the cubits' streams close, so nothing resubmits and
   /// nothing would otherwise cancel what is already scheduled.
-  Future<void> clearForSignOut() async {
+  Future<void> clearForSignOut() => _synchronized(() async {
     _reconcileTimer?.cancel();
     _reconcileTimer = null;
     _desired.clear();
     _canceledNotificationIds.clear();
-    await cancelAllNotifications();
+    await _notificationsPlugin.cancelAll();
     _lastScheduledSignature = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('received_notifications_history');
     await prefs.remove('scheduled_notifications_registry');
-  }
+  });
 
   /// Turns a TMDB date string into the release moment that alerts are offset
   /// back from — the alerts themselves fire a day or an hour before it.
@@ -918,7 +961,7 @@ class NotificationService {
   /// rescheduling, so two overlapping runs can interleave into one wiping the
   /// other's freshly scheduled alerts while the fingerprint records success.
   /// Overlapping calls coalesce into a single follow-up pass instead.
-  Future<void> reconcile({bool force = false}) {
+  Future<void> reconcile({bool force = false}) => _synchronized(() {
     if (_inFlight != null) {
       _rerunQueued = true;
       _rerunForce = _rerunForce || force;
@@ -927,7 +970,7 @@ class NotificationService {
     final future = _reconcileUntilSettled(force);
     _inFlight = future;
     return future;
-  }
+  });
 
   Future<void> _reconcileUntilSettled(bool force) async {
     try {
@@ -976,14 +1019,15 @@ class NotificationService {
 
     if (!permitted) {
       if (_lastScheduledSignature != 'blocked' || force) {
-        await cancelAllNotifications();
+        await _notificationsPlugin.cancelAll();
+        await prefs.remove('scheduled_notifications_registry');
         _lastScheduledSignature = 'blocked';
       }
       return;
     }
 
     // Preserve any alert that just reached or passed its fire time before rebuilding
-    await promoteFiredNotifications();
+    await _promoteFiredNotificationsDirect();
 
     final notify1HourBefore = prefs.getBool('notify_1_hour_before') ?? false;
     final now = DateTime.now();
@@ -1042,26 +1086,26 @@ class NotificationService {
     // Clear and rebuild. Cancelling wholesale is what makes stale alerts —
     // a show that stopped airing, a movie already watched — disappear without
     // each caller having to track what it previously scheduled.
-    await cancelAllNotifications();
+    await _notificationsPlugin.cancelAll();
 
+    final scheduledAlerts = <_ScheduledAlert>[];
     for (final alert in capped) {
       // Per-alert so one failure can't abort the rest. Exact alarms can be
       // revoked on Android 12+, which makes zonedSchedule throw.
-      try {
-        await _scheduleOne(
-          id: alert.id,
-          title: alert.title,
-          body: alert.body,
-          scheduledDate: alert.when,
-          payload: alert.payload,
-        );
-      } catch (e) {
-        debugPrint('Failed to schedule notification ${alert.id}: $e');
+      final success = await _scheduleOne(
+        id: alert.id,
+        title: alert.title,
+        body: alert.body,
+        scheduledDate: alert.when,
+        payload: alert.payload,
+      );
+      if (success) {
+        scheduledAlerts.add(alert);
       }
     }
 
-    // Keep the scheduled registry in sync with newly scheduled items
-    final registryList = capped
+    // Keep the scheduled registry in sync with only successfully scheduled items
+    final registryList = scheduledAlerts
         .map((alert) => jsonEncode(_ScheduledRegistryItem(
               id: alert.id.toString(),
               title: alert.title,
@@ -1072,6 +1116,9 @@ class NotificationService {
         .toList();
     await prefs.setStringList('scheduled_notifications_registry', registryList);
 
-    _lastScheduledSignature = signature;
+    // Signature matches only what was actually successfully scheduled
+    _lastScheduledSignature = scheduledAlerts
+        .map((a) => '${a.id}@${a.when.millisecondsSinceEpoch}')
+        .join(',');
   }
 }

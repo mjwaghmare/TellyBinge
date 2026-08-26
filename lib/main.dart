@@ -186,7 +186,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       return;
     }
 
-    NotificationService().promoteFiredNotifications();
+    unawaited(NotificationService().promoteFiredNotifications());
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null || uid.isEmpty) return;
