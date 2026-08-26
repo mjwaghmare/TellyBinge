@@ -3,27 +3,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../onboarding/data/onboarding_storage.dart';
 
 class SettingsState extends Equatable {
   final bool allowAdultContent;
   final bool notificationsEnabled;
   final bool notify1HourBefore;
+  final bool resetOnboarding;
 
   const SettingsState({
     this.allowAdultContent = false,
     this.notificationsEnabled = false,
     this.notify1HourBefore = false,
+    this.resetOnboarding = false,
   });
 
   SettingsState copyWith({
     bool? allowAdultContent,
     bool? notificationsEnabled,
     bool? notify1HourBefore,
+    bool? resetOnboarding,
   }) {
     return SettingsState(
       allowAdultContent: allowAdultContent ?? this.allowAdultContent,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notify1HourBefore: notify1HourBefore ?? this.notify1HourBefore,
+      resetOnboarding: resetOnboarding ?? this.resetOnboarding,
     );
   }
 
@@ -32,6 +37,7 @@ class SettingsState extends Equatable {
     allowAdultContent,
     notificationsEnabled,
     notify1HourBefore,
+    resetOnboarding,
   ];
 }
 
@@ -52,6 +58,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final notificationsEnabled =
         prefs.getBool(_notificationsEnabledKey) ?? false;
     final notify1HourBefore = prefs.getBool(_notify1HourBeforeKey) ?? false;
+    final hasSeenOnboarding = prefs.getBool(OnboardingStorage.seenKey) ?? false;
 
     tmdbClient.allowAdultContent = allowAdult;
     emit(
@@ -59,6 +66,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         allowAdultContent: allowAdult,
         notificationsEnabled: notificationsEnabled,
         notify1HourBefore: notify1HourBefore,
+        resetOnboarding: !hasSeenOnboarding,
       ),
     );
   }
@@ -97,5 +105,10 @@ class SettingsCubit extends Cubit<SettingsState> {
     // Turning this off has to actively cancel the hour-before alerts already
     // scheduled, not just stop creating new ones.
     await NotificationService().reconcile(force: true);
+  }
+
+  Future<void> toggleResetOnboarding(bool value) async {
+    await prefs.setBool(OnboardingStorage.seenKey, !value);
+    emit(state.copyWith(resetOnboarding: value));
   }
 }

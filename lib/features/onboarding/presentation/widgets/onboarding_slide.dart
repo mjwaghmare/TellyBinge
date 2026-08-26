@@ -36,16 +36,16 @@ class OnboardingSlide extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 OnboardingBadge(label: badge),
-                AppSpacing.gapH16,
-                Text(title, style: AppTextStyles.xl.copyWith(height: 1.2)),
                 AppSpacing.gapH12,
+                Text(title, style: AppTextStyles.xl.copyWith(height: 1.2)),
+                AppSpacing.gapH8,
                 Text(
                   body,
                   style: AppTextStyles.sm
                       .withColor(AppColors.textSecondary)
-                      .copyWith(height: 1.5),
+                      .copyWith(height: 1.45),
                 ),
-                AppSpacing.gapH20,
+                AppSpacing.gapH16,
                 child,
               ],
             ),

@@ -448,7 +448,11 @@ class _AuthGateState extends State<AuthGate> {
       },
       builder: (context, state) {
         if (state is Authenticated) {
-          return const ShellNavigationPage();
+          return const ShellNavigationPage(initialIndex: 0);
+        } else if (state is AuthGuest ||
+            (state is AuthLoginLoading && state.isGuest) ||
+            (state is AuthError && state.isGuest)) {
+          return const ShellNavigationPage(initialIndex: 2);
         } else if (state is Unauthenticated || state is AuthLoginLoading) {
           return const OnboardingGate();
         } else if (state is AuthError) {

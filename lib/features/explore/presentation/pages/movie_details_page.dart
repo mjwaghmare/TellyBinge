@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/action_circle_button.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
+import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
@@ -475,6 +476,14 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                             voteAverage: voteAverage,
                             genres: genres,
                           );
+                        } else {
+                          AuthRequiredBottomSheet.show(
+                            context,
+                            title: 'Sign in to Track Movies',
+                            subtitle:
+                                'Sign in to add movies to your personal watchlist.',
+                            icon: Icons.movie_filter_rounded,
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -647,69 +656,87 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                           ),
                                         ],
                                         const Spacer(),
-                                        if (uid != null) ...[
-                                          Skeleton.ignore(
-                                            child: ActionCircleButton(
-                                              isActive: isFavorite,
-                                              onTap: () {
-                                                HapticFeedback.mediumImpact();
-                                                if (isAdded) {
-                                                  context
-                                                      .read<
-                                                        MovieWatchlistCubit
-                                                      >()
-                                                      .toggleFavorite(
-                                                        uid: uid,
-                                                        movieId: widget.movieId,
-                                                        isFavorite: !isFavorite,
-                                                      );
-                                                } else {
-                                                  context
-                                                      .read<
-                                                        MovieWatchlistCubit
-                                                      >()
-                                                      .addMovie(
-                                                        uid: uid,
-                                                        movieId: widget.movieId,
-                                                        title: title,
-                                                        posterPath:
-                                                            movie['poster_path']
-                                                                as String?,
-                                                        backdropPath:
-                                                            movie['backdrop_path']
-                                                                as String?,
-                                                        releaseDate:
-                                                            releaseDate,
-                                                        runtime: runtimeMinutes,
-                                                        voteAverage:
-                                                            voteAverage,
-                                                        genres: genres,
-                                                        isFavorite: true,
-                                                      );
-                                                }
-                                              },
-                                              activeIcon: Icons.favorite,
-                                              inactiveIcon:
-                                                  Icons.favorite_border,
-                                              activeIconColor: Colors.red,
-                                              inactiveIconColor: Colors.white,
-                                              activeBgColor: Colors.grey
-                                                  .withValues(alpha: 0.3),
-                                              inactiveBgColor: Colors.grey
-                                                  .withValues(alpha: 0.3),
-                                              size: 28.0,
-                                              iconSize: 16.0,
-                                            ),
+                                        Skeleton.ignore(
+                                          child: ActionCircleButton(
+                                            isActive: isFavorite,
+                                            onTap: () {
+                                              HapticFeedback.mediumImpact();
+                                              if (uid == null) {
+                                                AuthRequiredBottomSheet.show(
+                                                  context,
+                                                  title: 'Sign in to Track Movies',
+                                                  subtitle:
+                                                      'Sign in to favorite and track movies you want to watch.',
+                                                  icon: Icons.movie_filter_rounded,
+                                                );
+                                                return;
+                                              }
+                                              if (isAdded) {
+                                                context
+                                                    .read<
+                                                      MovieWatchlistCubit
+                                                    >()
+                                                    .toggleFavorite(
+                                                      uid: uid,
+                                                      movieId: widget.movieId,
+                                                      isFavorite: !isFavorite,
+                                                    );
+                                              } else {
+                                                context
+                                                    .read<
+                                                      MovieWatchlistCubit
+                                                    >()
+                                                    .addMovie(
+                                                      uid: uid,
+                                                      movieId: widget.movieId,
+                                                      title: title,
+                                                      posterPath:
+                                                          movie['poster_path']
+                                                              as String?,
+                                                      backdropPath:
+                                                          movie['backdrop_path']
+                                                              as String?,
+                                                      releaseDate:
+                                                          releaseDate,
+                                                      runtime: runtimeMinutes,
+                                                      voteAverage:
+                                                          voteAverage,
+                                                      genres: genres,
+                                                      isFavorite: true,
+                                                    );
+                                              }
+                                            },
+                                            activeIcon: Icons.favorite,
+                                            inactiveIcon:
+                                                Icons.favorite_border,
+                                            activeIconColor: Colors.red,
+                                            inactiveIconColor: Colors.white,
+                                            activeBgColor: Colors.grey
+                                                .withValues(alpha: 0.3),
+                                            inactiveBgColor: Colors.grey
+                                                .withValues(alpha: 0.3),
+                                            size: 28.0,
+                                            iconSize: 16.0,
                                           ),
-                                          if (released)
-                                            const SizedBox(width: 12),
-                                        ],
-                                        if (released && uid != null)
+                                        ),
+                                        if (released)
+                                          const SizedBox(width: 12),
+                                        if (released)
                                           Skeleton.ignore(
                                             child: ActionCircleButton(
                                               isActive: isWatched,
                                               onTap: () {
                                                 HapticFeedback.mediumImpact();
+                                                if (uid == null) {
+                                                  AuthRequiredBottomSheet.show(
+                                                    context,
+                                                    title: 'Sign in to Track Movies',
+                                                    subtitle:
+                                                        'Sign in to track movies you have watched.',
+                                                    icon: Icons.check_circle_outline_rounded,
+                                                  );
+                                                  return;
+                                                }
                                                 if (isAdded) {
                                                   context
                                                       .read<

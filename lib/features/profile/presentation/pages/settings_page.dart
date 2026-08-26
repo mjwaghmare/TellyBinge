@@ -157,6 +157,39 @@ class SettingsPage extends StatelessWidget {
             },
           ),
           Divider(color: Theme.of(context).dividerColor, height: 32),
+          _buildSectionHeader(context, 'Testing'),
+          BlocBuilder<SettingsCubit, SettingsState>(
+            builder: (context, state) {
+              return SwitchListTile.adaptive(
+                secondary: Icon(
+                  Icons.restart_alt_rounded,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+                title: Text(
+                  'Reset Onboarding',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  'Show onboarding screen again after sign out',
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                    fontSize: 13,
+                  ),
+                ),
+                value: state.resetOnboarding,
+                onChanged: (bool value) {
+                  HapticFeedback.lightImpact();
+                  context.read<SettingsCubit>().toggleResetOnboarding(value);
+                },
+              );
+            },
+          ),
+          Divider(color: Theme.of(context).dividerColor, height: 32),
           _buildSectionHeader(context, 'Account'),
           ListTile(
             leading: const Icon(

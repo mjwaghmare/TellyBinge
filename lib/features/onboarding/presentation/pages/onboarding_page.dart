@@ -24,18 +24,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
     StatsSlide(),
   ];
 
-  /// Fades the poster wall into the canvas. Steeper than the login screen's:
-  /// onboarding copy starts much higher up the page.
+  /// Fades the poster wall into the canvas so the top half reveals the poster grid
+  /// while the lower half sits on solid background color, matching the login screen.
   static final LinearGradient _scrim = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
       AppColors.background.withValues(alpha: 0.35),
-      AppColors.background.withValues(alpha: 0.8),
+      AppColors.background.withValues(alpha: 0.75),
       AppColors.background,
       AppColors.background,
     ],
-    stops: const [0.0, 0.16, 0.32, 1.0],
+    stops: const [0.0, 0.34, 0.58, 1.0],
   );
 
   final PageController _controller = PageController();
