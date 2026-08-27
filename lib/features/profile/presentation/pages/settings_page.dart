@@ -614,7 +614,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Are you sure you want to sign out from your Popverse account? Your local data will remain saved.',
+                  'Are you sure you want to sign out from your Popverse account?',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.sm.copyWith(
                     color: isLight
