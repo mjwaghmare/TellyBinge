@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -17,6 +18,7 @@ import 'features/show_details/presentation/cubit/show_details_cubit.dart';
 import 'features/show_details/presentation/pages/show_details_page.dart';
 import 'features/explore/presentation/pages/movie_details_page.dart';
 import 'core/storage/settings_storage.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/cubit/theme_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,6 +27,7 @@ import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/auth/presentation/cubit/auth_state.dart';
+import 'features/auth/presentation/widgets/login_poster_wall.dart';
 import 'features/onboarding/presentation/pages/onboarding_gate.dart';
 import 'features/search/presentation/cubit/search_cubit.dart';
 import 'features/search/presentation/cubit/tv_status_cubit.dart';
@@ -471,33 +474,66 @@ class _AuthGateState extends State<AuthGate> {
           return const OnboardingGate();
         } else {
           // Loading states: keep showing the splash screen UI seamlessly
-          return Scaffold(
-            body: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF0D0D0D),
-                image: DecorationImage(
-                  image: AssetImage('assets/splash_background.jpg'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: Hero(
-                      tag: 'app_logo',
-                      child: Image.asset(
-                        'assets/images/splash_logo.png',
-                        width: 160,
-                        height: 160,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
+          return const _SplashScreen();
         }
       },
+    );
+  }
+}
+
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  static final _vignetteGradient = RadialGradient(
+    center: Alignment.center,
+    radius: 1.1,
+    colors: [
+      Colors.transparent,
+      AppColors.background.withValues(alpha: 0.2),
+      AppColors.background.withValues(alpha: 0.85),
+    ],
+    stops: const [0.35, 0.7, 1.0],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: AppColors.darkBackground,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const LoginPosterWall(),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.background.withValues(alpha: 0.35),
+              ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: _vignetteGradient,
+              ),
+            ),
+            Center(
+              child: Hero(
+                tag: 'app_logo',
+                child: Image.asset(
+                  'assets/images/splash_logo.png',
+                  width: 160,
+                  height: 160,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

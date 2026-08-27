@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
@@ -35,6 +36,13 @@ class AppTheme {
         backgroundColor: appBarBg,
         elevation: 0,
         centerTitle: false,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+          systemNavigationBarColor: AppColors.darkBackground,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
         iconTheme: IconThemeData(color: AppColors.textPrimary),
         titleTextStyle: TextStyle(
           fontSize: 20.0,
@@ -159,6 +167,13 @@ class AppTheme {
         backgroundColor: appBarBg,
         elevation: 0,
         centerTitle: false,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+          systemNavigationBarColor: AppColors.lightBackground,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
         iconTheme: IconThemeData(color: AppColors.lightTextPrimary),
         titleTextStyle: TextStyle(
           fontSize: 20.0,
