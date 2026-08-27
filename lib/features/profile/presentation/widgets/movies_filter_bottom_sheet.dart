@@ -228,7 +228,12 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                           });
                         },
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.white54),
+                          side: BorderSide(
+                            color: context.adaptiveColor(
+                              light: Colors.grey.shade400,
+                              dark: Colors.white54,
+                            ),
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppSpacing.xl),
                           ),

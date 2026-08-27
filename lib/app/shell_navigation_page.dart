@@ -217,14 +217,17 @@ class _CustomGlowBottomBar extends StatelessWidget {
                 right: 0,
                 child: Container(
                   height: 1,
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: context.isLight
+                      ? AppColors.borderLight
+                      : Colors.white.withValues(alpha: 0.05),
                 ),
               ),
 
               Row(
                 children: [
-                  _buildNavItem(0, 'Shows', Icons.tv_outlined, Icons.tv),
+                  _buildNavItem(context, 0, 'Shows', Icons.tv_outlined, Icons.tv),
                   _buildNavItem(
+                    context,
                     1,
                     'Movies',
                     Icons.movie_filter_outlined,
@@ -232,12 +235,14 @@ class _CustomGlowBottomBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 60), // Space for central FAB
                   _buildNavItem(
+                    context,
                     2,
                     'Explore',
                     Icons.search_outlined,
                     Icons.search,
                   ),
                   _buildNavItem(
+                    context,
                     3,
                     'Profile',
                     Icons.person_outline_rounded,
@@ -253,6 +258,7 @@ class _CustomGlowBottomBar extends StatelessWidget {
   }
 
   Widget _buildNavItem(
+    BuildContext context,
     int index,
     String label,
     IconData icon,
@@ -301,7 +307,7 @@ class _CustomGlowBottomBar extends StatelessWidget {
                   isSelected ? activeIcon : icon,
                   color: isSelected
                       ? AppColors.primary
-                      : AppColors.textTertiary,
+                      : context.textTertiary,
                   size: 24,
                 ),
                 const SizedBox(height: 4),
@@ -310,7 +316,7 @@ class _CustomGlowBottomBar extends StatelessWidget {
                   style: TextStyle(
                     color: isSelected
                         ? AppColors.primary
-                        : AppColors.textTertiary,
+                        : context.textTertiary,
                     fontSize: 11,
                     fontWeight: isSelected
                         ? FontWeight.w500

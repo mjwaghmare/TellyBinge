@@ -75,6 +75,15 @@ class AppColors {
 
   static Color heatmapEmpty(BuildContext context) =>
       isLight(context) ? heatmapEmptyLight : heatmapEmptyDark;
+
+  static Color textPrimaryColor(BuildContext context) =>
+      isLight(context) ? lightTextPrimary : textPrimary;
+
+  static Color textSecondaryColor(BuildContext context) =>
+      isLight(context) ? lightTextSecondary : textSecondary;
+
+  static Color textTertiaryColor(BuildContext context) =>
+      isLight(context) ? lightTextTertiary : textTertiary;
 }
 
 extension BuildContextColorX on BuildContext {
@@ -83,4 +92,12 @@ extension BuildContextColorX on BuildContext {
 
   Color adaptiveColor({required Color light, required Color dark}) =>
       isLight ? light : dark;
+
+  Color get textPrimary =>
+      isLight ? AppColors.lightTextPrimary : AppColors.textPrimary;
+  Color get textSecondary =>
+      isLight ? AppColors.lightTextSecondary : AppColors.textSecondary;
+  Color get textTertiary =>
+      isLight ? AppColors.lightTextTertiary : AppColors.textTertiary;
 }
+

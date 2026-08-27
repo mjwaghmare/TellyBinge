@@ -69,7 +69,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Divider(color: Colors.white24, height: 1, thickness: 0.5),
+            Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 0.5),
 
             // Profile Photo Row
             Padding(
@@ -105,7 +105,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ],
               ),
             ),
-            Divider(color: Colors.white24, height: 1, thickness: 0.5),
+            Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 0.5),
 
             // Display Name
             Padding(
@@ -146,7 +146,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ],
               ),
             ),
-            Divider(color: Colors.white24, height: 1, thickness: 0.5),
+            Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 0.5),
 
             // Personal Information Section
             Padding(
@@ -170,7 +170,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             _buildStaticField('Birth year', '1993'),
             _buildStaticField('Gender', 'Male'),
 
-            Divider(color: Colors.white24, height: 1, thickness: 0.5),
+            Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 0.5),
           ],
         ),
       ),

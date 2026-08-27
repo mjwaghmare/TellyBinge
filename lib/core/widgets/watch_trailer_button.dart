@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import '../theme/app_colors.dart';
 
 class WatchTrailerButton extends StatelessWidget {
   final Map<String, dynamic> trailer;
@@ -114,10 +115,10 @@ class WatchTrailerButton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Watch trailer',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: context.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -128,7 +129,7 @@ class WatchTrailerButton extends StatelessWidget {
                         trailer['site'] as String? ??
                         'Trailer',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: context.textSecondary,
                       fontSize: 12,
                     ),
                     maxLines: 1,
@@ -139,7 +140,7 @@ class WatchTrailerButton extends StatelessWidget {
                     Text(
                       _formatDate(trailer['published_at'] as String),
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: context.textTertiary,
                         fontSize: 11,
                       ),
                     ),

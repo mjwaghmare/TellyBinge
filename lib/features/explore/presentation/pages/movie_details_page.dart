@@ -259,10 +259,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             appBar: AppBar(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               leading: IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.arrow_back_ios_new,
                   size: 22,
-                  color: Colors.white,
+                  color: context.textPrimary,
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -280,10 +280,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 32),
-                    const Text(
+                    Text(
                       'Oops! Something went wrong',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.textPrimary,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -293,8 +293,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                     AppSpacing.gapH12,
                     Text(
                       userFriendlyError,
-                      style: const TextStyle(
-                        color: AppColors.textTertiary,
+                      style: TextStyle(
+                        color: context.textSecondary,
                         fontSize: 15,
                         height: 1.4,
                       ),
@@ -537,86 +537,112 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                           pinned: true,
                           actions: [
                             if (isAdded && uid != null)
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.more_horiz,
-                                  size: 28,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () => _showMoreActions(
-                                  context: context,
-                                  uid: uid,
-                                  isWatched: isWatched,
-                                  released: released,
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    padding: EdgeInsets.zero,
+                                    icon: const Icon(
+                                      Icons.more_horiz,
+                                      size: 24,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () => _showMoreActions(
+                                      context: context,
+                                      uid: uid,
+                                      isWatched: isWatched,
+                                      released: released,
+                                    ),
+                                  ),
                                 ),
                               ),
                           ],
-                          flexibleSpace: FlexibleSpaceBar(
-                            centerTitle: false,
-                            titlePadding: const EdgeInsets.only(
-                              left: 16,
-                              bottom: 4,
-                              right: 48,
-                            ),
-                            title: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                          flexibleSpace: LayoutBuilder(
+                            builder: (BuildContext context, BoxConstraints constraints) {
+                              final top = constraints.biggest.height;
+                              final isCollapsed = top <=
+                                  MediaQuery.paddingOf(context).top +
+                                      kToolbarHeight +
+                                      30;
+                              final titleColor = isCollapsed
+                                  ? context.textPrimary
+                                  : Colors.white;
+                              final genresColor = isCollapsed
+                                  ? context.textSecondary
+                                  : Colors.white.withValues(alpha: 0.8);
+
+                              return FlexibleSpaceBar(
+                                centerTitle: false,
+                                titlePadding: EdgeInsets.only(
+                                  left: isCollapsed ? 60 : 16,
+                                  bottom: 4,
+                                  right: 48,
                                 ),
-                                if (genres.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    genres,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.8,
+                                title: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      title,
+                                      style: TextStyle(
+                                        color: titleColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
                                       ),
-                                      fontSize: 10,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ],
-                            ),
-                            background: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                if (backdropPath != null &&
-                                    backdropPath.isNotEmpty)
-                                  CachedNetworkImage(
-                                    imageUrl: _getImageUrl(backdropPath),
-                                    fit: BoxFit.cover,
-                                    errorWidget: (context, url, error) =>
-                                        Container(color: Colors.grey[900]),
-                                  )
-                                else
-                                  Container(color: Colors.grey[900]),
-                                const DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.black45,
-                                        Colors.transparent,
-                                        Colors.black,
-                                      ],
-                                      stops: [0.0, 0.4, 1.0],
-                                    ),
-                                  ),
+                                    if (genres.isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        genres,
+                                        style: TextStyle(
+                                          color: genresColor,
+                                          fontSize: 10,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                              ],
-                            ),
+                                background: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    if (backdropPath != null &&
+                                        backdropPath.isNotEmpty)
+                                      CachedNetworkImage(
+                                        imageUrl: _getImageUrl(backdropPath),
+                                        fit: BoxFit.cover,
+                                        errorWidget: (context, url, error) =>
+                                            Container(color: Colors.grey[900]),
+                                      )
+                                    else
+                                      Container(color: Colors.grey[900]),
+                                    const DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.black45,
+                                            Colors.transparent,
+                                            Colors.black,
+                                          ],
+                                          stops: [0.0, 0.4, 1.0],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                         ),
                         SliverToBoxAdapter(
@@ -632,36 +658,36 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   children: [
                                     Row(
                                       children: [
-                                        const Icon(
+                                        Icon(
                                           Icons.calendar_today,
-                                          color: Colors.white54,
+                                          color: context.textTertiary,
                                           size: 14,
                                         ),
                                         const SizedBox(width: 6),
                                         Text(
                                           _formatDate(releaseDate),
-                                          style: const TextStyle(
-                                            color: Colors.white70,
+                                          style: TextStyle(
+                                            color: context.textSecondary,
                                             fontSize: 14,
                                           ),
                                         ),
                                         if (runtime.isNotEmpty) ...[
-                                          const Padding(
-                                            padding: EdgeInsets.symmetric(
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
                                               horizontal: 8,
                                             ),
                                             child: Text(
                                               '•',
                                               style: TextStyle(
-                                                color: Colors.white54,
+                                                color: context.textTertiary,
                                                 fontSize: 14,
                                               ),
                                             ),
                                           ),
                                           Text(
                                             runtime,
-                                            style: const TextStyle(
-                                              color: Colors.white54,
+                                            style: TextStyle(
+                                              color: context.textTertiary,
                                               fontSize: 14,
                                             ),
                                           ),
@@ -721,11 +747,15 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             inactiveIcon:
                                                 Icons.favorite_border,
                                             activeIconColor: Colors.red,
-                                            inactiveIconColor: Colors.white,
-                                            activeBgColor: Colors.grey
-                                                .withValues(alpha: 0.3),
-                                            inactiveBgColor: Colors.grey
-                                                .withValues(alpha: 0.3),
+                                            inactiveIconColor: context.isLight
+                                                ? AppColors.lightTextSecondary
+                                                : Colors.white,
+                                            activeBgColor: context.isLight
+                                                ? Colors.grey.withValues(alpha: 0.15)
+                                                : Colors.grey.withValues(alpha: 0.3),
+                                            inactiveBgColor: context.isLight
+                                                ? Colors.grey.withValues(alpha: 0.15)
+                                                : Colors.grey.withValues(alpha: 0.3),
                                             size: 28.0,
                                             iconSize: 16.0,
                                           ),
@@ -786,11 +816,13 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                               activeIcon: Icons.check,
                                               inactiveIcon: Icons.check,
                                               activeIconColor: Colors.white,
-                                              inactiveIconColor: Colors.white,
-                                              activeBgColor: Colors.green
-                                                  .withValues(alpha: 0.8),
-                                              inactiveBgColor: Colors.grey
-                                                  .withValues(alpha: 0.3),
+                                              inactiveIconColor: context.isLight
+                                                  ? AppColors.lightTextSecondary
+                                                  : Colors.white,
+                                              activeBgColor: AppColors.brandGreen,
+                                              inactiveBgColor: context.isLight
+                                                  ? Colors.grey.withValues(alpha: 0.15)
+                                                  : Colors.grey.withValues(alpha: 0.3),
                                               size: 28.0,
                                               iconSize: 18.0,
                                             ),
@@ -801,9 +833,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       AppSpacing.gapH8,
                                       Row(
                                         children: [
-                                          const Icon(
+                                          Icon(
                                             Icons.remove_red_eye_outlined,
-                                            color: Colors.greenAccent,
+                                            color: context.isLight
+                                                ? const Color(0xFF2E7D32)
+                                                : Colors.greenAccent,
                                             size: 14,
                                           ),
                                           AppSpacing.gapW4,
@@ -811,9 +845,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             watchedAtStr != null
                                                 ? _formatDate(watchedAtStr)
                                                 : 'Watched',
-                                            style: const TextStyle(
-                                              color: Colors.greenAccent,
+                                            style: TextStyle(
+                                              color: context.isLight
+                                                  ? const Color(0xFF2E7D32)
+                                                  : Colors.greenAccent,
                                               fontSize: 13,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ],
@@ -822,18 +859,18 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   ],
                                 ),
                                 AppSpacing.gapH16,
-                                const Divider(
-                                  color: Colors.white24,
+                                Divider(
+                                  color: Theme.of(context).dividerColor,
                                   height: 1,
                                   thickness: 0.5,
                                 ),
                                 AppSpacing.gapH16,
 
                                 // Movie Info Section
-                                const Text(
+                                Text(
                                   'Movie info',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: context.textPrimary,
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -850,8 +887,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     const SizedBox(width: 4),
                                     Text(
                                       '${voteAverage.toStringAsFixed(1)} / 10',
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: context.textPrimary,
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -859,8 +896,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     AppSpacing.gapW8,
                                     Text(
                                       '(${_formatVoteCount(voteCount)})',
-                                      style: const TextStyle(
-                                        color: Colors.white54,
+                                      style: TextStyle(
+                                        color: context.textTertiary,
                                         fontSize: 13,
                                       ),
                                     ),
@@ -870,16 +907,16 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.language,
-                                        color: Colors.white54,
+                                        color: context.textTertiary,
                                         size: 14,
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
                                         'Language: $language',
-                                        style: const TextStyle(
-                                          color: Colors.white70,
+                                        style: TextStyle(
+                                          color: context.textSecondary,
                                           fontSize: 13,
                                         ),
                                       ),
@@ -890,16 +927,16 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 if (overview.isNotEmpty)
                                   Text(
                                     overview,
-                                    style: const TextStyle(
-                                      color: Colors.white70,
+                                    style: TextStyle(
+                                      color: context.textPrimary,
                                       fontSize: 14,
                                       height: 1.5,
                                     ),
                                   ),
                                 if (trailer != null) ...[
                                   const SizedBox(height: AppSpacing.lg),
-                                  const Divider(
-                                    color: Colors.white24,
+                                  Divider(
+                                    color: Theme.of(context).dividerColor,
                                     height: 1,
                                     thickness: 0.5,
                                   ),
@@ -910,8 +947,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   ),
                                 ],
                                 const SizedBox(height: AppSpacing.lg),
-                                const Divider(
-                                  color: Colors.white24,
+                                Divider(
+                                  color: Theme.of(context).dividerColor,
                                   height: 1,
                                   thickness: 0.5,
                                 ),
@@ -919,10 +956,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
 
                                 // Cast Section
                                 if (cast.isNotEmpty) ...[
-                                  const Text(
+                                  Text(
                                     'Cast',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: context.textPrimary,
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -964,16 +1001,16 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 // Franchise Collection Parts
                                 if (!widget.fromRecommendation &&
                                     visibleCollectionParts.isNotEmpty) ...[
-                                  const Divider(
-                                    color: Colors.white24,
+                                  Divider(
+                                    color: Theme.of(context).dividerColor,
                                     height: 1,
                                     thickness: 0.5,
                                   ),
                                   const SizedBox(height: AppSpacing.lg),
                                   Text(
                                     collectionSectionTitle,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: context.textPrimary,
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -1018,16 +1055,16 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 // Similar Movie Recommendations
                                 if (!widget.fromRecommendation &&
                                     visibleSimilarMovies.isNotEmpty) ...[
-                                  const Divider(
-                                    color: Colors.white24,
+                                  Divider(
+                                    color: Theme.of(context).dividerColor,
                                     height: 1,
                                     thickness: 0.5,
                                   ),
                                   const SizedBox(height: AppSpacing.lg),
-                                  const Text(
+                                  Text(
                                     'More Like This',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: context.textPrimary,
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -1143,7 +1180,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
       width: 120,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: Colors.white10,
+        color: context.adaptiveColor(
+          light: AppColors.lightSurfaceElevated,
+          dark: Colors.white10,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -1156,9 +1196,19 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               height: 180,
               fit: BoxFit.cover,
               errorWidget: (context, url, error) => Container(
-                color: Colors.grey[800],
-                child: const Center(
-                  child: Icon(Icons.person, color: Colors.white24, size: 40),
+                color: context.adaptiveColor(
+                  light: Colors.grey[300]!,
+                  dark: Colors.grey[800]!,
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.person,
+                    color: context.adaptiveColor(
+                      light: Colors.grey[500]!,
+                      dark: Colors.white24,
+                    ),
+                    size: 40,
+                  ),
                 ),
               ),
             )
@@ -1166,9 +1216,19 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             Container(
               width: 120,
               height: 180,
-              color: Colors.grey[800],
-              child: const Center(
-                child: Icon(Icons.person, color: Colors.white24, size: 40),
+              color: context.adaptiveColor(
+                light: Colors.grey[300]!,
+                dark: Colors.grey[800]!,
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.person,
+                  color: context.adaptiveColor(
+                    light: Colors.grey[500]!,
+                    dark: Colors.white24,
+                  ),
+                  size: 40,
+                ),
               ),
             ),
           // Gradient for text readability
@@ -1298,26 +1358,34 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   Container(
                     height: 140,
                     width: 100,
-                    color: AppColors.surfaceLight,
+                    color: context.adaptiveColor(
+                      light: Colors.grey[300]!,
+                      dark: AppColors.surfaceLight,
+                    ),
                     child: hasImage
                         ? CachedNetworkImage(
                             imageUrl: _getImageUrl(posterPath, size: 'w185'),
                             fit: BoxFit.cover,
                             placeholder: (context, url) =>
-                                Container(color: AppColors.surfaceLight),
-                            errorWidget: (context, url, error) => const Center(
+                                Container(
+                                  color: context.adaptiveColor(
+                                    light: Colors.grey[300]!,
+                                    dark: AppColors.surfaceLight,
+                                  ),
+                                ),
+                            errorWidget: (context, url, error) => Center(
                               child: Icon(
                                 Icons.movie_creation_outlined,
                                 size: 24,
-                                color: AppColors.textTertiary,
+                                color: context.textTertiary,
                               ),
                             ),
                           )
-                        : const Center(
+                        : Center(
                             child: Icon(
                               Icons.movie_creation_outlined,
                               size: 24,
-                              color: AppColors.textTertiary,
+                              color: context.textTertiary,
                             ),
                           ),
                   ),
@@ -1374,8 +1442,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.textPrimary,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -1389,35 +1457,35 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   const SizedBox(width: 3),
                   Text(
                     voteAverage.toStringAsFixed(1),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10.0,
-                      color: AppColors.textSecondary,
+                      color: context.textSecondary,
                     ),
                   ),
                   if (year.isNotEmpty) ...[
                     const SizedBox(width: 4),
-                    const Text(
+                    Text(
                       '•',
                       style: TextStyle(
                         fontSize: 10.0,
-                        color: AppColors.textSecondary,
+                        color: context.textTertiary,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       year,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10.0,
-                        color: AppColors.textSecondary,
+                        color: context.textSecondary,
                       ),
                     ),
                   ],
                 ] else if (year.isNotEmpty) ...[
                   Text(
                     year,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10.0,
-                      color: AppColors.textSecondary,
+                      color: context.textSecondary,
                     ),
                   ),
                 ],

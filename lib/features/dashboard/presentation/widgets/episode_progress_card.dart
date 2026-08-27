@@ -136,9 +136,10 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       isScrollControlled: true,
       builder: (sheetContext) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surfaceDarkAlt,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).bottomSheetTheme.backgroundColor ??
+                (context.isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceDarkAlt),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
@@ -148,7 +149,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.isLight ? Colors.black26 : Colors.white24,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -160,7 +161,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   color: AppColors.error.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.stop_circle_outlined,
                   color: AppColors.error,
                   size: 28,
@@ -170,7 +171,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
               Text(
                 'Stop Watching?',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: context.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -179,16 +180,16 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: context.textSecondary,
                     fontSize: 13,
                     height: 1.5,
                   ),
                   children: [
                     TextSpan(
                       text: showName,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -223,7 +224,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
+                  child: const Text(
                     'STOP WATCHING',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -239,10 +240,10 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                 height: 44,
                 child: TextButton(
                   onPressed: () => Navigator.pop(sheetContext),
-                  child: const Text(
+                  child: Text(
                     'Cancel',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: context.textSecondary,
                       fontSize: 15,
                     ),
                   ),

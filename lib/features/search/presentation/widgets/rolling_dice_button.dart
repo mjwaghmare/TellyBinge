@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 
+import '../../../../core/theme/app_colors.dart';
+
 class RollingDiceButton extends StatefulWidget {
   final bool isRolling;
   final VoidCallback onPressed;
@@ -77,10 +79,10 @@ class _RollingDiceButtonState extends State<RollingDiceButton>
                   }
                 },
                 errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
+                  return Icon(
                     Icons.casino,
                     size: 34,
-                    color: Colors.white,
+                    color: Theme.of(context).iconTheme.color ?? AppColors.primary,
                   );
                 },
               ),

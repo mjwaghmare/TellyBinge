@@ -208,10 +208,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   children: [
                     Image.asset('assets/images/error_devices.png', width: 140, height: 140, fit: BoxFit.contain),
                     const SizedBox(height: 32),
-                    const Text(
+                    Text(
                       'Oops! Something went wrong',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.textPrimary,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -221,7 +221,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     AppSpacing.gapH12,
                     Text(
                       userFriendlyError,
-                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 15, height: 1.4),
+                      style: TextStyle(color: context.textSecondary, fontSize: 15, height: 1.4),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
@@ -354,9 +354,21 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     }
                   }
                   if (isTracked && uid != null) {
-                    return IconButton(
-                      icon: const Icon(Icons.more_horiz, size: 28, color: Colors.white),
-                      onPressed: () => _showMoreActions(context: context, uid: uid, isStopped: isStopped),
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.more_horiz, size: 24, color: Colors.white),
+                          onPressed: () => _showMoreActions(context: context, uid: uid, isStopped: isStopped),
+                        ),
+                      ),
                     );
                   }
                   return const SizedBox.shrink();
@@ -384,10 +396,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     colors: [
                       Colors.black54,
                       Colors.transparent,
-                      Colors.transparent,
-                      Theme.of(context).scaffoldBackgroundColor,
+                      Colors.black.withValues(alpha: 0.85),
                     ],
-                    stops: [0.0, 0.3, 0.6, 1.0],
+                    stops: const [0.0, 0.4, 1.0],
                   ),
                 ),
               ),
@@ -1080,14 +1091,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             children: [
                               Text(
                                 name,
-                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: context.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(width: 8),
                               Icon(
                                 (_expandedSeasons[seasonNumber] ?? false)
                                     ? Icons.keyboard_arrow_up
                                     : Icons.keyboard_arrow_down,
-                                color: Colors.white,
+                                color: context.textPrimary,
                                 size: 20,
                               ),
                             ],
@@ -1097,7 +1108,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             children: [
                               Text(
                                 '$watchedCount/$epCount',
-                                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                style: TextStyle(color: context.textSecondary, fontSize: 13),
                               ),
                               if (hasAnyReleased) ...[
                                 const SizedBox(width: 12),
@@ -1238,7 +1249,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surfaceDarkAlt,
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ??
+          (context.isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceDarkAlt),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (context) {
         return SafeArea(
@@ -1255,11 +1267,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     height: 220,
                     width: double.infinity,
                     errorWidget: (context, url, error) =>
-                        const SizedBox(height: 220, child: Icon(Icons.tv, size: 50, color: AppColors.textTertiary)),
+                        SizedBox(height: 220, child: Icon(Icons.tv, size: 50, color: context.textTertiary)),
                   ),
                 )
               else
-                const SizedBox(height: 100, child: Icon(Icons.tv, size: 50, color: AppColors.textTertiary)),
+                SizedBox(height: 100, child: Icon(Icons.tv, size: 50, color: context.textTertiary)),
 
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
@@ -1275,7 +1287,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             children: [
                               Text(
                                 name,
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimary),
                                 maxLines: 2,
                               ),
                               if (voteCount > 0) ...[
@@ -1286,9 +1298,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                     const SizedBox(width: 4),
                                     Text(
                                       '${voteAverage.toStringAsFixed(1)}/10 ($voteCount)',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 13,
-                                        color: AppColors.textTertiary,
+                                        color: context.textTertiary,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -1299,16 +1311,16 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           ),
                         ),
                         AppSpacing.gapW12,
-                        Text(airDate, style: const TextStyle(fontSize: 14, color: AppColors.textTertiary)),
+                        Text(airDate, style: TextStyle(fontSize: 14, color: context.textTertiary)),
                       ],
                     ),
                     AppSpacing.gapH16,
                     if (overview.isNotEmpty)
-                      Text(overview, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5))
+                      Text(overview, style: TextStyle(fontSize: 14, color: context.textSecondary, height: 1.5))
                     else
-                      const Text(
+                      Text(
                         'No description available.',
-                        style: TextStyle(fontSize: 14, color: AppColors.textTertiary, fontStyle: FontStyle.italic),
+                        style: TextStyle(fontSize: 14, color: context.textTertiary, fontStyle: FontStyle.italic),
                       ),
                   ],
                 ),
@@ -1422,10 +1434,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     children: [
                       Text(
                         '$seasonLabel | $episodeLabel',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15.0,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: context.textPrimary,
                           letterSpacing: 0.3,
                         ),
                       ),
@@ -1434,14 +1446,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13.0, color: AppColors.textSecondary),
+                        style: TextStyle(fontSize: 13.0, color: context.textSecondary),
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today, size: 11, color: AppColors.textTertiary),
+                          Icon(Icons.calendar_today, size: 11, color: context.textTertiary),
                           const SizedBox(width: 4),
-                          Text(airDate, style: const TextStyle(fontSize: 11.0, color: AppColors.textTertiary)),
+                          Text(airDate, style: TextStyle(fontSize: 11.0, color: context.textTertiary)),
                         ],
                       ),
                       BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
@@ -1474,11 +1486,19 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             padding: const EdgeInsets.only(top: 4.0),
                             child: Row(
                               children: [
-                                const Icon(Icons.remove_red_eye_outlined, color: Colors.greenAccent, size: 11),
+                                Icon(
+                                  Icons.remove_red_eye_outlined,
+                                  color: context.isLight ? const Color(0xFF2E7D32) : Colors.greenAccent,
+                                  size: 11,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   watchedAtStr != null ? _formatDate(watchedAtStr) : 'Watched',
-                                  style: const TextStyle(color: Colors.greenAccent, fontSize: 11.0),
+                                  style: TextStyle(
+                                    color: context.isLight ? const Color(0xFF2E7D32) : Colors.greenAccent,
+                                    fontSize: 11.0,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1553,14 +1573,15 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                     showDialog(
                                       context: context,
                                       builder: (ctx) => AlertDialog(
-                                        backgroundColor: AppColors.surface,
-                                        title: const Text(
+                                        backgroundColor: Theme.of(context).dialogTheme.backgroundColor ??
+                                             Theme.of(context).colorScheme.surface,
+                                        title: Text(
                                           'Mark Previous Episodes?',
-                                          style: TextStyle(color: Colors.white),
+                                          style: TextStyle(color: context.textPrimary),
                                         ),
                                         content: Text(
                                           'You have ${unwatchedPrev.length} unwatched previous episodes. Would you like to mark them as watched too?',
-                                          style: const TextStyle(color: AppColors.textSecondary),
+                                          style: TextStyle(color: context.textSecondary),
                                         ),
                                         actions: [
                                           TextButton(
@@ -1589,9 +1610,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                 }
                                               }
                                             },
-                                            child: const Text(
+                                            child: Text(
                                               'No, just this one',
-                                              style: TextStyle(color: AppColors.textTertiary),
+                                              style: TextStyle(color: context.textTertiary),
                                             ),
                                           ),
                                           TextButton(
@@ -1660,11 +1681,22 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isWatched ? Colors.green : Colors.transparent,
-                                border: Border.all(color: isWatched ? Colors.green : Colors.white38, width: 2),
+                                border: Border.all(
+                                  color: isWatched
+                                      ? Colors.green
+                                      : (context.isLight ? Colors.grey[400]! : Colors.white38),
+                                  width: 2,
+                                ),
                               ),
                               child: isLoadingThisEp
                                   ? const CircularProgressIndicator.adaptive()
-                                  : Icon(Icons.check, size: 20, color: isWatched ? Colors.white : Colors.white38),
+                                  : Icon(
+                                      Icons.check,
+                                      size: 20,
+                                      color: isWatched
+                                          ? Colors.white
+                                          : (context.isLight ? Colors.grey[400] : Colors.white38),
+                                    ),
                             ),
                           );
                         },
@@ -1679,8 +1711,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       Text(
                         '${daysUntilRelease > 0 ? daysUntilRelease : 1}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.textPrimary,
                           fontSize: 20.0,
                           fontWeight: FontWeight.bold,
                           height: 1.0,
@@ -1690,7 +1722,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       Text(
                         (daysUntilRelease > 0 ? daysUntilRelease : 1) == 1 ? 'DAY' : 'DAYS',
                         textAlign: TextAlign.right,
-                        style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.0, letterSpacing: 1.0),
+                        style: TextStyle(color: context.textTertiary, fontSize: 10.0, letterSpacing: 1.0),
                       ),
                     ],
                   ),
