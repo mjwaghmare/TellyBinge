@@ -448,60 +448,34 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         final authState = context.read<AuthCubit>().state;
                         final uid = authState is Authenticated ? authState.user.uid : null;
 
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            if (uid != null) ...[
-                              ActionCircleButton(
-                                isActive: isFavorite,
-                                onTap: () {
-                                  HapticFeedback.mediumImpact();
-                                  if (isAdded) {
-                                    context.read<TvShowWatchlistCubit>().toggleFavorite(
-                                      uid: uid,
-                                      showId: widget.mediaId,
-                                      isFavorite: !isFavorite,
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(
-                                      context,
-                                    ).showSnackBar(const SnackBar(content: Text('Add show to watchlist first')));
-                                  }
-                                },
-                                activeIcon: Icons.favorite,
-                                inactiveIcon: Icons.favorite_border,
-                                activeIconColor: Colors.red,
-                                inactiveIconColor: Colors.white,
-                                activeBgColor: Colors.grey.withValues(alpha: 0.3),
-                                inactiveBgColor: Colors.grey.withValues(alpha: 0.3),
-                                size: 28.0,
-                                iconSize: 16.0,
-                              ),
-                              AppSpacing.gapH8,
-                            ],
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.yellow,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                  child: Image.asset('assets/images/splash_logo.png', height: 16, width: 16),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${(voteAverage * 10).toInt()}%',
-                                  style: const TextStyle(
-                                    color: Colors.yellow,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14.0,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                        if (uid == null) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return ActionCircleButton(
+                          isActive: isFavorite,
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            if (isAdded) {
+                              context.read<TvShowWatchlistCubit>().toggleFavorite(
+                                uid: uid,
+                                showId: widget.mediaId,
+                                isFavorite: !isFavorite,
+                              );
+                            } else {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(const SnackBar(content: Text('Add show to watchlist first')));
+                            }
+                          },
+                          activeIcon: Icons.favorite,
+                          inactiveIcon: Icons.favorite_border,
+                          activeIconColor: Colors.red,
+                          inactiveIconColor: Colors.white,
+                          activeBgColor: Colors.grey.withValues(alpha: 0.3),
+                          inactiveBgColor: Colors.grey.withValues(alpha: 0.3),
+                          size: 28.0,
+                          iconSize: 16.0,
                         );
                       },
                     ),
