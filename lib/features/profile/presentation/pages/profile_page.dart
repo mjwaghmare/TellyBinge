@@ -905,7 +905,7 @@ class _ProfilePageState extends State<ProfilePage>
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
-                                    foregroundColor: Colors.black,
+                                    foregroundColor: AppColors.textOnPrimary,
                                     elevation: isShowFilterActive ? 0 : 4,
                                     side: isShowFilterActive
                                         ? BorderSide(
@@ -1030,7 +1030,7 @@ class _ProfilePageState extends State<ProfilePage>
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
-                                    foregroundColor: Colors.black,
+                                    foregroundColor: AppColors.textOnPrimary,
                                     elevation: isMovieFilterActive ? 0 : 4,
                                     side: isMovieFilterActive
                                         ? BorderSide(
@@ -1516,8 +1516,12 @@ class _ProfilePageState extends State<ProfilePage>
                       imageUrl: item.imageUrl,
                       fit: BoxFit.cover,
                       memCacheWidth: 360,
-                      placeholder: (context, url) =>
-                          Container(color: AppColors.surface),
+                      placeholder: (context, url) => Container(
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                            ? Colors.grey[200]
+                            : AppColors.surface,
+                      ),
                       errorWidget: (context, url, error) => Container(
                         color:
                             Theme.of(context).brightness == Brightness.light

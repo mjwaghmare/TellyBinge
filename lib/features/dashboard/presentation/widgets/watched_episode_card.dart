@@ -135,7 +135,19 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                           ),
                         ),
                       )
-                    : Container(color: AppColors.surfaceLight),
+                    : Container(
+                        color: context.adaptiveColor(
+                          light: Colors.grey[200]!,
+                          dark: AppColors.surfaceLight,
+                        ),
+                        child: Icon(
+                          Icons.tv,
+                          color: context.adaptiveColor(
+                            light: Colors.grey[500]!,
+                            dark: AppColors.textTertiary,
+                          ),
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: 12),

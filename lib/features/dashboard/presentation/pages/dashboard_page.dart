@@ -651,7 +651,7 @@ class DashboardPageState extends State<DashboardPage> {
                 onPressed: widget.onNavigateToExplore,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.black,
+                  foregroundColor: AppColors.textOnPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),

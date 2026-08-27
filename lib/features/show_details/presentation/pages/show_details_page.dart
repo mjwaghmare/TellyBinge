@@ -229,7 +229,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       onPressed: () => context.read<ShowDetailsCubit>().loadDetails(widget.mediaId, widget.mediaType),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.black,
+                        foregroundColor: AppColors.textOnPrimary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.xl)),
                         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.sm),
                       ),
@@ -691,25 +691,56 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                           ? CachedNetworkImage(
                                               imageUrl: _getImageUrl(posterPath),
                                               fit: BoxFit.cover,
-                                              placeholder: (context, url) => Container(color: AppColors.surfaceLight),
+                                              placeholder: (context, url) => Container(
+                                                color: context.adaptiveColor(
+                                                  light: Colors.grey[200]!,
+                                                  dark: AppColors.surfaceLight,
+                                                ),
+                                              ),
                                               errorWidget: (context, url, error) => Container(
-                                                color: AppColors.surfaceLight,
-                                                child: const Center(
-                                                  child: Icon(Icons.movie_outlined, color: Colors.white24, size: 40),
+                                                color: context.adaptiveColor(
+                                                  light: Colors.grey[200]!,
+                                                  dark: AppColors.surfaceLight,
+                                                ),
+                                                child: Center(
+                                                  child: Icon(
+                                                    Icons.movie_outlined,
+                                                    color: context.adaptiveColor(
+                                                      light: Colors.grey[500]!,
+                                                      dark: Colors.white24,
+                                                    ),
+                                                    size: 40,
+                                                  ),
                                                 ),
                                               ),
                                             )
                                           : Container(
-                                              color: AppColors.surfaceLight,
-                                              padding: const EdgeInsets.all(8),
+                                              color: context.adaptiveColor(
+                                                light: Colors.grey[200]!,
+                                                dark: AppColors.surfaceLight,
+                                              ),
+                                              padding: const EdgeInsets.all(AppSpacing.xs),
                                               child: Column(
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
-                                                  const Icon(Icons.movie_outlined, color: Colors.white24, size: 40),
+                                                  Icon(
+                                                    Icons.movie_outlined,
+                                                    color: context.adaptiveColor(
+                                                      light: Colors.grey[500]!,
+                                                      dark: Colors.white24,
+                                                    ),
+                                                    size: 40,
+                                                  ),
                                                   const SizedBox(height: 8),
                                                   Text(
                                                     item['name'] ?? '',
-                                                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                                    style: TextStyle(
+                                                      color: context.adaptiveColor(
+                                                        light: AppColors.lightTextSecondary,
+                                                        dark: Colors.white70,
+                                                      ),
+                                                      fontSize: 11,
+                                                    ),
                                                     maxLines: 2,
                                                     textAlign: TextAlign.center,
                                                     overflow: TextOverflow.ellipsis,
@@ -976,7 +1007,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.black,
+          foregroundColor: AppColors.textOnPrimary,
           padding: const EdgeInsets.symmetric(vertical: 12.0),
         ),
         child: const Text('Add to Watchlist'),
@@ -1070,8 +1101,16 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: (_expandedSeasons[seasonNumber] ?? false) ? Colors.transparent : AppColors.surface,
+                      color: (_expandedSeasons[seasonNumber] ?? false)
+                          ? Colors.transparent
+                          : context.adaptiveColor(
+                              light: AppColors.lightSurface,
+                              dark: AppColors.surface,
+                            ),
                       borderRadius: BorderRadius.circular(8),
+                      border: context.isLight && !(_expandedSeasons[seasonNumber] ?? false)
+                          ? Border.all(color: AppColors.borderLight)
+                          : null,
                     ),
                     clipBehavior: Clip.hardEdge,
                     child: Stack(
@@ -1154,12 +1193,22 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                     height: 32,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: allReleasedWatched ? AppColors.brandGreen : AppColors.borderLight,
+                                      color: allReleasedWatched
+                                          ? AppColors.brandGreen
+                                          : context.adaptiveColor(
+                                              light: Colors.grey[300]!,
+                                              dark: AppColors.borderDark,
+                                            ),
                                     ),
                                     child: Icon(
                                       Icons.check,
                                       size: 20,
-                                      color: allReleasedWatched ? Colors.white : Colors.grey[400],
+                                      color: allReleasedWatched
+                                          ? Colors.white
+                                          : context.adaptiveColor(
+                                              light: Colors.grey[600]!,
+                                              dark: Colors.grey[400]!,
+                                            ),
                                     ),
                                   ),
                                 ),
@@ -1350,9 +1399,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     }
 
     if (episodes.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(AppSpacing.md),
-        child: Text('No episodes listed for this season.', style: TextStyle(color: AppColors.textTertiary)),
+      return Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Text('No episodes listed for this season.', style: TextStyle(color: context.textTertiary)),
       );
     }
 
@@ -1394,7 +1443,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
         return Container(
           margin: const EdgeInsets.only(left: 2.0, right: 2.0, bottom: 10.0),
-          decoration: BoxDecoration(color: AppColors.surfaceDarkAlt, borderRadius: BorderRadius.circular(8.0)),
+          decoration: BoxDecoration(
+            color: context.adaptiveColor(
+              light: AppColors.lightSurface,
+              dark: AppColors.surfaceDarkAlt,
+            ),
+            borderRadius: BorderRadius.circular(8.0),
+            border: context.isLight ? Border.all(color: AppColors.borderLight) : null,
+          ),
           clipBehavior: Clip.hardEdge,
           child: InkWell(
             onTap: () => _showEpisodeDetailsBottomSheet(
@@ -1415,15 +1471,24 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 Container(
                   width: 90,
                   height: 90,
-                  color: AppColors.surfaceLight,
+                  color: context.adaptiveColor(
+                    light: Colors.grey[200]!,
+                    dark: AppColors.surfaceLight,
+                  ),
                   child: stillPath != null && stillPath.isNotEmpty
                       ? CachedNetworkImage(
                           imageUrl: _getImageUrl(stillPath, size: 'w300'),
                           fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: context.adaptiveColor(
+                              light: Colors.grey[200]!,
+                              dark: AppColors.surfaceLight,
+                            ),
+                          ),
                           errorWidget: (context, url, error) =>
-                              const Center(child: Icon(Icons.tv, size: 24, color: AppColors.textTertiary)),
+                              Center(child: Icon(Icons.tv, size: 24, color: context.textTertiary)),
                         )
-                      : const Center(child: Icon(Icons.tv, size: 24, color: AppColors.textTertiary)),
+                      : Center(child: Icon(Icons.tv, size: 24, color: context.textTertiary)),
                 ),
                 const SizedBox(width: 14),
                 // Episode info

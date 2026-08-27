@@ -474,7 +474,7 @@ class MoviesPageState extends State<MoviesPage> {
                 onPressed: widget.onNavigateToExplore,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.black,
+                  foregroundColor: AppColors.textOnPrimary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
                 child: Text('ADD MOVIES', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
@@ -669,8 +669,13 @@ class MoviesPageState extends State<MoviesPage> {
                                     color: Theme.of(context).brightness == Brightness.light
                                         ? Colors.grey[200]
                                         : AppColors.surfaceLight,
-                                    child: const Skeleton.ignore(
-                                      child: Icon(Icons.movie_outlined, color: AppColors.textTertiary),
+                                    child: Skeleton.ignore(
+                                      child: Icon(
+                                        Icons.movie_outlined,
+                                        color: Theme.of(context).brightness == Brightness.light
+                                            ? Colors.grey[500]
+                                            : AppColors.textTertiary,
+                                      ),
                                     ),
                                   ),
                                   placeholder: (context, url) => Container(
@@ -697,8 +702,13 @@ class MoviesPageState extends State<MoviesPage> {
                                   color: Theme.of(context).brightness == Brightness.light
                                       ? Colors.grey[200]
                                       : AppColors.surfaceLight,
-                                  child: const Skeleton.ignore(
-                                    child: Icon(Icons.movie_outlined, color: AppColors.textTertiary),
+                                  child: Skeleton.ignore(
+                                    child: Icon(
+                                      Icons.movie_outlined,
+                                      color: Theme.of(context).brightness == Brightness.light
+                                          ? Colors.grey[400]
+                                          : AppColors.textTertiary,
+                                    ),
                                   ),
                                 ),
                         ),
@@ -1116,7 +1126,10 @@ class MoviesPageState extends State<MoviesPage> {
                   )
                 : Container(
                     color: Theme.of(context).brightness == Brightness.light ? Colors.grey[200] : AppColors.surfaceLight,
-                    child: Icon(Icons.movie_creation_outlined, color: AppColors.textTertiary),
+                    child: Icon(
+                      Icons.movie_creation_outlined,
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.grey[500] : AppColors.textTertiary,
+                    ),
                   ),
             if (item['releaseDate'] != null) ...[
               Positioned(

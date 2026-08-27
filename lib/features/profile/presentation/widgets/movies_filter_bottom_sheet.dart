@@ -271,7 +271,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                         child: Text(
                           'APPLY',
                           style: TextStyle(
-                            color: Colors.black,
+                            color: AppColors.textOnPrimary,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),

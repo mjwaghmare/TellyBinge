@@ -455,7 +455,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                             child: Text(
                               'APPLY',
                               style: TextStyle(
-                                color: Colors.black,
+                                color: AppColors.textOnPrimary,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
                               ),
@@ -499,7 +499,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 color: AppColors.primary,
               ),
               padding: const EdgeInsets.all(4),
-              child: Icon(Icons.check, size: 16, color: Colors.black),
+              child: const Icon(Icons.check, size: 16, color: Colors.white),
             )
           : Container(
               width: 24,

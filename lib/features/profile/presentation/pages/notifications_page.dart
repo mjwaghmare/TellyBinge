@@ -222,7 +222,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 label: const Text('Retry'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.black,
+                                  foregroundColor: AppColors.textOnPrimary,
                                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 ),

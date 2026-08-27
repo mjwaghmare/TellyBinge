@@ -272,7 +272,7 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
                         child: Text(
                           'APPLY',
                           style: TextStyle(
-                            color: Colors.black,
+                            color: AppColors.textOnPrimary,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),

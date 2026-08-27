@@ -309,7 +309,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.black,
+                        foregroundColor: AppColors.textOnPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppSpacing.xl),
                         ),
@@ -580,8 +580,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                               return FlexibleSpaceBar(
                                 centerTitle: false,
                                 titlePadding: EdgeInsets.only(
-                                  left: isCollapsed ? 60 : 16,
-                                  bottom: 4,
+                                  left: isCollapsed ? 60 : AppSpacing.md,
+                                  bottom: isCollapsed
+                                      ? AppSpacing.sm
+                                      : AppSpacing.md,
                                   right: 48,
                                 ),
                                 title: Column(
