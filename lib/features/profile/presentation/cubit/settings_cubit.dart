@@ -9,12 +9,14 @@ class SettingsState extends Equatable {
   final bool allowAdultContent;
   final bool notificationsEnabled;
   final bool notify1HourBefore;
+  final bool notify1DayBefore;
   final bool resetOnboarding;
 
   const SettingsState({
     this.allowAdultContent = false,
     this.notificationsEnabled = false,
     this.notify1HourBefore = false,
+    this.notify1DayBefore = true,
     this.resetOnboarding = false,
   });
 
@@ -22,12 +24,14 @@ class SettingsState extends Equatable {
     bool? allowAdultContent,
     bool? notificationsEnabled,
     bool? notify1HourBefore,
+    bool? notify1DayBefore,
     bool? resetOnboarding,
   }) {
     return SettingsState(
       allowAdultContent: allowAdultContent ?? this.allowAdultContent,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notify1HourBefore: notify1HourBefore ?? this.notify1HourBefore,
+      notify1DayBefore: notify1DayBefore ?? this.notify1DayBefore,
       resetOnboarding: resetOnboarding ?? this.resetOnboarding,
     );
   }
@@ -37,6 +41,7 @@ class SettingsState extends Equatable {
     allowAdultContent,
     notificationsEnabled,
     notify1HourBefore,
+    notify1DayBefore,
     resetOnboarding,
   ];
 }
@@ -47,6 +52,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const String _adultContentKey = 'allow_adult_content';
   static const String _notificationsEnabledKey = 'notifications_enabled';
   static const String _notify1HourBeforeKey = 'notify_1_hour_before';
+  static const String _notify1DayBeforeKey = 'notify_1_day_before';
 
   SettingsCubit({required this.prefs, required this.tmdbClient})
     : super(const SettingsState()) {
@@ -58,6 +64,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final notificationsEnabled =
         prefs.getBool(_notificationsEnabledKey) ?? false;
     final notify1HourBefore = prefs.getBool(_notify1HourBeforeKey) ?? false;
+    final notify1DayBefore = prefs.getBool(_notify1DayBeforeKey) ?? true;
     final hasSeenOnboarding = prefs.getBool(OnboardingStorage.seenKey) ?? false;
 
     tmdbClient.allowAdultContent = allowAdult;
@@ -66,6 +73,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         allowAdultContent: allowAdult,
         notificationsEnabled: notificationsEnabled,
         notify1HourBefore: notify1HourBefore,
+        notify1DayBefore: notify1DayBefore,
         resetOnboarding: !hasSeenOnboarding,
       ),
     );
@@ -104,6 +112,12 @@ class SettingsCubit extends Cubit<SettingsState> {
     emit(state.copyWith(notify1HourBefore: value));
     // Turning this off has to actively cancel the hour-before alerts already
     // scheduled, not just stop creating new ones.
+    await NotificationService().reconcile(force: true);
+  }
+
+  Future<void> toggleNotify1DayBefore(bool value) async {
+    await prefs.setBool(_notify1DayBeforeKey, value);
+    emit(state.copyWith(notify1DayBefore: value));
     await NotificationService().reconcile(force: true);
   }
 

@@ -91,19 +91,41 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               BlocBuilder<SettingsCubit, SettingsState>(
                 builder: (context, settingsState) {
-                  return _SettingsTile(
-                    icon: Icons.notifications_none_rounded,
-                    title: 'Push Notifications',
-                    subtitle: 'Get updates about new releases and more',
-                    trailing: Switch.adaptive(
-                      value: settingsState.notificationsEnabled,
-                      activeTrackColor: AppColors.primary,
-                      activeThumbColor: Colors.white,
-                      onChanged: (value) {
-                        HapticFeedback.lightImpact();
-                        context.read<SettingsCubit>().toggleNotifications(value);
-                      },
-                    ),
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _SettingsTile(
+                        icon: Icons.notifications_none_rounded,
+                        title: 'Push Notifications',
+                        subtitle: 'Get alerted 1 hour before releases',
+                        trailing: Switch.adaptive(
+                          value: settingsState.notificationsEnabled,
+                          activeTrackColor: AppColors.primary,
+                          activeThumbColor: Colors.white,
+                          onChanged: (value) {
+                            HapticFeedback.lightImpact();
+                            context.read<SettingsCubit>().toggleNotifications(value);
+                          },
+                        ),
+                      ),
+                      if (settingsState.notificationsEnabled) ...[
+                        _buildDivider(),
+                        _SettingsTile(
+                          icon: Icons.calendar_today_outlined,
+                          title: '1 Day Before Release',
+                          subtitle: 'Get an extra reminder 24 hours in advance',
+                          trailing: Switch.adaptive(
+                            value: settingsState.notify1DayBefore,
+                            activeTrackColor: AppColors.primary,
+                            activeThumbColor: Colors.white,
+                            onChanged: (value) {
+                              HapticFeedback.lightImpact();
+                              context.read<SettingsCubit>().toggleNotify1DayBefore(value);
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
                   );
                 },
               ),

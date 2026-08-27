@@ -840,6 +840,8 @@ class NotificationService {
     }
 
     // 2. Supplement with desired notifications from watchlists
+    final prefs = await SharedPreferences.getInstance();
+    final notify1DayBefore = prefs.getBool('notify_1_day_before') ?? true;
     final now = DateTime.now();
     for (final entry in _desired.entries) {
       final media = entry.key;
@@ -848,21 +850,42 @@ class NotificationService {
         final releaseDate = _resolveReleaseDate(pending.releaseDateStr);
         if (releaseDate == null) continue;
 
-        final dayBefore = releaseDate.subtract(const Duration(days: 1));
-        if (dayBefore.isAfter(now)) {
-          final id = _notificationId(media, pending.mediaId, _slotDayBefore);
+        // Primary alert: 1 hour before release
+        final hourBefore = releaseDate.subtract(const Duration(hours: 1));
+        if (hourBefore.isAfter(now)) {
+          final id = _notificationId(media, pending.mediaId, _slotHourBefore);
           itemsById.putIfAbsent(
             id,
             () => ScheduledNotificationDisplayItem(
               id: id,
-              title: '${pending.title} (Tomorrow)',
-              body: pending.body.replaceAll('{time}', 'tomorrow'),
+              title: '${pending.title} (In 1 Hour)',
+              body: pending.body.replaceAll('{time}', 'in 1 hour'),
               payload: _deepLinkFor(media, pending.mediaId),
               media: media,
               mediaId: pending.mediaId,
-              scheduledDate: dayBefore,
+              scheduledDate: hourBefore,
             ),
           );
+        }
+
+        // Optional advance alert: 1 day before release
+        if (notify1DayBefore) {
+          final dayBefore = releaseDate.subtract(const Duration(days: 1));
+          if (dayBefore.isAfter(now)) {
+            final id = _notificationId(media, pending.mediaId, _slotDayBefore);
+            itemsById.putIfAbsent(
+              id,
+              () => ScheduledNotificationDisplayItem(
+                id: id,
+                title: '${pending.title} (Tomorrow)',
+                body: pending.body.replaceAll('{time}', 'tomorrow'),
+                payload: _deepLinkFor(media, pending.mediaId),
+                media: media,
+                mediaId: pending.mediaId,
+                scheduledDate: dayBefore,
+              ),
+            );
+          }
         }
       }
     }
@@ -1029,7 +1052,7 @@ class NotificationService {
     // Preserve any alert that just reached or passed its fire time before rebuilding
     await _promoteFiredNotificationsDirect();
 
-    final notify1HourBefore = prefs.getBool('notify_1_hour_before') ?? false;
+    final notify1DayBefore = prefs.getBool('notify_1_day_before') ?? true;
     final now = DateTime.now();
 
     // Expand every title into its alerts, dropping anything already past.
@@ -1040,33 +1063,32 @@ class NotificationService {
         final releaseDate = _resolveReleaseDate(pending.releaseDateStr);
         if (releaseDate == null) continue;
 
-        // The default alert lands a day ahead so there is runway to plan around
-        // the release. A title added after that moment has passed simply gets
-        // no day-before alert — the hour-before one, if enabled, still fires.
-        final dayBefore = releaseDate.subtract(const Duration(days: 1));
-        final dayBeforeId = _notificationId(pending.media, pending.mediaId, _slotDayBefore);
-        if (dayBefore.isAfter(now) && !_canceledNotificationIds.contains(dayBeforeId)) {
+        // Primary alert: 1 hour before release
+        final hourBefore = releaseDate.subtract(const Duration(hours: 1));
+        final hourBeforeId = _notificationId(pending.media, pending.mediaId, _slotHourBefore);
+        if (hourBefore.isAfter(now) && !_canceledNotificationIds.contains(hourBeforeId)) {
           alerts.add(
             _ScheduledAlert(
-              id: dayBeforeId,
-              title: '${pending.title} (Tomorrow)',
-              body: pending.body.replaceAll('{time}', 'tomorrow'),
-              when: dayBefore,
+              id: hourBeforeId,
+              title: '${pending.title} (In 1 Hour)',
+              body: pending.body.replaceAll('{time}', 'in 1 hour'),
+              when: hourBefore,
               payload: _deepLinkFor(pending.media, pending.mediaId),
             ),
           );
         }
 
-        if (notify1HourBefore) {
-          final hourBefore = releaseDate.subtract(const Duration(hours: 1));
-          final hourBeforeId = _notificationId(pending.media, pending.mediaId, _slotHourBefore);
-          if (hourBefore.isAfter(now) && !_canceledNotificationIds.contains(hourBeforeId)) {
+        // Optional advance alert: 1 day before release
+        if (notify1DayBefore) {
+          final dayBefore = releaseDate.subtract(const Duration(days: 1));
+          final dayBeforeId = _notificationId(pending.media, pending.mediaId, _slotDayBefore);
+          if (dayBefore.isAfter(now) && !_canceledNotificationIds.contains(dayBeforeId)) {
             alerts.add(
               _ScheduledAlert(
-                id: hourBeforeId,
-                title: '${pending.title} (In 1 Hour)',
-                body: pending.body.replaceAll('{time}', 'in 1 hour'),
-                when: hourBefore,
+                id: dayBeforeId,
+                title: '${pending.title} (Tomorrow)',
+                body: pending.body.replaceAll('{time}', 'tomorrow'),
+                when: dayBefore,
                 payload: _deepLinkFor(pending.media, pending.mediaId),
               ),
             );
