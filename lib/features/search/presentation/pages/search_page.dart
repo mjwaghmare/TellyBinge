@@ -1218,7 +1218,7 @@ class _SearchPageState extends State<SearchPage>
                         // Rating & Release Date row
                         Row(
                           children: [
-                            if (voteAverage > 0.0) ...[
+                            if (voteAverage >= 1.0) ...[
                               Icon(
                                 Icons.star,
                                 color: AppColors.primary,
