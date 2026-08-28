@@ -52,19 +52,43 @@ class AppColors {
   // 6. Heatmap Activity Tokens
   static const Color heatmapEmptyLight = Color(0xFFEBEDF0);
   static const Color heatmapEmptyDark = Color(0xFF161B22);
-  static const List<Color> heatmapGreenScale = [
-    Color(0xFF0E4429),
-    Color(0xFF006D32),
-    Color(0xFF26A641),
-    Color(0xFF39D353),
+
+  // Green scale: Light mode (soft pastel to rich deep forest green)
+  static const List<Color> heatmapGreenScaleLight = [
+    Color(0xFF9BE9A8), // Level 1: Soft pastel green
+    Color(0xFF40C463), // Level 2: Fresh vibrant green
+    Color(0xFF219653), // Level 3: Rich medium green
+    Color(0xFF14532D), // Level 4: Deep forest green
   ];
-  static const List<Color> heatmapVioletScale = [
-    Color(0xFF1E1B4B),
-    Color(0xFF5B21B6),
-    Color(0xFF7C3AED),
-    primary,
+
+  // Green scale: Dark mode (deep muted to bright glowing green)
+  static const List<Color> heatmapGreenScaleDark = [
+    Color(0xFF0E4429), // Level 1: Deep muted green
+    Color(0xFF006D32), // Level 2: Dark green
+    Color(0xFF26A641), // Level 3: Medium green
+    Color(0xFF39D353), // Level 4: Glowing neon green
   ];
-  static const List<Color> heatmapYellowScale = heatmapVioletScale;
+
+  // Violet scale: Light mode (soft lavender to rich deep purple)
+  static const List<Color> heatmapVioletScaleLight = [
+    Color(0xFFDDD6FE), // Level 1: Soft lavender
+    Color(0xFFA78BFA), // Level 2: Medium violet
+    Color(0xFF7C3AED), // Level 3: Vivid purple
+    Color(0xFF4C1D95), // Level 4: Deep royal purple
+  ];
+
+  // Violet scale: Dark mode (deep muted to bright glowing violet)
+  static const List<Color> heatmapVioletScaleDark = [
+    Color(0xFF2E1065), // Level 1: Deep muted violet
+    Color(0xFF5B21B6), // Level 2: Deep purple
+    Color(0xFF7C3AED), // Level 3: Vivid purple
+    Color(0xFFA78BFA), // Level 4: Glowing light violet
+  ];
+
+  // Compatibility aliases
+  static const List<Color> heatmapGreenScale = heatmapGreenScaleDark;
+  static const List<Color> heatmapVioletScale = heatmapVioletScaleDark;
+  static const List<Color> heatmapYellowScale = heatmapVioletScaleDark;
 
   // Dynamic Theme Helpers
   static bool isLight(BuildContext context) =>
@@ -75,6 +99,12 @@ class AppColors {
 
   static Color heatmapEmpty(BuildContext context) =>
       isLight(context) ? heatmapEmptyLight : heatmapEmptyDark;
+
+  static List<Color> heatmapGreen(BuildContext context) =>
+      isLight(context) ? heatmapGreenScaleLight : heatmapGreenScaleDark;
+
+  static List<Color> heatmapViolet(BuildContext context) =>
+      isLight(context) ? heatmapVioletScaleLight : heatmapVioletScaleDark;
 
   static Color textPrimaryColor(BuildContext context) =>
       isLight(context) ? lightTextPrimary : textPrimary;

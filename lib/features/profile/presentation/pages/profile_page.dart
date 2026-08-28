@@ -2139,10 +2139,13 @@ class _ProfilePageState extends State<ProfilePage>
         final int totalSlots = offset + daysInMonth;
 
         final List<Color> activeLegendColors = _heatmapPageIndex == 0
-            ? [AppColors.heatmapEmpty(context), ...AppColors.heatmapGreenScale]
+            ? [
+                AppColors.heatmapEmpty(context),
+                ...AppColors.heatmapGreen(context),
+              ]
             : [
                 AppColors.heatmapEmpty(context),
-                ...AppColors.heatmapYellowScale,
+                ...AppColors.heatmapViolet(context),
               ];
 
         final showShimmer = isLoading || _isLocalLoading;
@@ -2396,8 +2399,8 @@ class _ProfilePageState extends State<ProfilePage>
   }) {
     final bool isLight = Theme.of(context).brightness == Brightness.light;
     final List<Color> colorScale = isMovies
-        ? [AppColors.heatmapEmpty(context), ...AppColors.heatmapYellowScale]
-        : [AppColors.heatmapEmpty(context), ...AppColors.heatmapGreenScale];
+        ? [AppColors.heatmapEmpty(context), ...AppColors.heatmapViolet(context)]
+        : [AppColors.heatmapEmpty(context), ...AppColors.heatmapGreen(context)];
 
     return Column(
       mainAxisSize: MainAxisSize.min,
