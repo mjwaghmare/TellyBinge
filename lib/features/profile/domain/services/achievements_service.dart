@@ -465,7 +465,8 @@ class AchievementsService {
       final datesMap = s['episodeWatchedDates'] as Map?;
       for (final ep in episodes) {
         final epKey = ep.toString();
-        final epDateStr = datesMap != null ? datesMap[epKey] as String? : null;
+        final rawVal = datesMap?[epKey];
+        final epDateStr = rawVal is String ? rawVal : null;
         final dt = _parseDate(epDateStr ?? s['addedAt']);
         if (dt != null && _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
           return true;
@@ -505,7 +506,8 @@ class AchievementsService {
       final datesMap = s['episodeWatchedDates'] as Map?;
       for (final ep in episodes) {
         final epKey = ep.toString();
-        final epDateStr = datesMap != null ? datesMap[epKey] as String? : null;
+        final rawVal = datesMap?[epKey];
+        final epDateStr = rawVal is String ? rawVal : null;
         final dt = _parseDate(epDateStr ?? s['addedAt']);
         if (dt != null) {
           final key = _dayKey(dt);
@@ -525,7 +527,8 @@ class AchievementsService {
       final Map<String, int> showDayCounts = {};
       for (final ep in episodes) {
         final epKey = ep.toString();
-        final epDateStr = datesMap != null ? datesMap[epKey] as String? : null;
+        final rawVal = datesMap?[epKey];
+        final epDateStr = rawVal is String ? rawVal : null;
         final dt = _parseDate(epDateStr ?? s['addedAt']);
         if (dt != null) {
           final key = _dayKey(dt);
@@ -617,7 +620,8 @@ class AchievementsService {
       final datesMap = s['episodeWatchedDates'] as Map?;
       for (final ep in episodes) {
         final epKey = ep.toString();
-        final epDateStr = datesMap != null ? datesMap[epKey] as String? : null;
+        final rawVal = datesMap?[epKey];
+        final epDateStr = rawVal is String ? rawVal : null;
         final dt = _parseDate(epDateStr ?? s['addedAt']);
         if (dt != null) activeDays.add(_dayKey(dt));
       }
@@ -657,7 +661,8 @@ class AchievementsService {
       final datesMap = s['episodeWatchedDates'] as Map?;
       for (final ep in episodes) {
         final epKey = ep.toString();
-        final epDateStr = datesMap != null ? datesMap[epKey] as String? : null;
+        final rawVal = datesMap?[epKey];
+        final epDateStr = rawVal is String ? rawVal : null;
         final dt = _parseDate(epDateStr ?? s['addedAt']);
         if (dt != null) activeDays.add(_dayKey(dt));
       }
@@ -710,7 +715,10 @@ class AchievementsService {
 
   // ── UTILITIES ──
   static DateTime? _parseDate(dynamic value) {
-    if (value is String) return DateTime.tryParse(value);
+    if (value is String) {
+      final dt = DateTime.tryParse(value);
+      return dt?.toLocal();
+    }
     return null;
   }
 

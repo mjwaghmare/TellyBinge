@@ -19,7 +19,7 @@ class AchievementsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(create: (_) => AchievementsCubit(), child: const _AchievementsView());
+    return const _AchievementsView();
   }
 }
 
@@ -38,13 +38,7 @@ class _AchievementsViewState extends State<_AchievementsView> {
   }
 
   void _evaluateAchievements() {
-    final movieState = context.read<MovieWatchlistCubit>().state;
-    final showState = context.read<TvShowWatchlistCubit>().state;
-
-    final movies = movieState is MovieWatchlistSuccess ? movieState.movies : <Map<String, dynamic>>[];
-    final shows = showState is TvShowWatchlistSuccess ? showState.shows : <Map<String, dynamic>>[];
-
-    context.read<AchievementsCubit>().evaluate(movies: movies, shows: shows);
+    AchievementsCubit.evaluateFromContext(context, notify: true);
   }
 
   @override
@@ -249,42 +243,53 @@ class _AchievementGridTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLight = context.isLight;
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Badge circle
-          _buildBadgeCircle(isLight),
-          const SizedBox(height: AppSpacing.xs),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Derive badge diameter responsively from available tile constraints,
+        // leaving enough vertical room for text and spacing
+        const textReserve = 34.0;
+        const spacing = AppSpacing.xs;
+        final maxH = (constraints.maxHeight - textReserve - spacing).clamp(48.0, 96.0);
+        final maxW = (constraints.maxWidth - AppSpacing.xs).clamp(48.0, 96.0);
+        final badgeSize = maxH < maxW ? maxH : maxW;
 
-          // Title
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
-            child: Text(
-              achievement.title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.xsMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: achievement.isUnlocked
-                    ? (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary)
-                    : (isLight ? AppColors.lightTextTertiary : AppColors.textTertiary),
-                fontSize: 12,
-                height: 1.2,
+        return GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Badge circle
+              _buildBadgeCircle(isLight, badgeSize),
+              const SizedBox(height: spacing),
+
+              // Title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+                child: Text(
+                  achievement.title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.xsMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: achievement.isUnlocked
+                        ? (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary)
+                        : (isLight ? AppColors.lightTextTertiary : AppColors.textTertiary),
+                    fontSize: 12,
+                    height: 1.2,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildBadgeCircle(bool isLight) {
-    const double size = 100;
+  Widget _buildBadgeCircle(bool isLight, double size) {
     return SizedBox(
       width: size,
       height: size,
@@ -328,7 +333,7 @@ class _AchievementGridTile extends StatelessWidget {
                   color: isLight ? Colors.grey[300] : Colors.grey[800],
                   child: Icon(
                     achievement.icon,
-                    size: 32,
+                    size: size * 0.4,
                     color: achievement.isUnlocked
                         ? AppColors.primary
                         : (isLight ? AppColors.lightTextTertiary : AppColors.textTertiary),
@@ -339,14 +344,20 @@ class _AchievementGridTile extends StatelessWidget {
           ),
           if (!achievement.isUnlocked)
             Container(
-              width: 24,
-              height: 24,
+              width: (size * 0.3).clamp(18.0, 26.0),
+              height: (size * 0.3).clamp(18.0, 26.0),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.black.withValues(alpha: 0.65),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
               ),
-              child: const Center(child: Icon(Icons.lock_rounded, color: Colors.white, size: 12)),
+              child: Center(
+                child: Icon(
+                  Icons.lock_rounded,
+                  color: Colors.white,
+                  size: (size * 0.15).clamp(10.0, 14.0),
+                ),
+              ),
             ),
         ],
       ),
