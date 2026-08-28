@@ -925,6 +925,42 @@ class _ProfilePageState extends State<ProfilePage>
                                 ],
                               ),
                             ),
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 2.0,
+                                  bottom: 6.0,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Tap any card to view Watch Activity',
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? AppColors.primaryDark
+                                                : AppColors.primaryLight,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.1,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.info_outline_rounded,
+                                      size: 13,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? AppColors.primaryDark
+                                              : AppColors.primaryLight,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                             AnimatedSize(
                               alignment: Alignment.topCenter,
                               duration: const Duration(milliseconds: 500),
@@ -1487,10 +1523,9 @@ class _ProfilePageState extends State<ProfilePage>
                     Text(
                       timeSpent,
                       style: TextStyle(
-                        color: (isLight
-                                ? AppColors.lightTextSecondary
-                                : AppColors.textSecondary)
-                            .withValues(alpha: 0.8),
+                        color: isLight
+                            ? AppColors.lightTextSecondary
+                            : AppColors.textSecondary,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
@@ -2127,8 +2162,8 @@ class _ProfilePageState extends State<ProfilePage>
                     'WATCH ACTIVITY',
                     style: TextStyle(
                       color: Theme.of(context).brightness == Brightness.light
-                          ? Colors.black87
-                          : Colors.white70,
+                          ? AppColors.lightTextPrimary
+                          : AppColors.textPrimary.withValues(alpha: 0.7),
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       letterSpacing: 1.2,
@@ -2293,7 +2328,7 @@ class _ProfilePageState extends State<ProfilePage>
                                           Colors.white)
                                     : (Theme.of(context).brightness ==
                                               Brightness.light
-                                          ? Colors.black38
+                                          ? const Color(0xFFD1D5DB)
                                           : Colors.white30),
                               ),
                             );
@@ -2307,10 +2342,11 @@ class _ProfilePageState extends State<ProfilePage>
                               style: TextStyle(
                                 color:
                                     Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Colors.black54
-                                    : Colors.white54,
+                                            Brightness.light
+                                        ? AppColors.lightTextSecondary
+                                        : AppColors.textTertiary,
                                 fontSize: 11,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -2329,10 +2365,11 @@ class _ProfilePageState extends State<ProfilePage>
                               style: TextStyle(
                                 color:
                                     Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Colors.black54
-                                    : Colors.white54,
+                                            Brightness.light
+                                        ? AppColors.lightTextSecondary
+                                        : AppColors.textTertiary,
                                 fontSize: 11,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -2357,6 +2394,7 @@ class _ProfilePageState extends State<ProfilePage>
     required bool isMovies,
     required bool showShimmer,
   }) {
+    final bool isLight = Theme.of(context).brightness == Brightness.light;
     final List<Color> colorScale = isMovies
         ? [AppColors.heatmapEmpty(context), ...AppColors.heatmapYellowScale]
         : [AppColors.heatmapEmpty(context), ...AppColors.heatmapGreenScale];
@@ -2369,9 +2407,9 @@ class _ProfilePageState extends State<ProfilePage>
           child: Text(
             isMovies ? 'MOVIES WATCHED' : 'EPISODES WATCHED',
             style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.light
-                  ? Colors.black54
-                  : Colors.white54,
+              color: isLight
+                  ? AppColors.lightTextSecondary
+                  : AppColors.textTertiary,
               fontWeight: FontWeight.bold,
               fontSize: 11,
               letterSpacing: 1.1,
@@ -2392,10 +2430,9 @@ class _ProfilePageState extends State<ProfilePage>
                         child: Text(
                           day,
                           style: TextStyle(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                ? Colors.black38
-                                : Colors.white30,
+                            color: isLight
+                                ? AppColors.lightTextSecondary
+                                : AppColors.textTertiary,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -2449,6 +2486,14 @@ class _ProfilePageState extends State<ProfilePage>
                           cellColor = colorScale[4];
                         }
 
+                        final double cellLuminance =
+                            cellColor.computeLuminance();
+                        final Color dayTextColor = cellLuminance < 0.45
+                            ? Colors.white
+                            : (isLight
+                                ? AppColors.lightTextPrimary
+                                : AppColors.textPrimary);
+
                         final itemText = isMovies ? 'movie' : 'episode';
                         final itemsText = isMovies ? 'movies' : 'episodes';
 
@@ -2473,9 +2518,7 @@ class _ProfilePageState extends State<ProfilePage>
                               child: Text(
                                 '$day',
                                 style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).textTheme.bodyLarge?.color,
+                                  color: dayTextColor,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -2618,6 +2661,8 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid>
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -2640,28 +2685,39 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid>
             final phase = (progress - distance) * 2 * pi;
             final wave = (cos(phase) + 1.0) / 2.0;
 
-            final opacity = 0.08 + (0.22 * wave);
-            final scale = 1.0 + (0.12 * wave);
-            final translateY = -2.5 * wave;
+            final scale = 1.0 + (0.08 * wave);
+            final translateY = -2.0 * wave;
 
             final transform = Matrix4.translationValues(0.0, translateY, 0.0)
               ..multiply(Matrix4.diagonal3Values(scale, scale, 1.0));
+
+            final Color cellColor = isLight
+                ? Color.lerp(
+                    const Color(0xFFE5E7EB),
+                    const Color(0xFFD1D5DB),
+                    wave,
+                  )!
+                : Color.lerp(
+                    AppColors.heatmapEmptyDark,
+                    const Color(0xFF2D333B),
+                    wave,
+                  )!;
 
             return Transform(
               transform: transform,
               alignment: Alignment.center,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(
-                    alpha: opacity.clamp(0.08, 0.35),
-                  ),
+                  color: cellColor,
                   borderRadius: BorderRadius.circular(4),
                   boxShadow: wave > 0.15
                       ? [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.35 * wave),
-                            blurRadius: 4.5 * wave,
-                            offset: Offset(0, 2.0 * wave),
+                            color: isLight
+                                ? Colors.black.withValues(alpha: 0.05 * wave)
+                                : Colors.black.withValues(alpha: 0.35 * wave),
+                            blurRadius: 3.0 * wave,
+                            offset: Offset(0, 1.5 * wave),
                           ),
                         ]
                       : null,
