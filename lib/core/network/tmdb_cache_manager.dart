@@ -136,4 +136,16 @@ class TmdbCacheManager {
     }
     return null;
   }
+
+  /// Invalidate/remove a specific cache entry from memory and disk
+  Future<void> removeCache(String key) async {
+    _memoryCache.remove(key);
+    _memoryCacheTimestamps.remove(key);
+    try {
+      final file = await _getCacheFile(key);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+  }
 }

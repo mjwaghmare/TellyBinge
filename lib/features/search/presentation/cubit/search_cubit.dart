@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../../../core/network/tmdb_cache_manager.dart';
 import 'search_state.dart';
 
 class SearchCubit extends Cubit<SearchState> {
@@ -194,6 +195,50 @@ class SearchCubit extends Cubit<SearchState> {
       );
     } else if (state is! SearchTrendingSuccess) {
       loadTrending();
+    }
+  }
+
+  Future<void> refreshFeed({required bool isTv}) async {
+    if (isTv) {
+      _cachedTrendingTv = null;
+      await TmdbCacheManager.instance.removeCache('trending_tv_page_1');
+      await TmdbCacheManager.instance.removeCache('airing_today_tv_page_1');
+      await TmdbCacheManager.instance.removeCache('upcoming_tv_page_1');
+      try {
+        final tvShows = await _fetchTvPage(1);
+        _cachedTrendingTv = tvShows;
+        final currentState = state;
+        if (currentState is SearchTrendingSuccess) {
+          emit(
+            currentState.copyWith(
+              trendingTv: tvShows,
+              tvPage: 1,
+              tvHasReachedMax: tvShows.isEmpty,
+              tvLoadMoreError: false,
+            ),
+          );
+        }
+      } catch (_) {}
+    } else {
+      _cachedTrendingMovies = null;
+      await TmdbCacheManager.instance.removeCache('trending_movie_page_1');
+      await TmdbCacheManager.instance.removeCache('now_playing_movie_page_1');
+      await TmdbCacheManager.instance.removeCache('upcoming_movie_page_1');
+      try {
+        final movies = await _fetchMoviePage(1);
+        _cachedTrendingMovies = movies;
+        final currentState = state;
+        if (currentState is SearchTrendingSuccess) {
+          emit(
+            currentState.copyWith(
+              trendingMovies: movies,
+              moviesPage: 1,
+              moviesHasReachedMax: movies.isEmpty,
+              moviesLoadMoreError: false,
+            ),
+          );
+        }
+      } catch (_) {}
     }
   }
 

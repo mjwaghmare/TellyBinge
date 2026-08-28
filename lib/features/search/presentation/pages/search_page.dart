@@ -33,8 +33,6 @@ class _SearchPageState extends State<SearchPage>
   final ScrollController _showsScrollController = ScrollController();
   final ScrollController _moviesScrollController = ScrollController();
   late TabController _tabController;
-  bool _isTabChanging = false;
-  Timer? _tabTransitionTimer;
 
   static final Map<String, String> _gridFormattedDateCache = {};
 
@@ -172,90 +170,64 @@ class _SearchPageState extends State<SearchPage>
     _previousTabIndex = _tabController.index;
 
     _tabController.addListener(() {
-      // 1. Immediately activate shimmer at the start of transition/swipe
-      if (_tabController.indexIsChanging) {
-        _tabTransitionTimer?.cancel();
-        setState(() {
-          _isTabChanging = true;
-        });
-      }
-
-      // Check if sub-tab index actually changed
       if (_tabController.index != _previousTabIndex) {
         _previousTabIndex = _tabController.index;
 
-        // 1. Close keyboard if opened
+        // 1. Unfocus keyboard when switching subtabs
         FocusManager.instance.primaryFocus?.unfocus();
 
-        // 2. Clear search queries
-        _showsSearchController.clear();
-        _moviesSearchController.clear();
-
-        // 3. Reset pagination & scroll position
-        if (_showsScrollController.hasClients) {
-          _showsScrollController.jumpTo(0);
-        }
-        if (_moviesScrollController.hasClients) {
-          _moviesScrollController.jumpTo(0);
-        }
-        context.read<SearchCubit>().resetTvTrending();
-        context.read<SearchCubit>().resetMoviesTrending();
-
-        // 4. Load clean trending data for newly selected tab
-        _loadTrendingWithFilters();
-      } else if (!_tabController.indexIsChanging) {
+        // 2. Adjust search state if necessary without wiping controller text
         final isTv = _tabController.index == 0;
-        final activeController = isTv
-            ? _showsSearchController
-            : _moviesSearchController;
-
+        final activeController =
+            isTv ? _showsSearchController : _moviesSearchController;
         final trimmedQuery = activeController.text.trim();
+
         if (trimmedQuery.length >= 3) {
           final currentState = context.read<SearchCubit>().state;
           bool shouldSearch = true;
-          if (currentState is SearchResultsSuccess) {
-            if (currentState.isTv == isTv &&
-                currentState.query == trimmedQuery) {
-              shouldSearch = false;
-            }
+          if (currentState is SearchResultsSuccess &&
+              currentState.isTv == isTv &&
+              currentState.query == trimmedQuery) {
+            shouldSearch = false;
           }
           if (shouldSearch) {
             context.read<SearchCubit>().executeSearch(trimmedQuery, isTv: isTv);
-          } else {
-            setState(() {
-              _isTabChanging = false;
-            });
-            return;
           }
         } else {
-          _loadTrendingWithFilters();
+          final currentState = context.read<SearchCubit>().state;
+          if (currentState is SearchResultsSuccess &&
+              currentState.isTv != isTv) {
+            _loadTrendingWithFilters(isTv: isTv);
+          }
         }
       }
-
-      _tabTransitionTimer?.cancel();
-      _tabTransitionTimer = Timer(const Duration(milliseconds: 300), () {
-        if (!mounted) return;
-        setState(() {
-          _isTabChanging = false;
-        });
-      });
     });
 
     // Ensure trending is fetched on initial load if empty
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadTrendingWithFilters();
+      _loadTrendingWithFilters(isTv: _tabController.index == 0);
     });
 
     _showsScrollController.addListener(() => _onScroll(true));
     _moviesScrollController.addListener(() => _onScroll(false));
   }
 
-  void _loadTrendingWithFilters() {
-    if (_hasActiveFilters) {
-      // Apply filters when trending is loaded
-      _applyFiltersToTrending();
+  void _loadTrendingWithFilters({bool isTv = true}) {
+    if (isTv) {
+      final hasActiveExtra = _tvLanguage != null || _selectedYear != null;
+      if (_hasActiveFilters || hasActiveExtra) {
+        _applyFiltersToTrending();
+      } else {
+        context.read<SearchCubit>().loadTrending();
+      }
     } else {
-      context.read<SearchCubit>().loadTrending();
+      final hasActiveMovieExtra =
+          _movieLanguage != null || _selectedMovieYear != null;
+      if (_hasActiveMovieFilters || hasActiveMovieExtra) {
+        _applyMovieFiltersToTrending();
+      } else {
+        context.read<SearchCubit>().loadTrending();
+      }
     }
   }
 
@@ -416,7 +388,6 @@ class _SearchPageState extends State<SearchPage>
     _showsScrollController.dispose();
     _moviesScrollController.dispose();
     _tabController.dispose();
-    _tabTransitionTimer?.cancel();
     super.dispose();
   }
 
@@ -449,20 +420,26 @@ class _SearchPageState extends State<SearchPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          BlocBuilder<SearchCubit, SearchState>(
-            builder: (context, state) {
-              return BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
-                builder: (context, tvState) => _buildShowsTab(state, tvState),
-              );
-            },
+          _KeepAliveTab(
+            key: const PageStorageKey('explore_shows_tab'),
+            child: BlocBuilder<SearchCubit, SearchState>(
+              builder: (context, state) {
+                return BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
+                  builder: (context, tvState) => _buildShowsTab(state, tvState),
+                );
+              },
+            ),
           ),
-          BlocBuilder<SearchCubit, SearchState>(
-            builder: (context, state) {
-              return BlocBuilder<MovieWatchlistCubit, MovieWatchlistState>(
-                builder: (context, movieState) =>
-                    _buildMoviesTab(state, movieState),
-              );
-            },
+          _KeepAliveTab(
+            key: const PageStorageKey('explore_movies_tab'),
+            child: BlocBuilder<SearchCubit, SearchState>(
+              builder: (context, state) {
+                return BlocBuilder<MovieWatchlistCubit, MovieWatchlistState>(
+                  builder: (context, movieState) =>
+                      _buildMoviesTab(state, movieState),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -473,7 +450,28 @@ class _SearchPageState extends State<SearchPage>
     return Column(
       children: [
         _buildSearchBar(_showsSearchController, isTv: true),
-        Expanded(child: _buildShowsContent(state, tvState)),
+        Expanded(
+          child: RefreshIndicator(
+            color: AppColors.primary,
+            backgroundColor: Theme.of(context).cardColor,
+            onRefresh: () async {
+              final trimmedQuery = _showsSearchController.text.trim();
+              if (trimmedQuery.length >= 3) {
+                await context.read<SearchCubit>().executeSearch(
+                  trimmedQuery,
+                  isTv: true,
+                );
+              } else if (_hasActiveFilters ||
+                  _tvLanguage != null ||
+                  _selectedYear != null) {
+                await _applyFiltersToTrending();
+              } else {
+                await context.read<SearchCubit>().refreshFeed(isTv: true);
+              }
+            },
+            child: _buildShowsContent(state, tvState),
+          ),
+        ),
       ],
     );
   }
@@ -482,7 +480,28 @@ class _SearchPageState extends State<SearchPage>
     return Column(
       children: [
         _buildSearchBar(_moviesSearchController, isTv: false),
-        Expanded(child: _buildMoviesContent(state, movieState)),
+        Expanded(
+          child: RefreshIndicator(
+            color: AppColors.primary,
+            backgroundColor: Theme.of(context).cardColor,
+            onRefresh: () async {
+              final trimmedQuery = _moviesSearchController.text.trim();
+              if (trimmedQuery.length >= 3) {
+                await context.read<SearchCubit>().executeSearch(
+                  trimmedQuery,
+                  isTv: false,
+                );
+              } else if (_hasActiveMovieFilters ||
+                  _movieLanguage != null ||
+                  _selectedMovieYear != null) {
+                await _applyMovieFiltersToTrending();
+              } else {
+                await context.read<SearchCubit>().refreshFeed(isTv: false);
+              }
+            },
+            child: _buildMoviesContent(state, movieState),
+          ),
+        ),
       ],
     );
   }
@@ -808,7 +827,7 @@ class _SearchPageState extends State<SearchPage>
       }
     }
 
-    if (_isTabChanging || state is SearchLoading || _isFetchingTvFilters) {
+    if (state is SearchLoading || _isFetchingTvFilters) {
       return Skeletonizer(
         enabled: true,
         child: _buildGrid(
@@ -947,7 +966,7 @@ class _SearchPageState extends State<SearchPage>
       }
     }
 
-    if (_isTabChanging || state is SearchLoading || _isFetchingMovieFilters) {
+    if (state is SearchLoading || _isFetchingMovieFilters) {
       return Skeletonizer(
         enabled: true,
         child: _buildGrid(
@@ -1069,25 +1088,34 @@ class _SearchPageState extends State<SearchPage>
     Map<int, int>? indexById,
   }) {
     if (items.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.xl,
-            AppSpacing.xl,
-            AppSpacing.xl,
-            AppSpacing.bottomTabPadding,
-          ),
-          child: Text(
-            'No results found.\nTry searching for something else.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey[500]
-                  : AppColors.textTertiary,
-              fontSize: 16.0,
+      return CustomScrollView(
+        controller: controller,
+        physics: physics ?? const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.xl,
+                  AppSpacing.xl,
+                  AppSpacing.bottomTabPadding,
+                ),
+                child: Text(
+                  'No results found.\nTry searching for something else.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.grey[500]
+                        : AppColors.textTertiary,
+                    fontSize: 16.0,
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       );
     }
 
@@ -1100,7 +1128,7 @@ class _SearchPageState extends State<SearchPage>
 
     return CustomScrollView(
       controller: controller,
-      physics: physics,
+      physics: physics ?? const AlwaysScrollableScrollPhysics(),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       slivers: [
         SliverPadding(
@@ -1538,5 +1566,25 @@ class _FilteredGrid {
     _excludedIds = excludedIds;
     _items = filtered;
     _indexById = index;
+  }
+}
+
+class _KeepAliveTab extends StatefulWidget {
+  final Widget child;
+  const _KeepAliveTab({super.key, required this.child});
+
+  @override
+  State<_KeepAliveTab> createState() => _KeepAliveTabState();
+}
+
+class _KeepAliveTabState extends State<_KeepAliveTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
