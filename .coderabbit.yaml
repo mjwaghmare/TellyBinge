@@ -4,49 +4,28 @@ language: "en-US"
 early_access: false
 
 reviews:
-  # Fast, balanced reviews focused on actionable bugs, security, and major issues.
   profile: "chill"
-
-  # Avoid blocking PRs with formal request-changes delays.
   request_changes_workflow: false
-
-  # Concise PR summary and review status.
   high_level_summary: true
   review_status: true
-
-  # Disable decorative output.
   poem: false
   in_progress_fortune: false
 
   auto_review:
-    # Automatically review new and updated PRs.
     enabled: true
-
-    # Review new commits incrementally.
-    auto_incremental_review: true
-
-    # Prevent excessive reviews on very large/active PRs.
+    auto_incremental_review: false # was true — was re-reviewing on every push
     auto_pause_after_reviewed_commits: 10
-
-    # Do not review draft PRs.
     drafts: false
-
-    # Skip these PR titles.
     ignore_title_keywords:
       - "WIP"
       - "[skip review]"
       - "DO NOT REVIEW"
-
-    # Ignore automated dependency PRs.
     ignore_usernames:
       - "dependabot[bot]"
       - "renovate[bot]"
-
-    # Optional label to skip CodeRabbit.
     labels:
       - "!do-not-review"
 
-  # Exclude generated code, dependencies, and binary assets from review.
   path_filters:
     - "!**/build/**"
     - "!**/.dart_tool/**"
@@ -61,52 +40,25 @@ reviews:
     - "!**/assets/**"
 
   path_instructions:
-    # ============================================================
-    # FLUTTER / DART APPLICATION CODE
-    # ============================================================
     - path: "lib/**/*.dart"
       instructions: |
-        Review Flutter/Dart code focusing on high-impact production issues:
+        Flag: undisposed controllers/listeners (Animation, TextEditing, Scroll, FocusNode,
+        StreamSubscription, Timer); BuildContext used after async gap without mounted check;
+        unhandled Futures; heavy work/JSON parsing in build(); hardcoded secrets or sensitive
+        data in logs/local storage; business logic in UI widgets. Skip formatting/lint-covered issues.
 
-        - Resource Leaks: Ensure AnimationController, TextEditingController,
-          ScrollController, FocusNode, StreamSubscription, and Timer instances are disposed or cancelled.
-        - Async & Lifecycle: Check for BuildContext used across async gaps without
-          a mounted check. Ensure unhandled Futures and network errors are caught.
-        - Performance: Flag heavy computations, JSON parsing, or allocations
-          inside build() methods. Check for unbounded list rendering without builders.
-        - Security: Flag hardcoded API keys, tokens, credentials, or sensitive data
-          leaking into logs or insecure local storage.
-        - State & Logic: Avoid business logic leaking into UI widgets. Keep state predictable.
-        - Noise reduction: Do not comment on formatting, styling, or items already
-          covered by the Dart analyzer/linter. Prioritize actionable defects.
-
-    # ============================================================
-    # TESTS
-    # ============================================================
     - path: "test/**/*.dart"
       instructions: |
-        Review tests for reliability:
-        - Detect flaky tests, timing dependencies, or missing async synchronization.
-        - Ensure mock resources and streams are cleaned up.
+        Flag flaky/timing-dependent tests, missing async sync, uncleaned mocks/streams.
 
-    # ============================================================
-    # NATIVE PLATFORMS (ANDROID / iOS)
-    # ============================================================
     - path: "{android,ios}/**"
       instructions: |
-        Review native platform changes for:
-        - Exposed secrets, credentials, or insecure permissions.
-        - Deep link and exported component vulnerabilities.
-        - Breaking build/plugin configuration changes.
+        Flag exposed secrets, insecure permissions, exported component/deep-link vulns,
+        breaking build/plugin config changes.
 
-    # ============================================================
-    # CI/CD & DEPENDENCIES
-    # ============================================================
     - path: "{pubspec.yaml,.github/**}"
       instructions: |
-        - Flag deprecated, unmaintained, or risky dependencies.
-        - Flag unpinned third-party GitHub Actions or exposed CI secrets.
+        Flag deprecated/unmaintained/risky deps, unpinned GitHub Actions, exposed CI secrets.
 
 chat:
-  # Respond when @coderabbitai is mentioned in PR comments.
   auto_reply: true

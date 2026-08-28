@@ -10,7 +10,6 @@ import '../../../../core/theme/cubit/theme_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/settings_cubit.dart';
-import 'delete_account_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -313,15 +312,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   iconBgColor: AppColors.error.withValues(alpha: 0.12),
                   title: 'Delete Account',
                   subtitle: 'Permanently delete your account and data',
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DeleteAccountPage(),
-                      ),
-                    );
-                  },
+                  onTap: () => _showDeleteAccountSheet(context),
                 ),
               ],
             ),
@@ -573,6 +564,120 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
 
+
+  void _showDeleteAccountSheet(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    final isLight = context.isLight;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.delete_forever_rounded,
+                    color: AppColors.error,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Delete Account?',
+                  style: AppTextStyles.lg.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isLight
+                        ? AppColors.lightTextPrimary
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be erased.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.sm.copyWith(
+                    color: isLight
+                        ? AppColors.lightTextSecondary
+                        : AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(
+                            color: isLight
+                                ? AppColors.borderLight
+                                : Colors.white24,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(sheetContext),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: isLight
+                                ? AppColors.lightTextPrimary
+                                : AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          if (Navigator.of(context).canPop()) {
+                            Navigator.of(context).popUntil((route) => route.isFirst);
+                          }
+                          context.read<AuthCubit>().deleteAccount();
+                        },
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   void _showPrivacyPolicySheet(BuildContext context) {
     HapticFeedback.lightImpact();
