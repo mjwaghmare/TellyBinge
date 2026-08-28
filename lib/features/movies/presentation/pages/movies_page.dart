@@ -644,7 +644,15 @@ class MoviesPageState extends State<MoviesPage> {
               margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
               clipBehavior: Clip.antiAlias,
               height: 96.0,
-              decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(6.0)),
+              decoration: BoxDecoration(
+                color: (isMarkingAsWatched || isRemoving)
+                    ? context.adaptiveColor(
+                        light: AppColors.lightSurfaceElevated,
+                        dark: AppColors.surface,
+                      )
+                    : Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(6.0),
+              ),
               child: (isMarkingAsWatched || isRemoving)
                   ? Center(
                       child: CircularProgressIndicator.adaptive(
