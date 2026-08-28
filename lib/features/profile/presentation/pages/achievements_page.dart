@@ -143,7 +143,7 @@ class _AchievementsViewState extends State<_AchievementsView> {
 
               // Category filter chips
               SizedBox(
-                height: 44,
+                height: 34,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(
@@ -173,15 +173,15 @@ class _AchievementsViewState extends State<_AchievementsView> {
               Expanded(
                 child: GridView.builder(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
                   ),
                   gridDelegate:
                       const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    mainAxisSpacing: AppSpacing.xs,
-                    crossAxisSpacing: AppSpacing.xs,
-                    childAspectRatio: 0.82,
+                    mainAxisSpacing: AppSpacing.md,
+                    crossAxisSpacing: AppSpacing.sm,
+                    childAspectRatio: 0.85,
                   ),
                   itemCount: state.filtered.length,
                   itemBuilder: (context, index) {
@@ -236,20 +236,24 @@ class _FilterChip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: AppSpacing.xs),
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.xs,
+            horizontal: AppSpacing.md,
           ),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primary
                 : (isLight
-                    ? Colors.black.withValues(alpha: 0.05)
+                    ? Colors.black.withValues(alpha: 0.04)
                     : Colors.white.withValues(alpha: 0.06)),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(17),
             border: Border.all(
               color: isSelected
                   ? AppColors.primary
@@ -260,6 +264,8 @@ class _FilterChip extends StatelessWidget {
           child: Text(
             label,
             style: AppTextStyles.xsMedium.copyWith(
+              fontSize: 12.5,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               color: isSelected
                   ? Colors.white
                   : (isLight
@@ -287,77 +293,47 @@ class _AchievementGridTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
-    final tierColors = _tierGradient(achievement.tier, achievement.isUnlocked);
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isLight ? Colors.white : AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: achievement.isUnlocked
-                ? tierColors.first.withValues(alpha: 0.3)
-                : (isLight
-                    ? AppColors.borderLight
-                    : Colors.white.withValues(alpha: 0.04)),
-            width: 1,
-          ),
-          boxShadow: achievement.isUnlocked
-              ? [
-                  BoxShadow(
-                    color: tierColors.first.withValues(alpha: 0.08),
-                    blurRadius: 12,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Badge circle
-            _buildBadgeCircle(isLight, tierColors),
-            const SizedBox(height: AppSpacing.xs),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Badge circle
+          _buildBadgeCircle(isLight),
+          const SizedBox(height: AppSpacing.xs),
 
-            // Title
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
-              child: Text(
-                achievement.title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.xs.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: achievement.isUnlocked
-                      ? (isLight
-                          ? AppColors.lightTextPrimary
-                          : AppColors.textPrimary)
-                      : (isLight
-                          ? AppColors.lightTextTertiary
-                          : AppColors.textTertiary),
-                  fontSize: 11.5,
-                ),
+          // Title
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+            child: Text(
+              achievement.title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.xsMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: achievement.isUnlocked
+                    ? (isLight
+                        ? AppColors.lightTextPrimary
+                        : AppColors.textPrimary)
+                    : (isLight
+                        ? AppColors.lightTextTertiary
+                        : AppColors.textTertiary),
+                fontSize: 12,
+                height: 1.2,
               ),
             ),
-            const SizedBox(height: AppSpacing.xxs),
-
-            // Tier or progress indicator
-            if (achievement.isUnlocked &&
-                achievement.tier != AchievementTier.none)
-              _buildTierDot(tierColors)
-            else if (!achievement.isUnlocked)
-              _buildProgressIndicator(isLight, tierColors),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBadgeCircle(bool isLight, List<Color> tierColors) {
-    const double size = 52;
+  Widget _buildBadgeCircle(bool isLight) {
+    const double size = 76;
     return SizedBox(
       width: size,
       height: size,
@@ -372,7 +348,7 @@ class _AchievementGridTile extends StatelessWidget {
                       0.2126, 0.7152, 0.0722, 0, 0,
                       0.2126, 0.7152, 0.0722, 0, 0,
                       0.2126, 0.7152, 0.0722, 0, 0,
-                      0,      0,      0,      0.4, 0,
+                      0,      0,      0,      0.35, 0,
                     ]),
               child: Image.asset(
                 achievement.assetPath,
@@ -385,8 +361,12 @@ class _AchievementGridTile extends StatelessWidget {
                   color: isLight ? Colors.grey[300] : Colors.grey[800],
                   child: Icon(
                     achievement.icon,
-                    size: 24,
-                    color: tierColors.first,
+                    size: 32,
+                    color: achievement.isUnlocked
+                        ? AppColors.primary
+                        : (isLight
+                            ? AppColors.lightTextTertiary
+                            : AppColors.textTertiary),
                   ),
                 ),
               ),
@@ -394,8 +374,8 @@ class _AchievementGridTile extends StatelessWidget {
           ),
           if (!achievement.isUnlocked)
             Container(
-              width: 22,
-              height: 22,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.black.withValues(alpha: 0.65),
@@ -408,77 +388,12 @@ class _AchievementGridTile extends StatelessWidget {
                 child: Icon(
                   Icons.lock_rounded,
                   color: Colors.white,
-                  size: 11,
+                  size: 12,
                 ),
               ),
             ),
         ],
       ),
     );
-  }
-
-
-  Widget _buildTierDot(List<Color> tierColors) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: tierColors),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        _tierShort(achievement.tier),
-        style: AppTextStyles.xs.copyWith(
-          color: Colors.white,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressIndicator(bool isLight, List<Color> tierColors) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(2),
-        child: LinearProgressIndicator(
-          value: achievement.progress,
-          minHeight: 3,
-          backgroundColor: isLight
-              ? Colors.black.withValues(alpha: 0.06)
-              : Colors.white.withValues(alpha: 0.06),
-          valueColor: AlwaysStoppedAnimation(
-            tierColors.first.withValues(alpha: 0.5),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static String _tierShort(AchievementTier tier) {
-    return switch (tier) {
-      AchievementTier.none => '',
-      AchievementTier.bronze => '🥉',
-      AchievementTier.silver => '🥈',
-      AchievementTier.gold => '🥇',
-      AchievementTier.diamond => '💎',
-    };
-  }
-
-  static List<Color> _tierGradient(AchievementTier tier, bool isUnlocked) {
-    if (!isUnlocked) {
-      return const [Color(0xFF636366), Color(0xFF48484A)];
-    }
-    return switch (tier) {
-      AchievementTier.none => [AppColors.primary, AppColors.primaryDark],
-      AchievementTier.bronze => const [Color(0xFFCD7F32), Color(0xFFA0522D)],
-      AchievementTier.silver => const [Color(0xFFC0C0C0), Color(0xFF808080)],
-      AchievementTier.gold => const [Color(0xFFFFD700), Color(0xFFDAA520)],
-      AchievementTier.diamond => const [Color(0xFFB9F2FF), Color(0xFF4FC3F7)],
-    };
   }
 }
