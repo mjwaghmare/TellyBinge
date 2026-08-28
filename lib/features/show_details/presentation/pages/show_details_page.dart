@@ -10,6 +10,7 @@ import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/action_circle_button.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -463,9 +464,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                 isFavorite: !isFavorite,
                               );
                             } else {
-                              ScaffoldMessenger.of(
+                              AppSnackbar.showInfo(
                                 context,
-                              ).showSnackBar(const SnackBar(content: Text('Add show to watchlist first')));
+                                'Add show to watchlist first',
+                              );
                             }
                           },
                           activeIcon: Icons.favorite,
@@ -1139,9 +1141,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                       return;
                                     }
                                     if (!isTracked) {
-                                      ScaffoldMessenger.of(
+                                      AppSnackbar.showInfo(
                                         context,
-                                      ).showSnackBar(const SnackBar(content: Text('Add show to watchlist first')));
+                                        'Add show to watchlist first',
+                                      );
                                       return;
                                     }
 
@@ -1589,9 +1592,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                               }
 
                               if (!isTracked) {
-                                ScaffoldMessenger.of(
+                                AppSnackbar.showInfo(
                                   context,
-                                ).showSnackBar(const SnackBar(content: Text('Add show to watchlist first')));
+                                  'Add show to watchlist first',
+                                );
                                 return;
                               }
 

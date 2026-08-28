@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../theme/app_colors.dart';
+import 'app_snackbar.dart';
 
 class WatchTrailerButton extends StatelessWidget {
   final Map<String, dynamic> trailer;
@@ -61,9 +62,7 @@ class WatchTrailerButton extends StatelessWidget {
             if (url != null && await canLaunchUrl(url)) {
               await launchUrl(url, mode: LaunchMode.inAppWebView);
             } else if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Could not play trailer.')),
-              );
+              AppSnackbar.showError(context, 'Could not play trailer.');
             }
           }
         }
@@ -267,9 +266,7 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
       } else if (await canLaunchUrl(webUri)) {
         await launchUrl(webUri, mode: LaunchMode.externalApplication);
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open YouTube.')),
-        );
+        AppSnackbar.showError(context, 'Could not open YouTube.');
       }
     } catch (_) {
       if (await canLaunchUrl(webUri)) {

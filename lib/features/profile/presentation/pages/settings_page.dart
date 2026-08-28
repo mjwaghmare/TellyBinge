@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/cubit/theme_cubit.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/settings_cubit.dart';
@@ -1180,21 +1181,17 @@ class _SettingsPageState extends State<SettingsPage> {
         await launchUrl(emailUri);
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Support email: support@popverse.app'),
-              backgroundColor: AppColors.surfaceElevated,
-            ),
+          AppSnackbar.showInfo(
+            context,
+            'Support email: support@popverse.app',
           );
         }
       }
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Support email: support@popverse.app'),
-            backgroundColor: AppColors.surfaceElevated,
-          ),
+        AppSnackbar.showInfo(
+          context,
+          'Support email: support@popverse.app',
         );
       }
     }

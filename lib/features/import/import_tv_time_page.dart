@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/widgets/app_snackbar.dart';
 import 'cubit/import_tv_time_cubit.dart';
 import 'cubit/import_tv_time_state.dart';
 
@@ -17,17 +18,15 @@ class ImportTvTimePage extends StatelessWidget {
       child: BlocConsumer<ImportTvTimeCubit, ImportTvTimeState>(
         listener: (context, state) {
           if (state.status == ImportTvTimeStatus.completed) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Import completed successfully!')),
-            );
-
+            AppSnackbar.showSuccess(context, 'Import completed successfully!');
             Navigator.pop(context);
           }
 
           if (state.status == ImportTvTimeStatus.failure) {
-            ScaffoldMessenger.of(
+            AppSnackbar.showError(
               context,
-            ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? '')));
+              state.errorMessage ?? 'Import failed',
+            );
           }
         },
         builder: (context, state) {
