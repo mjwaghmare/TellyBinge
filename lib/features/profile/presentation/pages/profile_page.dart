@@ -439,6 +439,30 @@ class _ProfilePageState extends State<ProfilePage>
         : 'User';
     final photoURL = user?.photoUrl;
 
+    final movieWatchlistState = context.watch<MovieWatchlistCubit>().state;
+    final showWatchlistState = context.watch<TvShowWatchlistCubit>().state;
+    final profileStats = _calculateProfileStats(
+      movieWatchlistState,
+      showWatchlistState,
+    );
+    final rawMovies =
+        movieWatchlistState is MovieWatchlistSuccess
+            ? movieWatchlistState.movies
+            : const <Map<String, dynamic>>[];
+    final rawShows =
+        showWatchlistState is TvShowWatchlistSuccess
+            ? showWatchlistState.shows
+            : const <Map<String, dynamic>>[];
+    final profileTag = _calculateProfileTag(
+      watchedMoviesCount: profileStats.watchedMoviesCount,
+      watchedShowsCount: profileStats.watchedShowsCount,
+      totalEpisodesCount: profileStats.totalEpisodesCount,
+      totalMovieMinutes: profileStats.totalMovieMinutes,
+      totalShowMinutes: profileStats.totalShowMinutes,
+      rawMovies: rawMovies,
+      rawShows: rawShows,
+    );
+
     String generateUsername(String name) {
       if (name.isEmpty || name == 'User') return 'user_popverse';
       // Strip everything except letters and numbers, then lowercase
@@ -462,13 +486,69 @@ class _ProfilePageState extends State<ProfilePage>
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: Text(
-          username,
-          style: TextStyle(
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+        scrolledUnderElevation: 0,
+        toolbarHeight: 68,
+        titleSpacing: AppSpacing.md,
+        title: Row(
+          children: [
+            // Avatar with ring
+            Container(
+              padding: const EdgeInsets.all(2.5),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  shape: BoxShape.circle,
+                ),
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: const Color(0xFF2E6930),
+                  backgroundImage:
+                      (photoURL != null && photoURL.isNotEmpty)
+                          ? CachedNetworkImageProvider(photoURL)
+                          : null,
+                  child:
+                      (photoURL == null || photoURL.isEmpty)
+                          ? Text(
+                            displayName.isNotEmpty
+                                ? displayName[0].toUpperCase()
+                                : 'U',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                          : null,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    username,
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      letterSpacing: -0.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  _buildProfileTag(profileTag),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
           if (defaultTargetPlatform == TargetPlatform.iOS)
@@ -525,6 +605,7 @@ class _ProfilePageState extends State<ProfilePage>
             ),
             onPressed: _showSettingsMenu,
           ),
+          const SizedBox(width: AppSpacing.xs),
         ],
       ),
       body: MultiBlocListener(
@@ -791,85 +872,54 @@ class _ProfilePageState extends State<ProfilePage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Profile Header Info
+                            // Stats Section (Shows added & Movies watched)
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: AppSpacing.md,
-                                vertical: 8.0,
+                                vertical: AppSpacing.sm,
                               ),
                               child: Row(
                                 children: [
-                                  // Avatar with ring
-                                  Container(
-                                    padding: const EdgeInsets.all(
-                                      3,
-                                    ), // Border width
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.primary,
-                                    ),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(
-                                        2,
-                                      ), // Gap between ring and image
-                                      decoration: BoxDecoration(
-                                        color: Colors.black,
-                                        shape: BoxShape.circle,
+                                  Expanded(
+                                    child: _buildStatColumn(
+                                      icon: const Icon(
+                                        Icons.tv_rounded,
+                                        color: AppColors.primary,
+                                        size: 24,
                                       ),
-                                      child: CircleAvatar(
-                                        radius: 36,
-                                        backgroundColor: Colors.grey[800],
-                                        backgroundImage:
-                                            (photoURL != null &&
-                                                photoURL.isNotEmpty)
-                                            ? CachedNetworkImageProvider(
-                                                photoURL,
-                                              )
-                                            : null,
-                                        child:
-                                            (photoURL == null ||
-                                                photoURL.isEmpty)
-                                            ? Text(
-                                                displayName.isNotEmpty
-                                                    ? displayName[0]
-                                                          .toUpperCase()
-                                                    : 'U',
-                                                style: TextStyle(
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).textTheme.bodyLarge?.color,
-                                                  fontSize: 32,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              )
-                                            : null,
-                                      ),
+                                      count: '${watchedShows.length}',
+                                      label: 'Shows added',
+                                      timeSpent: _formatTime(totalShowMinutes),
+                                      onTap: () {
+                                        _toggleHeatmap(0);
+                                      },
                                     ),
                                   ),
-                                  const SizedBox(width: AppSpacing.lg),
-                                  // Stats
+                                  Container(
+                                    height: 40,
+                                    width: 1,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.xs,
+                                    ),
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? AppColors.borderLight
+                                            : AppColors.borderDark,
+                                  ),
                                   Expanded(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        _buildStatColumn(
-                                          '${watchedShows.length}',
-                                          'Shows added',
-                                          _formatTime(totalShowMinutes),
-                                          () {
-                                            _toggleHeatmap(0);
-                                          },
-                                        ),
-                                        _buildStatColumn(
-                                          '${watchedMovies.length}',
-                                          'Movies watched',
-                                          _formatTime(totalMinutes),
-                                          () {
-                                            _toggleHeatmap(1);
-                                          },
-                                        ),
-                                      ],
+                                    child: _buildStatColumn(
+                                      icon: const Icon(
+                                        Icons.movie_filter_outlined,
+                                        color: AppColors.primary,
+                                        size: 24,
+                                      ),
+                                      count: '${watchedMovies.length}',
+                                      label: 'Movies watched',
+                                      timeSpent: _formatTime(totalMinutes),
+                                      onTap: () {
+                                        _toggleHeatmap(1);
+                                      },
                                     ),
                                   ),
                                 ],
@@ -879,15 +929,16 @@ class _ProfilePageState extends State<ProfilePage>
                               alignment: Alignment.topCenter,
                               duration: const Duration(milliseconds: 500),
                               curve: Curves.easeInOut,
-                              child: _isHeatmapExpanded
-                                  ? _buildHeatmapSection(
-                                      context,
-                                      user?.uid ?? '',
-                                    )
-                                  : const SizedBox(
-                                      width: double.infinity,
-                                      height: 0,
-                                    ),
+                              child:
+                                  _isHeatmapExpanded
+                                      ? _buildHeatmapSection(
+                                        context,
+                                        user?.uid ?? '',
+                                      )
+                                      : const SizedBox(
+                                        width: double.infinity,
+                                        height: 0,
+                                      ),
                             ),
                           ],
                         ),
@@ -897,6 +948,31 @@ class _ProfilePageState extends State<ProfilePage>
                         delegate: _SliverAppBarDelegate(
                           TabBar(
                             controller: _tabController,
+                            labelColor:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? AppColors.lightTextPrimary
+                                    : AppColors.textPrimary,
+                            unselectedLabelColor:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? AppColors.lightTextSecondary
+                                    : AppColors.textSecondary,
+                            labelStyle: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                            unselectedLabelStyle: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                            indicatorColor: AppColors.primary,
+                            indicatorWeight: 3.0,
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            dividerColor:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? AppColors.borderLight
+                                    : AppColors.borderDark,
                             tabs: const [
                               Tab(text: 'SHOWS'),
                               Tab(text: 'MOVIES'),
@@ -1196,41 +1272,237 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildStatColumn(
-    String count,
-    String label,
-    String timeSpent,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
+  Widget _buildProfileTag(ProfileTag tag) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final accentColor =
+        isLight ? AppColors.primaryDark : AppColors.primaryLight;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 7,
+        vertical: 1.5,
+      ),
+      decoration: BoxDecoration(
+        color: isLight
+            ? AppColors.primary.withValues(alpha: 0.08)
+            : AppColors.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isLight
+              ? AppColors.primary.withValues(alpha: 0.22)
+              : AppColors.primary.withValues(alpha: 0.35),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            count,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            tag.emoji,
+            style: const TextStyle(fontSize: 10, height: 1.1),
           ),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 13)),
-          const SizedBox(height: 4),
-          Visibility(
-            visible: timeSpent.isNotEmpty && timeSpent != '0m',
-            maintainSize: true,
-            maintainAnimation: true,
-            maintainState: true,
-            child: Text(
-              timeSpent,
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
+          const SizedBox(width: 4),
+          Text(
+            tag.label,
+            style: TextStyle(
+              color: accentColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.1,
+              height: 1.1,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  ProfileTag _calculateProfileTag({
+    required int watchedMoviesCount,
+    required int watchedShowsCount,
+    required int totalEpisodesCount,
+    required int totalMovieMinutes,
+    required int totalShowMinutes,
+    required List<Map<String, dynamic>> rawMovies,
+    required List<Map<String, dynamic>> rawShows,
+  }) {
+    // 1. On a Streak overrides other tags when user has an active qualifying streak (>= 3 days)
+    final streak = _calculateViewingStreak(rawMovies, rawShows);
+    if (streak >= 3) {
+      return ProfileTag.onAStreak;
+    }
+
+    final totalTitles = watchedMoviesCount + watchedShowsCount;
+    final totalMinutes = totalMovieMinutes + totalShowMinutes;
+
+    // 4. Fresh Watcher used for new or low-activity users
+    if (totalTitles < 5 && totalEpisodesCount < 10 && totalMinutes < 300) {
+      return ProfileTag.freshWatcher;
+    }
+
+    // 2. Screen Veteran applies to highly experienced users
+    if (totalTitles >= 60 ||
+        totalEpisodesCount >= 150 ||
+        totalMinutes >= 20 * 24 * 60) {
+      return ProfileTag.screenVeteran;
+    }
+
+    // 3. Viewing balance between movies and TV shows
+    final effectiveMovieWeight =
+        watchedMoviesCount * 1.5 + (totalMovieMinutes / 60);
+    final effectiveShowWeight =
+        watchedShowsCount * 1.5 + totalEpisodesCount + (totalShowMinutes / 60);
+
+    if (effectiveMovieWeight >=
+        2.0 * (effectiveShowWeight == 0 ? 1 : effectiveShowWeight)) {
+      return ProfileTag.movieBuff;
+    } else if (effectiveShowWeight >=
+        2.0 * (effectiveMovieWeight == 0 ? 1 : effectiveMovieWeight)) {
+      return ProfileTag.seriesExplorer;
+    } else {
+      return ProfileTag.screenExplorer;
+    }
+  }
+
+  int _calculateViewingStreak(
+    List<Map<String, dynamic>> rawMovies,
+    List<Map<String, dynamic>> rawShows,
+  ) {
+    final activeDates = <DateTime>{};
+
+    for (final movie in rawMovies) {
+      final isWatched = movie['isWatched'] as bool? ?? false;
+      if (!isWatched) continue;
+      final dateStr =
+          movie['watchedAt'] as String? ?? movie['addedAt'] as String?;
+      if (dateStr != null && dateStr.isNotEmpty) {
+        final dt = DateTime.tryParse(dateStr);
+        if (dt != null) {
+          activeDates.add(DateTime(dt.year, dt.month, dt.day));
+        }
+      }
+    }
+
+    for (final show in rawShows) {
+      final watchedEps = show['watchedEpisodes'] as List?;
+      if (watchedEps == null || watchedEps.isEmpty) continue;
+      final dateStr =
+          show['watchedAt'] as String? ?? show['addedAt'] as String?;
+      if (dateStr != null && dateStr.isNotEmpty) {
+        final dt = DateTime.tryParse(dateStr);
+        if (dt != null) {
+          activeDates.add(DateTime(dt.year, dt.month, dt.day));
+        }
+      }
+    }
+
+    if (activeDates.isEmpty) return 0;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    DateTime checkDate;
+    if (activeDates.contains(today)) {
+      checkDate = today;
+    } else if (activeDates.contains(yesterday)) {
+      checkDate = yesterday;
+    } else {
+      return 0;
+    }
+
+    int streak = 0;
+    while (activeDates.contains(checkDate)) {
+      streak++;
+      checkDate = checkDate.subtract(const Duration(days: 1));
+    }
+
+    return streak;
+  }
+
+  Widget _buildStatColumn({
+    required Widget icon,
+    required String count,
+    required String label,
+    required String timeSpent,
+    required VoidCallback onTap,
+  }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isLight
+                    ? const Color(0xFFF3E8FF)
+                    : AppColors.primary.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: icon,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    count,
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: isLight
+                          ? AppColors.lightTextPrimary
+                          : AppColors.textPrimary,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: isLight
+                          ? AppColors.lightTextPrimary
+                          : AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (timeSpent.isNotEmpty && timeSpent != '0m') ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      timeSpent,
+                      style: TextStyle(
+                        color: (isLight
+                                ? AppColors.lightTextSecondary
+                                : AppColors.textSecondary)
+                            .withValues(alpha: 0.8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1239,60 +1511,70 @@ class _ProfilePageState extends State<ProfilePage>
     required String label,
     required Color dotColor,
     required int count,
+    VoidCallback? onTap,
   }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 20, 8, 10),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: dotColor,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.light
-                  ? AppColors.lightTextPrimary
-                  : AppColors.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 2,
-            ),
-            decoration: BoxDecoration(
-              color: dotColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '$count',
-              style: TextStyle(
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          16,
+          AppSpacing.md,
+          10,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
                 color: dotColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              height: 1,
-              color: Theme.of(context).brightness == Brightness.light
-                  ? AppColors.borderLight
-                  : AppColors.borderDark,
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.light
+                    ? AppColors.lightTextPrimary
+                    : AppColors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: dotColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  color: dotColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.color
+                  ?.withValues(alpha: 0.4),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2391,4 +2673,39 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid>
       },
     );
   }
+}
+
+enum ProfileTag {
+  freshWatcher(
+    emoji: '🌱',
+    label: 'Fresh Watcher',
+  ),
+  movieBuff(
+    emoji: '🎬',
+    label: 'Movie Buff',
+  ),
+  seriesExplorer(
+    emoji: '📺',
+    label: 'Series Explorer',
+  ),
+  screenExplorer(
+    emoji: '🍿',
+    label: 'Screen Explorer',
+  ),
+  onAStreak(
+    emoji: '🔥',
+    label: 'On a Streak',
+  ),
+  screenVeteran(
+    emoji: '🏆',
+    label: 'Screen Veteran',
+  );
+
+  final String emoji;
+  final String label;
+
+  const ProfileTag({
+    required this.emoji,
+    required this.label,
+  });
 }
