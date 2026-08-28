@@ -62,9 +62,53 @@ class EnrichedShow {
       targetEpisode++;
     }
 
+    final derivedCode =
+        'S${targetSeason.toString().padLeft(2, '0')} | E${targetEpisode.toString().padLeft(2, '0')}';
+
+    final int totalEpisodes = (data['totalEpisodes'] as num?)?.toInt() ?? 0;
+    final String? extraCount = data['extraCount'] as String?;
+    final bool isPremiere = data['isPremiere'] as bool? ?? false;
+    final bool isNewEpisode = data['isNewEpisode'] as bool? ?? false;
+
+    // Upcoming fields
+    final String upcomingEpisodeCode =
+        data['upcomingEpisodeCode'] as String? ?? 'TBA';
+    final String upcomingEpisodeTitle =
+        data['upcomingEpisodeTitle'] as String? ?? 'No upcoming episodes';
+    final bool upcomingIsPremiere =
+        data['upcomingIsPremiere'] as bool? ?? false;
+    final bool upcomingIsNew = data['upcomingIsNew'] as bool? ?? false;
+    final bool hasUpcoming = data['hasUpcoming'] as bool? ?? false;
+    final String? upcomingNetworkName = data['upcomingNetworkName'] as String?;
+
+    DateTime? upcomingAirDate;
+    int? upcomingDaysLeft;
+    final String? upcomingAirDateStr = data['upcomingAirDate'] as String?;
+    if (upcomingAirDateStr != null && upcomingAirDateStr.isNotEmpty) {
+      try {
+        final parsed = DateTime.parse(upcomingAirDateStr);
+        upcomingAirDate = parsed.toLocal();
+        final now = DateTime.now();
+        final today = DateTime.utc(now.year, now.month, now.day);
+        final targetDate = DateTime.utc(
+          upcomingAirDate.year,
+          upcomingAirDate.month,
+          upcomingAirDate.day,
+        );
+        upcomingDaysLeft = targetDate.difference(today).inDays;
+      } catch (_) {}
+    }
+
+    // Check if the next unwatched episode is actually an unreleased upcoming episode
+    final bool isNextUpcoming = hasUpcoming &&
+        upcomingDaysLeft != null &&
+        upcomingDaysLeft > 0 &&
+        upcomingEpisodeCode == derivedCode;
+
     // Derive category:
     // If watchedEpisodes is not empty, the user has started watching this show.
-    // Unless stored category is UP_TO_DATE or FINISHED, it belongs in WATCH_NEXT.
+    // If all released episodes are watched (next unwatched is upcoming, or stored category is UP_TO_DATE/FINISHED),
+    // then the user is UP_TO_DATE or FINISHED.
     final String storedCategory = data['category'] as String? ?? '';
     String category;
     if (watchedEpisodes.isEmpty) {
@@ -74,8 +118,13 @@ class EnrichedShow {
         category = 'HAVENT_STARTED';
       }
     } else {
-      if (storedCategory == 'UP_TO_DATE' || storedCategory == 'FINISHED') {
-        category = storedCategory;
+      if (isNextUpcoming ||
+          storedCategory == 'UP_TO_DATE' ||
+          storedCategory == 'FINISHED' ||
+          (totalEpisodes > 0 && watchedEpisodes.length >= totalEpisodes)) {
+        category = (storedCategory == 'FINISHED' && !isNextUpcoming)
+            ? 'FINISHED'
+            : 'UP_TO_DATE';
       } else {
         category = 'WATCH_NEXT';
       }
@@ -85,9 +134,6 @@ class EnrichedShow {
 
     // Compute episode code for next unwatched episode
     String episodeCode;
-    final derivedCode =
-        'S${targetSeason.toString().padLeft(2, '0')} | E${targetEpisode.toString().padLeft(2, '0')}';
-
     if (isUpToDate) {
       episodeCode = 'Up to date';
     } else {
@@ -125,38 +171,6 @@ class EnrichedShow {
       }
     } else {
       episodeTitle = '';
-    }
-    final int totalEpisodes = (data['totalEpisodes'] as num?)?.toInt() ?? 0;
-    final String? extraCount = data['extraCount'] as String?;
-    final bool isPremiere = data['isPremiere'] as bool? ?? false;
-    final bool isNewEpisode = data['isNewEpisode'] as bool? ?? false;
-
-    // Upcoming fields
-    final String upcomingEpisodeCode =
-        data['upcomingEpisodeCode'] as String? ?? 'TBA';
-    final String upcomingEpisodeTitle =
-        data['upcomingEpisodeTitle'] as String? ?? 'No upcoming episodes';
-    final bool upcomingIsPremiere =
-        data['upcomingIsPremiere'] as bool? ?? false;
-    final bool upcomingIsNew = data['upcomingIsNew'] as bool? ?? false;
-    final bool hasUpcoming = data['hasUpcoming'] as bool? ?? false;
-    final String? upcomingNetworkName = data['upcomingNetworkName'] as String?;
-
-    DateTime? upcomingAirDate;
-    int? upcomingDaysLeft;
-    final String? upcomingAirDateStr = data['upcomingAirDate'] as String?;
-    if (upcomingAirDateStr != null && upcomingAirDateStr.isNotEmpty) {
-      try {
-        upcomingAirDate = DateTime.parse(upcomingAirDateStr).toLocal();
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final targetDate = DateTime(
-          upcomingAirDate.year,
-          upcomingAirDate.month,
-          upcomingAirDate.day,
-        );
-        upcomingDaysLeft = targetDate.difference(today).inDays;
-      } catch (_) {}
     }
 
     return EnrichedShow(

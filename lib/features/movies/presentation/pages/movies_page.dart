@@ -1170,8 +1170,8 @@ class MoviesPageState extends State<MoviesPage> {
                     if (relDate == null) return const SizedBox.shrink();
 
                     final now = DateTime.now();
-                    final today = DateTime(now.year, now.month, now.day);
-                    final targetDate = DateTime(relDate.year, relDate.month, relDate.day);
+                    final today = DateTime.utc(now.year, now.month, now.day);
+                    final targetDate = DateTime.utc(relDate.year, relDate.month, relDate.day);
                     final daysLeft = targetDate.difference(today).inDays;
 
                     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

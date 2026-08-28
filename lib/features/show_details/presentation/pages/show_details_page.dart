@@ -1050,8 +1050,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             final airDateStr = ep['air_date'] as String?;
                             if (airDateStr != null && airDateStr.isNotEmpty) {
                               final airDate = DateTime.tryParse(airDateStr);
-                              if (airDate != null && airDate.isBefore(DateTime.now())) {
-                                releasedEpisodesKeys.add('$seasonNumber-$epNum');
+                              if (airDate != null) {
+                                final now = DateTime.now();
+                                final today = DateTime.utc(now.year, now.month, now.day);
+                                final targetDate = DateTime.utc(airDate.year, airDate.month, airDate.day);
+                                if (!targetDate.isAfter(today)) {
+                                  releasedEpisodesKeys.add('$seasonNumber-$epNum');
+                                }
                               }
                             }
                           }
@@ -1399,9 +1404,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         if (airDate != 'No Air Date' && airDate.isNotEmpty) {
           try {
             final date = DateTime.parse(airDate);
-            isReleased = date.isBefore(DateTime.now().add(const Duration(days: 1)));
+            final now = DateTime.now();
+            final today = DateTime.utc(now.year, now.month, now.day);
+            final targetDate = DateTime.utc(date.year, date.month, date.day);
+            isReleased = !targetDate.isAfter(today);
             if (!isReleased) {
-              daysUntilRelease = date.difference(DateTime.now()).inDays;
+              daysUntilRelease = targetDate.difference(today).inDays;
             }
             airDate = DateFormat('dd-MMM-yyyy').format(date);
           } catch (e) {
@@ -1752,7 +1760,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        '${daysUntilRelease > 0 ? daysUntilRelease : 1}',
+                        '$daysUntilRelease',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: context.textPrimary,
@@ -1763,7 +1771,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        (daysUntilRelease > 0 ? daysUntilRelease : 1) == 1 ? 'DAY' : 'DAYS',
+                        daysUntilRelease == 1 ? 'DAY' : 'DAYS',
                         textAlign: TextAlign.right,
                         style: TextStyle(color: context.textTertiary, fontSize: 10.0, letterSpacing: 1.0),
                       ),

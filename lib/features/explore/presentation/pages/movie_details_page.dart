@@ -174,7 +174,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     if (dateStr == null || dateStr.isEmpty) return false;
     try {
       final date = DateTime.parse(dateStr);
-      return date.isBefore(DateTime.now());
+      final now = DateTime.now();
+      final today = DateTime.utc(now.year, now.month, now.day);
+      final relDay = DateTime.utc(date.year, date.month, date.day);
+      return !relDay.isAfter(today);
     } catch (_) {
       return false;
     }
