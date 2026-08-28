@@ -197,6 +197,12 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
     }
   }
 
+  void clearWatchlist() {
+    _watchlistSubscription?.cancel();
+    _watchlistSubscription = null;
+    emit(TvShowWatchlistInitial());
+  }
+
   @override
   Future<void> close() {
     _watchlistSubscription?.cancel();

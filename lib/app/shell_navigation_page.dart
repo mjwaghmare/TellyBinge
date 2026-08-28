@@ -91,6 +91,8 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
           _startWatchers(authState.user.uid);
         } else {
           _hasStartedWatchers = false;
+          context.read<MovieWatchlistCubit>().clearWatchlist();
+          context.read<TvShowWatchlistCubit>().clearWatchlist();
         }
       },
       child: BlocBuilder<AuthCubit, AuthState>(

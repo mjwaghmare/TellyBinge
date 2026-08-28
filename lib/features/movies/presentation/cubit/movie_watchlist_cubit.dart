@@ -196,6 +196,14 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     }
   }
 
+  void clearWatchlist() {
+    _watchlistSubscription?.cancel();
+    _watchlistSubscription = null;
+    _backfillingMovieIds.clear();
+    _failedMovieIds.clear();
+    emit(MovieWatchlistInitial());
+  }
+
   @override
   Future<void> close() {
     _watchlistSubscription?.cancel();

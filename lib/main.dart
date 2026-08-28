@@ -454,10 +454,13 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
-      listenWhen: (previous, current) => current is Authenticated,
+      listenWhen: (previous, current) => true,
       listener: (context, state) {
         if (state is Authenticated) {
           syncWidget(state.user.uid);
+        } else if (state is Unauthenticated || state is AuthGuest) {
+          context.read<MovieWatchlistCubit>().clearWatchlist();
+          context.read<TvShowWatchlistCubit>().clearWatchlist();
         }
       },
       builder: (context, state) {
