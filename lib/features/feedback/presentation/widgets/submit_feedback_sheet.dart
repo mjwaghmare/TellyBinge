@@ -543,22 +543,22 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
   String _getTitlePlaceholder() {
     switch (_selectedCategory) {
       case FeedbackCategory.bug:
-        return 'Subtitles out of sync on Season 3';
+        return 'e.g. Episode notification not triggering or watchlist count issue';
       case FeedbackCategory.feature:
-        return 'Trakt.tv 2-way automatic sync';
+        return 'e.g. Filter Discover tab by streaming service (Netflix, Prime)';
       case FeedbackCategory.improvement:
-        return 'Smoother episode countdown animations';
+        return 'e.g. Faster watchlist search and smoother poster grid scrolling';
     }
   }
 
   String _getMessagePlaceholder() {
     switch (_selectedCategory) {
       case FeedbackCategory.bug:
-        return '1. Open Episode 2 in player\n2. Notice subtitles lag 2-3s behind audio';
+        return '1. Describe what happened\n2. Steps to reproduce the issue\n3. What you expected to see';
       case FeedbackCategory.feature:
-        return 'Explain how you imagine this feature working and why it would be useful...';
+        return 'Explain how you imagine this feature working and why it would improve your tracking experience in PopVerse...';
       case FeedbackCategory.improvement:
-        return 'What feels sluggish or confusing, and how can we make it better?';
+        return 'Tell us what part of PopVerse can be better (e.g. UI/UX, watchlist speed, stats, notifications) and what you suggest...';
     }
   }
 
