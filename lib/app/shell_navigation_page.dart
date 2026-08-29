@@ -81,6 +81,18 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
   }
 
   void _showSurpriseMeSheet() {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is! Authenticated) {
+      AuthRequiredBottomSheet.show(
+        context,
+        title: 'Sign in for Surprise Me',
+        subtitle:
+            'Sign in to roll the dice and get personalized random movie and TV show recommendations.',
+        icon: Icons.casino_rounded,
+      );
+      return;
+    }
+
     HapticFeedback.heavyImpact();
     showModalBottomSheet(
       context: context,
