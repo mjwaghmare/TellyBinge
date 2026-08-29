@@ -451,7 +451,7 @@ class _SearchPageState extends State<SearchPage>
       children: [
         _buildSearchBar(_showsSearchController, isTv: true),
         Expanded(
-          child: RefreshIndicator(
+          child: RefreshIndicator.adaptive(
             color: AppColors.primary,
             backgroundColor: Theme.of(context).cardColor,
             onRefresh: () async {
@@ -481,7 +481,7 @@ class _SearchPageState extends State<SearchPage>
       children: [
         _buildSearchBar(_moviesSearchController, isTv: false),
         Expanded(
-          child: RefreshIndicator(
+          child: RefreshIndicator.adaptive(
             color: AppColors.primary,
             backgroundColor: Theme.of(context).cardColor,
             onRefresh: () async {

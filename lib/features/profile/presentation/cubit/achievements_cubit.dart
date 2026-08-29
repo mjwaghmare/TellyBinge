@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
@@ -16,35 +17,24 @@ class AchievementsCubit extends Cubit<AchievementsState> {
   final SharedPreferences? prefs;
   final GlobalKey<NavigatorState>? navigatorKey;
 
-  AchievementsCubit({
-    this.prefs,
-    this.navigatorKey,
-  }) : super(AchievementsInitial());
+  AchievementsCubit({this.prefs, this.navigatorKey}) : super(AchievementsInitial());
 
   /// Evaluates achievements using the watchlist and auth state from [context].
-  static Future<void> evaluateFromContext(
-    BuildContext context, {
-    bool notify = true,
-  }) async {
+  static Future<void> evaluateFromContext(BuildContext context, {bool notify = true}) async {
     final authState = context.read<AuthCubit>().state;
     final uid = authState is Authenticated ? authState.user.uid : null;
 
     final movieState = context.read<MovieWatchlistCubit>().state;
     final showState = context.read<TvShowWatchlistCubit>().state;
 
-    final movies = movieState is MovieWatchlistSuccess
-        ? movieState.movies
-        : <Map<String, dynamic>>[];
-    final shows = showState is TvShowWatchlistSuccess
-        ? showState.shows
-        : <Map<String, dynamic>>[];
+    if (movieState is! MovieWatchlistSuccess || showState is! TvShowWatchlistSuccess) {
+      return;
+    }
 
-    await context.read<AchievementsCubit>().evaluate(
-          movies: movies,
-          shows: shows,
-          uid: uid,
-          notify: notify,
-        );
+    final movies = movieState.movies;
+    final shows = showState.shows;
+
+    await context.read<AchievementsCubit>().evaluate(movies: movies, shows: shows, uid: uid, notify: notify);
   }
 
   /// Evaluate all achievements from the current watchlist data and detect new unlocks.
@@ -54,27 +44,16 @@ class AchievementsCubit extends Cubit<AchievementsState> {
     String? uid,
     bool notify = true,
   }) async {
-    final achievements = AchievementsService.evaluate(
-      movies: movies,
-      shows: shows,
-    );
+    final achievements = AchievementsService.evaluate(movies: movies, shows: shows);
 
     final current = state;
-    final activeFilter =
-        current is AchievementsLoaded ? current.activeFilter : null;
-    emit(AchievementsLoaded(
-      achievements: achievements,
-      activeFilter: activeFilter,
-    ));
+    final activeFilter = current is AchievementsLoaded ? current.activeFilter : null;
+    emit(AchievementsLoaded(achievements: achievements, activeFilter: activeFilter));
 
     await _processNewUnlocks(achievements, uid: uid, notify: notify);
   }
 
-  Future<void> _processNewUnlocks(
-    List<Achievement> achievements, {
-    String? uid,
-    required bool notify,
-  }) async {
+  Future<void> _processNewUnlocks(List<Achievement> achievements, {String? uid, required bool notify}) async {
     final preferences = prefs;
     if (preferences == null) return;
 
@@ -84,8 +63,7 @@ class AchievementsCubit extends Cubit<AchievementsState> {
 
     // First time initializing: seed existing unlocked achievements without spamming notifications
     if (savedList == null) {
-      final initialKeys =
-          currentlyUnlocked.map((a) => '${a.id}_${a.tier.name}').toList();
+      final initialKeys = currentlyUnlocked.map((a) => '${a.id}_${a.tier.name}').toList();
       try {
         await preferences.setStringList(storageKey, initialKeys);
       } catch (e) {

@@ -146,21 +146,34 @@ class SearchCubit extends Cubit<SearchState> {
     }
     emit(SearchLoading());
     try {
-      final tvShows = await _fetchTvPage(1);
-      // Stagger by 100ms to prevent simultaneous socket handshakes on startup
-      await Future.delayed(const Duration(milliseconds: 100));
-      final movies = await _fetchMoviePage(1);
+      final results = await Future.wait<List<dynamic>?>([
+        _fetchTvPage(1).then<List<dynamic>?>((res) => res).catchError((_) => null),
+        _fetchMoviePage(1).then<List<dynamic>?>((res) => res).catchError((_) => null),
+      ]);
+      final tvShows = results[0];
+      final movies = results[1];
+
+      if (tvShows == null && movies == null) {
+        emit(SearchError('Failed to load explore content. Please check your connection.'));
+        return;
+      }
+
+      final bool tvFailed = tvShows == null;
+      final bool moviesFailed = movies == null;
 
       _cachedTrendingTv = tvShows;
       _cachedTrendingMovies = movies;
+
       emit(
         SearchTrendingSuccess(
-          trendingTv: tvShows,
-          trendingMovies: movies,
-          tvPage: 1,
-          moviesPage: 1,
-          tvHasReachedMax: tvShows.isEmpty,
-          moviesHasReachedMax: movies.isEmpty,
+          trendingTv: tvShows ?? const [],
+          trendingMovies: movies ?? const [],
+          tvPage: tvFailed ? 0 : 1,
+          moviesPage: moviesFailed ? 0 : 1,
+          tvHasReachedMax: tvFailed ? false : tvShows.isEmpty,
+          moviesHasReachedMax: moviesFailed ? false : movies.isEmpty,
+          tvLoadMoreError: tvFailed,
+          moviesLoadMoreError: moviesFailed,
         ),
       );
     } catch (e) {
@@ -176,9 +189,10 @@ class SearchCubit extends Cubit<SearchState> {
           trendingTv: _cachedTrendingTv,
           tvPage: 1,
           tvHasReachedMax: _cachedTrendingTv!.isEmpty,
+          tvLoadMoreError: false,
         ),
       );
-    } else if (state is! SearchTrendingSuccess) {
+    } else if (state is! SearchTrendingSuccess || _cachedTrendingTv == null) {
       loadTrending();
     }
   }
@@ -191,9 +205,10 @@ class SearchCubit extends Cubit<SearchState> {
           trendingMovies: _cachedTrendingMovies,
           moviesPage: 1,
           moviesHasReachedMax: _cachedTrendingMovies!.isEmpty,
+          moviesLoadMoreError: false,
         ),
       );
-    } else if (state is! SearchTrendingSuccess) {
+    } else if (state is! SearchTrendingSuccess || _cachedTrendingMovies == null) {
       loadTrending();
     }
   }
@@ -218,7 +233,16 @@ class SearchCubit extends Cubit<SearchState> {
             ),
           );
         }
-      } catch (_) {}
+      } catch (_) {
+        final currentState = state;
+        if (currentState is SearchTrendingSuccess) {
+          emit(
+            currentState.copyWith(
+              tvLoadMoreError: true,
+            ),
+          );
+        }
+      }
     } else {
       _cachedTrendingMovies = null;
       await TmdbCacheManager.instance.removeCache('trending_movie_page_1');
@@ -238,7 +262,16 @@ class SearchCubit extends Cubit<SearchState> {
             ),
           );
         }
-      } catch (_) {}
+      } catch (_) {
+        final currentState = state;
+        if (currentState is SearchTrendingSuccess) {
+          emit(
+            currentState.copyWith(
+              moviesLoadMoreError: true,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -251,10 +284,6 @@ class SearchCubit extends Cubit<SearchState> {
           : currentState.moviesHasReachedMax;
       if (currentState.isLoadingMore || hasReachedMax) return;
 
-      final isRetry = isTvTab
-          ? currentState.tvLoadMoreError
-          : currentState.moviesLoadMoreError;
-
       emit(
         currentState.copyWith(
           isLoadingMore: true,
@@ -264,21 +293,23 @@ class SearchCubit extends Cubit<SearchState> {
       );
 
       try {
-        final nextPage =
-            (isTvTab ? currentState.tvPage : currentState.moviesPage) + 1;
+        final currentPage = isTvTab ? currentState.tvPage : currentState.moviesPage;
+        final nextPage = currentPage == 0 ? 1 : currentPage + 1;
 
         final List<dynamic> newResults = isTvTab
             ? await _fetchTvPage(nextPage)
             : await _fetchMoviePage(nextPage);
 
         if (newResults.isEmpty) {
-          if (nextPage >= 500) {
+          if (nextPage >= 500 || nextPage == 1) {
             emit(
               currentState.copyWith(
                 tvHasReachedMax: isTvTab ? true : currentState.tvHasReachedMax,
                 moviesHasReachedMax: !isTvTab
                     ? true
                     : currentState.moviesHasReachedMax,
+                tvPage: isTvTab && nextPage == 1 ? 1 : currentState.tvPage,
+                moviesPage: !isTvTab && nextPage == 1 ? 1 : currentState.moviesPage,
                 isLoadingMore: false,
               ),
             );
@@ -294,11 +325,22 @@ class SearchCubit extends Cubit<SearchState> {
           }
         } else {
           final updatedTv = isTvTab
-              ? _appendUnique(currentState.trendingTv, newResults)
+              ? (currentState.trendingTv.isEmpty
+                  ? newResults
+                  : _appendUnique(currentState.trendingTv, newResults))
               : currentState.trendingTv;
           final updatedMovies = !isTvTab
-              ? _appendUnique(currentState.trendingMovies, newResults)
+              ? (currentState.trendingMovies.isEmpty
+                  ? newResults
+                  : _appendUnique(currentState.trendingMovies, newResults))
               : currentState.trendingMovies;
+
+          if (isTvTab && _cachedTrendingTv == null) {
+            _cachedTrendingTv = updatedTv;
+          }
+          if (!isTvTab && _cachedTrendingMovies == null) {
+            _cachedTrendingMovies = updatedMovies;
+          }
 
           emit(
             currentState.copyWith(
@@ -307,6 +349,8 @@ class SearchCubit extends Cubit<SearchState> {
               tvPage: isTvTab ? nextPage : currentState.tvPage,
               moviesPage: !isTvTab ? nextPage : currentState.moviesPage,
               isLoadingMore: false,
+              tvLoadMoreError: isTvTab ? false : null,
+              moviesLoadMoreError: !isTvTab ? false : null,
             ),
           );
         }
@@ -314,8 +358,8 @@ class SearchCubit extends Cubit<SearchState> {
         emit(
           currentState.copyWith(
             isLoadingMore: false,
-            tvLoadMoreError: isTvTab ? !isRetry : null,
-            moviesLoadMoreError: !isTvTab ? !isRetry : null,
+            tvLoadMoreError: isTvTab ? true : null,
+            moviesLoadMoreError: !isTvTab ? true : null,
           ),
         );
       }
