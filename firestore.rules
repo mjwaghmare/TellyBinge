@@ -40,5 +40,14 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
       allow update, delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
     }
+
+    // App configuration & version info (read-only for all clients)
+    match /app_config/{configId} {
+      allow read: if true;
+    }
+
+    match /system_configs/{configId} {
+      allow read: if true;
+    }
   }
 }

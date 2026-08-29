@@ -15,6 +15,7 @@ import '../features/search/presentation/widgets/surprise_me_sheet.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/profile/presentation/cubit/achievements_cubit.dart';
 
+import '../core/services/app_update_service.dart';
 import '../features/profile/presentation/cubit/profile_heatmap_cubit.dart';
 import '../features/auth/presentation/widgets/auth_required_view.dart';
 import 'package:lottie/lottie.dart';
@@ -45,6 +46,12 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
     if (authState is Authenticated) {
       _startWatchers(authState.user.uid);
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        AppUpdateService.instance.checkAndShowUpdate(context);
+      }
+    });
   }
 
   void _startWatchers(String uid) {
