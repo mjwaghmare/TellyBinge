@@ -11,6 +11,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'app/shell_navigation_page.dart';
 import 'core/network/tmdb_client.dart';
+import 'core/services/app_update_service.dart';
 import 'core/services/widget_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/background_sync_service.dart';
@@ -204,6 +205,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
 
     unawaited(NotificationService().promoteFiredNotifications());
+
+    final navContext = navigatorKey.currentContext;
+    if (navContext != null && navContext.mounted) {
+      unawaited(
+        AppUpdateService.instance.checkAndShowUpdate(
+          navContext,
+          isResume: true,
+        ),
+      );
+    }
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null || uid.isEmpty) return;
@@ -429,6 +440,16 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        AppUpdateService.instance.checkAndShowUpdate(context);
+      }
+    });
+  }
+
   // Time-based throttle: prevent hammering Firestore on rapid AuthCubit emissions.
   // Static so _MyAppState can reset it from outside the widget tree when a
   // widget click is received (signals the user returned after a background
