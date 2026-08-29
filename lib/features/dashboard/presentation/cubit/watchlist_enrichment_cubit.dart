@@ -25,7 +25,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
   /// Tracks the watchedEpisodes hash for each show to detect actual changes.
   final Map<int, int> _watchedEpisodesHash = {};
 
-  bool _isRecent(String? dateStr) {
+  bool _isRecentlyAired(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return false;
     try {
       final date = DateTime.parse(dateStr);
@@ -33,7 +33,21 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
       final today = DateTime.utc(now.year, now.month, now.day);
       final airDay = DateTime.utc(date.year, date.month, date.day);
       final diff = today.difference(airDay).inDays;
-      return diff >= -7 && diff <= 7;
+      return diff >= 0 && diff <= 7;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _isUpcomingSoon(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return false;
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final today = DateTime.utc(now.year, now.month, now.day);
+      final airDay = DateTime.utc(date.year, date.month, date.day);
+      final diff = airDay.difference(today).inDays;
+      return diff >= 0 && diff <= 7;
     } catch (_) {
       return false;
     }
@@ -331,7 +345,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
       bool isPremiere = false;
       bool isNewEpisode = false;
 
-      if (!foundNext) {
+      if (!foundNext || airedUnwatchedCount == 0) {
         if (watchedEpisodes.isEmpty) {
           category = 'UPCOMING_ONLY';
         } else {
@@ -355,7 +369,8 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
               (s) => s['season_number'] == tempTargetSeason,
               orElse: () => <String, dynamic>{},
             );
-            if (seasonObj.isNotEmpty && _isRecent(seasonObj['air_date'])) {
+            if (seasonObj.isNotEmpty &&
+                _isRecentlyAired(seasonObj['air_date'])) {
               isPremiere = true;
             }
           } catch (_) {}
@@ -366,26 +381,14 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
           final lastS = lastToAir['season_number'].toString().padLeft(2, '0');
           final lastE = lastToAir['episode_number'].toString().padLeft(2, '0');
           if (nextCode == 'S$lastS | E$lastE' &&
-              _isRecent(lastToAir['air_date'])) {
+              _isRecentlyAired(lastToAir['air_date'])) {
             isNewEpisode = true;
           }
         }
-        if (airedUnwatchedCount == 0) {
-          if (watchedEpisodes.isEmpty) {
-            category = 'UPCOMING_ONLY';
-          } else {
-            category =
-                (details['status'] == 'Ended' ||
-                    details['status'] == 'Canceled')
-                ? 'FINISHED'
-                : 'UP_TO_DATE';
-          }
+        if (watchedEpisodes.isEmpty) {
+          category = 'HAVENT_STARTED';
         } else {
-          if (watchedEpisodes.isEmpty) {
-            category = 'HAVENT_STARTED';
-          } else {
-            category = 'WATCH_NEXT';
-          }
+          category = 'WATCH_NEXT';
         }
       }
 
@@ -450,7 +453,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
 
         upcomingAirDateStr = nextToAir['air_date'] as String?;
 
-        if (_isRecent(upcomingAirDateStr)) {
+        if (_isUpcomingSoon(upcomingAirDateStr)) {
           if (uIsSeriesPremiere || uIsSeasonPremiere) {
             upcomingIsPremiere = true;
           } else {

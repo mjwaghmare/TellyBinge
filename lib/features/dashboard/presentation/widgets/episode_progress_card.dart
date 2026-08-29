@@ -405,7 +405,12 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
           clipBehavior: Clip.antiAlias,
           height: cardHeight,
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: _isMarkingAsWatched
+                ? context.adaptiveColor(
+                    light: AppColors.lightSurfaceElevated,
+                    dark: AppColors.surface,
+                  )
+                : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(6.0),
           ),
           child: _isMarkingAsWatched

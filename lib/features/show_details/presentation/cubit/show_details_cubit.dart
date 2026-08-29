@@ -86,7 +86,7 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
               }
             });
 
-        // Prefetch Season 1 episodes for immediate display
+        // Prefetch Season 1 episodes for immediate display (non-blocking for main UI)
         final seasonsList = details['seasons'] as List<dynamic>? ?? [];
         if (seasonsList.isNotEmpty) {
           // Find the first actual season (season_number > 0), skip specials
@@ -103,7 +103,11 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
           if (totalSeasons > firstSeasonNum) {
             futures.add(loadSeasonEpisodes(id, totalSeasons));
           }
-          await Future.wait(futures);
+          try {
+            await Future.wait(futures);
+          } catch (_) {
+            // Non-critical: let user expand season to retry if prefetch fails on slow connection
+          }
         }
       }
     } catch (e) {

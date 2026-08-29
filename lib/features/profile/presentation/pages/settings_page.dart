@@ -10,7 +10,13 @@ import '../../../../core/theme/cubit/theme_cubit.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
+import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
+import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
+import '../../domain/services/achievements_service.dart';
 import '../cubit/settings_cubit.dart';
+import 'achievements_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -85,6 +91,78 @@ class _SettingsPageState extends State<SettingsPage> {
           vertical: AppSpacing.xs,
         ),
         children: [
+          // 0. ACCOUNT SECTION
+          _buildSectionHeader('ACCOUNT'),
+          _buildSectionCard(
+            children: [
+              Builder(
+                builder: (context) {
+                  final movieState = context.watch<MovieWatchlistCubit>().state;
+                  final showState = context.watch<TvShowWatchlistCubit>().state;
+                  final movies = movieState is MovieWatchlistSuccess
+                      ? movieState.movies
+                      : <Map<String, dynamic>>[];
+                  final shows = showState is TvShowWatchlistSuccess
+                      ? showState.shows
+                      : <Map<String, dynamic>>[];
+                  final achievements = AchievementsService.evaluate(
+                    movies: movies,
+                    shows: shows,
+                  );
+                  final unlocked =
+                      achievements.where((a) => a.isUnlocked).length;
+                  final total = achievements.length;
+
+                  return _SettingsTile(
+                    icon: Icons.emoji_events_rounded,
+                    iconColor: const Color(0xFFFFD700),
+                    iconBgColor: const Color(0xFFFFD700).withValues(alpha: 0.14),
+                    title: 'Achievements',
+                    subtitle: 'Track your milestones and badges',
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '$unlocked / $total',
+                            style: AppTextStyles.xsMedium.copyWith(
+                              color: AppColors.primaryLight,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: context.isLight
+                              ? AppColors.lightTextTertiary
+                              : const Color(0xFF8E8E93).withValues(alpha: 0.7),
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AchievementsPage(),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+
           // 1. NOTIFICATIONS SECTION
           _buildSectionHeader('NOTIFICATIONS'),
           _buildSectionCard(

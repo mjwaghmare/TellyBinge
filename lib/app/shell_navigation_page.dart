@@ -6,11 +6,14 @@ import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/auth/presentation/cubit/auth_state.dart';
 import '../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../features/dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
+import '../features/dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../features/movies/presentation/pages/movies_page.dart';
 import '../features/movies/presentation/cubit/movie_watchlist_cubit.dart';
+import '../features/movies/presentation/cubit/movie_watchlist_state.dart';
 import '../features/search/presentation/pages/search_page.dart';
 import '../features/search/presentation/widgets/surprise_me_sheet.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
+import '../features/profile/presentation/cubit/achievements_cubit.dart';
 
 import '../features/profile/presentation/cubit/profile_heatmap_cubit.dart';
 import '../features/auth/presentation/widgets/auth_required_view.dart';
@@ -51,6 +54,10 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
     context.read<TvShowWatchlistCubit>().watchWatchlist(uid);
   }
 
+  void _evaluateAchievements() {
+    AchievementsCubit.evaluateFromContext(context, notify: true);
+  }
+
   @override
   void dispose() {
     _tabNotifier.dispose();
@@ -85,16 +92,28 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthCubit, AuthState>(
-      listener: (context, authState) {
-        if (authState is Authenticated) {
-          _startWatchers(authState.user.uid);
-        } else {
-          _hasStartedWatchers = false;
-          context.read<MovieWatchlistCubit>().clearWatchlist();
-          context.read<TvShowWatchlistCubit>().clearWatchlist();
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<AuthCubit, AuthState>(
+          listener: (context, authState) {
+            if (authState is Authenticated) {
+              _startWatchers(authState.user.uid);
+            } else {
+              _hasStartedWatchers = false;
+              context.read<MovieWatchlistCubit>().clearWatchlist();
+              context.read<TvShowWatchlistCubit>().clearWatchlist();
+            }
+          },
+        ),
+        BlocListener<MovieWatchlistCubit, MovieWatchlistState>(
+          listenWhen: (previous, current) => current is MovieWatchlistSuccess,
+          listener: (context, state) => _evaluateAchievements(),
+        ),
+        BlocListener<TvShowWatchlistCubit, TvShowWatchlistState>(
+          listenWhen: (previous, current) => current is TvShowWatchlistSuccess,
+          listener: (context, state) => _evaluateAchievements(),
+        ),
+      ],
       child: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, authState) {
           final isAuthenticated = authState is Authenticated;

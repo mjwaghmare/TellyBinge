@@ -37,6 +37,7 @@ import 'features/movies/data/repositories/movie_watchlist_repository_impl.dart';
 import 'features/dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import 'features/dashboard/domain/repositories/tv_watchlist_repository.dart';
 import 'features/dashboard/data/repositories/tv_watchlist_repository_impl.dart';
+import 'features/profile/presentation/cubit/achievements_cubit.dart';
 import 'firebase_options.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -356,6 +357,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           BlocProvider<TvShowWatchlistCubit>(
             create: (context) => TvShowWatchlistCubit(
               tvWatchlistRepository: context.read<TvWatchlistRepository>(),
+            ),
+          ),
+          BlocProvider<AchievementsCubit>(
+            create: (context) => AchievementsCubit(
+              prefs: context.read<SharedPreferences>(),
+              navigatorKey: navigatorKey,
             ),
           ),
         ],

@@ -644,7 +644,15 @@ class MoviesPageState extends State<MoviesPage> {
               margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
               clipBehavior: Clip.antiAlias,
               height: 96.0,
-              decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(6.0)),
+              decoration: BoxDecoration(
+                color: (isMarkingAsWatched || isRemoving)
+                    ? context.adaptiveColor(
+                        light: AppColors.lightSurfaceElevated,
+                        dark: AppColors.surface,
+                      )
+                    : Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(6.0),
+              ),
               child: (isMarkingAsWatched || isRemoving)
                   ? Center(
                       child: CircularProgressIndicator.adaptive(
@@ -1162,8 +1170,8 @@ class MoviesPageState extends State<MoviesPage> {
                     if (relDate == null) return const SizedBox.shrink();
 
                     final now = DateTime.now();
-                    final today = DateTime(now.year, now.month, now.day);
-                    final targetDate = DateTime(relDate.year, relDate.month, relDate.day);
+                    final today = DateTime.utc(now.year, now.month, now.day);
+                    final targetDate = DateTime.utc(relDate.year, relDate.month, relDate.day);
                     final daysLeft = targetDate.difference(today).inDays;
 
                     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
