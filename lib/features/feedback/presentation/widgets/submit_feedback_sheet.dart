@@ -36,10 +36,8 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _attachedMedia = [];
 
-  // Dynamic tags
-  String _selectedSeverity = 'Major';
-  String _selectedFeatureTag = 'Sync';
-  String _selectedImprovementArea = 'Performance';
+  // Bug severity default is Minor
+  String _selectedSeverity = 'Minor';
 
   bool _isSubmitting = false;
 
@@ -111,236 +109,268 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
   Widget build(BuildContext context) {
     final isLight = context.isLight;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Top Drag Handle
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(top: 4.0, bottom: 12.0),
-                  decoration: BoxDecoration(
-                    color: isLight ? Colors.grey[300] : Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-
-              // 2. Header Bar: Title + Done Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Feedback',
-                    style: TextStyle(
-                      color: isLight ? AppColors.lightTextSecondary : const Color(0xFF8E8E93),
-                      fontSize: 13.0,
-                      fontWeight: FontWeight.w600,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Top Drag Handle
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 4.0, bottom: 12.0),
+                    decoration: BoxDecoration(
+                      color: isLight ? Colors.grey[300] : Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Text(
-                      'Close',
-                      style: TextStyle(color: AppColors.primaryLight, fontSize: 15.0, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
+                ),
 
-              // 3. Main Title & Subtitle
-              Text(
-                'Submit your feedback',
-                style: AppTextStyles.xl.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                  fontSize: 22.0,
-                ),
-              ),
-              const SizedBox(height: 4.0),
-              Text(
-                'Choose a category below to submit your feedback.',
-                style: AppTextStyles.sm.copyWith(
-                  color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                  fontSize: 13.0,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-
-              // 4. Category Segmented Pill Bar (Bug, Feature, Improvement)
-              Container(
-                padding: const EdgeInsets.all(4.0),
-                decoration: BoxDecoration(
-                  color: isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C),
-                  borderRadius: BorderRadius.circular(14.0),
-                ),
-                child: Row(
+                // 2. Header Bar: Title + Close Button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildCategoryTab(FeedbackCategory.bug, 'Bug'),
-                    _buildCategoryTab(FeedbackCategory.feature, 'Feature'),
-                    _buildCategoryTab(FeedbackCategory.improvement, 'Improvement'),
+                    Text(
+                      'Feedback',
+                      style: TextStyle(
+                        color: isLight ? AppColors.lightTextSecondary : const Color(0xFF8E8E93),
+                        fontSize: 13.0,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Text(
+                        'Close',
+                        style: TextStyle(color: AppColors.primaryLight, fontSize: 15.0, fontWeight: FontWeight.w600),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sm),
 
-              // 5. Dynamic Category Fields
-              ..._buildCategorySpecificFields(isLight),
-
-              // 6. Title Input
-              _buildInputLabel('Title', isLight),
-              Container(
-                decoration: BoxDecoration(
-                  color: isLight ? const Color(0xFFF9FAFB) : const Color(0xFF1B182B),
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(color: isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.08)),
-                ),
-                child: TextField(
-                  controller: _titleController,
-                  style: TextStyle(color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary, fontSize: 14.5),
-                  decoration: InputDecoration(
-                    hintText: _getTitlePlaceholder(),
-                    hintStyle: TextStyle(
-                      color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
-                      fontSize: 13.5,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-
-              // 7. Message / Description Input
-              _buildInputLabel('Description', isLight),
-              Container(
-                decoration: BoxDecoration(
-                  color: isLight ? const Color(0xFFF9FAFB) : const Color(0xFF1B182B),
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(color: isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.08)),
-                ),
-                child: TextField(
-                  controller: _messageController,
-                  maxLines: 4,
-                  style: TextStyle(
+                // 3. Main Title & Subtitle
+                Text(
+                  'Submit your feedback',
+                  style: AppTextStyles.xl.copyWith(
+                    fontWeight: FontWeight.bold,
                     color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                    fontSize: 14.5,
-                    height: 1.4,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: _getMessagePlaceholder(),
-                    hintStyle: TextStyle(
-                      color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
-                      fontSize: 13.5,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(14.0),
+                    fontSize: 22.0,
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: 4.0),
+                Text(
+                  'Choose a category below to submit your feedback.',
+                  style: AppTextStyles.sm.copyWith(
+                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+                    fontSize: 13.0,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
 
-              // 8. Media Section (Camera + Upload buttons + Thumbnails)
-              _buildInputLabel('Media', isLight),
-              SizedBox(
-                height: 84.0,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    // Camera picker button
-                    _buildMediaPickerButton(
-                      icon: Icons.camera_alt_outlined,
-                      onTap: () => _pickImage(ImageSource.camera),
-                      isLight: isLight,
+                // 4. Category Segmented Pill Bar (Bug, Feature, Improvement)
+                Container(
+                  padding: const EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    color: isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C),
+                    borderRadius: BorderRadius.circular(14.0),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildCategoryTab(FeedbackCategory.bug, 'Bug'),
+                      _buildCategoryTab(FeedbackCategory.feature, 'Feature'),
+                      _buildCategoryTab(FeedbackCategory.improvement, 'Improvement'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // 5. Bug Severity Chips (Only for Bug category)
+                if (_selectedCategory == FeedbackCategory.bug) ...[
+                  _buildInputLabel('Severity', isLight),
+                  Row(
+                    children: [
+                      _buildChoicePill('Minor', _selectedSeverity == 'Minor', () {
+                        setState(() => _selectedSeverity = 'Minor');
+                      }, isLight),
+                      const SizedBox(width: 8.0),
+                      _buildChoicePill('Major', _selectedSeverity == 'Major', () {
+                        setState(() => _selectedSeverity = 'Major');
+                      }, isLight),
+                      const SizedBox(width: 8.0),
+                      _buildChoicePill('Crash', _selectedSeverity == 'Crash', () {
+                        setState(() => _selectedSeverity = 'Crash');
+                      }, isLight),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+
+                // 6. Title Input with Character Limit (80 max)
+                _buildInputLabel('Title', isLight),
+                Container(
+                  decoration: BoxDecoration(
+                    color: isLight ? const Color(0xFFF9FAFB) : const Color(0xFF1B182B),
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(color: isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.08)),
+                  ),
+                  child: TextField(
+                    controller: _titleController,
+                    maxLength: 80,
+                    style: TextStyle(color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary, fontSize: 14.5),
+                    decoration: InputDecoration(
+                      hintText: _getTitlePlaceholder(),
+                      hintStyle: TextStyle(
+                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
+                        fontSize: 13.5,
+                      ),
+                      counterStyle: TextStyle(
+                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
+                        fontSize: 11.0,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.only(left: 14.0, right: 14.0, top: 12.0, bottom: 4.0),
                     ),
-                    const SizedBox(width: 10.0),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
 
-                    // Gallery upload button
-                    _buildMediaPickerButton(
-                      icon: Icons.file_upload_outlined,
-                      label: '+ Upload',
-                      onTap: () => _pickImage(ImageSource.gallery),
-                      isLight: isLight,
+                // 7. Message / Description Input with Character Limit (500 max)
+                _buildInputLabel('Description', isLight),
+                Container(
+                  decoration: BoxDecoration(
+                    color: isLight ? const Color(0xFFF9FAFB) : const Color(0xFF1B182B),
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(color: isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.08)),
+                  ),
+                  child: TextField(
+                    controller: _messageController,
+                    maxLength: 500,
+                    maxLines: 4,
+                    style: TextStyle(
+                      color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                      fontSize: 14.5,
+                      height: 1.4,
                     ),
-                    const SizedBox(width: 10.0),
+                    decoration: InputDecoration(
+                      hintText: _getMessagePlaceholder(),
+                      hintStyle: TextStyle(
+                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
+                        fontSize: 13.5,
+                      ),
+                      counterStyle: TextStyle(
+                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
+                        fontSize: 11.0,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.only(left: 14.0, right: 14.0, top: 14.0, bottom: 4.0),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
 
-                    // Attached Media Previews
-                    ..._attachedMedia.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final file = entry.value;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 10.0),
-                        child: Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12.0),
-                              child: Container(
-                                width: 84.0,
-                                height: 84.0,
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: isLight ? AppColors.borderLight : Colors.white24),
-                                ),
-                                child: Image.file(File(file.path), fit: BoxFit.cover),
-                              ),
-                            ),
-                            // Delete badge (Red trash)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: GestureDetector(
-                                onTap: () => _removeMedia(index),
+                // 8. Media Section (Camera + Upload buttons + Thumbnails)
+                _buildInputLabel('Media', isLight),
+                SizedBox(
+                  height: 84.0,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      // Camera picker button
+                      _buildMediaPickerButton(
+                        icon: Icons.camera_alt_outlined,
+                        onTap: () => _pickImage(ImageSource.camera),
+                        isLight: isLight,
+                      ),
+                      const SizedBox(width: 10.0),
+
+                      // Gallery upload button
+                      _buildMediaPickerButton(
+                        icon: Icons.file_upload_outlined,
+                        label: '+ Upload',
+                        onTap: () => _pickImage(ImageSource.gallery),
+                        isLight: isLight,
+                      ),
+                      const SizedBox(width: 10.0),
+
+                      // Attached Media Previews
+                      ..._attachedMedia.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final file = entry.value;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 10.0),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12.0),
                                 child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                                  child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 14),
+                                  width: 84.0,
+                                  height: 84.0,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: isLight ? AppColors.borderLight : Colors.white24),
+                                  ),
+                                  child: Image.file(File(file.path), fit: BoxFit.cover),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.xl),
-
-              // 9. Submit Full-width Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15.0),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
-                    elevation: 0,
+                              // Delete badge (Red trash)
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: GestureDetector(
+                                  onTap: () => _removeMedia(index),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+                                    child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 14),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
                   ),
-                  onPressed: _isSubmitting ? null : _handleSubmit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(
-                          _getSubmitButtonText(),
-                          style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold),
-                        ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-            ],
+
+                const SizedBox(height: AppSpacing.lg),
+
+                // 9. Submit Full-width Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                      elevation: 0,
+                    ),
+                    onPressed: _isSubmitting ? null : _handleSubmit,
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text(
+                            _getSubmitButtonText(),
+                            style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+            ),
           ),
         ),
       ),
@@ -380,87 +410,6 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
         ),
       ),
     );
-  }
-
-  List<Widget> _buildCategorySpecificFields(bool isLight) {
-    switch (_selectedCategory) {
-      case FeedbackCategory.bug:
-        return [
-          _buildInputLabel('Severity', isLight),
-          Row(
-            children: [
-              _buildChoicePill('Minor', _selectedSeverity == 'Minor', () {
-                setState(() => _selectedSeverity = 'Minor');
-              }, isLight),
-              const SizedBox(width: 8.0),
-              _buildChoicePill('Major', _selectedSeverity == 'Major', () {
-                setState(() => _selectedSeverity = 'Major');
-              }, isLight),
-              const SizedBox(width: 8.0),
-              _buildChoicePill('Crash', _selectedSeverity == 'Crash', () {
-                setState(() => _selectedSeverity = 'Crash');
-              }, isLight),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-        ];
-
-      case FeedbackCategory.feature:
-        return [
-          _buildInputLabel('Category', isLight),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildChoicePill('Sync', _selectedFeatureTag == 'Sync', () {
-                  setState(() => _selectedFeatureTag = 'Sync');
-                }, isLight),
-                const SizedBox(width: 8.0),
-                _buildChoicePill('Player', _selectedFeatureTag == 'Player', () {
-                  setState(() => _selectedFeatureTag = 'Player');
-                }, isLight),
-                const SizedBox(width: 8.0),
-                _buildChoicePill('Social', _selectedFeatureTag == 'Social', () {
-                  setState(() => _selectedFeatureTag = 'Social');
-                }, isLight),
-                const SizedBox(width: 8.0),
-                _buildChoicePill('Stats', _selectedFeatureTag == 'Stats', () {
-                  setState(() => _selectedFeatureTag = 'Stats');
-                }, isLight),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-        ];
-
-      case FeedbackCategory.improvement:
-        return [
-          _buildInputLabel('Focus Area', isLight),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildChoicePill('Performance', _selectedImprovementArea == 'Performance', () {
-                  setState(() => _selectedImprovementArea = 'Performance');
-                }, isLight),
-                const SizedBox(width: 8.0),
-                _buildChoicePill('UI/UX', _selectedImprovementArea == 'UI/UX', () {
-                  setState(() => _selectedImprovementArea = 'UI/UX');
-                }, isLight),
-                const SizedBox(width: 8.0),
-                _buildChoicePill('Watchlist', _selectedImprovementArea == 'Watchlist', () {
-                  setState(() => _selectedImprovementArea = 'Watchlist');
-                }, isLight),
-                const SizedBox(width: 8.0),
-                _buildChoicePill('Notifications', _selectedImprovementArea == 'Notifications', () {
-                  setState(() => _selectedImprovementArea = 'Notifications');
-                }, isLight),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-        ];
-    }
   }
 
   Widget _buildChoicePill(String label, bool isSelected, VoidCallback onTap, bool isLight) {
@@ -543,11 +492,11 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
   String _getTitlePlaceholder() {
     switch (_selectedCategory) {
       case FeedbackCategory.bug:
-        return 'e.g. Episode notification not triggering or watchlist count issue';
+        return 'e.g. Episode notification not triggering';
       case FeedbackCategory.feature:
-        return 'e.g. Filter Discover tab by streaming service (Netflix, Prime)';
+        return 'e.g. Filter Discover by streaming service';
       case FeedbackCategory.improvement:
-        return 'e.g. Faster watchlist search and smoother poster grid scrolling';
+        return 'e.g. Faster watchlist search & poster load';
     }
   }
 
