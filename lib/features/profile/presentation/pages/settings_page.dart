@@ -18,6 +18,7 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../domain/services/achievements_service.dart';
 import '../cubit/settings_cubit.dart';
 import 'achievements_page.dart';
+import '../../../feedback/presentation/pages/feedback_board_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -348,10 +349,18 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               _buildDivider(),
               _SettingsTile(
-                icon: Icons.warning_amber_rounded,
-                title: 'Report a Problem',
-                subtitle: 'Let us know if something isn\'t working',
-                onTap: () => _showReportProblemSheet(context),
+                icon: Icons.forum_outlined,
+                title: 'Feedback & Requests',
+                subtitle: 'Report bugs, suggest features & upvote ideas',
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FeedbackBoardPage(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -1089,81 +1098,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             );
           },
-        );
-      },
-    );
-  }
-
-  void _showReportProblemSheet(BuildContext context) {
-    HapticFeedback.lightImpact();
-    final isLight = context.isLight;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isLight ? Colors.grey[300] : Colors.white24,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  'Report a Problem',
-                  style: AppTextStyles.lg.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isLight
-                        ? AppColors.lightTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Let us know if something isn\'t working as expected',
-                  style: AppTextStyles.sm.copyWith(
-                    color: isLight
-                        ? AppColors.lightTextSecondary
-                        : AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.email_outlined),
-                    label: const Text('Email Support (support@popverse.app)'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _launchSupportEmail(context);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
         );
       },
     );
