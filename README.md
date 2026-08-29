@@ -10,11 +10,9 @@
 
 <p align="center">
   <a href="#features">Features</a> •
-  <a href="#tech-stack">Tech Stack</a> •
+  <a href="#tech-stack--dependencies">Tech Stack</a> •
   <a href="#architecture">Architecture</a> •
-  <a href="#getting-started">Getting Started</a> •
-  <a href="#folder-structure">Folder Structure</a> •
-  <a href="#contributing">Contributing</a>
+  <a href="#screenshots">Screenshots</a>
 </p>
 
 <p align="center">
@@ -102,63 +100,8 @@ Each feature is organized into layers:
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (version `^3.12.0` or higher)
-- [Dart SDK](https://dart.dev/get-dart)
-- Android Studio / Xcode for device emulators
-- A TMDB API Key from [themoviedb.org](https://www.themoviedb.org/documentation/api)
-- A configured [Firebase Project](https://firebase.google.com/)
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/your-username/popverse.git
-cd popverse
-```
-
-### 2. Configure Environment Variables
-Create a `.env` file in the root directory:
-```env
-TMDB_API_KEY=your_tmdb_api_key_here
-TMDB_BASE_URL=https://api.themoviedb.org/3
-TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
-```
-
-### 3. Setup Firebase
-- Add your `google-services.json` to `android/app/`
-- Add your `GoogleService-Info.plist` to `ios/Runner/`
-
-### 4. Install Dependencies & Run
-```bash
-# Get dependencies
-flutter pub get
-
-# Run the app
-flutter run
-```
-
----
-
 ## 📱 Screenshots
 
 | Home / Watchlist | Explore & Discover | Show Details | Statistics & Badges |
 | :---: | :---: | :---: | :---: |
 | *(Add screenshot)* | *(Add screenshot)* | *(Add screenshot)* | *(Add screenshot)* |
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
