@@ -127,11 +127,11 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   // MODIFY: loadTrending with caching to avoid redundant api queries
-  Future<void> loadTrending() async {
-    if (state is SearchTrendingSuccess) {
+  Future<void> loadTrending({bool force = false}) async {
+    if (!force && state is SearchTrendingSuccess) {
       return;
     }
-    if (_cachedTrendingTv != null && _cachedTrendingMovies != null) {
+    if (!force && _cachedTrendingTv != null && _cachedTrendingMovies != null) {
       emit(
         SearchTrendingSuccess(
           trendingTv: _cachedTrendingTv!,
@@ -192,8 +192,10 @@ class SearchCubit extends Cubit<SearchState> {
           tvLoadMoreError: false,
         ),
       );
-    } else if (state is! SearchTrendingSuccess || _cachedTrendingTv == null) {
-      loadTrending();
+    } else if (state is SearchTrendingSuccess && _cachedTrendingTv == null) {
+      refreshFeed(isTv: true);
+    } else {
+      loadTrending(force: true);
     }
   }
 
@@ -208,8 +210,10 @@ class SearchCubit extends Cubit<SearchState> {
           moviesLoadMoreError: false,
         ),
       );
-    } else if (state is! SearchTrendingSuccess || _cachedTrendingMovies == null) {
-      loadTrending();
+    } else if (state is SearchTrendingSuccess && _cachedTrendingMovies == null) {
+      refreshFeed(isTv: false);
+    } else {
+      loadTrending(force: true);
     }
   }
 
@@ -342,12 +346,19 @@ class SearchCubit extends Cubit<SearchState> {
             _cachedTrendingMovies = updatedMovies;
           }
 
+          final bool isMaxReached = nextPage >= 500;
           emit(
             currentState.copyWith(
               trendingTv: updatedTv,
               trendingMovies: updatedMovies,
               tvPage: isTvTab ? nextPage : currentState.tvPage,
               moviesPage: !isTvTab ? nextPage : currentState.moviesPage,
+              tvHasReachedMax: isTvTab
+                  ? (isMaxReached || currentState.tvHasReachedMax)
+                  : currentState.tvHasReachedMax,
+              moviesHasReachedMax: !isTvTab
+                  ? (isMaxReached || currentState.moviesHasReachedMax)
+                  : currentState.moviesHasReachedMax,
               isLoadingMore: false,
               tvLoadMoreError: isTvTab ? false : null,
               moviesLoadMoreError: !isTvTab ? false : null,
@@ -399,10 +410,12 @@ class SearchCubit extends Cubit<SearchState> {
             filteredNewResults,
           );
 
+          final bool isMaxReached = nextPage >= 500;
           emit(
             currentState.copyWith(
               results: updatedResults,
               page: nextPage,
+              hasReachedMax: isMaxReached,
               isLoadingMore: false,
             ),
           );

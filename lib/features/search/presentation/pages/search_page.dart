@@ -889,6 +889,7 @@ class _SearchPageState extends State<SearchPage>
       if (filteredTrending.length < 12 &&
           !state.isLoadingMore &&
           !state.tvHasReachedMax &&
+          !state.tvLoadMoreError &&
           state.tvPage < 500) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -1025,6 +1026,7 @@ class _SearchPageState extends State<SearchPage>
       if (filteredTrending.length < 12 &&
           !state.isLoadingMore &&
           !state.moviesHasReachedMax &&
+          !state.moviesLoadMoreError &&
           state.moviesPage < 500) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -1088,6 +1090,42 @@ class _SearchPageState extends State<SearchPage>
     Map<int, int>? indexById,
   }) {
     if (items.isEmpty) {
+      if (hasLoadMoreError && onRetry != null) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Failed to load explore content.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.error),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ElevatedButton(
+                  onPressed: onRetry,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.textOnPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.xl),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl,
+                      vertical: AppSpacing.sm,
+                    ),
+                  ),
+                  child: const Text(
+                    'RETRY',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
       return CustomScrollView(
         controller: controller,
         physics: physics ?? const AlwaysScrollableScrollPhysics(),

@@ -126,7 +126,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     _fetchReceivedNotifications();
   }
 
-  Future<void> _fetchReceivedNotifications() async {
+  Future<void> _fetchReceivedNotifications({bool isRefresh = false}) async {
     // Read in-memory watchlist data before async call to populate real posters
     final tvState = context.read<TvShowWatchlistCubit>().state;
     final movieState = context.read<MovieWatchlistCubit>().state;
@@ -134,7 +134,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final moviesList = movieState is MovieWatchlistSuccess ? movieState.movies : <Map<String, dynamic>>[];
 
     setState(() {
-      _isLoading = true;
+      if (!isRefresh) {
+        _isLoading = true;
+      }
       _errorMessage = null;
     });
 
@@ -155,7 +157,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
             final id = int.tryParse(idStr);
             if (id != null) {
               final show = showsList.firstWhere(
-                (s) => (s['id'] as num?)?.toInt() == id,
+                (s) {
+                  final sId = (s['id'] as num?)?.toInt() ??
+                      int.tryParse(s['id']?.toString() ?? '');
+                  return sId == id;
+                },
                 orElse: () => <String, dynamic>{},
               );
               posterPath = show['posterPath'] as String?;
@@ -166,7 +172,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
             final id = int.tryParse(idStr);
             if (id != null) {
               final movie = moviesList.firstWhere(
-                (m) => (m['id'] as num?)?.toInt() == id,
+                (m) {
+                  final mId = (m['id'] as num?)?.toInt() ??
+                      int.tryParse(m['id']?.toString() ?? '');
+                  return mId == id;
+                },
                 orElse: () => <String, dynamic>{},
               );
               posterPath = movie['posterPath'] as String?;
@@ -355,11 +365,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     if (confirmed == true) {
       HapticFeedback.mediumImpact();
+      final previousNotifications = List<CleanNotificationItem>.from(_notifications);
       setState(() {
         _notifications.clear();
         _errorMessage = null;
       });
-      await NotificationService().clearAllUserNotifications();
+      try {
+        await NotificationService().clearAllUserNotifications();
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _notifications = previousNotifications;
+            _errorMessage = 'Failed to clear notifications. Please try again.';
+          });
+        }
+      }
     }
   }
 
@@ -507,7 +527,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
             )
           : RefreshIndicator(
-              onRefresh: _fetchReceivedNotifications,
+              onRefresh: () => _fetchReceivedNotifications(isRefresh: true),
               color: AppColors.primary,
               child: _errorMessage != null
                   ? _buildErrorState(isLight)

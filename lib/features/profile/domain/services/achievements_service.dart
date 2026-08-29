@@ -20,11 +20,16 @@ class AchievementsService {
     final totalEpisodes = shows.fold<int>(
       0,
       (sum, s) =>
-          sum + (List<dynamic>.from(s['watchedEpisodes'] ?? [])).length,
+          sum + (Set<dynamic>.from(s['watchedEpisodes'] ?? [])).length,
     );
     final totalMovieMinutes = watchedMovies.fold<int>(
       0,
-      (sum, m) => sum + ((m['runtime'] as num?)?.toInt() ?? 0),
+      (sum, m) {
+        final runtime = (m['runtime'] as num?)?.toInt() ??
+            int.tryParse(m['runtime']?.toString() ?? '') ??
+            0;
+        return sum + runtime;
+      },
     );
     // Rough average of 42 min per TV episode.
     final totalShowMinutes = totalEpisodes * 42;
@@ -33,17 +38,17 @@ class AchievementsService {
 
     final watchedShows = shows.where((s) {
       final eps = s['watchedEpisodes'];
-      return eps is List && eps.isNotEmpty;
+      final isCompleted = s['category'] == 'COMPLETED';
+      return (eps is Iterable && eps.isNotEmpty) || isCompleted;
     }).toList();
 
     // Genre helpers.
-    final movieGenres = _extractGenreCountsFromMovies(watchedMovies);
-    final showGenreNames = _extractGenreNamesFromShows(watchedShows);
-    final uniqueGenreCount = _countUniqueGenres(watchedMovies, watchedShows);
+    final allGenres = _extractAllGenreCounts(watchedMovies, watchedShows);
+    final uniqueGenreCount = allGenres.keys.length;
 
     // History-based helpers.
     final hasNightOwl = _hasTimeRange(watchedMovies, watchedShows, 1, 0, 4, 30);
-    final hasEarlyBird = _hasTimeRange(watchedMovies, watchedShows, 5, 0, 7, 30);
+    final hasEarlyBird = _hasTimeRange(watchedMovies, watchedShows, 4, 30, 7, 30);
     final marathonDayEpisodes = _maxEpisodesInSingleDay(shows);
     final weekendStats = _weekendStats(watchedMovies, watchedShows);
     final completedSeriesCount = _completedSeriesCount(shows);
@@ -54,15 +59,16 @@ class AchievementsService {
 
     return [
       // ── 1. WATCH VOLUME ──
-      _multi(
-        baseId: 'first_step',
+      Achievement(
+        id: 'first_step',
         title: 'First Step',
         description: 'Log your very first Movie or TV Episode',
         category: AchievementCategory.volume,
         icon: Icons.rocket_launch_rounded,
         assetPath: 'assets/awards/first_step.jpg',
-        current: watchedMoviesCount + totalEpisodes,
-        tiers: const {AchievementTier.none: 1},
+        currentValue: (watchedMoviesCount + totalEpisodes) >= 1 ? 1 : 0,
+        targetValue: 1,
+        isUnlocked: (watchedMoviesCount + totalEpisodes) >= 1,
       ),
       _multi(
         baseId: 'movie_buff',
@@ -133,7 +139,7 @@ class AchievementsService {
         category: AchievementCategory.habits,
         icon: Icons.weekend_rounded,
         assetPath: 'assets/awards/weekend_warrior.jpg',
-        currentValue: weekendStats,
+        currentValue: weekendStats.clamp(0, 1),
         targetValue: 1,
         isUnlocked: weekendStats >= 1,
       ),
@@ -144,7 +150,7 @@ class AchievementsService {
         category: AchievementCategory.habits,
         icon: Icons.directions_run_rounded,
         assetPath: 'assets/awards/marathon_runner.jpg',
-        currentValue: marathonDayEpisodes,
+        currentValue: marathonDayEpisodes.clamp(0, 5),
         targetValue: 5,
         isUnlocked: marathonDayEpisodes >= 5,
       ),
@@ -179,7 +185,7 @@ class AchievementsService {
         category: AchievementCategory.genres,
         icon: Icons.whatshot_rounded,
         assetPath: 'assets/awards/scream_king.jpg',
-        current: (movieGenres['Horror'] ?? 0) + (showGenreNames['Horror'] ?? 0),
+        current: _getGenreCount(allGenres, const ['horror']),
         tiers: const {
           AchievementTier.bronze: 10,
           AchievementTier.silver: 25,
@@ -193,8 +199,7 @@ class AchievementsService {
         category: AchievementCategory.genres,
         icon: Icons.rocket_rounded,
         assetPath: 'assets/awards/space_explorer.jpg',
-        current: (movieGenres['Science Fiction'] ?? 0) +
-            (showGenreNames['Sci-Fi & Fantasy'] ?? 0),
+        current: _getGenreCount(allGenres, const ['science fiction', 'sci-fi']),
         tiers: const {
           AchievementTier.bronze: 10,
           AchievementTier.silver: 25,
@@ -208,8 +213,7 @@ class AchievementsService {
         category: AchievementCategory.genres,
         icon: Icons.animation_rounded,
         assetPath: 'assets/awards/otaku.jpg',
-        current: (movieGenres['Animation'] ?? 0) +
-            (showGenreNames['Animation'] ?? 0),
+        current: _getGenreCount(allGenres, const ['animation', 'anime']),
         tiers: const {
           AchievementTier.bronze: 20,
           AchievementTier.silver: 100,
@@ -223,10 +227,7 @@ class AchievementsService {
         category: AchievementCategory.genres,
         icon: Icons.search_rounded,
         assetPath: 'assets/awards/true_detective.jpg',
-        current: (movieGenres['Crime'] ?? 0) +
-            (movieGenres['Mystery'] ?? 0) +
-            (showGenreNames['Crime'] ?? 0) +
-            (showGenreNames['Mystery'] ?? 0),
+        current: _getGenreCount(allGenres, const ['crime', 'mystery']),
         tiers: const {
           AchievementTier.bronze: 15,
           AchievementTier.silver: 40,
@@ -239,12 +240,9 @@ class AchievementsService {
         category: AchievementCategory.genres,
         icon: Icons.favorite_rounded,
         assetPath: 'assets/awards/hopeless_romantic.jpg',
-        currentValue: (movieGenres['Romance'] ?? 0) +
-            (showGenreNames['Romance'] ?? 0),
+        currentValue: _getGenreCount(allGenres, const ['romance', 'romantic']).clamp(0, 15),
         targetValue: 15,
-        isUnlocked: ((movieGenres['Romance'] ?? 0) +
-                (showGenreNames['Romance'] ?? 0)) >=
-            15,
+        isUnlocked: _getGenreCount(allGenres, const ['romance', 'romantic']) >= 15,
       ),
       Achievement(
         id: 'mind_bender',
@@ -253,12 +251,9 @@ class AchievementsService {
         category: AchievementCategory.genres,
         icon: Icons.psychology_rounded,
         assetPath: 'assets/awards/mind_bender.jpg',
-        currentValue: (movieGenres['Thriller'] ?? 0) +
-            (showGenreNames['Thriller'] ?? 0),
+        currentValue: _getGenreCount(allGenres, const ['thriller', 'psychological']).clamp(0, 10),
         targetValue: 10,
-        isUnlocked: ((movieGenres['Thriller'] ?? 0) +
-                (showGenreNames['Thriller'] ?? 0)) >=
-            10,
+        isUnlocked: _getGenreCount(allGenres, const ['thriller', 'psychological']) >= 10,
       ),
       Achievement(
         id: 'genre_hopper',
@@ -267,7 +262,7 @@ class AchievementsService {
         category: AchievementCategory.genres,
         icon: Icons.shuffle_rounded,
         assetPath: 'assets/awards/genre_hopper.jpg',
-        currentValue: uniqueGenreCount,
+        currentValue: uniqueGenreCount.clamp(0, 8),
         targetValue: 8,
         isUnlocked: uniqueGenreCount >= 8,
       ),
@@ -319,7 +314,7 @@ class AchievementsService {
         category: AchievementCategory.special,
         icon: Icons.theaters_rounded,
         assetPath: 'assets/awards/double_feature.jpg',
-        currentValue: doubleFeatureDay,
+        currentValue: doubleFeatureDay.clamp(0, 1),
         targetValue: 1,
         isUnlocked: doubleFeatureDay >= 1,
       ),
@@ -383,64 +378,108 @@ class AchievementsService {
 
   // ── GENRE EXTRACTION ──
 
-  static Map<String, int> _extractGenreCountsFromMovies(
-      List<Map<String, dynamic>> watchedMovies) {
-    final Map<String, int> counts = {};
-    for (final movie in watchedMovies) {
-      final genres = movie['genres'];
-      if (genres is List) {
-        for (final g in genres) {
-          final name = g is Map ? (g['name'] as String?) : g?.toString();
-          if (name != null && name.isNotEmpty) {
-            counts[name] = (counts[name] ?? 0) + 1;
-          }
-        }
-      }
-    }
-    return counts;
-  }
-
-  static Map<String, int> _extractGenreNamesFromShows(
-      List<Map<String, dynamic>> shows) {
-    final Map<String, int> counts = {};
-    for (final show in shows) {
-      final genres = show['genres'];
-      if (genres is List) {
-        for (final g in genres) {
-          final name = g is Map ? (g['name'] as String?) : g?.toString();
-          if (name != null && name.isNotEmpty) {
-            counts[name] = (counts[name] ?? 0) + 1;
-          }
-        }
-      }
-    }
-    return counts;
-  }
-
-  static int _countUniqueGenres(
+  static Map<String, int> _extractAllGenreCounts(
     List<Map<String, dynamic>> watchedMovies,
     List<Map<String, dynamic>> shows,
   ) {
-    final Set<String> genres = {};
-    for (final movie in watchedMovies) {
-      final g = movie['genres'];
-      if (g is List) {
-        for (final genre in g) {
-          final name = genre is Map ? (genre['name'] as String?) : genre?.toString();
-          if (name != null && name.isNotEmpty) genres.add(name);
+    final Map<String, int> counts = {};
+
+    void processItem(Map<String, dynamic> item) {
+      final rawGenres = item['genres'];
+      final Set<String> itemGenres = {};
+
+      if (rawGenres is String) {
+        for (final part in rawGenres.split(',')) {
+          final trimmed = part.trim().toLowerCase();
+          if (trimmed.isNotEmpty) {
+            itemGenres.add(trimmed);
+          }
+        }
+      } else if (rawGenres is List) {
+        for (final g in rawGenres) {
+          if (g is Map) {
+            final name = (g['name'] as String?)?.trim().toLowerCase();
+            if (name != null && name.isNotEmpty) {
+              itemGenres.add(name);
+            }
+          } else if (g is String) {
+            final trimmed = g.trim().toLowerCase();
+            if (trimmed.isNotEmpty) {
+              itemGenres.add(trimmed);
+            }
+          }
         }
       }
+
+      // Check genre_ids / genreIds from raw TMDB payloads
+      final rawGenreIds = item['genre_ids'] ?? item['genreIds'];
+      if (rawGenreIds is List) {
+        for (final id in rawGenreIds) {
+          final name = _genreNameFromId((id as num?)?.toInt());
+          if (name != null) {
+            itemGenres.add(name.toLowerCase());
+          }
+        }
+      }
+
+      for (final genre in itemGenres) {
+        counts[genre] = (counts[genre] ?? 0) + 1;
+      }
+    }
+
+    for (final movie in watchedMovies) {
+      processItem(movie);
     }
     for (final show in shows) {
-      final g = show['genres'];
-      if (g is List) {
-        for (final genre in g) {
-          final name = genre is Map ? (genre['name'] as String?) : genre?.toString();
-          if (name != null && name.isNotEmpty) genres.add(name);
-        }
+      processItem(show);
+    }
+
+    return counts;
+  }
+
+  static int _getGenreCount(Map<String, int> counts, List<String> keywords) {
+    int total = 0;
+    for (final entry in counts.entries) {
+      final key = entry.key.toLowerCase();
+      if (keywords.any((kw) => key.contains(kw.toLowerCase()))) {
+        total += entry.value;
       }
     }
-    return genres.length;
+    return total;
+  }
+
+  static String? _genreNameFromId(int? id) {
+    if (id == null) return null;
+    return switch (id) {
+      28 => 'Action',
+      12 => 'Adventure',
+      16 => 'Animation',
+      35 => 'Comedy',
+      80 => 'Crime',
+      99 => 'Documentary',
+      18 => 'Drama',
+      10751 => 'Family',
+      14 => 'Fantasy',
+      36 => 'History',
+      27 => 'Horror',
+      10402 => 'Music',
+      9648 => 'Mystery',
+      10749 => 'Romance',
+      878 => 'Science Fiction',
+      10770 => 'TV Movie',
+      53 => 'Thriller',
+      10752 => 'War',
+      37 => 'Western',
+      10759 => 'Action & Adventure',
+      10762 => 'Kids',
+      10763 => 'News',
+      10764 => 'Reality',
+      10765 => 'Sci-Fi & Fantasy',
+      10766 => 'Soap',
+      10767 => 'Talk',
+      10768 => 'War & Politics',
+      _ => null,
+    };
   }
 
   // ── TIME-OF-DAY CHECKS ──
@@ -454,22 +493,27 @@ class AchievementsService {
     int endMin,
   ) {
     for (final m in movies) {
-      final dt = _parseDate(m['watchedAt']);
+      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
       if (dt != null && _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
         return true;
       }
     }
     for (final s in shows) {
-      final episodes = s['watchedEpisodes'] as List?;
-      if (episodes == null || episodes.isEmpty) continue;
       final datesMap = s['episodeWatchedDates'] as Map?;
-      for (final ep in episodes) {
-        final epKey = ep.toString();
-        final rawVal = datesMap?[epKey];
-        final epDateStr = rawVal is String ? rawVal : null;
-        final dt = _parseDate(epDateStr ?? s['addedAt']);
-        if (dt != null && _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
-          return true;
+      if (datesMap != null && datesMap.isNotEmpty) {
+        for (final rawVal in datesMap.values) {
+          final dt = _parseFirstDate([rawVal, s['updatedAt'], s['addedAt']]);
+          if (dt != null && _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
+            return true;
+          }
+        }
+      } else {
+        final episodes = Set<dynamic>.from(s['watchedEpisodes'] ?? []);
+        if (episodes.isNotEmpty) {
+          final dt = _parseFirstDate([s['updatedAt'], s['addedAt']]);
+          if (dt != null && _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
+            return true;
+          }
         }
       }
     }
@@ -488,7 +532,7 @@ class AchievementsService {
       List<Map<String, dynamic>> movies) {
     final Map<String, int> dayCounts = {};
     for (final m in movies) {
-      final dt = _parseDate(m['watchedAt']);
+      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
       if (dt != null) {
         final key = _dayKey(dt);
         dayCounts[key] = (dayCounts[key] ?? 0) + 1;
@@ -501,17 +545,23 @@ class AchievementsService {
       List<Map<String, dynamic>> shows) {
     final Map<String, int> dayCounts = {};
     for (final s in shows) {
-      final episodes = List<dynamic>.from(s['watchedEpisodes'] ?? []);
-      if (episodes.isEmpty) continue;
       final datesMap = s['episodeWatchedDates'] as Map?;
-      for (final ep in episodes) {
-        final epKey = ep.toString();
-        final rawVal = datesMap?[epKey];
-        final epDateStr = rawVal is String ? rawVal : null;
-        final dt = _parseDate(epDateStr ?? s['addedAt']);
-        if (dt != null) {
-          final key = _dayKey(dt);
-          dayCounts[key] = (dayCounts[key] ?? 0) + 1;
+      if (datesMap != null && datesMap.isNotEmpty) {
+        for (final rawVal in datesMap.values) {
+          final dt = _parseFirstDate([rawVal, s['updatedAt'], s['addedAt']]);
+          if (dt != null) {
+            final key = _dayKey(dt);
+            dayCounts[key] = (dayCounts[key] ?? 0) + 1;
+          }
+        }
+      } else {
+        final episodes = Set<dynamic>.from(s['watchedEpisodes'] ?? []);
+        for (final _ in episodes) {
+          final dt = _parseFirstDate([s['updatedAt'], s['addedAt']]);
+          if (dt != null) {
+            final key = _dayKey(dt);
+            dayCounts[key] = (dayCounts[key] ?? 0) + 1;
+          }
         }
       }
     }
@@ -521,18 +571,24 @@ class AchievementsService {
   static int _maxEpisodesInSingleDay(List<Map<String, dynamic>> shows) {
     int maxEpisodes = 0;
     for (final s in shows) {
-      final episodes = List<dynamic>.from(s['watchedEpisodes'] ?? []);
-      if (episodes.isEmpty) continue;
       final datesMap = s['episodeWatchedDates'] as Map?;
       final Map<String, int> showDayCounts = {};
-      for (final ep in episodes) {
-        final epKey = ep.toString();
-        final rawVal = datesMap?[epKey];
-        final epDateStr = rawVal is String ? rawVal : null;
-        final dt = _parseDate(epDateStr ?? s['addedAt']);
-        if (dt != null) {
-          final key = _dayKey(dt);
-          showDayCounts[key] = (showDayCounts[key] ?? 0) + 1;
+      if (datesMap != null && datesMap.isNotEmpty) {
+        for (final rawVal in datesMap.values) {
+          final dt = _parseFirstDate([rawVal, s['updatedAt'], s['addedAt']]);
+          if (dt != null) {
+            final key = _dayKey(dt);
+            showDayCounts[key] = (showDayCounts[key] ?? 0) + 1;
+          }
+        }
+      } else {
+        final episodes = Set<dynamic>.from(s['watchedEpisodes'] ?? []);
+        for (final _ in episodes) {
+          final dt = _parseFirstDate([s['updatedAt'], s['addedAt']]);
+          if (dt != null) {
+            final key = _dayKey(dt);
+            showDayCounts[key] = (showDayCounts[key] ?? 0) + 1;
+          }
         }
       }
       for (final count in showDayCounts.values) {
@@ -564,7 +620,7 @@ class AchievementsService {
       // Group Saturday and Sunday into the same weekend (keyed by Saturday).
       final sat = dt.weekday == DateTime.saturday
           ? dt
-          : dt.subtract(const Duration(days: 1));
+          : DateTime(dt.year, dt.month, dt.day - 1);
       final weekendKey = _dayKey(sat);
 
       final movs = movieDays[dayKey] ?? 0;
@@ -595,9 +651,12 @@ class AchievementsService {
     int count = 0;
     for (final s in shows) {
       final watchedEpisodes =
-          List<dynamic>.from(s['watchedEpisodes'] ?? []);
-      final totalEpisodes = (s['totalEpisodes'] as num?)?.toInt() ?? 0;
-      if (totalEpisodes > 0 && watchedEpisodes.length >= totalEpisodes) {
+          Set<dynamic>.from(s['watchedEpisodes'] ?? []);
+      final totalEpisodes = (s['totalEpisodes'] as num?)?.toInt() ??
+          int.tryParse(s['totalEpisodes']?.toString() ?? '') ??
+          0;
+      final isMarkedCompleted = s['category'] == 'COMPLETED';
+      if (isMarkedCompleted || (totalEpisodes > 0 && watchedEpisodes.length >= totalEpisodes)) {
         count++;
       }
     }
@@ -612,31 +671,38 @@ class AchievementsService {
     final Set<String> activeDays = {};
 
     for (final m in movies) {
-      final dt = _parseDate(m['watchedAt']);
+      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
       if (dt != null) activeDays.add(_dayKey(dt));
     }
     for (final s in shows) {
-      final episodes = List<dynamic>.from(s['watchedEpisodes'] ?? []);
       final datesMap = s['episodeWatchedDates'] as Map?;
-      for (final ep in episodes) {
-        final epKey = ep.toString();
-        final rawVal = datesMap?[epKey];
-        final epDateStr = rawVal is String ? rawVal : null;
-        final dt = _parseDate(epDateStr ?? s['addedAt']);
-        if (dt != null) activeDays.add(_dayKey(dt));
+      if (datesMap != null && datesMap.isNotEmpty) {
+        for (final rawVal in datesMap.values) {
+          final dt = _parseFirstDate([rawVal, s['updatedAt'], s['addedAt']]);
+          if (dt != null) activeDays.add(_dayKey(dt));
+        }
+      } else {
+        final episodes = Set<dynamic>.from(s['watchedEpisodes'] ?? []);
+        if (episodes.isNotEmpty) {
+          final dt = _parseFirstDate([s['updatedAt'], s['addedAt']]);
+          if (dt != null) activeDays.add(_dayKey(dt));
+        }
       }
     }
 
     if (activeDays.isEmpty) return 0;
 
-    final sorted = activeDays.toList()..sort();
+    final sorted = activeDays.map((d) => DateTime.parse(d)).toList()..sort();
     int maxStreak = 1;
     int currentStreak = 1;
 
     for (int i = 1; i < sorted.length; i++) {
-      final prev = DateTime.parse(sorted[i - 1]);
-      final curr = DateTime.parse(sorted[i]);
-      if (curr.difference(prev).inDays == 1) {
+      final prev = sorted[i - 1];
+      final curr = sorted[i];
+      final nextDay = DateTime(prev.year, prev.month, prev.day + 1);
+      if (curr.year == nextDay.year &&
+          curr.month == nextDay.month &&
+          curr.day == nextDay.day) {
         currentStreak++;
         if (currentStreak > maxStreak) maxStreak = currentStreak;
       } else {
@@ -653,29 +719,33 @@ class AchievementsService {
     final Set<String> activeDays = {};
 
     for (final m in movies) {
-      final dt = _parseDate(m['watchedAt']);
+      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
       if (dt != null) activeDays.add(_dayKey(dt));
     }
     for (final s in shows) {
-      final episodes = List<dynamic>.from(s['watchedEpisodes'] ?? []);
       final datesMap = s['episodeWatchedDates'] as Map?;
-      for (final ep in episodes) {
-        final epKey = ep.toString();
-        final rawVal = datesMap?[epKey];
-        final epDateStr = rawVal is String ? rawVal : null;
-        final dt = _parseDate(epDateStr ?? s['addedAt']);
-        if (dt != null) activeDays.add(_dayKey(dt));
+      if (datesMap != null && datesMap.isNotEmpty) {
+        for (final rawVal in datesMap.values) {
+          final dt = _parseFirstDate([rawVal, s['updatedAt'], s['addedAt']]);
+          if (dt != null) activeDays.add(_dayKey(dt));
+        }
+      } else {
+        final episodes = Set<dynamic>.from(s['watchedEpisodes'] ?? []);
+        if (episodes.isNotEmpty) {
+          final dt = _parseFirstDate([s['updatedAt'], s['addedAt']]);
+          if (dt != null) activeDays.add(_dayKey(dt));
+        }
       }
     }
 
     if (activeDays.length < 2) return 0;
 
-    final sorted = activeDays.toList()..sort();
+    final sorted = activeDays.map((d) => DateTime.parse(d)).toList()..sort();
     int maxGap = 0;
 
     for (int i = 1; i < sorted.length; i++) {
-      final prev = DateTime.parse(sorted[i - 1]);
-      final curr = DateTime.parse(sorted[i]);
+      final prev = DateTime(sorted[i - 1].year, sorted[i - 1].month, sorted[i - 1].day);
+      final curr = DateTime(sorted[i].year, sorted[i].month, sorted[i].day);
       final gap = curr.difference(prev).inDays;
       if (gap > maxGap) maxGap = gap;
     }
@@ -686,9 +756,11 @@ class AchievementsService {
   static bool _hasClassicMovie(List<Map<String, dynamic>> movies) {
     for (final m in movies) {
       final releaseDateStr = m['releaseDate'] as String?;
-      if (releaseDateStr != null) {
+      if (releaseDateStr != null && releaseDateStr.isNotEmpty) {
         final dt = DateTime.tryParse(releaseDateStr);
-        if (dt != null && dt.year < 1980) return true;
+        if (dt != null && dt.year < 1980 && dt.year > 1850) return true;
+        final yearOnly = int.tryParse(releaseDateStr.split('-').first.trim());
+        if (yearOnly != null && yearOnly > 1850 && yearOnly < 1980) return true;
       }
     }
     return false;
@@ -698,10 +770,11 @@ class AchievementsService {
     // Group long movies (150+ min) by day, check if any day has 2+.
     final Map<String, int> dayCounts = {};
     for (final m in movies) {
-      if (m['isWatched'] != true) continue;
-      final runtime = (m['runtime'] as num?)?.toInt() ?? 0;
+      final runtime = (m['runtime'] as num?)?.toInt() ??
+          int.tryParse(m['runtime']?.toString() ?? '') ??
+          0;
       if (runtime < 150) continue;
-      final dt = _parseDate(m['watchedAt']);
+      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
       if (dt != null) {
         final key = _dayKey(dt);
         dayCounts[key] = (dayCounts[key] ?? 0) + 1;
@@ -714,11 +787,32 @@ class AchievementsService {
   }
 
   // ── UTILITIES ──
+  static DateTime? _parseFirstDate(List<dynamic> candidates) {
+    for (final candidate in candidates) {
+      final dt = _parseDate(candidate);
+      if (dt != null) return dt;
+    }
+    return null;
+  }
+
   static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value.toLocal();
     if (value is String) {
-      final dt = DateTime.tryParse(value);
+      final trimmed = value.trim();
+      if (trimmed.isEmpty || trimmed == 'null') return null;
+      final dt = DateTime.tryParse(trimmed);
       return dt?.toLocal();
     }
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value).toLocal();
+    }
+    try {
+      final dynamic dyn = value;
+      if (dyn.toDate is Function) {
+        return (dyn.toDate() as DateTime).toLocal();
+      }
+    } catch (_) {}
     return null;
   }
 
