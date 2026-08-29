@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/app_version_info.dart';
+import '../widgets/app_snackbar.dart';
 import '../widgets/app_update_dialog.dart';
 
 class AppUpdateService {
@@ -16,7 +17,9 @@ class AppUpdateService {
   static const String prefSnoozedAt = 'app_update_snoozed_at';
   static const String prefSnoozedVersion = 'app_update_snoozed_version';
   static const int snoozeDurationDays = 7;
+  static const Duration resumeThrottleDuration = Duration(hours: 1);
 
+  DateTime? _lastResumeCheckTime;
   bool _isDialogShowing = false;
   bool _isChecking = false;
 
@@ -120,7 +123,18 @@ class AppUpdateService {
     FirebaseFirestore? firestore,
     SharedPreferences? prefs,
     GlobalKey<NavigatorState>? navKey,
+    bool isResume = false,
+    bool bypassSnooze = false,
   }) async {
+    if (isResume) {
+      final now = DateTime.now();
+      if (_lastResumeCheckTime != null &&
+          now.difference(_lastResumeCheckTime!) < resumeThrottleDuration) {
+        return;
+      }
+      _lastResumeCheckTime = now;
+    }
+
     if (_isDialogShowing || _isChecking) return;
     _isChecking = true;
 
@@ -142,8 +156,8 @@ class AppUpdateService {
 
       final isForceUpdate = (updateType == AppUpdateType.force);
 
-      // If it's an optional update, check if it's currently snoozed
-      if (!isForceUpdate) {
+      // If it's an optional update and not bypassing snooze, check if it's currently snoozed
+      if (!isForceUpdate && !bypassSnooze) {
         final snoozed = await isUpdateSnoozed(versionInfo.latestVersion, prefs: prefs);
         if (snoozed) {
           _isChecking = false;
@@ -187,10 +201,58 @@ class AppUpdateService {
     }
   }
 
+  /// Triggered manually from Settings -> Check for Updates.
+  Future<void> checkForUpdatesManual(BuildContext context) async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final installedVersion = packageInfo.version;
+
+      final versionInfo = await fetchVersionInfo();
+      if (!context.mounted) return;
+
+      if (versionInfo == null || !versionInfo.isUpdateEnabled) {
+        AppSnackbar.showInfo(context, 'PopVerse is up to date (v$installedVersion)');
+        return;
+      }
+
+      final updateType = versionInfo.getUpdateType(installedVersion);
+      if (updateType == AppUpdateType.none) {
+        AppSnackbar.showSuccess(context, 'PopVerse is up to date (v$installedVersion)');
+        return;
+      }
+
+      await checkAndShowUpdate(context, bypassSnooze: true);
+    } catch (e) {
+      debugPrint('AppUpdateService: Manual update check failed: $e');
+      if (context.mounted) {
+        AppSnackbar.showError(context, 'Could not check for updates. Please try again.');
+      }
+    }
+  }
+
   /// Resolves the store URL and launches it externally.
   Future<void> openStore(AppVersionInfo versionInfo, String packageName) async {
-    String url = '';
+    // Try platform-specific deep links first
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final marketUri = Uri.tryParse('market://details?id=$packageName');
+      if (marketUri != null) {
+        try {
+          final launched = await launchUrl(marketUri, mode: LaunchMode.externalApplication);
+          if (launched) return;
+        } catch (_) {}
+      }
+    } else if (defaultTargetPlatform == TargetPlatform.iOS && versionInfo.iosUrl.isNotEmpty) {
+      final itmsUrl = versionInfo.iosUrl.replaceFirst('https://', 'itms-apps://');
+      final itmsUri = Uri.tryParse(itmsUrl);
+      if (itmsUri != null) {
+        try {
+          final launched = await launchUrl(itmsUri, mode: LaunchMode.externalApplication);
+          if (launched) return;
+        } catch (_) {}
+      }
+    }
 
+    String url = '';
     if (defaultTargetPlatform == TargetPlatform.android) {
       url = versionInfo.androidUrl.isNotEmpty
           ? versionInfo.androidUrl

@@ -208,7 +208,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     final navContext = navigatorKey.currentContext;
     if (navContext != null && navContext.mounted) {
-      unawaited(AppUpdateService.instance.checkAndShowUpdate(navContext));
+      unawaited(
+        AppUpdateService.instance.checkAndShowUpdate(
+          navContext,
+          isResume: true,
+        ),
+      );
     }
 
     final uid = FirebaseAuth.instance.currentUser?.uid;

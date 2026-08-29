@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/services/app_update_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -364,6 +365,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: 'About Popverse',
                 subtitle: _appVersionString,
                 onTap: () => _showAboutSheet(context),
+              ),
+              _buildDivider(),
+              _SettingsTile(
+                icon: Icons.system_update_rounded,
+                title: 'Check for Updates',
+                subtitle: 'Check for latest features and enhancements',
+                onTap: () => AppUpdateService.instance.checkForUpdatesManual(context),
               ),
               _buildDivider(),
               _SettingsTile(
