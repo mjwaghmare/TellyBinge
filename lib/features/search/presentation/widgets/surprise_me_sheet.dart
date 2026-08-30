@@ -68,8 +68,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
         if (!mounted ||
             !isCurrentRoute ||
             _isCurrentTabLoading ||
-            _isShakeProcessing)
+            _isShakeProcessing) {
           return;
+        }
         _isShakeProcessing = true;
         HapticFeedback.heavyImpact();
         _shuffleCurrentTab();
