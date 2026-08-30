@@ -57,8 +57,12 @@ class AppUpdateDialog extends StatelessWidget {
 
     final cardBg = isLight ? AppColors.lightSurface : AppColors.surfaceElevated;
     final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
-    final primaryText = isLight ? AppColors.lightTextPrimary : AppColors.textPrimary;
-    final secondaryText = isLight ? AppColors.lightTextSecondary : AppColors.textSecondary;
+    final primaryText = isLight
+        ? AppColors.lightTextPrimary
+        : AppColors.textPrimary;
+    final secondaryText = isLight
+        ? AppColors.lightTextSecondary
+        : AppColors.textSecondary;
 
     const titleText = 'New Update Available';
 
@@ -108,7 +112,9 @@ class AppUpdateDialog extends StatelessWidget {
                     height: 76,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.primary.withValues(alpha: isLight ? 0.1 : 0.12),
+                      color: AppColors.primary.withValues(
+                        alpha: isLight ? 0.1 : 0.12,
+                      ),
                     ),
                   ),
                   Container(
@@ -116,7 +122,9 @@ class AppUpdateDialog extends StatelessWidget {
                     height: 60,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.primary.withValues(alpha: isLight ? 0.18 : 0.22),
+                      color: AppColors.primary.withValues(
+                        alpha: isLight ? 0.18 : 0.22,
+                      ),
                       border: Border.all(
                         color: AppColors.primary.withValues(alpha: 0.4),
                         width: 1.5,
@@ -251,10 +259,7 @@ class AppUpdateDialog extends StatelessWidget {
     );
 
     if (isForceUpdate) {
-      return PopScope(
-        canPop: false,
-        child: dialogContent,
-      );
+      return PopScope(canPop: false, child: dialogContent);
     }
 
     return dialogContent;

@@ -68,7 +68,10 @@ class AppUpdateService {
   }
 
   /// Checks if an optional update is currently snoozed for the given [latestVersion].
-  Future<bool> isUpdateSnoozed(String latestVersion, {SharedPreferences? prefs}) async {
+  Future<bool> isUpdateSnoozed(
+    String latestVersion, {
+    SharedPreferences? prefs,
+  }) async {
     try {
       final preferences = prefs ?? await SharedPreferences.getInstance();
       final snoozedAtStr = preferences.getString(prefSnoozedAt);
@@ -84,7 +87,8 @@ class AppUpdateService {
       // If less than 7 days have passed AND the user snoozed this same (or higher) version
       if (difference.inDays < snoozeDurationDays) {
         if (snoozedVersion != null &&
-            AppVersionInfo.compareVersions(snoozedVersion, latestVersion) >= 0) {
+            AppVersionInfo.compareVersions(snoozedVersion, latestVersion) >=
+                0) {
           return true;
         }
       }
@@ -99,7 +103,10 @@ class AppUpdateService {
   Future<void> snoozeUpdate(String version, {SharedPreferences? prefs}) async {
     try {
       final preferences = prefs ?? await SharedPreferences.getInstance();
-      await preferences.setString(prefSnoozedAt, DateTime.now().toUtc().toIso8601String());
+      await preferences.setString(
+        prefSnoozedAt,
+        DateTime.now().toUtc().toIso8601String(),
+      );
       await preferences.setString(prefSnoozedVersion, version);
     } catch (e) {
       debugPrint('AppUpdateService: Failed to save snooze state: $e');
@@ -158,14 +165,18 @@ class AppUpdateService {
 
       // If it's an optional update and not bypassing snooze, check if it's currently snoozed
       if (!isForceUpdate && !bypassSnooze) {
-        final snoozed = await isUpdateSnoozed(versionInfo.latestVersion, prefs: prefs);
+        final snoozed = await isUpdateSnoozed(
+          versionInfo.latestVersion,
+          prefs: prefs,
+        );
         if (snoozed) {
           _isChecking = false;
           return;
         }
       }
 
-      final targetContext = navKey?.currentContext ?? (context.mounted ? context : null);
+      final targetContext =
+          navKey?.currentContext ?? (context.mounted ? context : null);
       if (targetContext == null || !targetContext.mounted) {
         _isChecking = false;
         return;
@@ -211,13 +222,19 @@ class AppUpdateService {
       if (!context.mounted) return;
 
       if (versionInfo == null || !versionInfo.isUpdateEnabled) {
-        AppSnackbar.showInfo(context, 'PopVerse is up to date (v$installedVersion)');
+        AppSnackbar.showInfo(
+          context,
+          'PopVerse is up to date (v$installedVersion)',
+        );
         return;
       }
 
       final updateType = versionInfo.getUpdateType(installedVersion);
       if (updateType == AppUpdateType.none) {
-        AppSnackbar.showSuccess(context, 'PopVerse is up to date (v$installedVersion)');
+        AppSnackbar.showSuccess(
+          context,
+          'PopVerse is up to date (v$installedVersion)',
+        );
         return;
       }
 
@@ -225,7 +242,10 @@ class AppUpdateService {
     } catch (e) {
       debugPrint('AppUpdateService: Manual update check failed: $e');
       if (context.mounted) {
-        AppSnackbar.showError(context, 'Could not check for updates. Please try again.');
+        AppSnackbar.showError(
+          context,
+          'Could not check for updates. Please try again.',
+        );
       }
     }
   }
@@ -237,16 +257,26 @@ class AppUpdateService {
       final marketUri = Uri.tryParse('market://details?id=$packageName');
       if (marketUri != null) {
         try {
-          final launched = await launchUrl(marketUri, mode: LaunchMode.externalApplication);
+          final launched = await launchUrl(
+            marketUri,
+            mode: LaunchMode.externalApplication,
+          );
           if (launched) return;
         } catch (_) {}
       }
-    } else if (defaultTargetPlatform == TargetPlatform.iOS && versionInfo.iosUrl.isNotEmpty) {
-      final itmsUrl = versionInfo.iosUrl.replaceFirst('https://', 'itms-apps://');
+    } else if (defaultTargetPlatform == TargetPlatform.iOS &&
+        versionInfo.iosUrl.isNotEmpty) {
+      final itmsUrl = versionInfo.iosUrl.replaceFirst(
+        'https://',
+        'itms-apps://',
+      );
       final itmsUri = Uri.tryParse(itmsUrl);
       if (itmsUri != null) {
         try {
-          final launched = await launchUrl(itmsUri, mode: LaunchMode.externalApplication);
+          final launched = await launchUrl(
+            itmsUri,
+            mode: LaunchMode.externalApplication,
+          );
           if (launched) return;
         } catch (_) {}
       }
@@ -262,7 +292,9 @@ class AppUpdateService {
           ? versionInfo.iosUrl
           : 'https://apps.apple.com/app/id$packageName';
     } else {
-      url = versionInfo.androidUrl.isNotEmpty ? versionInfo.androidUrl : versionInfo.iosUrl;
+      url = versionInfo.androidUrl.isNotEmpty
+          ? versionInfo.androidUrl
+          : versionInfo.iosUrl;
     }
 
     if (url.isEmpty) return;

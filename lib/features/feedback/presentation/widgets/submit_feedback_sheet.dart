@@ -116,9 +116,9 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
     final message = _messageController.text.trim();
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a title')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a title')));
       return;
     }
 
@@ -137,7 +137,8 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       final userId = user?.uid ?? '';
-      final userName = user?.displayName ??
+      final userName =
+          user?.displayName ??
           (user?.email != null && user!.email!.contains('@')
               ? user.email!.split('@').first
               : 'PopVerse User');
@@ -190,11 +191,16 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
       behavior: HitTestBehavior.opaque,
       onTap: () => FocusScope.of(context).unfocus(),
       child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: SafeArea(
           top: false,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +225,9 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                     Text(
                       'Feedback',
                       style: TextStyle(
-                        color: isLight ? AppColors.lightTextSecondary : const Color(0xFF8E8E93),
+                        color: isLight
+                            ? AppColors.lightTextSecondary
+                            : const Color(0xFF8E8E93),
                         fontSize: 13.0,
                         fontWeight: FontWeight.w600,
                       ),
@@ -228,7 +236,11 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                       onTap: () => Navigator.pop(context),
                       child: const Text(
                         'Close',
-                        style: TextStyle(color: AppColors.primaryLight, fontSize: 15.0, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: AppColors.primaryLight,
+                          fontSize: 15.0,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -240,7 +252,9 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                   'Submit your feedback',
                   style: AppTextStyles.xl.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                    color: isLight
+                        ? AppColors.lightTextPrimary
+                        : AppColors.textPrimary,
                     fontSize: 22.0,
                   ),
                 ),
@@ -248,7 +262,9 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                 Text(
                   'Choose a category below to submit your feedback.',
                   style: AppTextStyles.sm.copyWith(
-                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+                    color: isLight
+                        ? AppColors.lightTextSecondary
+                        : AppColors.textSecondary,
                     fontSize: 13.0,
                   ),
                 ),
@@ -258,14 +274,19 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                 Container(
                   padding: const EdgeInsets.all(4.0),
                   decoration: BoxDecoration(
-                    color: isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C),
+                    color: isLight
+                        ? const Color(0xFFF3F4F6)
+                        : const Color(0xFF1E1E2C),
                     borderRadius: BorderRadius.circular(14.0),
                   ),
                   child: Row(
                     children: [
                       _buildCategoryTab(FeedbackCategory.bug, 'Bug'),
                       _buildCategoryTab(FeedbackCategory.feature, 'Feature'),
-                      _buildCategoryTab(FeedbackCategory.improvement, 'Improvement'),
+                      _buildCategoryTab(
+                        FeedbackCategory.improvement,
+                        'Improvement',
+                      ),
                     ],
                   ),
                 ),
@@ -276,27 +297,49 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                   _buildInputLabel('Severity', isLight),
                   Row(
                     children: [
-                      _buildChoicePill('Minor', _selectedSeverity == 'Minor', () {
-                        setState(() => _selectedSeverity = 'Minor');
-                      }, isLight),
+                      _buildChoicePill(
+                        'Minor',
+                        _selectedSeverity == 'Minor',
+                        () {
+                          setState(() => _selectedSeverity = 'Minor');
+                        },
+                        isLight,
+                      ),
                       const SizedBox(width: 8.0),
-                      _buildChoicePill('Major', _selectedSeverity == 'Major', () {
-                        setState(() => _selectedSeverity = 'Major');
-                      }, isLight),
+                      _buildChoicePill(
+                        'Major',
+                        _selectedSeverity == 'Major',
+                        () {
+                          setState(() => _selectedSeverity = 'Major');
+                        },
+                        isLight,
+                      ),
                       const SizedBox(width: 8.0),
-                      _buildChoicePill('Crash', _selectedSeverity == 'Crash', () {
-                        setState(() => _selectedSeverity = 'Crash');
-                      }, isLight),
+                      _buildChoicePill(
+                        'Crash',
+                        _selectedSeverity == 'Crash',
+                        () {
+                          setState(() => _selectedSeverity = 'Crash');
+                        },
+                        isLight,
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
                 ],
 
                 // 6. Title Input with Character Limit (80 max)
-                _buildFieldHeader('Title', _titleController.text.length, 80, isLight),
+                _buildFieldHeader(
+                  'Title',
+                  _titleController.text.length,
+                  80,
+                  isLight,
+                ),
                 Container(
                   decoration: BoxDecoration(
-                    color: isLight ? const Color(0xFFF8F9FA) : const Color(0xFF1E1E2C),
+                    color: isLight
+                        ? const Color(0xFFF8F9FA)
+                        : const Color(0xFF1E1E2C),
                     borderRadius: BorderRadius.circular(12.0),
                     border: Border.all(
                       color: isLight
@@ -307,11 +350,13 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                   child: TextField(
                     controller: _titleController,
                     maxLength: 80,
-                    buildCounter: (_,
-                            {required currentLength,
-                            required isFocused,
-                            maxLength}) =>
-                        null,
+                    buildCounter:
+                        (
+                          _, {
+                          required currentLength,
+                          required isFocused,
+                          maxLength,
+                        }) => null,
                     onChanged: (_) => setState(() {}),
                     style: TextStyle(
                       color: isLight
@@ -347,7 +392,9 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: isLight ? const Color(0xFFF8F9FA) : const Color(0xFF1E1E2C),
+                    color: isLight
+                        ? const Color(0xFFF8F9FA)
+                        : const Color(0xFF1E1E2C),
                     borderRadius: BorderRadius.circular(12.0),
                     border: Border.all(
                       color: isLight
@@ -359,11 +406,13 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                     controller: _messageController,
                     maxLength: 500,
                     maxLines: 4,
-                    buildCounter: (_,
-                            {required currentLength,
-                            required isFocused,
-                            maxLength}) =>
-                        null,
+                    buildCounter:
+                        (
+                          _, {
+                          required currentLength,
+                          required isFocused,
+                          maxLength,
+                        }) => null,
                     onChanged: (_) => setState(() {}),
                     style: TextStyle(
                       color: isLight
@@ -433,9 +482,16 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                                   width: 84.0,
                                   height: 84.0,
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: isLight ? AppColors.borderLight : Colors.white24),
+                                    border: Border.all(
+                                      color: isLight
+                                          ? AppColors.borderLight
+                                          : Colors.white24,
+                                    ),
                                   ),
-                                  child: Image.file(File(file.path), fit: BoxFit.cover),
+                                  child: Image.file(
+                                    File(file.path),
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                               // Delete badge (Red trash)
@@ -446,8 +502,15 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                                   onTap: () => _removeMedia(index),
                                   child: Container(
                                     padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                                    child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 14),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.error,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -468,9 +531,13 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
+                      disabledBackgroundColor: AppColors.primary.withValues(
+                        alpha: 0.6,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 15.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.0),
+                      ),
                       elevation: 0,
                     ),
                     onPressed: _isSubmitting ? null : _handleSubmit,
@@ -485,7 +552,10 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                           )
                         : Text(
                             _getSubmitButtonText(),
-                            style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                   ),
                 ),
@@ -533,7 +603,12 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
     );
   }
 
-  Widget _buildChoicePill(String label, bool isSelected, VoidCallback onTap, bool isLight) {
+  Widget _buildChoicePill(
+    String label,
+    bool isSelected,
+    VoidCallback onTap,
+    bool isLight,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -543,18 +618,26 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 7.0),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : (isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C)),
+          color: isSelected
+              ? AppColors.primary
+              : (isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C)),
           borderRadius: BorderRadius.circular(20.0),
           border: Border.all(
             color: isSelected
                 ? AppColors.primary
-                : (isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.05)),
+                : (isLight
+                      ? AppColors.borderLight
+                      : Colors.white.withValues(alpha: 0.05)),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : (isLight ? AppColors.lightTextSecondary : AppColors.textSecondary),
+            color: isSelected
+                ? Colors.white
+                : (isLight
+                      ? AppColors.lightTextSecondary
+                      : AppColors.textSecondary),
             fontSize: 12.5,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           ),
@@ -633,8 +716,9 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
           Text(
             label,
             style: TextStyle(
-              color:
-                  isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+              color: isLight
+                  ? AppColors.lightTextPrimary
+                  : AppColors.textPrimary,
               fontSize: 13.0,
               fontWeight: FontWeight.w600,
             ),

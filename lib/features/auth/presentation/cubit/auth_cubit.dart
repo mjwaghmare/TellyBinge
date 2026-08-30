@@ -34,7 +34,8 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
-    final wasGuest = state is AuthGuest ||
+    final wasGuest =
+        state is AuthGuest ||
         (state is AuthLoginLoading && (state as AuthLoginLoading).isGuest);
     emit(AuthLoginLoading(isGuest: wasGuest));
     try {

@@ -147,14 +147,22 @@ class SearchCubit extends Cubit<SearchState> {
     emit(SearchLoading());
     try {
       final results = await Future.wait<List<dynamic>?>([
-        _fetchTvPage(1).then<List<dynamic>?>((res) => res).catchError((_) => null),
-        _fetchMoviePage(1).then<List<dynamic>?>((res) => res).catchError((_) => null),
+        _fetchTvPage(
+          1,
+        ).then<List<dynamic>?>((res) => res).catchError((_) => null),
+        _fetchMoviePage(
+          1,
+        ).then<List<dynamic>?>((res) => res).catchError((_) => null),
       ]);
       final tvShows = results[0];
       final movies = results[1];
 
       if (tvShows == null && movies == null) {
-        emit(SearchError('Failed to load explore content. Please check your connection.'));
+        emit(
+          SearchError(
+            'Failed to load explore content. Please check your connection.',
+          ),
+        );
         return;
       }
 
@@ -210,7 +218,8 @@ class SearchCubit extends Cubit<SearchState> {
           moviesLoadMoreError: false,
         ),
       );
-    } else if (state is SearchTrendingSuccess && _cachedTrendingMovies == null) {
+    } else if (state is SearchTrendingSuccess &&
+        _cachedTrendingMovies == null) {
       refreshFeed(isTv: false);
     } else {
       loadTrending(force: true);
@@ -240,11 +249,7 @@ class SearchCubit extends Cubit<SearchState> {
       } catch (_) {
         final currentState = state;
         if (currentState is SearchTrendingSuccess) {
-          emit(
-            currentState.copyWith(
-              tvLoadMoreError: true,
-            ),
-          );
+          emit(currentState.copyWith(tvLoadMoreError: true));
         }
       }
     } else {
@@ -269,11 +274,7 @@ class SearchCubit extends Cubit<SearchState> {
       } catch (_) {
         final currentState = state;
         if (currentState is SearchTrendingSuccess) {
-          emit(
-            currentState.copyWith(
-              moviesLoadMoreError: true,
-            ),
-          );
+          emit(currentState.copyWith(moviesLoadMoreError: true));
         }
       }
     }
@@ -297,7 +298,9 @@ class SearchCubit extends Cubit<SearchState> {
       );
 
       try {
-        final currentPage = isTvTab ? currentState.tvPage : currentState.moviesPage;
+        final currentPage = isTvTab
+            ? currentState.tvPage
+            : currentState.moviesPage;
         final nextPage = currentPage == 0 ? 1 : currentPage + 1;
 
         final List<dynamic> newResults = isTvTab
@@ -313,7 +316,9 @@ class SearchCubit extends Cubit<SearchState> {
                     ? true
                     : currentState.moviesHasReachedMax,
                 tvPage: isTvTab && nextPage == 1 ? 1 : currentState.tvPage,
-                moviesPage: !isTvTab && nextPage == 1 ? 1 : currentState.moviesPage,
+                moviesPage: !isTvTab && nextPage == 1
+                    ? 1
+                    : currentState.moviesPage,
                 isLoadingMore: false,
               ),
             );
@@ -330,13 +335,13 @@ class SearchCubit extends Cubit<SearchState> {
         } else {
           final updatedTv = isTvTab
               ? (currentState.trendingTv.isEmpty
-                  ? newResults
-                  : _appendUnique(currentState.trendingTv, newResults))
+                    ? newResults
+                    : _appendUnique(currentState.trendingTv, newResults))
               : currentState.trendingTv;
           final updatedMovies = !isTvTab
               ? (currentState.trendingMovies.isEmpty
-                  ? newResults
-                  : _appendUnique(currentState.trendingMovies, newResults))
+                    ? newResults
+                    : _appendUnique(currentState.trendingMovies, newResults))
               : currentState.trendingMovies;
 
           if (isTvTab && _cachedTrendingTv == null) {

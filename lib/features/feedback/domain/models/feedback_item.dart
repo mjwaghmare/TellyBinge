@@ -107,15 +107,9 @@ class FeedbackMedia {
   final String path;
   final bool isLocal;
 
-  const FeedbackMedia({
-    required this.path,
-    this.isLocal = false,
-  });
+  const FeedbackMedia({required this.path, this.isLocal = false});
 
-  Map<String, dynamic> toMap() => {
-        'path': path,
-        'isLocal': isLocal,
-      };
+  Map<String, dynamic> toMap() => {'path': path, 'isLocal': isLocal};
 
   factory FeedbackMedia.fromMap(dynamic map) {
     if (map is String) {
@@ -331,7 +325,11 @@ class FeedbackItem {
     };
   }
 
-  factory FeedbackItem.fromMap(Map<String, dynamic> map, String docId, [String? currentUserId]) {
+  factory FeedbackItem.fromMap(
+    Map<String, dynamic> map,
+    String docId, [
+    String? currentUserId,
+  ]) {
     final categoryStr = map['category'] as String? ?? 'bug';
     final category = FeedbackCategory.values.firstWhere(
       (c) => c.name == categoryStr,
@@ -344,22 +342,26 @@ class FeedbackItem {
       orElse: () => FeedbackStatus.open,
     );
 
-    final mediaList = (map['media'] as List<dynamic>?)
+    final mediaList =
+        (map['media'] as List<dynamic>?)
             ?.map((m) => FeedbackMedia.fromMap(m))
             .toList() ??
         [];
 
-    final commentsList = (map['comments'] as List<dynamic>?)
+    final commentsList =
+        (map['comments'] as List<dynamic>?)
             ?.map((c) => Map<String, dynamic>.from(c as Map))
             .toList() ??
         [];
 
-    final upvotedIds = (map['upvotedUserIds'] as List<dynamic>?)
+    final upvotedIds =
+        (map['upvotedUserIds'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         [];
 
-    final downvotedIds = (map['downvotedUserIds'] as List<dynamic>?)
+    final downvotedIds =
+        (map['downvotedUserIds'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         [];
@@ -374,8 +376,14 @@ class FeedbackItem {
       } catch (_) {}
     }
 
-    final isUpvoted = currentUserId != null && currentUserId.isNotEmpty && upvotedIds.contains(currentUserId);
-    final isDownvoted = currentUserId != null && currentUserId.isNotEmpty && downvotedIds.contains(currentUserId);
+    final isUpvoted =
+        currentUserId != null &&
+        currentUserId.isNotEmpty &&
+        upvotedIds.contains(currentUserId);
+    final isDownvoted =
+        currentUserId != null &&
+        currentUserId.isNotEmpty &&
+        downvotedIds.contains(currentUserId);
 
     return FeedbackItem(
       id: docId,

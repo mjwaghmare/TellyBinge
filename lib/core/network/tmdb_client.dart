@@ -128,9 +128,7 @@ class TmdbClient {
         }
 
         final desiredDelay = Duration(milliseconds: delayMs);
-        final actualDelay = desiredDelay > remaining
-            ? remaining
-            : desiredDelay;
+        final actualDelay = desiredDelay > remaining ? remaining : desiredDelay;
         await Future.delayed(actualDelay);
 
         if (DateTime.now().isAfter(overallDeadline)) {
@@ -157,9 +155,7 @@ class TmdbClient {
         }
 
         final desiredDelay = Duration(milliseconds: delayMs);
-        final actualDelay = desiredDelay > remaining
-            ? remaining
-            : desiredDelay;
+        final actualDelay = desiredDelay > remaining ? remaining : desiredDelay;
         await Future.delayed(actualDelay);
 
         if (DateTime.now().isAfter(overallDeadline)) {

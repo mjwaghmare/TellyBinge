@@ -10,17 +10,15 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
   FeedbackRepositoryImpl({
     FirebaseFirestore? firestore,
     FeedbackStorageService? storageService,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _storageService = storageService ?? FeedbackStorageService();
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _storageService = storageService ?? FeedbackStorageService();
 
   CollectionReference<Map<String, dynamic>> get _feedbacksCollection =>
       _firestore.collection('feedbacks');
 
   @override
   Stream<List<FeedbackItem>> getFeedbacksStream({String? currentUserId}) {
-    return _feedbacksCollection
-        .snapshots()
-        .map((snapshot) {
+    return _feedbacksCollection.snapshots().map((snapshot) {
       final list = snapshot.docs.map((doc) {
         return FeedbackItem.fromMap(doc.data(), doc.id, currentUserId);
       }).toList();
@@ -94,7 +92,9 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       category: category,
       status: FeedbackStatus.open,
       votes: 1,
-      media: mediaUrls.map((url) => FeedbackMedia(path: url, isLocal: false)).toList(),
+      media: mediaUrls
+          .map((url) => FeedbackMedia(path: url, isLocal: false))
+          .toList(),
       severity: category == FeedbackCategory.bug ? severity : null,
       userId: userId,
       userName: userName.isNotEmpty ? userName : 'PopVerse Fan',
@@ -122,10 +122,14 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
 
       final data = snapshot.data() ?? {};
       final upvotedIds = List<String>.from(
-        (data['upvotedUserIds'] as List<dynamic>?)?.map((e) => e.toString()) ?? [],
+        (data['upvotedUserIds'] as List<dynamic>?)?.map((e) => e.toString()) ??
+            [],
       );
       final downvotedIds = List<String>.from(
-        (data['downvotedUserIds'] as List<dynamic>?)?.map((e) => e.toString()) ?? [],
+        (data['downvotedUserIds'] as List<dynamic>?)?.map(
+              (e) => e.toString(),
+            ) ??
+            [],
       );
       int currentVotes = (data['votes'] as num?)?.toInt() ?? 0;
 
@@ -150,7 +154,10 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
           if (currentVotes <= 0) return;
           downvotedIds.add(userId);
           final removedUpvote = upvotedIds.remove(userId);
-          currentVotes = (currentVotes - (removedUpvote ? 2 : 1)).clamp(0, 99999);
+          currentVotes = (currentVotes - (removedUpvote ? 2 : 1)).clamp(
+            0,
+            99999,
+          );
         }
       }
 
@@ -188,9 +195,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
     required String feedbackId,
     required List<Map<String, dynamic>> comments,
   }) async {
-    await _feedbacksCollection.doc(feedbackId).update({
-      'comments': comments,
-    });
+    await _feedbacksCollection.doc(feedbackId).update({'comments': comments});
   }
 
   @override

@@ -130,8 +130,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
     // Read in-memory watchlist data before async call to populate real posters
     final tvState = context.read<TvShowWatchlistCubit>().state;
     final movieState = context.read<MovieWatchlistCubit>().state;
-    final showsList = tvState is TvShowWatchlistSuccess ? tvState.shows : <Map<String, dynamic>>[];
-    final moviesList = movieState is MovieWatchlistSuccess ? movieState.movies : <Map<String, dynamic>>[];
+    final showsList = tvState is TvShowWatchlistSuccess
+        ? tvState.shows
+        : <Map<String, dynamic>>[];
+    final moviesList = movieState is MovieWatchlistSuccess
+        ? movieState.movies
+        : <Map<String, dynamic>>[];
 
     setState(() {
       if (!isRefresh) {
@@ -156,14 +160,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
             final idStr = payload.replaceFirst('tvtimeapp://show/', '');
             final id = int.tryParse(idStr);
             if (id != null) {
-              final show = showsList.firstWhere(
-                (s) {
-                  final sId = (s['id'] as num?)?.toInt() ??
-                      int.tryParse(s['id']?.toString() ?? '');
-                  return sId == id;
-                },
-                orElse: () => <String, dynamic>{},
-              );
+              final show = showsList.firstWhere((s) {
+                final sId =
+                    (s['id'] as num?)?.toInt() ??
+                    int.tryParse(s['id']?.toString() ?? '');
+                return sId == id;
+              }, orElse: () => <String, dynamic>{});
               posterPath = show['posterPath'] as String?;
             }
           } else if (payload.startsWith('tvtimeapp://movie/')) {
@@ -171,14 +173,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
             final idStr = payload.replaceFirst('tvtimeapp://movie/', '');
             final id = int.tryParse(idStr);
             if (id != null) {
-              final movie = moviesList.firstWhere(
-                (m) {
-                  final mId = (m['id'] as num?)?.toInt() ??
-                      int.tryParse(m['id']?.toString() ?? '');
-                  return mId == id;
-                },
-                orElse: () => <String, dynamic>{},
-              );
+              final movie = moviesList.firstWhere((m) {
+                final mId =
+                    (m['id'] as num?)?.toInt() ??
+                    int.tryParse(m['id']?.toString() ?? '');
+                return mId == id;
+              }, orElse: () => <String, dynamic>{});
               posterPath = movie['posterPath'] as String?;
             }
           }
@@ -210,7 +210,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         }
 
         // Clean leading emojis from title
-        String cleanTitle = raw.title.replaceAll(RegExp(r'^[^\w\s]+'), '').trim();
+        String cleanTitle = raw.title
+            .replaceAll(RegExp(r'^[^\w\s]+'), '')
+            .trim();
         if (cleanTitle.isEmpty) cleanTitle = raw.title;
 
         mapped.add(
@@ -302,7 +304,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 'Clear All Notifications?',
                 style: AppTextStyles.lg.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                  color: isLight
+                      ? AppColors.lightTextPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -310,7 +314,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 'This will remove all alerts from your notification center.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.sm.copyWith(
-                  color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+                  color: isLight
+                      ? AppColors.lightTextSecondary
+                      : AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -322,7 +328,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         side: BorderSide(
-                          color: isLight ? AppColors.borderLight : AppColors.borderDark,
+                          color: isLight
+                              ? AppColors.borderLight
+                              : AppColors.borderDark,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -331,7 +339,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       child: Text(
                         'Cancel',
                         style: AppTextStyles.smMedium.copyWith(
-                          color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                          color: isLight
+                              ? AppColors.lightTextPrimary
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -351,7 +361,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       ),
                       child: Text(
                         'Clear All',
-                        style: AppTextStyles.smBold.copyWith(color: Colors.white),
+                        style: AppTextStyles.smBold.copyWith(
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -365,7 +377,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     if (confirmed == true) {
       HapticFeedback.mediumImpact();
-      final previousNotifications = List<CleanNotificationItem>.from(_notifications);
+      final previousNotifications = List<CleanNotificationItem>.from(
+        _notifications,
+      );
       setState(() {
         _notifications.clear();
         _errorMessage = null;
@@ -419,10 +433,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => MovieDetailsPage(
-                movieId: movieId,
-                title: item.title,
-              ),
+              builder: (_) =>
+                  MovieDetailsPage(movieId: movieId, title: item.title),
             ),
           );
           return;
@@ -479,7 +491,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ? IconButton(
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,
-                  color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                  color: isLight
+                      ? AppColors.lightTextPrimary
+                      : AppColors.textPrimary,
                   size: 20,
                 ),
                 onPressed: () => Navigator.pop(context),
@@ -532,13 +546,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
               child: _errorMessage != null
                   ? _buildErrorState(isLight)
                   : _notifications.isEmpty
-                      ? _buildEmptyState(isLight)
-                      : _buildGroupedListView(_notifications, isLight),
+                  ? _buildEmptyState(isLight)
+                  : _buildGroupedListView(_notifications, isLight),
             ),
     );
   }
 
-  Widget _buildGroupedListView(List<CleanNotificationItem> items, bool isLight) {
+  Widget _buildGroupedListView(
+    List<CleanNotificationItem> items,
+    bool isLight,
+  ) {
     final grouped = _groupNotificationsByTimeline(items);
 
     return ListView.builder(
@@ -564,7 +581,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
               child: Text(
                 sectionKey,
                 style: TextStyle(
-                  color: isLight ? AppColors.lightTextSecondary : const Color(0xFF8E8E93),
+                  color: isLight
+                      ? AppColors.lightTextSecondary
+                      : const Color(0xFF8E8E93),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.8,
@@ -573,7 +592,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
 
             // Section Cards
-            ...sectionItems.map((item) => _buildNotificationCard(item, isLight)),
+            ...sectionItems.map(
+              (item) => _buildNotificationCard(item, isLight),
+            ),
           ],
         );
       },
@@ -581,10 +602,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _buildNotificationCard(CleanNotificationItem item, bool isLight) {
-    final String? posterFullUrl = item.posterPath != null && item.posterPath!.isNotEmpty
+    final String? posterFullUrl =
+        item.posterPath != null && item.posterPath!.isNotEmpty
         ? (item.posterPath!.startsWith('http')
-            ? item.posterPath!
-            : 'https://image.tmdb.org/t/p/w342${item.posterPath}')
+              ? item.posterPath!
+              : 'https://image.tmdb.org/t/p/w342${item.posterPath}')
         : null;
 
     return Container(
@@ -595,14 +617,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
           onTap: () => _onNotificationTap(item),
           borderRadius: BorderRadius.circular(14),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10.0,
+              vertical: 8.0,
+            ),
             decoration: BoxDecoration(
               color: isLight ? Colors.white : AppColors.surface,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: !item.isRead
                     ? AppColors.primary.withValues(alpha: 0.25)
-                    : (isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.04)),
+                    : (isLight
+                          ? AppColors.borderLight
+                          : Colors.white.withValues(alpha: 0.04)),
                 width: 1,
               ),
               boxShadow: [
@@ -633,19 +660,24 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.smBold.copyWith(
                           fontSize: 14.0,
-                          color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                          color: isLight
+                              ? AppColors.lightTextPrimary
+                              : AppColors.textPrimary,
                         ),
                       ),
 
                       // Subtitle (show episode) if present
-                      if (item.episodeSubtitle != null && item.episodeSubtitle!.isNotEmpty) ...[
+                      if (item.episodeSubtitle != null &&
+                          item.episodeSubtitle!.isNotEmpty) ...[
                         const SizedBox(height: 2.0),
                         Text(
                           item.episodeSubtitle!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.xs.copyWith(
-                            color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+                            color: isLight
+                                ? AppColors.lightTextSecondary
+                                : AppColors.textSecondary,
                             fontSize: 12.0,
                           ),
                         ),
@@ -694,9 +726,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 imageUrl: posterUrl,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
-                  color: isLight ? const Color(0xFFE5E7EB) : const Color(0xFF242432),
+                  color: isLight
+                      ? const Color(0xFFE5E7EB)
+                      : const Color(0xFF242432),
                 ),
-                errorWidget: (context, url, error) => _buildPosterFallback(isMovie, isLight),
+                errorWidget: (context, url, error) =>
+                    _buildPosterFallback(isMovie, isLight),
               )
             : _buildPosterFallback(isMovie, isLight),
       ),
@@ -712,7 +747,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ),
     );
   }
-
 
   Widget _buildEmptyState(bool isLight) {
     return ListView(
@@ -745,7 +779,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 textAlign: TextAlign.center,
                 style: AppTextStyles.lg.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                  color: isLight
+                      ? AppColors.lightTextPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -753,7 +789,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 _emptyState.subtitle,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.sm.copyWith(
-                  color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+                  color: isLight
+                      ? AppColors.lightTextSecondary
+                      : AppColors.textSecondary,
                   height: 1.4,
                 ),
               ),
@@ -774,14 +812,20 @@ class _NotificationsPageState extends State<NotificationsPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, size: 54.0, color: AppColors.error),
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 54.0,
+                color: AppColors.error,
+              ),
               const SizedBox(height: AppSpacing.md),
               Text(
                 'Could not load notifications',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.lg.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                  color: isLight
+                      ? AppColors.lightTextPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -789,7 +833,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 _errorMessage!,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.xs.copyWith(
-                  color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+                  color: isLight
+                      ? AppColors.lightTextSecondary
+                      : AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -801,8 +847,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.sm,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
@@ -812,4 +863,3 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 }
-

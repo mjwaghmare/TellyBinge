@@ -28,7 +28,8 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
   }
 
   Future<void> _loadExpirationDate() async {
-    final expirationDate = await NotificationService().getProfileExpirationDate();
+    final expirationDate = await NotificationService()
+        .getProfileExpirationDate();
     if (!mounted) return;
     setState(() {
       _expirationDate = expirationDate;
@@ -66,7 +67,11 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
         child: const Center(
           child: Padding(
             padding: EdgeInsets.all(AppSpacing.sm),
-            child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5)),
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
           ),
         ),
       );
@@ -81,7 +86,8 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
     final minutes = isExpired ? 0 : (difference.inMinutes % 60);
     final seconds = isExpired ? 0 : (difference.inSeconds % 60);
 
-    final isExpiringSoon = !isExpired && difference <= const Duration(hours: 24);
+    final isExpiringSoon =
+        !isExpired && difference <= const Duration(hours: 24);
 
     final statusColor = isExpired
         ? AppColors.error
@@ -96,7 +102,9 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
         : 'ACTIVE';
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final digitBgColor = isDarkMode ? AppColors.surfaceElevated : Theme.of(context).colorScheme.surface;
+    final digitBgColor = isDarkMode
+        ? AppColors.surfaceElevated
+        : Theme.of(context).colorScheme.surface;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -104,7 +112,10 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1.5),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +138,10 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.xxs,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
@@ -135,7 +149,12 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
                 ),
                 child: Text(
                   statusLabel,
-                  style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ],
@@ -181,7 +200,9 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
           Text(
             'Free 6-day Apple Developer provisioning profile. Connect to Xcode and rebuild before the timer reaches zero to prevent app launch failure.',
             style: TextStyle(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+              color: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
               fontSize: 12,
               height: 1.4,
             ),
@@ -199,7 +220,10 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
     required Color accentColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       constraints: const BoxConstraints(minWidth: 54),
       decoration: BoxDecoration(
         color: bgColor,
@@ -212,14 +236,19 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
           Text(
             value,
             style: AppTextStyles.lg.withTabularFigures().copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: accentColor, letterSpacing: 0.5),
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: accentColor,
+              letterSpacing: 0.5,
+            ),
           ),
         ],
       ),
@@ -234,7 +263,9 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+          color: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
         ),
       ),
     );

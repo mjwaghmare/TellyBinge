@@ -73,88 +73,88 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ),
       child: Scaffold(
         backgroundColor: AppColors.background,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const OnboardingPosterWall(),
-          DecoratedBox(decoration: BoxDecoration(gradient: _scrim)),
-          SafeArea(
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                    ),
-                    // Kept in the tree on the last slide so the slides below
-                    // don't shift up when it goes away.
-                    child: Visibility(
-                      visible: !_isLastSlide,
-                      maintainSize: true,
-                      maintainAnimation: true,
-                      maintainState: true,
-                      child: TextButton(
-                        onPressed: widget.onFinished,
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(
-                            AppSpacing.huge,
-                            AppSpacing.xxxl,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const OnboardingPosterWall(),
+            DecoratedBox(decoration: BoxDecoration(gradient: _scrim)),
+            SafeArea(
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                      ),
+                      // Kept in the tree on the last slide so the slides below
+                      // don't shift up when it goes away.
+                      child: Visibility(
+                        visible: !_isLastSlide,
+                        maintainSize: true,
+                        maintainAnimation: true,
+                        maintainState: true,
+                        child: TextButton(
+                          onPressed: widget.onFinished,
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(
+                              AppSpacing.huge,
+                              AppSpacing.xxxl,
+                            ),
+                            foregroundColor: AppColors.textSecondary,
                           ),
-                          foregroundColor: AppColors.textSecondary,
-                        ),
-                        child: Text(
-                          'Skip',
-                          style: AppTextStyles.smMedium.withColor(
-                            AppColors.textSecondary,
+                          child: Text(
+                            'Skip',
+                            style: AppTextStyles.smMedium.withColor(
+                              AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: PageView(
-                    controller: _controller,
-                    onPageChanged: (index) => setState(() => _index = index),
-                    children: _slides,
-                  ),
-                ),
-                AppSpacing.gapH20,
-                _PageDots(count: _slides.length, activeIndex: _index),
-                AppSpacing.gapH20,
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.xl,
-                    0,
-                    AppSpacing.xl,
-                    AppSpacing.md,
-                  ),
-                  child: ElevatedButton(
-                    onPressed: _next,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.textOnPrimary,
-                      minimumSize: const Size.fromHeight(56.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      _isLastSlide ? 'Start tracking' : 'Next',
-                      style: AppTextStyles.mdBold.withColor(
-                        AppColors.textOnPrimary,
-                      ),
+                  Expanded(
+                    child: PageView(
+                      controller: _controller,
+                      onPageChanged: (index) => setState(() => _index = index),
+                      children: _slides,
                     ),
                   ),
-                ),
-              ],
+                  AppSpacing.gapH20,
+                  _PageDots(count: _slides.length, activeIndex: _index),
+                  AppSpacing.gapH20,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      0,
+                      AppSpacing.xl,
+                      AppSpacing.md,
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _next,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.textOnPrimary,
+                        minimumSize: const Size.fromHeight(56.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _isLastSlide ? 'Start tracking' : 'Next',
+                        style: AppTextStyles.mdBold.withColor(
+                          AppColors.textOnPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 }

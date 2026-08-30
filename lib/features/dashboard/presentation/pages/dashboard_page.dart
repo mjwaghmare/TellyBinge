@@ -358,7 +358,7 @@ class DashboardPageState extends State<DashboardPage> {
                       SliverPadding(
                         padding: const EdgeInsets.only(bottom: 24.0, top: 4.0),
                         sliver: SliverList(
-                           delegate: SliverChildBuilderDelegate((
+                          delegate: SliverChildBuilderDelegate((
                             context,
                             index,
                           ) {

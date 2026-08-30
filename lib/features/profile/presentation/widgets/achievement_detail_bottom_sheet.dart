@@ -10,10 +10,7 @@ import '../../domain/models/achievement.dart';
 class AchievementDetailBottomSheet extends StatelessWidget {
   final Achievement achievement;
 
-  const AchievementDetailBottomSheet({
-    super.key,
-    required this.achievement,
-  });
+  const AchievementDetailBottomSheet({super.key, required this.achievement});
 
   /// Shows a single achievement bottom sheet.
   static Future<void> show(BuildContext context, Achievement achievement) {
@@ -33,9 +30,7 @@ class AchievementDetailBottomSheet extends StatelessWidget {
       elevation: 0,
       isScrollControlled: true,
       useRootNavigator: true,
-      builder: (_) => _AchievementStackBottomSheet(
-        achievements: achievements,
-      ),
+      builder: (_) => _AchievementStackBottomSheet(achievements: achievements),
     );
   }
 
@@ -100,9 +95,7 @@ class AchievementDetailBottomSheet extends StatelessWidget {
 class _AchievementStackBottomSheet extends StatefulWidget {
   final List<Achievement> achievements;
 
-  const _AchievementStackBottomSheet({
-    required this.achievements,
-  });
+  const _AchievementStackBottomSheet({required this.achievements});
 
   @override
   State<_AchievementStackBottomSheet> createState() =>
@@ -148,13 +141,17 @@ class _AchievementStackBottomSheetState
     } else {
       // Spring back to 0 smoothly
       final startOffset = _dragOffset;
-      _dismissAnimation = Tween<double>(begin: startOffset, end: 0.0).animate(
-        CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
-      )..addListener(() {
-          setState(() {
-            _dragOffset = _dismissAnimation.value;
+      _dismissAnimation =
+          Tween<double>(begin: startOffset, end: 0.0).animate(
+            CurvedAnimation(
+              parent: _animController,
+              curve: Curves.easeOutCubic,
+            ),
+          )..addListener(() {
+            setState(() {
+              _dragOffset = _dismissAnimation.value;
+            });
           });
-        });
       _animController.forward(from: 0.0);
     }
   }
@@ -166,12 +163,12 @@ class _AchievementStackBottomSheetState
     final startOffset = _dragOffset;
     _dismissAnimation =
         Tween<double>(begin: startOffset, end: sheetHeight + 60.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
-    )..addListener(() {
-        setState(() {
-          _dragOffset = _dismissAnimation.value;
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        )..addListener(() {
+          setState(() {
+            _dragOffset = _dismissAnimation.value;
+          });
         });
-      });
 
     _animController.forward(from: 0.0).then((_) {
       if (!mounted) return;
@@ -206,12 +203,15 @@ class _AchievementStackBottomSheetState
     final t = (_dragOffset / 110.0).clamp(0.0, 1.0);
 
     // Color definitions for card layers
-    final topCardColor =
-        isLight ? AppColors.lightSurface : AppColors.surfaceElevated;
-    final card1Color =
-        isLight ? AppColors.lightSurfaceElevated : const Color(0xFF2E2E2E);
-    final card2Color =
-        isLight ? AppColors.borderLight : const Color(0xFF383838);
+    final topCardColor = isLight
+        ? AppColors.lightSurface
+        : AppColors.surfaceElevated;
+    final card1Color = isLight
+        ? AppColors.lightSurfaceElevated
+        : const Color(0xFF2E2E2E);
+    final card2Color = isLight
+        ? AppColors.borderLight
+        : const Color(0xFF383838);
 
     // Interpolated values for Background Card 1 promoting to Top Card
     final card1Top = lerpDouble(lipHeight, lipHeight * 2, t) ?? lipHeight;
@@ -388,9 +388,7 @@ class _AchievementStackBottomSheetState
 class _AchievementCardContent extends StatelessWidget {
   final Achievement achievement;
 
-  const _AchievementCardContent({
-    required this.achievement,
-  });
+  const _AchievementCardContent({required this.achievement});
 
   @override
   Widget build(BuildContext context) {
@@ -475,7 +473,9 @@ class _AchievementCardContent extends StatelessWidget {
 
                 // Centered Description
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                  ),
                   child: Text(
                     achievement.description,
                     textAlign: TextAlign.center,
@@ -542,10 +542,26 @@ class _BadgeEmblem extends StatelessWidget {
                       BlendMode.multiply,
                     )
                   : const ColorFilter.matrix(<double>[
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0, 0, 0, 0.4, 0,
+                      0.2126,
+                      0.7152,
+                      0.0722,
+                      0,
+                      0,
+                      0.2126,
+                      0.7152,
+                      0.0722,
+                      0,
+                      0,
+                      0.2126,
+                      0.7152,
+                      0.0722,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0.4,
+                      0,
                     ]),
               child: Image.asset(
                 achievement.assetPath,
@@ -581,11 +597,7 @@ class _BadgeEmblem extends StatelessWidget {
                 ),
               ),
               child: const Center(
-                child: Icon(
-                  Icons.lock_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                child: Icon(Icons.lock_rounded, color: Colors.white, size: 16),
               ),
             ),
         ],
@@ -593,4 +605,3 @@ class _BadgeEmblem extends StatelessWidget {
     );
   }
 }
-

@@ -39,7 +39,10 @@ abstract class Failure extends Equatable {
         case DioExceptionType.badResponse:
           final statusCode = exception.response?.statusCode;
           if (statusCode == 404) {
-            return const ServerFailure('Requested item not found.', code: '404');
+            return const ServerFailure(
+              'Requested item not found.',
+              code: '404',
+            );
           }
           if (statusCode == 429) {
             return const ServerFailure(

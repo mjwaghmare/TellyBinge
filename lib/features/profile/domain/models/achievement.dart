@@ -2,22 +2,10 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
 /// Category grouping for achievements.
-enum AchievementCategory {
-  volume,
-  habits,
-  genres,
-  streaks,
-  special,
-}
+enum AchievementCategory { volume, habits, genres, streaks, special }
 
 /// Visual tier for multi-level achievements.
-enum AchievementTier {
-  none,
-  bronze,
-  silver,
-  gold,
-  diamond,
-}
+enum AchievementTier { none, bronze, silver, gold, diamond }
 
 /// A single achievement definition with its current progress state.
 class Achievement extends Equatable {
@@ -75,13 +63,13 @@ class Achievement extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        category,
-        tier,
-        currentValue,
-        targetValue,
-        isUnlocked,
-        unlockedAt,
-      ];
+    id,
+    title,
+    category,
+    tier,
+    currentValue,
+    targetValue,
+    isUnlocked,
+    unlockedAt,
+  ];
 }

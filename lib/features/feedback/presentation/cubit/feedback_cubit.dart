@@ -17,13 +17,13 @@ class FeedbackCubit extends Cubit<FeedbackState> {
     _feedbackSubscription = feedbackRepository
         .getFeedbacksStream(currentUserId: currentUserId)
         .listen(
-      (items) {
-        emit(FeedbackLoaded(items: items));
-      },
-      onError: (error) {
-        emit(FeedbackError(error.toString()));
-      },
-    );
+          (items) {
+            emit(FeedbackLoaded(items: items));
+          },
+          onError: (error) {
+            emit(FeedbackError(error.toString()));
+          },
+        );
   }
 
   Future<bool> submitFeedback({
@@ -61,10 +61,12 @@ class FeedbackCubit extends Cubit<FeedbackState> {
       return true;
     } catch (e) {
       if (state is FeedbackLoaded) {
-        emit((state as FeedbackLoaded).copyWith(
-          isSubmitting: false,
-          submitError: e.toString(),
-        ));
+        emit(
+          (state as FeedbackLoaded).copyWith(
+            isSubmitting: false,
+            submitError: e.toString(),
+          ),
+        );
       }
       return false;
     }

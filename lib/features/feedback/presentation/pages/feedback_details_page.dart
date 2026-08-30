@@ -80,7 +80,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     if (text.isEmpty) return;
 
     final user = FirebaseAuth.instance.currentUser;
-    final userName = user?.displayName ??
+    final userName =
+        user?.displayName ??
         (user?.email != null && user!.email!.contains('@')
             ? user.email!.split('@').first
             : 'PopVerse Fan');
@@ -111,10 +112,13 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   }
 
   Future<void> _showEditCommentSheet(
-      int index, Map<String, dynamic> comment) async {
+    int index,
+    Map<String, dynamic> comment,
+  ) async {
     final isLight = context.isLight;
-    final editController =
-        TextEditingController(text: comment['text'] as String? ?? '');
+    final editController = TextEditingController(
+      text: comment['text'] as String? ?? '',
+    );
 
     final updated = await showModalBottomSheet<String>(
       context: context,
@@ -214,7 +218,9 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     child: const Text(
                       'Save Changes',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14.5),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.5,
+                      ),
                     ),
                   ),
                 ),
@@ -229,17 +235,11 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     if (updated != null && updated.isNotEmpty && mounted) {
       HapticFeedback.lightImpact();
       setState(() {
-        _comments[index] = {
-          ...comment,
-          'text': updated,
-        };
+        _comments[index] = {...comment, 'text': updated};
         _item = _item.copyWith(comments: _comments);
       });
 
-      _repository.updateComments(
-        feedbackId: _item.id,
-        comments: _comments,
-      );
+      _repository.updateComments(feedbackId: _item.id, comments: _comments);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -312,10 +312,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         _item = _item.copyWith(comments: _comments);
       });
 
-      _repository.updateComments(
-        feedbackId: _item.id,
-        comments: _comments,
-      );
+      _repository.updateComments(feedbackId: _item.id, comments: _comments);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -393,8 +390,9 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor:
-                      AppColors.error.withValues(alpha: 0.6),
+                  disabledBackgroundColor: AppColors.error.withValues(
+                    alpha: 0.6,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
@@ -459,8 +457,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     final isLight = context.isLight;
     final canDownvote = _item.votes > 0 || _item.isDownvoted;
     final canSubmitComment = _commentController.text.trim().isNotEmpty;
-    final isOwner =
-        _currentUserId.isNotEmpty && _item.userId == _currentUserId;
+    final isOwner = _currentUserId.isNotEmpty && _item.userId == _currentUserId;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -471,9 +468,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isLight
-                ? AppColors.lightTextPrimary
-                : AppColors.textPrimary,
+            color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
             size: 20,
           ),
           onPressed: () => Navigator.pop(context, _item),
@@ -481,9 +476,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         title: Text(
           'Feedback Details',
           style: AppTextStyles.lg.copyWith(
-            color: isLight
-                ? AppColors.lightTextPrimary
-                : AppColors.textPrimary,
+            color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -546,9 +539,13 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                 Row(
                                   children: [
                                     _buildCategoryPill(_item.category, isLight),
-                                    if (_item.severity != null && _item.severity!.isNotEmpty) ...[
+                                    if (_item.severity != null &&
+                                        _item.severity!.isNotEmpty) ...[
                                       const SizedBox(width: 6.0),
-                                      _buildSeverityPill(_item.severity!, isLight),
+                                      _buildSeverityPill(
+                                        _item.severity!,
+                                        isLight,
+                                      ),
                                     ],
                                     const Spacer(),
                                     // App Version Badge
@@ -560,12 +557,18 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                       decoration: BoxDecoration(
                                         color: isLight
                                             ? Colors.grey[100]
-                                            : Colors.white.withValues(alpha: 0.06),
-                                        borderRadius: BorderRadius.circular(10.0),
+                                            : Colors.white.withValues(
+                                                alpha: 0.06,
+                                              ),
+                                        borderRadius: BorderRadius.circular(
+                                          10.0,
+                                        ),
                                         border: Border.all(
                                           color: isLight
                                               ? AppColors.borderLight
-                                              : Colors.white.withValues(alpha: 0.04),
+                                              : Colors.white.withValues(
+                                                  alpha: 0.04,
+                                                ),
                                         ),
                                       ),
                                       child: Text(
@@ -651,38 +654,44 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                     border: Border.all(
                                       color: isLight
                                           ? AppColors.borderLight
-                                          : Colors.white.withValues(alpha: 0.08),
+                                          : Colors.white.withValues(
+                                              alpha: 0.08,
+                                            ),
                                     ),
                                   ),
                                   child: mediaItem.isLocal
                                       ? Image.file(
                                           File(mediaItem.path),
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) =>
-                                              const Icon(
-                                            Icons.image_outlined,
-                                            color: AppColors.textTertiary,
-                                            size: 28,
-                                          ),
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  const Icon(
+                                                    Icons.image_outlined,
+                                                    color:
+                                                        AppColors.textTertiary,
+                                                    size: 28,
+                                                  ),
                                         )
                                       : CachedNetworkImage(
                                           imageUrl: mediaItem.path,
                                           fit: BoxFit.cover,
-                                          placeholder: (context, url) => const Center(
-                                            child: SizedBox(
-                                              width: 24,
-                                              height: 24,
-                                              child: CircularProgressIndicator.adaptive(
-                                                strokeWidth: 2,
+                                          placeholder: (context, url) =>
+                                              const Center(
+                                                child: SizedBox(
+                                                  width: 24,
+                                                  height: 24,
+                                                  child:
+                                                      CircularProgressIndicator.adaptive(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
                                           errorWidget: (context, url, error) =>
                                               const Icon(
-                                            Icons.image_outlined,
-                                            color: AppColors.textTertiary,
-                                            size: 28,
-                                          ),
+                                                Icons.image_outlined,
+                                                color: AppColors.textTertiary,
+                                                size: 28,
+                                              ),
                                         ),
                                 ),
                               );
@@ -709,7 +718,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                             height: 26,
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [AppColors.primary, AppColors.primaryDark],
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primaryDark,
+                                ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -757,7 +769,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 const SizedBox(height: AppSpacing.md),
 
                 // 2. Official Team Response Card (Conditional on _item.officialResponse)
-                if (_item.officialResponse != null && _item.officialResponse!.isNotEmpty) ...[
+                if (_item.officialResponse != null &&
+                    _item.officialResponse!.isNotEmpty) ...[
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
@@ -861,12 +874,17 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 // 4. Comments List
                 if (_comments.isEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg, horizontal: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.lg,
+                      horizontal: AppSpacing.md,
+                    ),
                     alignment: Alignment.center,
                     child: Text(
                       'No comments yet. Start the discussion below!',
                       style: AppTextStyles.sm.copyWith(
-                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
+                        color: isLight
+                            ? AppColors.lightTextTertiary
+                            : AppColors.textTertiary,
                       ),
                     ),
                   )
@@ -875,7 +893,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     final index = entry.key;
                     final comment = entry.value;
                     final timeText = _formatCommentTime(comment['time']);
-                    final isCommentOwner = _currentUserId.isNotEmpty &&
+                    final isCommentOwner =
+                        _currentUserId.isNotEmpty &&
                         comment['userId'] == _currentUserId;
 
                     return Container(
@@ -961,8 +980,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w500,
                                                 color: isLight
-                                                  ? AppColors.lightTextPrimary
-                                                  : AppColors.textPrimary,
+                                                    ? AppColors.lightTextPrimary
+                                                    : AppColors.textPrimary,
                                               ),
                                             ),
                                           ],
@@ -1087,8 +1106,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     color: canSubmitComment
                         ? null
                         : (isLight
-                            ? Colors.grey[300]
-                            : Colors.white.withValues(alpha: 0.1)),
+                              ? Colors.grey[300]
+                              : Colors.white.withValues(alpha: 0.1)),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
@@ -1127,8 +1146,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
           color: hasVoted
               ? AppColors.primary
               : (isLight
-                  ? AppColors.borderLight
-                  : Colors.white.withValues(alpha: 0.06)),
+                    ? AppColors.borderLight
+                    : Colors.white.withValues(alpha: 0.06)),
           width: hasVoted ? 1.5 : 1.0,
         ),
       ),
@@ -1177,8 +1196,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                   color: _item.isDownvoted
                       ? AppColors.primary
                       : (canDownvote
-                          ? (isLight ? AppColors.lightTextSecondary : Colors.white70)
-                          : (isLight ? Colors.grey[300] : Colors.white24)),
+                            ? (isLight
+                                  ? AppColors.lightTextSecondary
+                                  : Colors.white70)
+                            : (isLight ? Colors.grey[300] : Colors.white24)),
                   size: 22,
                 ),
               ),

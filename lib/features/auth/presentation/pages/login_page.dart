@@ -38,62 +38,64 @@ class LoginPage extends StatelessWidget {
       ),
       child: Scaffold(
         backgroundColor: AppColors.background,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const LoginPosterWall(),
-          DecoratedBox(decoration: BoxDecoration(gradient: _scrim)),
-          SafeArea(
-            child: Padding(
-              padding: AppSpacing.allXL,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Spacer(),
-                  Hero(
-                    tag: 'app_logo',
-                    child: Image.asset(
-                      'assets/images/splash_logo.png',
-                      width: AppSpacing.huge,
-                      height: AppSpacing.huge,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const LoginPosterWall(),
+            DecoratedBox(decoration: BoxDecoration(gradient: _scrim)),
+            SafeArea(
+              child: Padding(
+                padding: AppSpacing.allXL,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Spacer(),
+                    Hero(
+                      tag: 'app_logo',
+                      child: Image.asset(
+                        'assets/images/splash_logo.png',
+                        width: AppSpacing.huge,
+                        height: AppSpacing.huge,
+                      ),
                     ),
-                  ),
-                  AppSpacing.gapH12,
-                  Text(
-                    'Everything you watch, in one place.',
-                    style: AppTextStyles.display,
-                  ),
-                  AppSpacing.gapH16,
-                  Text(
-                    'Track your progress, view release calendars, and join the '
-                    'community of TV show & movie lovers.',
-                    style: AppTextStyles.md
-                        .withColor(AppColors.textSecondary)
-                        .copyWith(height: 1.5),
-                  ),
-                  AppSpacing.gapH32,
-                  const _GoogleSignInButton(),
-                  AppSpacing.gapH24,
-                  const _OrDivider(),
-                  AppSpacing.gapH8,
-                  const _BrowseWithoutAccountButton(),
-                  AppSpacing.gapH8,
-                  SizedBox(
-                    width: double.infinity,
-                    child: Text(
-                      'By continuing you agree to our Terms of Service.',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.xs.withColor(AppColors.textTertiary),
+                    AppSpacing.gapH12,
+                    Text(
+                      'Everything you watch, in one place.',
+                      style: AppTextStyles.display,
                     ),
-                  ),
-                  AppSpacing.gapH16,
-                ],
+                    AppSpacing.gapH16,
+                    Text(
+                      'Track your progress, view release calendars, and join the '
+                      'community of TV show & movie lovers.',
+                      style: AppTextStyles.md
+                          .withColor(AppColors.textSecondary)
+                          .copyWith(height: 1.5),
+                    ),
+                    AppSpacing.gapH32,
+                    const _GoogleSignInButton(),
+                    AppSpacing.gapH24,
+                    const _OrDivider(),
+                    AppSpacing.gapH8,
+                    const _BrowseWithoutAccountButton(),
+                    AppSpacing.gapH8,
+                    SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        'By continuing you agree to our Terms of Service.',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.xs.withColor(
+                          AppColors.textTertiary,
+                        ),
+                      ),
+                    ),
+                    AppSpacing.gapH16,
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 }

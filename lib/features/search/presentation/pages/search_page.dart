@@ -178,8 +178,9 @@ class _SearchPageState extends State<SearchPage>
 
         // 2. Adjust search state if necessary without wiping controller text
         final isTv = _tabController.index == 0;
-        final activeController =
-            isTv ? _showsSearchController : _moviesSearchController;
+        final activeController = isTv
+            ? _showsSearchController
+            : _moviesSearchController;
         final trimmedQuery = activeController.text.trim();
 
         if (trimmedQuery.length >= 3) {
@@ -355,8 +356,6 @@ class _SearchPageState extends State<SearchPage>
       }
     }
   }
-
-
 
   void _onScroll(bool isTv) {
     final controller = isTv ? _showsScrollController : _moviesScrollController;

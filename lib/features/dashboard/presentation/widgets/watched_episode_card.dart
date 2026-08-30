@@ -84,10 +84,9 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
         ? 'https://image.tmdb.org/t/p/w500$posterPath'
         : null;
 
-    final showName =
-        widget.item.showName.isNotEmpty
-            ? widget.item.showName.toUpperCase()
-            : 'UNKNOWN';
+    final showName = widget.item.showName.isNotEmpty
+        ? widget.item.showName.toUpperCase()
+        : 'UNKNOWN';
 
     final displayCode = widget.item.displayCode;
     final episodeTitle = widget.item.episodeTitle;

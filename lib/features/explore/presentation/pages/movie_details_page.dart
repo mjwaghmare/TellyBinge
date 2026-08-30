@@ -367,7 +367,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             ? authState.user.uid
             : null;
 
-        final movie = isLoading ? _dummyMovieData() : (movieData ?? _dummyMovieData());
+        final movie = isLoading
+            ? _dummyMovieData()
+            : (movieData ?? _dummyMovieData());
         final title = movie['title'] as String? ?? 'Unknown';
         final backdropPath = movie['backdrop_path'] as String?;
         final releaseDate = movie['release_date'] as String?;
@@ -567,87 +569,98 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                               ),
                           ],
                           flexibleSpace: LayoutBuilder(
-                            builder: (BuildContext context, BoxConstraints constraints) {
-                              final top = constraints.biggest.height;
-                              final isCollapsed = top <=
-                                  MediaQuery.paddingOf(context).top +
-                                      kToolbarHeight +
-                                      30;
-                              final titleColor = isCollapsed
-                                  ? context.textPrimary
-                                  : Colors.white;
-                              final genresColor = isCollapsed
-                                  ? context.textSecondary
-                                  : Colors.white.withValues(alpha: 0.8);
+                            builder:
+                                (
+                                  BuildContext context,
+                                  BoxConstraints constraints,
+                                ) {
+                                  final top = constraints.biggest.height;
+                                  final isCollapsed =
+                                      top <=
+                                      MediaQuery.paddingOf(context).top +
+                                          kToolbarHeight +
+                                          30;
+                                  final titleColor = isCollapsed
+                                      ? context.textPrimary
+                                      : Colors.white;
+                                  final genresColor = isCollapsed
+                                      ? context.textSecondary
+                                      : Colors.white.withValues(alpha: 0.8);
 
-                              return FlexibleSpaceBar(
-                                centerTitle: false,
-                                titlePadding: EdgeInsets.only(
-                                  left: isCollapsed ? 60 : AppSpacing.md,
-                                  bottom: isCollapsed
-                                      ? AppSpacing.sm
-                                      : AppSpacing.md,
-                                  right: 48,
-                                ),
-                                title: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      title,
-                                      style: TextStyle(
-                                        color: titleColor,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                  return FlexibleSpaceBar(
+                                    centerTitle: false,
+                                    titlePadding: EdgeInsets.only(
+                                      left: isCollapsed ? 60 : AppSpacing.md,
+                                      bottom: isCollapsed
+                                          ? AppSpacing.sm
+                                          : AppSpacing.md,
+                                      right: 48,
                                     ),
-                                    if (genres.isNotEmpty) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        genres,
-                                        style: TextStyle(
-                                          color: genresColor,
-                                          fontSize: 10,
+                                    title: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          title,
+                                          style: TextStyle(
+                                            color: titleColor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                background: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    if (backdropPath != null &&
-                                        backdropPath.isNotEmpty)
-                                      CachedNetworkImage(
-                                        imageUrl: _getImageUrl(backdropPath),
-                                        fit: BoxFit.cover,
-                                        errorWidget: (context, url, error) =>
-                                            Container(color: Colors.grey[900]),
-                                      )
-                                    else
-                                      Container(color: Colors.grey[900]),
-                                    const DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Colors.black45,
-                                            Colors.transparent,
-                                            Colors.black,
-                                          ],
-                                          stops: [0.0, 0.4, 1.0],
-                                        ),
-                                      ),
+                                        if (genres.isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            genres,
+                                            style: TextStyle(
+                                              color: genresColor,
+                                              fontSize: 10,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              );
-                            },
+                                    background: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        if (backdropPath != null &&
+                                            backdropPath.isNotEmpty)
+                                          CachedNetworkImage(
+                                            imageUrl: _getImageUrl(
+                                              backdropPath,
+                                            ),
+                                            fit: BoxFit.cover,
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    Container(
+                                                      color: Colors.grey[900],
+                                                    ),
+                                          )
+                                        else
+                                          Container(color: Colors.grey[900]),
+                                        const DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.black45,
+                                                Colors.transparent,
+                                                Colors.black,
+                                              ],
+                                              stops: [0.0, 0.4, 1.0],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                           ),
                         ),
                         SliverToBoxAdapter(
@@ -706,18 +719,18 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                               if (uid == null) {
                                                 AuthRequiredBottomSheet.show(
                                                   context,
-                                                  title: 'Sign in to Track Movies',
+                                                  title:
+                                                      'Sign in to Track Movies',
                                                   subtitle:
                                                       'Sign in to favorite and track movies you want to watch.',
-                                                  icon: Icons.movie_filter_rounded,
+                                                  icon: Icons
+                                                      .movie_filter_rounded,
                                                 );
                                                 return;
                                               }
                                               if (isAdded) {
                                                 context
-                                                    .read<
-                                                      MovieWatchlistCubit
-                                                    >()
+                                                    .read<MovieWatchlistCubit>()
                                                     .toggleFavorite(
                                                       uid: uid,
                                                       movieId: widget.movieId,
@@ -725,9 +738,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                                     );
                                               } else {
                                                 context
-                                                    .read<
-                                                      MovieWatchlistCubit
-                                                    >()
+                                                    .read<MovieWatchlistCubit>()
                                                     .addMovie(
                                                       uid: uid,
                                                       movieId: widget.movieId,
@@ -738,35 +749,39 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                                       backdropPath:
                                                           movie['backdrop_path']
                                                               as String?,
-                                                      releaseDate:
-                                                          releaseDate,
+                                                      releaseDate: releaseDate,
                                                       runtime: runtimeMinutes,
-                                                      voteAverage:
-                                                          voteAverage,
+                                                      voteAverage: voteAverage,
                                                       genres: genres,
                                                       isFavorite: true,
                                                     );
                                               }
                                             },
                                             activeIcon: Icons.favorite,
-                                            inactiveIcon:
-                                                Icons.favorite_border,
+                                            inactiveIcon: Icons.favorite_border,
                                             activeIconColor: Colors.red,
                                             inactiveIconColor: context.isLight
                                                 ? AppColors.lightTextSecondary
                                                 : Colors.white,
                                             activeBgColor: context.isLight
-                                                ? Colors.grey.withValues(alpha: 0.15)
-                                                : Colors.grey.withValues(alpha: 0.3),
+                                                ? Colors.grey.withValues(
+                                                    alpha: 0.15,
+                                                  )
+                                                : Colors.grey.withValues(
+                                                    alpha: 0.3,
+                                                  ),
                                             inactiveBgColor: context.isLight
-                                                ? Colors.grey.withValues(alpha: 0.15)
-                                                : Colors.grey.withValues(alpha: 0.3),
+                                                ? Colors.grey.withValues(
+                                                    alpha: 0.15,
+                                                  )
+                                                : Colors.grey.withValues(
+                                                    alpha: 0.3,
+                                                  ),
                                             size: 28.0,
                                             iconSize: 16.0,
                                           ),
                                         ),
-                                        if (released)
-                                          const SizedBox(width: 12),
+                                        if (released) const SizedBox(width: 12),
                                         if (released)
                                           Skeleton.ignore(
                                             child: ActionCircleButton(
@@ -776,10 +791,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                                 if (uid == null) {
                                                   AuthRequiredBottomSheet.show(
                                                     context,
-                                                    title: 'Sign in to Track Movies',
+                                                    title:
+                                                        'Sign in to Track Movies',
                                                     subtitle:
                                                         'Sign in to track movies you have watched.',
-                                                    icon: Icons.check_circle_outline_rounded,
+                                                    icon: Icons
+                                                        .check_circle_outline_rounded,
                                                   );
                                                   return;
                                                 }
@@ -824,10 +841,15 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                               inactiveIconColor: context.isLight
                                                   ? AppColors.lightTextSecondary
                                                   : Colors.white,
-                                              activeBgColor: AppColors.brandGreen,
+                                              activeBgColor:
+                                                  AppColors.brandGreen,
                                               inactiveBgColor: context.isLight
-                                                  ? Colors.grey.withValues(alpha: 0.15)
-                                                  : Colors.grey.withValues(alpha: 0.3),
+                                                  ? Colors.grey.withValues(
+                                                      alpha: 0.15,
+                                                    )
+                                                  : Colors.grey.withValues(
+                                                      alpha: 0.3,
+                                                    ),
                                               size: 28.0,
                                               iconSize: 18.0,
                                             ),
@@ -979,13 +1001,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                           const SizedBox(width: 12),
                                       itemBuilder: (context, index) {
                                         final actor =
-                                            cast[index]
-                                                as Map<String, dynamic>;
+                                            cast[index] as Map<String, dynamic>;
                                         final actorName =
                                             actor['name'] as String? ?? '';
                                         final character =
-                                            actor['character'] as String? ??
-                                            '';
+                                            actor['character'] as String? ?? '';
                                         final profilePath =
                                             actor['profile_path'] as String?;
                                         return _buildCastCard(
@@ -1025,8 +1045,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     height: 200,
                                     child: ListView.separated(
                                       scrollDirection: Axis.horizontal,
-                                      itemCount:
-                                          visibleCollectionParts.length,
+                                      itemCount: visibleCollectionParts.length,
                                       separatorBuilder: (context, index) =>
                                           const SizedBox(width: 14),
                                       itemBuilder: (context, index) {
@@ -1083,53 +1102,53 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       separatorBuilder: (context, index) =>
                                           const SizedBox(width: 14),
                                       itemBuilder: (context, index) {
-                                          final rec =
-                                              visibleSimilarMovies[index]
-                                                  as Map<String, dynamic>;
-                                          final rawRecId = rec['id'];
-                                          int? recId;
-                                          if (rawRecId is num) {
-                                            recId = rawRecId.toInt();
-                                          } else if (rawRecId is String) {
-                                            recId = int.tryParse(rawRecId);
-                                          }
-                                          if (recId == null) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          final String recTitle =
-                                              rec['title'] ??
-                                              rec['name'] ??
-                                              'Unknown';
-                                          final String? recPoster =
-                                              rec['poster_path'];
-                                          final String? recBackdrop =
-                                              rec['backdrop_path'];
-                                          final String? recDate =
-                                              rec['release_date'];
-                                          final double recVote =
-                                              (rec['vote_average'] as num?)
-                                                  ?.toDouble() ??
-                                              0.0;
+                                        final rec =
+                                            visibleSimilarMovies[index]
+                                                as Map<String, dynamic>;
+                                        final rawRecId = rec['id'];
+                                        int? recId;
+                                        if (rawRecId is num) {
+                                          recId = rawRecId.toInt();
+                                        } else if (rawRecId is String) {
+                                          recId = int.tryParse(rawRecId);
+                                        }
+                                        if (recId == null) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        final String recTitle =
+                                            rec['title'] ??
+                                            rec['name'] ??
+                                            'Unknown';
+                                        final String? recPoster =
+                                            rec['poster_path'];
+                                        final String? recBackdrop =
+                                            rec['backdrop_path'];
+                                        final String? recDate =
+                                            rec['release_date'];
+                                        final double recVote =
+                                            (rec['vote_average'] as num?)
+                                                ?.toDouble() ??
+                                            0.0;
 
-                                          return _buildRecommendationCard(
-                                            movieId: recId,
-                                            posterPath: recPoster,
-                                            title: recTitle,
-                                            releaseDate: recDate,
-                                            voteAverage: recVote,
-                                            backdropPath: recBackdrop,
-                                            runtime: 0,
-                                            genres: '',
-                                            isAdded: watchlistedIds.contains(
-                                              recId,
-                                            ),
-                                            uid: uid,
-                                          );
-                                        },
-                                      ),
+                                        return _buildRecommendationCard(
+                                          movieId: recId,
+                                          posterPath: recPoster,
+                                          title: recTitle,
+                                          releaseDate: recDate,
+                                          voteAverage: recVote,
+                                          backdropPath: recBackdrop,
+                                          runtime: 0,
+                                          genres: '',
+                                          isAdded: watchlistedIds.contains(
+                                            recId,
+                                          ),
+                                          uid: uid,
+                                        );
+                                      },
                                     ),
-                                    const SizedBox(height: AppSpacing.lg),
-                                  ],
+                                  ),
+                                  const SizedBox(height: AppSpacing.lg),
+                                ],
                               ],
                             ),
                           ),
@@ -1166,8 +1185,6 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
       },
     );
   }
-
-
 
   String _formatVoteCount(int count) {
     if (count >= 1000) {
@@ -1371,13 +1388,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                         ? CachedNetworkImage(
                             imageUrl: _getImageUrl(posterPath, size: 'w185'),
                             fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                Container(
-                                  color: context.adaptiveColor(
-                                    light: Colors.grey[300]!,
-                                    dark: AppColors.surfaceLight,
-                                  ),
-                                ),
+                            placeholder: (context, url) => Container(
+                              color: context.adaptiveColor(
+                                light: Colors.grey[300]!,
+                                dark: AppColors.surfaceLight,
+                              ),
+                            ),
                             errorWidget: (context, url, error) => Center(
                               child: Icon(
                                 Icons.movie_creation_outlined,

@@ -14,23 +14,19 @@ class AchievementsService {
     required List<Map<String, dynamic>> shows,
   }) {
     // Pre-compute shared stats.
-    final watchedMovies =
-        movies.where((m) => m['isWatched'] == true).toList();
+    final watchedMovies = movies.where((m) => m['isWatched'] == true).toList();
     final watchedMoviesCount = watchedMovies.length;
     final totalEpisodes = shows.fold<int>(
       0,
-      (sum, s) =>
-          sum + (Set<dynamic>.from(s['watchedEpisodes'] ?? [])).length,
+      (sum, s) => sum + (Set<dynamic>.from(s['watchedEpisodes'] ?? [])).length,
     );
-    final totalMovieMinutes = watchedMovies.fold<int>(
-      0,
-      (sum, m) {
-        final runtime = (m['runtime'] as num?)?.toInt() ??
-            int.tryParse(m['runtime']?.toString() ?? '') ??
-            0;
-        return sum + runtime;
-      },
-    );
+    final totalMovieMinutes = watchedMovies.fold<int>(0, (sum, m) {
+      final runtime =
+          (m['runtime'] as num?)?.toInt() ??
+          int.tryParse(m['runtime']?.toString() ?? '') ??
+          0;
+      return sum + runtime;
+    });
     // Rough average of 42 min per TV episode.
     final totalShowMinutes = totalEpisodes * 42;
     final totalMinutes = totalMovieMinutes + totalShowMinutes;
@@ -48,7 +44,14 @@ class AchievementsService {
 
     // History-based helpers.
     final hasNightOwl = _hasTimeRange(watchedMovies, watchedShows, 1, 0, 4, 30);
-    final hasEarlyBird = _hasTimeRange(watchedMovies, watchedShows, 4, 30, 7, 30);
+    final hasEarlyBird = _hasTimeRange(
+      watchedMovies,
+      watchedShows,
+      4,
+      30,
+      7,
+      30,
+    );
     final marathonDayEpisodes = _maxEpisodesInSingleDay(shows);
     final weekendStats = _weekendStats(watchedMovies, watchedShows);
     final completedSeriesCount = _completedSeriesCount(shows);
@@ -228,10 +231,7 @@ class AchievementsService {
         icon: Icons.search_rounded,
         assetPath: 'assets/awards/true_detective.jpg',
         current: _getGenreCount(allGenres, const ['crime', 'mystery']),
-        tiers: const {
-          AchievementTier.bronze: 15,
-          AchievementTier.silver: 40,
-        },
+        tiers: const {AchievementTier.bronze: 15, AchievementTier.silver: 40},
       ),
       Achievement(
         id: 'hopeless_romantic',
@@ -240,9 +240,13 @@ class AchievementsService {
         category: AchievementCategory.genres,
         icon: Icons.favorite_rounded,
         assetPath: 'assets/awards/hopeless_romantic.jpg',
-        currentValue: _getGenreCount(allGenres, const ['romance', 'romantic']).clamp(0, 15),
+        currentValue: _getGenreCount(allGenres, const [
+          'romance',
+          'romantic',
+        ]).clamp(0, 15),
         targetValue: 15,
-        isUnlocked: _getGenreCount(allGenres, const ['romance', 'romantic']) >= 15,
+        isUnlocked:
+            _getGenreCount(allGenres, const ['romance', 'romantic']) >= 15,
       ),
       Achievement(
         id: 'mind_bender',
@@ -251,9 +255,14 @@ class AchievementsService {
         category: AchievementCategory.genres,
         icon: Icons.psychology_rounded,
         assetPath: 'assets/awards/mind_bender.jpg',
-        currentValue: _getGenreCount(allGenres, const ['thriller', 'psychological']).clamp(0, 10),
+        currentValue: _getGenreCount(allGenres, const [
+          'thriller',
+          'psychological',
+        ]).clamp(0, 10),
         targetValue: 10,
-        isUnlocked: _getGenreCount(allGenres, const ['thriller', 'psychological']) >= 10,
+        isUnlocked:
+            _getGenreCount(allGenres, const ['thriller', 'psychological']) >=
+            10,
       ),
       Achievement(
         id: 'genre_hopper',
@@ -493,8 +502,13 @@ class AchievementsService {
     int endMin,
   ) {
     for (final m in movies) {
-      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
-      if (dt != null && _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
+      final dt = _parseFirstDate([
+        m['watchedAt'],
+        m['updatedAt'],
+        m['addedAt'],
+      ]);
+      if (dt != null &&
+          _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
         return true;
       }
     }
@@ -503,7 +517,8 @@ class AchievementsService {
       if (datesMap != null && datesMap.isNotEmpty) {
         for (final rawVal in datesMap.values) {
           final dt = _parseFirstDate([rawVal, s['updatedAt'], s['addedAt']]);
-          if (dt != null && _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
+          if (dt != null &&
+              _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
             return true;
           }
         }
@@ -511,7 +526,8 @@ class AchievementsService {
         final episodes = Set<dynamic>.from(s['watchedEpisodes'] ?? []);
         if (episodes.isNotEmpty) {
           final dt = _parseFirstDate([s['updatedAt'], s['addedAt']]);
-          if (dt != null && _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
+          if (dt != null &&
+              _inTimeRange(dt, startHour, startMin, endHour, endMin)) {
             return true;
           }
         }
@@ -520,8 +536,7 @@ class AchievementsService {
     return false;
   }
 
-  static bool _inTimeRange(
-      DateTime dt, int sh, int sm, int eh, int em) {
+  static bool _inTimeRange(DateTime dt, int sh, int sm, int eh, int em) {
     final mins = dt.hour * 60 + dt.minute;
     return mins >= sh * 60 + sm && mins <= eh * 60 + em;
   }
@@ -529,10 +544,15 @@ class AchievementsService {
   // ── DAY-BASED COUNTERS ──
 
   static Map<String, int> _movieWatchDayCounts(
-      List<Map<String, dynamic>> movies) {
+    List<Map<String, dynamic>> movies,
+  ) {
     final Map<String, int> dayCounts = {};
     for (final m in movies) {
-      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
+      final dt = _parseFirstDate([
+        m['watchedAt'],
+        m['updatedAt'],
+        m['addedAt'],
+      ]);
       if (dt != null) {
         final key = _dayKey(dt);
         dayCounts[key] = (dayCounts[key] ?? 0) + 1;
@@ -542,7 +562,8 @@ class AchievementsService {
   }
 
   static Map<String, int> _episodeWatchDayCounts(
-      List<Map<String, dynamic>> shows) {
+    List<Map<String, dynamic>> shows,
+  ) {
     final Map<String, int> dayCounts = {};
     for (final s in shows) {
       final datesMap = s['episodeWatchedDates'] as Map?;
@@ -628,8 +649,7 @@ class AchievementsService {
 
       weekendMovieCounts[weekendKey] =
           (weekendMovieCounts[weekendKey] ?? 0) + movs;
-      weekendEpCounts[weekendKey] =
-          (weekendEpCounts[weekendKey] ?? 0) + eps;
+      weekendEpCounts[weekendKey] = (weekendEpCounts[weekendKey] ?? 0) + eps;
     }
 
     final allWeekendKeys = <String>{
@@ -650,13 +670,14 @@ class AchievementsService {
   static int _completedSeriesCount(List<Map<String, dynamic>> shows) {
     int count = 0;
     for (final s in shows) {
-      final watchedEpisodes =
-          Set<dynamic>.from(s['watchedEpisodes'] ?? []);
-      final totalEpisodes = (s['totalEpisodes'] as num?)?.toInt() ??
+      final watchedEpisodes = Set<dynamic>.from(s['watchedEpisodes'] ?? []);
+      final totalEpisodes =
+          (s['totalEpisodes'] as num?)?.toInt() ??
           int.tryParse(s['totalEpisodes']?.toString() ?? '') ??
           0;
       final isMarkedCompleted = s['category'] == 'COMPLETED';
-      if (isMarkedCompleted || (totalEpisodes > 0 && watchedEpisodes.length >= totalEpisodes)) {
+      if (isMarkedCompleted ||
+          (totalEpisodes > 0 && watchedEpisodes.length >= totalEpisodes)) {
         count++;
       }
     }
@@ -671,7 +692,11 @@ class AchievementsService {
     final Set<String> activeDays = {};
 
     for (final m in movies) {
-      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
+      final dt = _parseFirstDate([
+        m['watchedAt'],
+        m['updatedAt'],
+        m['addedAt'],
+      ]);
       if (dt != null) activeDays.add(_dayKey(dt));
     }
     for (final s in shows) {
@@ -719,7 +744,11 @@ class AchievementsService {
     final Set<String> activeDays = {};
 
     for (final m in movies) {
-      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
+      final dt = _parseFirstDate([
+        m['watchedAt'],
+        m['updatedAt'],
+        m['addedAt'],
+      ]);
       if (dt != null) activeDays.add(_dayKey(dt));
     }
     for (final s in shows) {
@@ -744,7 +773,11 @@ class AchievementsService {
     int maxGap = 0;
 
     for (int i = 1; i < sorted.length; i++) {
-      final prev = DateTime(sorted[i - 1].year, sorted[i - 1].month, sorted[i - 1].day);
+      final prev = DateTime(
+        sorted[i - 1].year,
+        sorted[i - 1].month,
+        sorted[i - 1].day,
+      );
       final curr = DateTime(sorted[i].year, sorted[i].month, sorted[i].day);
       final gap = curr.difference(prev).inDays;
       if (gap > maxGap) maxGap = gap;
@@ -770,11 +803,16 @@ class AchievementsService {
     // Group long movies (150+ min) by day, check if any day has 2+.
     final Map<String, int> dayCounts = {};
     for (final m in movies) {
-      final runtime = (m['runtime'] as num?)?.toInt() ??
+      final runtime =
+          (m['runtime'] as num?)?.toInt() ??
           int.tryParse(m['runtime']?.toString() ?? '') ??
           0;
       if (runtime < 150) continue;
-      final dt = _parseFirstDate([m['watchedAt'], m['updatedAt'], m['addedAt']]);
+      final dt = _parseFirstDate([
+        m['watchedAt'],
+        m['updatedAt'],
+        m['addedAt'],
+      ]);
       if (dt != null) {
         final key = _dayKey(dt);
         dayCounts[key] = (dayCounts[key] ?? 0) + 1;

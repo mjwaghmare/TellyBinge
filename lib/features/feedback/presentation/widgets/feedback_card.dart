@@ -67,7 +67,8 @@ class FeedbackCard extends StatelessWidget {
                           Row(
                             children: [
                               _buildCategoryPill(item.category, isLight),
-                              if (item.severity != null && item.severity!.isNotEmpty) ...[
+                              if (item.severity != null &&
+                                  item.severity!.isNotEmpty) ...[
                                 const SizedBox(width: 6.0),
                                 _buildSeverityPill(item.severity!, isLight),
                               ],
@@ -120,7 +121,8 @@ class FeedbackCard extends StatelessWidget {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: item.media.length,
-                        separatorBuilder: (context, index) => const SizedBox(width: 8.0),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 8.0),
                         itemBuilder: (context, index) {
                           final mediaItem = item.media[index];
                           return ClipRRect(
@@ -142,12 +144,13 @@ class FeedbackCard extends StatelessWidget {
                                   ? Image.file(
                                       File(mediaItem.path),
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          const Icon(
-                                        Icons.image_outlined,
-                                        color: AppColors.textTertiary,
-                                        size: 20,
-                                      ),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Icon(
+                                                Icons.image_outlined,
+                                                color: AppColors.textTertiary,
+                                                size: 20,
+                                              ),
                                     )
                                   : CachedNetworkImage(
                                       imageUrl: mediaItem.path,
@@ -156,16 +159,18 @@ class FeedbackCard extends StatelessWidget {
                                         child: SizedBox(
                                           width: 18,
                                           height: 18,
-                                          child: CircularProgressIndicator.adaptive(
-                                            strokeWidth: 2,
-                                          ),
+                                          child:
+                                              CircularProgressIndicator.adaptive(
+                                                strokeWidth: 2,
+                                              ),
                                         ),
                                       ),
-                                      errorWidget: (context, url, error) => const Icon(
-                                        Icons.image_outlined,
-                                        color: AppColors.textTertiary,
-                                        size: 20,
-                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          const Icon(
+                                            Icons.image_outlined,
+                                            color: AppColors.textTertiary,
+                                            size: 20,
+                                          ),
                                     ),
                             ),
                           );
@@ -194,10 +199,7 @@ class FeedbackCard extends StatelessWidget {
                       height: 26,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primaryDark,
-                          ],
+                          colors: [AppColors.primary, AppColors.primaryDark],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -282,7 +284,11 @@ class FeedbackCard extends StatelessWidget {
 
   // --- SUB WIDGETS ---
 
-  Widget _buildVoteCapsule(BuildContext context, bool isLight, bool canDownvote) {
+  Widget _buildVoteCapsule(
+    BuildContext context,
+    bool isLight,
+    bool canDownvote,
+  ) {
     final hasVoted = item.isUpvoted || item.isDownvoted;
 
     return Container(
@@ -291,16 +297,14 @@ class FeedbackCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: hasVoted
             ? AppColors.primary.withValues(alpha: 0.15)
-            : (isLight
-                ? const Color(0xFFF3F4F6)
-                : const Color(0xFF1E1E2C)),
+            : (isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C)),
         borderRadius: BorderRadius.circular(14.0),
         border: Border.all(
           color: hasVoted
               ? AppColors.primary
               : (isLight
-                  ? AppColors.borderLight
-                  : Colors.white.withValues(alpha: 0.06)),
+                    ? AppColors.borderLight
+                    : Colors.white.withValues(alpha: 0.06)),
           width: hasVoted ? 1.5 : 1.0,
         ),
       ),
@@ -337,9 +341,7 @@ class FeedbackCard extends StatelessWidget {
               style: AppTextStyles.smBold.copyWith(
                 color: hasVoted
                     ? AppColors.primary
-                    : (isLight
-                        ? AppColors.lightTextPrimary
-                        : Colors.white),
+                    : (isLight ? AppColors.lightTextPrimary : Colors.white),
                 fontSize: 14.0,
                 fontWeight: FontWeight.w700,
               ),
@@ -364,8 +366,10 @@ class FeedbackCard extends StatelessWidget {
                   color: item.isDownvoted
                       ? AppColors.primary
                       : (canDownvote
-                          ? (isLight ? AppColors.lightTextSecondary : Colors.white70)
-                          : (isLight ? Colors.grey[300] : Colors.white24)),
+                            ? (isLight
+                                  ? AppColors.lightTextSecondary
+                                  : Colors.white70)
+                            : (isLight ? Colors.grey[300] : Colors.white24)),
                   size: 22,
                 ),
               ),

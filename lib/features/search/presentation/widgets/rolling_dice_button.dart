@@ -82,7 +82,8 @@ class _RollingDiceButtonState extends State<RollingDiceButton>
                   return Icon(
                     Icons.casino,
                     size: 34,
-                    color: Theme.of(context).iconTheme.color ?? AppColors.primary,
+                    color:
+                        Theme.of(context).iconTheme.color ?? AppColors.primary,
                   );
                 },
               ),

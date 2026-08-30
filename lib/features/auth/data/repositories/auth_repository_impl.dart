@@ -91,7 +91,9 @@ class AuthRepositoryImpl implements AuthRepository {
       await firebaseUser.delete();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
-        throw Exception('For security, please sign out and sign in again before deleting your account.');
+        throw Exception(
+          'For security, please sign out and sign in again before deleting your account.',
+        );
       }
       throw Exception('Account deletion failed: ${e.message ?? e.code}');
     } catch (e) {

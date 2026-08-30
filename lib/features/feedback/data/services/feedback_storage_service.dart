@@ -6,7 +6,7 @@ class FeedbackStorageService {
   final FirebaseStorage _storage;
 
   FeedbackStorageService({FirebaseStorage? storage})
-      : _storage = storage ?? FirebaseStorage.instance;
+    : _storage = storage ?? FirebaseStorage.instance;
 
   /// Uploads media files for a specific feedback ID to Firebase Storage.
   /// Storage hierarchy: `feedbacks/{feedbackId}/{fileName}`

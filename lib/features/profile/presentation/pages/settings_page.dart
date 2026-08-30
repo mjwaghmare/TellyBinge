@@ -77,9 +77,7 @@ class _SettingsPageState extends State<SettingsPage> {
         title: Text(
           'Settings',
           style: AppTextStyles.xl.copyWith(
-            color: isLight
-                ? AppColors.lightTextPrimary
-                : AppColors.textPrimary,
+            color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
             fontSize: 26,
             fontWeight: FontWeight.bold,
             letterSpacing: -0.5,
@@ -111,14 +109,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     movies: movies,
                     shows: shows,
                   );
-                  final unlocked =
-                      achievements.where((a) => a.isUnlocked).length;
+                  final unlocked = achievements
+                      .where((a) => a.isUnlocked)
+                      .length;
                   final total = achievements.length;
 
                   return _SettingsTile(
                     icon: Icons.emoji_events_rounded,
                     iconColor: const Color(0xFFFFD700),
-                    iconBgColor: const Color(0xFFFFD700).withValues(alpha: 0.14),
+                    iconBgColor: const Color(
+                      0xFFFFD700,
+                    ).withValues(alpha: 0.14),
                     title: 'Achievements',
                     subtitle: 'Track your milestones and badges',
                     trailing: Row(
@@ -184,7 +185,9 @@ class _SettingsPageState extends State<SettingsPage> {
                           activeThumbColor: Colors.white,
                           onChanged: (value) {
                             HapticFeedback.lightImpact();
-                            context.read<SettingsCubit>().toggleNotifications(value);
+                            context.read<SettingsCubit>().toggleNotifications(
+                              value,
+                            );
                           },
                         ),
                       ),
@@ -200,7 +203,9 @@ class _SettingsPageState extends State<SettingsPage> {
                             activeThumbColor: Colors.white,
                             onChanged: (value) {
                               HapticFeedback.lightImpact();
-                              context.read<SettingsCubit>().toggleNotify1DayBefore(value);
+                              context
+                                  .read<SettingsCubit>()
+                                  .toggleNotify1DayBefore(value);
                             },
                           ),
                         ),
@@ -247,10 +252,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ],
                     ),
-                    onTap: () => _showThemeSelectionSheet(
-                      context,
-                      themeState.themeMode,
-                    ),
+                    onTap: () =>
+                        _showThemeSelectionSheet(context, themeState.themeMode),
                   );
                 },
               ),
@@ -330,7 +333,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     context: context,
                     applicationName: 'PopVerse',
                     applicationVersion: _packageInfo?.version ?? '1.0.0',
-                    applicationLegalese: '© 2026 PopVerse. All rights reserved.',
+                    applicationLegalese:
+                        '© 2026 PopVerse. All rights reserved.',
                   );
                 },
               ),
@@ -380,7 +384,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.system_update_rounded,
                 title: 'Check for Updates',
                 subtitle: 'Check for latest features and enhancements',
-                onTap: () => AppUpdateService.instance.checkForUpdatesManual(context),
+                onTap: () =>
+                    AppUpdateService.instance.checkForUpdatesManual(context),
               ),
               _buildDivider(),
               _SettingsTile(
@@ -424,15 +429,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSectionHeader(String title, {Color? color}) {
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 4.0,
-        top: 20.0,
-        bottom: 8.0,
-      ),
+      padding: const EdgeInsets.only(left: 4.0, top: 20.0, bottom: 8.0),
       child: Text(
         title,
         style: TextStyle(
-          color: color ??
+          color:
+              color ??
               (context.isLight
                   ? AppColors.lightTextSecondary
                   : const Color(0xFF8E8E93)),
@@ -458,10 +460,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 
@@ -614,12 +613,16 @@ class _SettingsPageState extends State<SettingsPage> {
       decoration: BoxDecoration(
         color: isSelected
             ? AppColors.primary.withValues(alpha: 0.12)
-            : (isLight ? Colors.grey[100] : Colors.white.withValues(alpha: 0.04)),
+            : (isLight
+                  ? Colors.grey[100]
+                  : Colors.white.withValues(alpha: 0.04)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected
               ? AppColors.primary
-              : (isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.06)),
+              : (isLight
+                    ? AppColors.borderLight
+                    : Colors.white.withValues(alpha: 0.06)),
           width: isSelected ? 1.5 : 1.0,
         ),
       ),
@@ -627,7 +630,9 @@ class _SettingsPageState extends State<SettingsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: Icon(
           icon,
-          color: isSelected ? AppColors.primary : (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary),
+          color: isSelected
+              ? AppColors.primary
+              : (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary),
         ),
         title: Text(
           title,
@@ -635,14 +640,18 @@ class _SettingsPageState extends State<SettingsPage> {
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             color: isSelected
                 ? AppColors.primary
-                : (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary),
+                : (isLight
+                      ? AppColors.lightTextPrimary
+                      : AppColors.textPrimary),
           ),
         ),
         subtitle: Text(
           subtitle,
           style: TextStyle(
             fontSize: 12,
-            color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+            color: isLight
+                ? AppColors.lightTextSecondary
+                : AppColors.textSecondary,
           ),
         ),
         trailing: Icon(
@@ -658,8 +667,6 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
-
-
 
   void _showDeleteAccountSheet(BuildContext context) {
     HapticFeedback.mediumImpact();
@@ -752,7 +759,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         onPressed: () {
                           Navigator.pop(sheetContext);
                           if (Navigator.of(context).canPop()) {
-                            Navigator.of(context).popUntil((route) => route.isFirst);
+                            Navigator.of(
+                              context,
+                            ).popUntil((route) => route.isFirst);
                           }
                           context.read<AuthCubit>().deleteAccount();
                         },
@@ -927,9 +936,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                _buildInfoBullet('Zero tracking cookies or cross-app identifiers'),
-                _buildInfoBullet('Watchlist data is never sold or shared with advertisers'),
-                _buildInfoBullet('Instant and permanent data deletion upon request'),
+                _buildInfoBullet(
+                  'Zero tracking cookies or cross-app identifiers',
+                ),
+                _buildInfoBullet(
+                  'Watchlist data is never sold or shared with advertisers',
+                ),
+                _buildInfoBullet(
+                  'Instant and permanent data deletion upon request',
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 SizedBox(
                   width: double.infinity,
@@ -1010,7 +1025,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     onPressed: () async {
                       final url = Uri.parse('https://www.themoviedb.org');
                       if (await canLaunchUrl(url)) {
-                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
                       }
                     },
                   ),
@@ -1201,27 +1219,19 @@ class _SettingsPageState extends State<SettingsPage> {
         await launchUrl(emailUri);
       } else {
         if (context.mounted) {
-          AppSnackbar.showInfo(
-            context,
-            'Support email: support@popverse.app',
-          );
+          AppSnackbar.showInfo(context, 'Support email: support@popverse.app');
         }
       }
     } catch (_) {
       if (context.mounted) {
-        AppSnackbar.showInfo(
-          context,
-          'Support email: support@popverse.app',
-        );
+        AppSnackbar.showInfo(context, 'Support email: support@popverse.app');
       }
     }
   }
 
   Future<void> _launchAppRating(BuildContext context) async {
     HapticFeedback.lightImpact();
-    final Uri ratingUri = Uri.parse(
-      'https://apps.apple.com',
-    );
+    final Uri ratingUri = Uri.parse('https://apps.apple.com');
     try {
       if (await canLaunchUrl(ratingUri)) {
         await launchUrl(ratingUri, mode: LaunchMode.externalApplication);
@@ -1234,10 +1244,7 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.only(top: 16.0, bottom: 6.0),
       child: Text(
         text,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 15,
-        ),
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
       ),
     );
   }
@@ -1317,10 +1324,7 @@ class _SettingsTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16.0,
-            vertical: 12.0,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
             children: [
               customIcon ??
@@ -1328,7 +1332,8 @@ class _SettingsTile extends StatelessWidget {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: iconBgColor ??
+                      color:
+                          iconBgColor ??
                           (isLight
                               ? AppColors.primary.withValues(alpha: 0.1)
                               : AppColors.primary.withValues(alpha: 0.14)),

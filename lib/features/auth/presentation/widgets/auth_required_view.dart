@@ -27,9 +27,12 @@ class AuthRequiredView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surfaceColor = isDark ? AppColors.surface : AppColors.lightSurface;
-    final textColor = isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
-    final textSecColor =
-        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textColor = isDark
+        ? AppColors.textPrimary
+        : AppColors.lightTextPrimary;
+    final textSecColor = isDark
+        ? AppColors.textSecondary
+        : AppColors.lightTextSecondary;
     final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
 
     return SafeArea(
@@ -55,11 +58,7 @@ class AuthRequiredView extends StatelessWidget {
                     width: 2,
                   ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: AppColors.primary,
-                ),
+                child: Icon(icon, size: 40, color: AppColors.primary),
               ),
               AppSpacing.gapH24,
 
@@ -75,7 +74,9 @@ class AuthRequiredView extends StatelessWidget {
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.md.withColor(textSecColor).copyWith(height: 1.4),
+                style: AppTextStyles.md
+                    .withColor(textSecColor)
+                    .copyWith(height: 1.4),
               ),
               AppSpacing.gapH24,
 
@@ -105,7 +106,9 @@ class AuthRequiredView extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 features[i],
-                                style: AppTextStyles.smMedium.withColor(textColor),
+                                style: AppTextStyles.smMedium.withColor(
+                                  textColor,
+                                ),
                               ),
                             ),
                           ],
@@ -187,8 +190,11 @@ class AuthGoogleSignInButton extends StatelessWidget {
                       'assets/images/google.png',
                       width: AppSpacing.xl,
                       height: AppSpacing.xl,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.login, size: AppSpacing.xl, color: Colors.white),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.login,
+                        size: AppSpacing.xl,
+                        color: Colors.white,
+                      ),
                     ),
                     AppSpacing.gapW12,
                     Flexible(
@@ -232,23 +238,23 @@ class AuthRequiredBottomSheet extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) => AuthRequiredBottomSheet(
-        title: title,
-        subtitle: subtitle,
-        icon: icon,
-      ),
+      builder: (sheetContext) =>
+          AuthRequiredBottomSheet(title: title, subtitle: subtitle, icon: icon),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor =
-        isDark ? AppColors.surfaceElevated : AppColors.lightSurfaceElevated;
-    final textColor =
-        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
-    final textSecColor =
-        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final surfaceColor = isDark
+        ? AppColors.surfaceElevated
+        : AppColors.lightSurfaceElevated;
+    final textColor = isDark
+        ? AppColors.textPrimary
+        : AppColors.lightTextPrimary;
+    final textSecColor = isDark
+        ? AppColors.textSecondary
+        : AppColors.lightTextSecondary;
 
     return Container(
       decoration: BoxDecoration(
@@ -278,45 +284,47 @@ class AuthRequiredBottomSheet extends StatelessWidget {
               ),
               AppSpacing.gapH24,
 
-          // Icon
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primary.withValues(alpha: 0.15),
-            ),
-            child: Icon(icon, size: 30, color: AppColors.primary),
-          ),
-          AppSpacing.gapH16,
+              // Icon
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                ),
+                child: Icon(icon, size: 30, color: AppColors.primary),
+              ),
+              AppSpacing.gapH16,
 
-          // Title
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.lg.withColor(textColor),
-          ),
-          AppSpacing.gapH8,
+              // Title
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.lg.withColor(textColor),
+              ),
+              AppSpacing.gapH8,
 
-          // Subtitle
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.sm.withColor(textSecColor).copyWith(height: 1.4),
-          ),
-          AppSpacing.gapH24,
+              // Subtitle
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.sm
+                    .withColor(textSecColor)
+                    .copyWith(height: 1.4),
+              ),
+              AppSpacing.gapH24,
 
-          // Sign In Button
-          AuthGoogleSignInButton(
-            onSuccess: () {
-              Navigator.of(context).pop();
-            },
+              // Sign In Button
+              AuthGoogleSignInButton(
+                onSuccess: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              AppSpacing.gapH12,
+            ],
           ),
-          AppSpacing.gapH12,
-        ],
+        ),
       ),
-    ),
-  ),
-);
-}
+    );
+  }
 }

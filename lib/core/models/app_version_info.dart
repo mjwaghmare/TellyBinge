@@ -1,10 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum AppUpdateType {
-  none,
-  optional,
-  force,
-}
+enum AppUpdateType { none, optional, force }
 
 @immutable
 class AppVersionInfo {
@@ -29,7 +25,10 @@ class AppVersionInfo {
   factory AppVersionInfo.fromMap(Map<String, dynamic> map) {
     List<String> parseNotes(dynamic raw) {
       if (raw is List) {
-        return raw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+        return raw
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
       } else if (raw is String && raw.trim().isNotEmpty) {
         return raw
             .split('\n')
@@ -40,25 +39,29 @@ class AppVersionInfo {
       return const [];
     }
 
-    final newVersion = (map['version'] ??
-            map['new_version'] ??
-            map['latest_version'] ??
-            map['latestVersion'] ??
-            '1.0.0')
-        .toString()
-        .trim();
+    final newVersion =
+        (map['version'] ??
+                map['new_version'] ??
+                map['latest_version'] ??
+                map['latestVersion'] ??
+                '1.0.0')
+            .toString()
+            .trim();
 
     // Check is_optional flag directly
     bool isOpt = true;
     if (map.containsKey('is_optional') ||
         map.containsKey('is_optional_update') ||
         map.containsKey('isOptional')) {
-      isOpt = map['is_optional'] as bool? ??
+      isOpt =
+          map['is_optional'] as bool? ??
           map['is_optional_update'] as bool? ??
           map['isOptional'] as bool? ??
           true;
-    } else if (map.containsKey('is_force') || map.containsKey('is_force_update')) {
-      final isForce = map['is_force'] as bool? ?? map['is_force_update'] as bool? ?? false;
+    } else if (map.containsKey('is_force') ||
+        map.containsKey('is_force_update')) {
+      final isForce =
+          map['is_force'] as bool? ?? map['is_force_update'] as bool? ?? false;
       isOpt = !isForce;
     } else if (map.containsKey('min_supported_version')) {
       // Legacy fallback
@@ -70,10 +73,17 @@ class AppVersionInfo {
       latestVersion: newVersion,
       isOptional: isOpt,
       title: (map['title'] ?? 'Update Available!').toString().trim(),
-      releaseNotes: parseNotes(map['release_notes'] ?? map['releaseNotes'] ?? map['whats_new']),
-      androidUrl: (map['android_url'] ?? map['play_store_url'] ?? '').toString().trim(),
+      releaseNotes: parseNotes(
+        map['release_notes'] ?? map['releaseNotes'] ?? map['whats_new'],
+      ),
+      androidUrl: (map['android_url'] ?? map['play_store_url'] ?? '')
+          .toString()
+          .trim(),
       iosUrl: (map['ios_url'] ?? map['app_store_url'] ?? '').toString().trim(),
-      isUpdateEnabled: map['is_update_enabled'] as bool? ?? map['isUpdateEnabled'] as bool? ?? true,
+      isUpdateEnabled:
+          map['is_update_enabled'] as bool? ??
+          map['isUpdateEnabled'] as bool? ??
+          true,
     );
   }
 
@@ -89,7 +99,9 @@ class AppVersionInfo {
     final parts1 = clean1.split('.').map((e) => int.tryParse(e) ?? 0).toList();
     final parts2 = clean2.split('.').map((e) => int.tryParse(e) ?? 0).toList();
 
-    final maxLen = parts1.length > parts2.length ? parts1.length : parts2.length;
+    final maxLen = parts1.length > parts2.length
+        ? parts1.length
+        : parts2.length;
 
     for (int i = 0; i < maxLen; i++) {
       final p1 = i < parts1.length ? parts1[i] : 0;

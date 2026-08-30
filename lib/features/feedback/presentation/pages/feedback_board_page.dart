@@ -53,21 +53,24 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
 
     _subscription = _repository
         .getFeedbacksStream(currentUserId: _currentUserId)
-        .listen((items) {
-      if (mounted) {
-        setState(() {
-          _items = items;
-          _isLoading = false;
-        });
-      }
-    }, onError: (error) {
-      debugPrint('FeedbackBoardPage: Error in feedback stream: $error');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
+        .listen(
+          (items) {
+            if (mounted) {
+              setState(() {
+                _items = items;
+                _isLoading = false;
+              });
+            }
+          },
+          onError: (error) {
+            debugPrint('FeedbackBoardPage: Error in feedback stream: $error');
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+          },
+        );
   }
 
   @override
@@ -79,21 +82,22 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
 
   List<FeedbackItem> get _filteredItems {
     return _items.where((item) {
-      // Category filter
-      final matchesFilter = switch (_selectedFilter) {
-        'Bug' => item.category == FeedbackCategory.bug,
-        'Feature' => item.category == FeedbackCategory.feature,
-        'Improvement' => item.category == FeedbackCategory.improvement,
-        _ => true,
-      };
+        // Category filter
+        final matchesFilter = switch (_selectedFilter) {
+          'Bug' => item.category == FeedbackCategory.bug,
+          'Feature' => item.category == FeedbackCategory.feature,
+          'Improvement' => item.category == FeedbackCategory.improvement,
+          _ => true,
+        };
 
-      // Search filter
-      final matchesSearch = _searchQuery.isEmpty ||
-          item.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          item.description.toLowerCase().contains(_searchQuery.toLowerCase());
+        // Search filter
+        final matchesSearch =
+            _searchQuery.isEmpty ||
+            item.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            item.description.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      return matchesFilter && matchesSearch;
-    }).toList()
+        return matchesFilter && matchesSearch;
+      }).toList()
       ..sort((a, b) => b.votes.compareTo(a.votes)); // Sorted by top voted
   }
 
@@ -161,9 +165,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: isLight
-                ? AppColors.lightTextPrimary
-                : AppColors.textPrimary,
+            color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
             size: 20,
           ),
           onPressed: () => Navigator.pop(context),
@@ -171,9 +173,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
         title: Text(
           'Feedback & Requests',
           style: AppTextStyles.lg.copyWith(
-            color: isLight
-                ? AppColors.lightTextPrimary
-                : AppColors.textPrimary,
+            color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -213,9 +213,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
         ],
       ),
       body: _isLoading && _items.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator.adaptive(),
-            )
+          ? const Center(child: CircularProgressIndicator.adaptive())
           : Column(
               children: [
                 // 1. Search Bar
@@ -227,11 +225,13 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(
-                          alpha: isLight ? 0.06 : 0.10),
+                        alpha: isLight ? 0.06 : 0.10,
+                      ),
                       borderRadius: BorderRadius.circular(14.0),
                       border: Border.all(
                         color: AppColors.primary.withValues(
-                            alpha: isLight ? 0.18 : 0.16),
+                          alpha: isLight ? 0.18 : 0.16,
+                        ),
                         width: 1.0,
                       ),
                     ),
@@ -299,10 +299,17 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                       const SizedBox(width: 8.0),
                       _buildFilterChip('Bug', isLight, label: '🪲 Bugs'),
                       const SizedBox(width: 8.0),
-                      _buildFilterChip('Feature', isLight, label: '💡 Features'),
+                      _buildFilterChip(
+                        'Feature',
+                        isLight,
+                        label: '💡 Features',
+                      ),
                       const SizedBox(width: 8.0),
-                      _buildFilterChip('Improvement', isLight,
-                          label: '✨ Improvements'),
+                      _buildFilterChip(
+                        'Improvement',
+                        isLight,
+                        label: '✨ Improvements',
+                      ),
                     ],
                   ),
                 ),
@@ -327,18 +334,20 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                               onDownvote: () => _handleDownvote(item),
                               onTap: () async {
                                 HapticFeedback.lightImpact();
-                                final updated = await Navigator.push<FeedbackItem>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => FeedbackDetailsPage(
-                                      item: item,
-                                      feedbackRepository: _repository,
-                                    ),
-                                  ),
-                                );
+                                final updated =
+                                    await Navigator.push<FeedbackItem>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => FeedbackDetailsPage(
+                                          item: item,
+                                          feedbackRepository: _repository,
+                                        ),
+                                      ),
+                                    );
                                 if (updated != null) {
-                                  final idx = _items
-                                      .indexWhere((i) => i.id == updated.id);
+                                  final idx = _items.indexWhere(
+                                    (i) => i.id == updated.id,
+                                  );
                                   if (idx != -1) {
                                     setState(() {
                                       _items[idx] = updated;
@@ -383,8 +392,8 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
               color: isSelected
                   ? AppColors.primary
                   : (isLight
-                      ? AppColors.borderLight
-                      : Colors.white.withValues(alpha: 0.06)),
+                        ? AppColors.borderLight
+                        : Colors.white.withValues(alpha: 0.06)),
               width: 1.0,
             ),
           ),
@@ -394,8 +403,8 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
               color: isSelected
                   ? Colors.white
                   : (isLight
-                      ? AppColors.lightTextPrimary
-                      : AppColors.textPrimary),
+                        ? AppColors.lightTextPrimary
+                        : AppColors.textPrimary),
               fontSize: 13.0,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             ),
@@ -421,10 +430,14 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: isLight ? 0.1 : 0.15),
+                color: AppColors.primary.withValues(
+                  alpha: isLight ? 0.1 : 0.15,
+                ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: isLight ? 0.2 : 0.25),
+                  color: AppColors.primary.withValues(
+                    alpha: isLight ? 0.2 : 0.25,
+                  ),
                   width: 1.5,
                 ),
               ),

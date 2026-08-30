@@ -10,14 +10,11 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('ProfileExpirationCard renders title and countdown units',
-      (WidgetTester tester) async {
+  testWidgets('ProfileExpirationCard renders title and countdown units', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: ProfileExpirationCard(),
-        ),
-      ),
+      const MaterialApp(home: Scaffold(body: ProfileExpirationCard())),
     );
 
     // Initial loading indicator
