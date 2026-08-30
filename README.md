@@ -9,13 +9,6 @@
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#tech-stack--dependencies">Tech Stack</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#screenshots">Screenshots</a>
-</p>
-
-<p align="center">
   <img src="https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" />
   <img src="https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart" />
   <img src="https://img.shields.io/badge/Firebase-Supported-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase" />
