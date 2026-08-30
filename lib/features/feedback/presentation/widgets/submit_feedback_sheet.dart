@@ -10,6 +10,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
@@ -90,12 +91,9 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Failed to attach image. Please check permissions and try again.',
-            ),
-          ),
+        AppSnackbar.showError(
+          context,
+          'Failed to attach image. Please check permissions and try again.',
         );
       }
     }
@@ -116,16 +114,12 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
     final message = _messageController.text.trim();
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter a title')));
+      AppSnackbar.showInfo(context, 'Please enter a title');
       return;
     }
 
     if (message.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a description / message')),
-      );
+      AppSnackbar.showInfo(context, 'Please enter a description / message');
       return;
     }
 
@@ -173,12 +167,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
         setState(() {
           _isSubmitting = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to submit feedback: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        AppSnackbar.showError(context, 'Failed to submit feedback: $e');
       }
     }
   }

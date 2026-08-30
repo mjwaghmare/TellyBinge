@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
@@ -141,11 +142,10 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
       context,
       feedbackRepository: _repository,
       onSubmit: (newItem) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Feedback submitted successfully!'),
-            duration: Duration(seconds: 2),
-          ),
+        AppSnackbar.showSuccess(
+          context,
+          'Feedback submitted successfully!',
+          duration: const Duration(seconds: 2),
         );
       },
     );

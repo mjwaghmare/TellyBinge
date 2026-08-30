@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
@@ -241,11 +242,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
       _repository.updateComments(feedbackId: _item.id, comments: _comments);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Comment updated successfully'),
-          duration: Duration(seconds: 2),
-        ),
+      AppSnackbar.showSuccess(
+        context,
+        'Comment updated successfully',
+        duration: const Duration(seconds: 2),
       );
     }
   }
@@ -314,11 +314,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
       _repository.updateComments(feedbackId: _item.id, comments: _comments);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Comment deleted'),
-          duration: Duration(seconds: 2),
-        ),
+      AppSnackbar.showSuccess(
+        context,
+        'Comment deleted',
+        duration: const Duration(seconds: 2),
       );
     }
   }
@@ -409,11 +408,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                             Navigator.pop(dialogCtx);
                           }
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Feedback deleted successfully'),
-                                duration: Duration(seconds: 2),
-                              ),
+                            AppSnackbar.showSuccess(
+                              context,
+                              'Feedback deleted successfully',
+                              duration: const Duration(seconds: 2),
                             );
                             Navigator.pop(context);
                           }
@@ -422,11 +420,9 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                             setDialogState(() => isDeleting = false);
                           }
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to delete feedback: $e'),
-                                backgroundColor: AppColors.error,
-                              ),
+                            AppSnackbar.showError(
+                              context,
+                              'Failed to delete feedback: $e',
                             );
                           }
                         }
