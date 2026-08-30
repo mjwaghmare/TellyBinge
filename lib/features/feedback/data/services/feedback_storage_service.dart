@@ -35,16 +35,21 @@ class FeedbackStorageService {
       final storagePath = 'feedbacks/$feedbackId/$fileName';
       final ref = _storage.ref().child(storagePath);
 
-      final uploadTask = ref.putFile(
-        file,
-        SettableMetadata(
-          contentType: mimeType,
-          customMetadata: {'feedbackId': feedbackId},
-        ),
-      );
+      try {
+        final uploadTask = ref.putFile(
+          file,
+          SettableMetadata(
+            contentType: mimeType,
+            customMetadata: {'feedbackId': feedbackId},
+          ),
+        );
 
-      final snapshot = await uploadTask;
-      return await snapshot.ref.getDownloadURL();
+        final snapshot = await uploadTask;
+        return await snapshot.ref.getDownloadURL();
+      } catch (e) {
+        debugPrint('FeedbackStorageService: Upload failed for $path: $e');
+        return null;
+      }
     });
 
     final results = await Future.wait(uploadFutures);
