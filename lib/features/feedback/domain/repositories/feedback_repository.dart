@@ -17,11 +17,10 @@ abstract class FeedbackRepository {
     required String appVersion,
   });
 
-  /// Toggles upvote or downvote for a specific user
+  /// Toggles upvote for a specific user
   Future<void> toggleVote({
     required String feedbackId,
     required String userId,
-    required bool isUpvote,
   });
 
   /// Adds a comment to a feedback item

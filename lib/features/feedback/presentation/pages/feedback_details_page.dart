@@ -57,21 +57,6 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       _repository.toggleVote(
         feedbackId: _item.id,
         userId: _currentUserId,
-        isUpvote: true,
-      );
-    }
-  }
-
-  void _handleDownvote() {
-    HapticFeedback.lightImpact();
-    setState(() {
-      _item = _item.downvoted(_currentUserId);
-    });
-    if (_currentUserId.isNotEmpty) {
-      _repository.toggleVote(
-        feedbackId: _item.id,
-        userId: _currentUserId,
-        isUpvote: false,
       );
     }
   }
@@ -451,7 +436,6 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
-    final canDownvote = _item.votes > 0 || _item.isDownvoted;
     final canSubmitComment = _commentController.text.trim().isNotEmpty;
     final isOwner = _currentUserId.isNotEmpty && _item.userId == _currentUserId;
 
@@ -522,11 +506,11 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top Row: Upvote Capsule + Category Pill + Submitter Info
+                      // Top Row: Upvote Button + Category Pill + Submitter Info
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildVoteCapsule(isLight, canDownvote),
+                          _buildUpvoteButton(isLight),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: Column(
@@ -1127,81 +1111,59 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
   // --- SUB WIDGETS ---
 
-  Widget _buildVoteCapsule(bool isLight, bool canDownvote) {
-    final hasVoted = _item.isUpvoted || _item.isDownvoted;
+  Widget _buildUpvoteButton(bool isLight) {
+    final isUpvoted = _item.isUpvoted;
 
-    return Container(
-      width: 48.0,
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      decoration: BoxDecoration(
-        color: hasVoted
-            ? AppColors.primary.withValues(alpha: 0.15)
-            : (isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C)),
-        borderRadius: BorderRadius.circular(14.0),
-        border: Border.all(
-          color: hasVoted
-              ? AppColors.primary
-              : (isLight
-                    ? AppColors.borderLight
-                    : Colors.white.withValues(alpha: 0.06)),
-          width: hasVoted ? 1.5 : 1.0,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _handleUpvote,
-              borderRadius: BorderRadius.circular(10),
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: _item.isUpvoted
-                      ? AppColors.primary
-                      : (isLight ? AppColors.lightTextPrimary : Colors.white),
-                  size: 22,
-                ),
-              ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _handleUpvote,
+        borderRadius: BorderRadius.circular(12.0),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 48.0,
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+          decoration: BoxDecoration(
+            color: isUpvoted
+                ? AppColors.primary.withValues(alpha: isLight ? 0.15 : 0.22)
+                : (isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C)),
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(
+              color: isUpvoted
+                  ? AppColors.primary
+                  : (isLight
+                        ? AppColors.borderLight
+                        : Colors.white.withValues(alpha: 0.08)),
+              width: isUpvoted ? 1.5 : 1.0,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2.0),
-            child: Text(
-              '${_item.votes}',
-              style: AppTextStyles.smBold.copyWith(
-                color: hasVoted
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.keyboard_arrow_up_rounded,
+                color: isUpvoted
                     ? AppColors.primary
-                    : (isLight ? AppColors.lightTextPrimary : Colors.white),
-                fontSize: 14.0,
-                fontWeight: FontWeight.w700,
+                    : (isLight ? AppColors.lightTextSecondary : Colors.white70),
+                size: 22,
               ),
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: canDownvote ? _handleDownvote : null,
-              borderRadius: BorderRadius.circular(10),
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: _item.isDownvoted
+              const SizedBox(height: 1.0),
+              Text(
+                '${_item.votes}',
+                style: AppTextStyles.smBold.copyWith(
+                  color: isUpvoted
                       ? AppColors.primary
-                      : (canDownvote
-                            ? (isLight
-                                  ? AppColors.lightTextSecondary
-                                  : Colors.white70)
-                            : (isLight ? Colors.grey[300] : Colors.white24)),
-                  size: 22,
+                      : (isLight
+                            ? AppColors.lightTextPrimary
+                            : AppColors.textPrimary),
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

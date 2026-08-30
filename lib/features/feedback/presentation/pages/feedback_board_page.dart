@@ -114,24 +114,6 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
       _repository.toggleVote(
         feedbackId: item.id,
         userId: _currentUserId,
-        isUpvote: true,
-      );
-    }
-  }
-
-  void _handleDownvote(FeedbackItem item) {
-    final index = _items.indexWhere((i) => i.id == item.id);
-    if (index == -1) return;
-
-    setState(() {
-      _items[index] = _items[index].downvoted(_currentUserId);
-    });
-
-    if (_currentUserId.isNotEmpty) {
-      _repository.toggleVote(
-        feedbackId: item.id,
-        userId: _currentUserId,
-        isUpvote: false,
       );
     }
   }
@@ -331,7 +313,6 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                             return FeedbackCard(
                               item: item,
                               onUpvote: () => _handleUpvote(item),
-                              onDownvote: () => _handleDownvote(item),
                               onTap: () async {
                                 HapticFeedback.lightImpact();
                                 final updated =

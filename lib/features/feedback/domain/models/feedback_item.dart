@@ -153,9 +153,7 @@ class FeedbackItem {
   final String appVersion;
   final DateTime? createdAt;
   final List<String> upvotedUserIds;
-  final List<String> downvotedUserIds;
   final bool isUpvoted;
-  final bool isDownvoted;
 
   const FeedbackItem({
     required this.id,
@@ -174,9 +172,7 @@ class FeedbackItem {
     required this.appVersion,
     this.createdAt,
     this.upvotedUserIds = const [],
-    this.downvotedUserIds = const [],
     this.isUpvoted = false,
-    this.isDownvoted = false,
   });
 
   String get timeAgo {
@@ -216,9 +212,7 @@ class FeedbackItem {
     String? appVersion,
     DateTime? createdAt,
     List<String>? upvotedUserIds,
-    List<String>? downvotedUserIds,
     bool? isUpvoted,
-    bool? isDownvoted,
   }) {
     return FeedbackItem(
       id: id ?? this.id,
@@ -237,19 +231,18 @@ class FeedbackItem {
       appVersion: appVersion ?? this.appVersion,
       createdAt: createdAt ?? this.createdAt,
       upvotedUserIds: upvotedUserIds ?? this.upvotedUserIds,
-      downvotedUserIds: downvotedUserIds ?? this.downvotedUserIds,
       isUpvoted: isUpvoted ?? this.isUpvoted,
-      isDownvoted: isDownvoted ?? this.isDownvoted,
     );
   }
 
   FeedbackItem upvoted([String? currentUserId]) {
-    final uid = currentUserId ?? userId;
+    final uid = (currentUserId != null && currentUserId.isNotEmpty)
+        ? currentUserId
+        : '';
     final updatedUpvotes = List<String>.from(upvotedUserIds);
-    final updatedDownvotes = List<String>.from(downvotedUserIds);
 
     if (isUpvoted) {
-      // Remove upvote
+      // Toggle off / cancel upvote (-1)
       if (uid.isNotEmpty) updatedUpvotes.remove(uid);
       return copyWith(
         votes: (votes - 1).clamp(0, 99999),
@@ -257,48 +250,14 @@ class FeedbackItem {
         upvotedUserIds: updatedUpvotes,
       );
     } else {
-      // Add upvote & remove downvote if any
-      if (uid.isNotEmpty) {
-        if (!updatedUpvotes.contains(uid)) updatedUpvotes.add(uid);
-        updatedDownvotes.remove(uid);
+      // Add upvote (+1)
+      if (uid.isNotEmpty && !updatedUpvotes.contains(uid)) {
+        updatedUpvotes.add(uid);
       }
-      final diff = isDownvoted ? 2 : 1;
-      return copyWith(
-        votes: votes + diff,
-        isUpvoted: true,
-        isDownvoted: false,
-        upvotedUserIds: updatedUpvotes,
-        downvotedUserIds: updatedDownvotes,
-      );
-    }
-  }
-
-  FeedbackItem downvoted([String? currentUserId]) {
-    final uid = currentUserId ?? userId;
-    final updatedUpvotes = List<String>.from(upvotedUserIds);
-    final updatedDownvotes = List<String>.from(downvotedUserIds);
-
-    if (isDownvoted) {
-      // Remove downvote
-      if (uid.isNotEmpty) updatedDownvotes.remove(uid);
       return copyWith(
         votes: votes + 1,
-        isDownvoted: false,
-        downvotedUserIds: updatedDownvotes,
-      );
-    } else {
-      if (votes <= 0) return this;
-      if (uid.isNotEmpty) {
-        if (!updatedDownvotes.contains(uid)) updatedDownvotes.add(uid);
-        updatedUpvotes.remove(uid);
-      }
-      final diff = isUpvoted ? 2 : 1;
-      return copyWith(
-        votes: (votes - diff).clamp(0, 99999),
-        isDownvoted: true,
-        isUpvoted: false,
+        isUpvoted: true,
         upvotedUserIds: updatedUpvotes,
-        downvotedUserIds: updatedDownvotes,
       );
     }
   }
@@ -321,7 +280,6 @@ class FeedbackItem {
       'appVersion': appVersion,
       'createdAt': createdAt?.toIso8601String(),
       'upvotedUserIds': upvotedUserIds,
-      'downvotedUserIds': downvotedUserIds,
     };
   }
 
@@ -360,12 +318,6 @@ class FeedbackItem {
             .toList() ??
         [];
 
-    final downvotedIds =
-        (map['downvotedUserIds'] as List<dynamic>?)
-            ?.map((e) => e.toString())
-            .toList() ??
-        [];
-
     DateTime? createdAt;
     final createdRaw = map['createdAt'];
     if (createdRaw is String) {
@@ -380,10 +332,6 @@ class FeedbackItem {
         currentUserId != null &&
         currentUserId.isNotEmpty &&
         upvotedIds.contains(currentUserId);
-    final isDownvoted =
-        currentUserId != null &&
-        currentUserId.isNotEmpty &&
-        downvotedIds.contains(currentUserId);
 
     return FeedbackItem(
       id: docId,
@@ -402,9 +350,7 @@ class FeedbackItem {
       appVersion: map['appVersion'] as String? ?? 'v1.0.0',
       createdAt: createdAt,
       upvotedUserIds: upvotedIds,
-      downvotedUserIds: downvotedIds,
       isUpvoted: isUpvoted,
-      isDownvoted: isDownvoted,
     );
   }
 }

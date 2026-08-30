@@ -11,21 +11,18 @@ import '../../domain/models/feedback_item.dart';
 class FeedbackCard extends StatelessWidget {
   final FeedbackItem item;
   final VoidCallback? onUpvote;
-  final VoidCallback? onDownvote;
   final VoidCallback? onTap;
 
   const FeedbackCard({
     super.key,
     required this.item,
     this.onUpvote,
-    this.onDownvote,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
-    final canDownvote = item.votes > 0 || item.isDownvoted;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -50,12 +47,12 @@ class FeedbackCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top section: Left capsule upvote/downvote + Right content
+                // Top section: Left upvote button + Right content
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Upvote / Downvote Capsule
-                    _buildVoteCapsule(context, isLight, canDownvote),
+                    // 1. Upvote Button
+                    _buildUpvoteButton(context, isLight),
                     const SizedBox(width: AppSpacing.md),
 
                     // 2. Main content area
@@ -284,98 +281,62 @@ class FeedbackCard extends StatelessWidget {
 
   // --- SUB WIDGETS ---
 
-  Widget _buildVoteCapsule(
-    BuildContext context,
-    bool isLight,
-    bool canDownvote,
-  ) {
-    final hasVoted = item.isUpvoted || item.isDownvoted;
+  Widget _buildUpvoteButton(BuildContext context, bool isLight) {
+    final isUpvoted = item.isUpvoted;
 
-    return Container(
-      width: 48.0,
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      decoration: BoxDecoration(
-        color: hasVoted
-            ? AppColors.primary.withValues(alpha: 0.15)
-            : (isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C)),
-        borderRadius: BorderRadius.circular(14.0),
-        border: Border.all(
-          color: hasVoted
-              ? AppColors.primary
-              : (isLight
-                    ? AppColors.borderLight
-                    : Colors.white.withValues(alpha: 0.06)),
-          width: hasVoted ? 1.5 : 1.0,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Upvote button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                onUpvote?.call();
-              },
-              borderRadius: BorderRadius.circular(10),
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: item.isUpvoted
-                      ? AppColors.primary
-                      : (isLight ? AppColors.lightTextPrimary : Colors.white),
-                  size: 22,
-                ),
-              ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onUpvote?.call();
+        },
+        borderRadius: BorderRadius.circular(12.0),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 48.0,
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+          decoration: BoxDecoration(
+            color: isUpvoted
+                ? AppColors.primary.withValues(alpha: isLight ? 0.15 : 0.22)
+                : (isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C)),
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(
+              color: isUpvoted
+                  ? AppColors.primary
+                  : (isLight
+                        ? AppColors.borderLight
+                        : Colors.white.withValues(alpha: 0.08)),
+              width: isUpvoted ? 1.5 : 1.0,
             ),
           ),
-
-          // Vote count
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2.0),
-            child: Text(
-              '${item.votes}',
-              style: AppTextStyles.smBold.copyWith(
-                color: hasVoted
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.keyboard_arrow_up_rounded,
+                color: isUpvoted
                     ? AppColors.primary
-                    : (isLight ? AppColors.lightTextPrimary : Colors.white),
-                fontSize: 14.0,
-                fontWeight: FontWeight.w700,
+                    : (isLight ? AppColors.lightTextSecondary : Colors.white70),
+                size: 22,
               ),
-            ),
-          ),
-
-          // Downvote button (Disabled when votes == 0 and not downvoted)
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: canDownvote
-                  ? () {
-                      HapticFeedback.lightImpact();
-                      onDownvote?.call();
-                    }
-                  : null,
-              borderRadius: BorderRadius.circular(10),
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: item.isDownvoted
+              const SizedBox(height: 1.0),
+              Text(
+                '${item.votes}',
+                style: AppTextStyles.smBold.copyWith(
+                  color: isUpvoted
                       ? AppColors.primary
-                      : (canDownvote
-                            ? (isLight
-                                  ? AppColors.lightTextSecondary
-                                  : Colors.white70)
-                            : (isLight ? Colors.grey[300] : Colors.white24)),
-                  size: 22,
+                      : (isLight
+                            ? AppColors.lightTextPrimary
+                            : AppColors.textPrimary),
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

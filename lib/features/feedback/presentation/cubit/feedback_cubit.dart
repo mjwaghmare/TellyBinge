@@ -75,7 +75,6 @@ class FeedbackCubit extends Cubit<FeedbackState> {
   Future<void> toggleVote({
     required FeedbackItem item,
     required String userId,
-    required bool isUpvote,
   }) async {
     if (userId.isEmpty) return;
 
@@ -84,7 +83,7 @@ class FeedbackCubit extends Cubit<FeedbackState> {
       final currentLoaded = state as FeedbackLoaded;
       final updatedList = currentLoaded.items.map((i) {
         if (i.id == item.id) {
-          return isUpvote ? i.upvoted(userId) : i.downvoted(userId);
+          return i.upvoted(userId);
         }
         return i;
       }).toList();
@@ -96,7 +95,6 @@ class FeedbackCubit extends Cubit<FeedbackState> {
       await feedbackRepository.toggleVote(
         feedbackId: item.id,
         userId: userId,
-        isUpvote: isUpvote,
       );
     } catch (_) {
       // Stream subscription will revert or reflect accurate state from Firestore

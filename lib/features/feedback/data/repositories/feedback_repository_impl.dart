@@ -80,7 +80,6 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       'appVersion': appVersion,
       'createdAt': FieldValue.serverTimestamp(),
       'upvotedUserIds': initialUpvotedIds,
-      'downvotedUserIds': <String>[],
     };
 
     await docRef.set(data);
@@ -110,7 +109,6 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
   Future<void> toggleVote({
     required String feedbackId,
     required String userId,
-    required bool isUpvote,
   }) async {
     if (userId.isEmpty) return;
 
@@ -125,46 +123,21 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
         (data['upvotedUserIds'] as List<dynamic>?)?.map((e) => e.toString()) ??
             [],
       );
-      final downvotedIds = List<String>.from(
-        (data['downvotedUserIds'] as List<dynamic>?)?.map(
-              (e) => e.toString(),
-            ) ??
-            [],
-      );
       int currentVotes = (data['votes'] as num?)?.toInt() ?? 0;
 
-      if (isUpvote) {
-        if (upvotedIds.contains(userId)) {
-          // Cancel upvote
-          upvotedIds.remove(userId);
-          currentVotes = (currentVotes - 1).clamp(0, 99999);
-        } else {
-          // Add upvote & remove downvote if present
-          upvotedIds.add(userId);
-          final removedDownvote = downvotedIds.remove(userId);
-          currentVotes += removedDownvote ? 2 : 1;
-        }
+      if (upvotedIds.contains(userId)) {
+        // Cancel upvote (-1)
+        upvotedIds.remove(userId);
+        currentVotes = (currentVotes - 1).clamp(0, 99999);
       } else {
-        if (downvotedIds.contains(userId)) {
-          // Cancel downvote
-          downvotedIds.remove(userId);
-          currentVotes += 1;
-        } else {
-          // Add downvote & remove upvote if present
-          if (currentVotes <= 0) return;
-          downvotedIds.add(userId);
-          final removedUpvote = upvotedIds.remove(userId);
-          currentVotes = (currentVotes - (removedUpvote ? 2 : 1)).clamp(
-            0,
-            99999,
-          );
-        }
+        // Add upvote (+1)
+        upvotedIds.add(userId);
+        currentVotes += 1;
       }
 
       transaction.update(docRef, {
         'votes': currentVotes,
         'upvotedUserIds': upvotedIds,
-        'downvotedUserIds': downvotedIds,
       });
     });
   }
