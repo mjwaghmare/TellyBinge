@@ -76,6 +76,13 @@ enum FeedbackStatus {
     lightText: Color(0xFF15803D),
     darkBg: Color(0xFF052E16),
     darkText: Color(0xFF4ADE80),
+  ),
+  declined(
+    label: 'Declined',
+    lightBg: Color(0xFFFEE2E2),
+    lightText: Color(0xFFDC2626),
+    darkBg: Color(0xFF3B1212),
+    darkText: Color(0xFFF87171),
   );
 
   final String label;
@@ -96,6 +103,45 @@ enum FeedbackStatus {
   Color textColor(bool isLight) => isLight ? lightText : darkText;
 }
 
+class FeedbackMedia {
+  final String path;
+  final bool isLocal;
+
+  const FeedbackMedia({
+    required this.path,
+    this.isLocal = false,
+  });
+
+  Map<String, dynamic> toMap() => {
+        'path': path,
+        'isLocal': isLocal,
+      };
+
+  factory FeedbackMedia.fromMap(dynamic map) {
+    if (map is String) {
+      return FeedbackMedia(path: map, isLocal: false);
+    }
+    if (map is Map<String, dynamic>) {
+      return FeedbackMedia(
+        path: map['path'] as String? ?? '',
+        isLocal: map['isLocal'] as bool? ?? false,
+      );
+    }
+    return const FeedbackMedia(path: '', isLocal: false);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FeedbackMedia &&
+          runtimeType == other.runtimeType &&
+          path == other.path &&
+          isLocal == other.isLocal;
+
+  @override
+  int get hashCode => path.hashCode ^ isLocal.hashCode;
+}
+
 class FeedbackItem {
   final String id;
   final String title;
@@ -103,11 +149,17 @@ class FeedbackItem {
   final FeedbackCategory category;
   final FeedbackStatus status;
   final int votes;
-  final List<String> mediaUrls;
+  final List<FeedbackMedia> media;
+  final String? severity;
+  final String? officialResponse;
+  final List<Map<String, dynamic>> comments;
+  final String userId;
   final String userName;
   final String userAvatar;
   final String appVersion;
-  final String timeAgo;
+  final DateTime? createdAt;
+  final List<String> upvotedUserIds;
+  final List<String> downvotedUserIds;
   final bool isUpvoted;
   final bool isDownvoted;
 
@@ -118,14 +170,40 @@ class FeedbackItem {
     required this.category,
     required this.status,
     required this.votes,
-    this.mediaUrls = const [],
+    this.media = const [],
+    this.severity,
+    this.officialResponse,
+    this.comments = const [],
+    this.userId = '',
     required this.userName,
     required this.userAvatar,
     required this.appVersion,
-    required this.timeAgo,
+    this.createdAt,
+    this.upvotedUserIds = const [],
+    this.downvotedUserIds = const [],
     this.isUpvoted = false,
     this.isDownvoted = false,
   });
+
+  String get timeAgo {
+    if (createdAt == null) return 'Just now';
+    final diff = DateTime.now().difference(createdAt!);
+    if (diff.inDays > 365) {
+      return '${(diff.inDays / 365).floor()}y ago';
+    } else if (diff.inDays > 30) {
+      return '${(diff.inDays / 30).floor()}mo ago';
+    } else if (diff.inDays > 7) {
+      return '${(diff.inDays / 7).floor()}w ago';
+    } else if (diff.inDays > 0) {
+      return '${diff.inDays}d ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours}h ago';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
 
   FeedbackItem copyWith({
     String? id,
@@ -134,11 +212,17 @@ class FeedbackItem {
     FeedbackCategory? category,
     FeedbackStatus? status,
     int? votes,
-    List<String>? mediaUrls,
+    List<FeedbackMedia>? media,
+    String? severity,
+    String? officialResponse,
+    List<Map<String, dynamic>>? comments,
+    String? userId,
     String? userName,
     String? userAvatar,
     String? appVersion,
-    String? timeAgo,
+    DateTime? createdAt,
+    List<String>? upvotedUserIds,
+    List<String>? downvotedUserIds,
     bool? isUpvoted,
     bool? isDownvoted,
   }) {
@@ -149,92 +233,170 @@ class FeedbackItem {
       category: category ?? this.category,
       status: status ?? this.status,
       votes: votes ?? this.votes,
-      mediaUrls: mediaUrls ?? this.mediaUrls,
+      media: media ?? this.media,
+      severity: severity ?? this.severity,
+      officialResponse: officialResponse ?? this.officialResponse,
+      comments: comments ?? this.comments,
+      userId: userId ?? this.userId,
       userName: userName ?? this.userName,
       userAvatar: userAvatar ?? this.userAvatar,
       appVersion: appVersion ?? this.appVersion,
-      timeAgo: timeAgo ?? this.timeAgo,
+      createdAt: createdAt ?? this.createdAt,
+      upvotedUserIds: upvotedUserIds ?? this.upvotedUserIds,
+      downvotedUserIds: downvotedUserIds ?? this.downvotedUserIds,
       isUpvoted: isUpvoted ?? this.isUpvoted,
       isDownvoted: isDownvoted ?? this.isDownvoted,
     );
   }
 
-  static List<FeedbackItem> get dummyList => const [
-        FeedbackItem(
-          id: '1',
-          title: 'Subtitle sync delay on Season 3',
-          description:
-              'Season 3 episodes have a noticeable audio-to-subtitle lag of around 2-3 seconds when streaming with hardware decoding.',
-          category: FeedbackCategory.bug,
-          status: FeedbackStatus.underReview,
-          votes: 42,
-          mediaUrls: [
-            'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=600&auto=format&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=600&auto=format&fit=crop&q=80',
-          ],
-          userName: 'uandamata',
-          userAvatar: '',
-          appVersion: 'v1.0.0',
-          timeAgo: '2h ago',
-          isUpvoted: true,
-        ),
-        FeedbackItem(
-          id: '2',
-          title: 'Trakt.tv 2-way automatic synchronization',
-          description:
-              'Add seamless 2-way background sync with Trakt.tv so watched episodes, ratings, and custom collection lists stay synchronized across all devices.',
-          category: FeedbackCategory.feature,
-          status: FeedbackStatus.planned,
-          votes: 128,
-          mediaUrls: [
-            'https://images.unsplash.com/photo-1616469829941-c7200edec809?w=600&auto=format&fit=crop&q=80',
-          ],
-          userName: 'sarah_m',
-          userAvatar: '',
-          appVersion: 'v1.0.0',
-          timeAgo: '1d ago',
-        ),
-        FeedbackItem(
-          id: '3',
-          title: 'Smoother episode countdown animations',
-          description:
-              'The countdown animation between episodes feels slightly stuttery on 120Hz displays. A subtle fade interpolation would feel more premium.',
-          category: FeedbackCategory.improvement,
-          status: FeedbackStatus.inProgress,
-          votes: 19,
-          mediaUrls: [],
-          userName: 'david_k',
-          userAvatar: '',
-          appVersion: 'v1.0.0',
-          timeAgo: '3d ago',
-        ),
-        FeedbackItem(
-          id: '4',
-          title: 'Search results filter by streaming providers',
-          description:
-              'Allow filtering discover/search results by streaming subscription (e.g. Netflix, Prime Video, HBO Max, Disney+).',
-          category: FeedbackCategory.feature,
-          status: FeedbackStatus.open,
-          votes: 7,
-          mediaUrls: [],
-          userName: 'elena_r',
-          userAvatar: '',
-          appVersion: 'v1.0.0',
-          timeAgo: '4d ago',
-        ),
-        FeedbackItem(
-          id: '5',
-          title: 'Crash when rotating player in picture-in-picture',
-          description:
-              'App occasionally crashes if PiP mode is entered while quickly toggling device orientation on Android 14.',
-          category: FeedbackCategory.bug,
-          status: FeedbackStatus.resolved,
-          votes: 0,
-          mediaUrls: [],
-          userName: 'marcus_dev',
-          userAvatar: '',
-          appVersion: 'v1.0.0',
-          timeAgo: '1w ago',
-        ),
-      ];
+  FeedbackItem upvoted([String? currentUserId]) {
+    final uid = currentUserId ?? userId;
+    final updatedUpvotes = List<String>.from(upvotedUserIds);
+    final updatedDownvotes = List<String>.from(downvotedUserIds);
+
+    if (isUpvoted) {
+      // Remove upvote
+      if (uid.isNotEmpty) updatedUpvotes.remove(uid);
+      return copyWith(
+        votes: (votes - 1).clamp(0, 99999),
+        isUpvoted: false,
+        upvotedUserIds: updatedUpvotes,
+      );
+    } else {
+      // Add upvote & remove downvote if any
+      if (uid.isNotEmpty) {
+        if (!updatedUpvotes.contains(uid)) updatedUpvotes.add(uid);
+        updatedDownvotes.remove(uid);
+      }
+      final diff = isDownvoted ? 2 : 1;
+      return copyWith(
+        votes: votes + diff,
+        isUpvoted: true,
+        isDownvoted: false,
+        upvotedUserIds: updatedUpvotes,
+        downvotedUserIds: updatedDownvotes,
+      );
+    }
+  }
+
+  FeedbackItem downvoted([String? currentUserId]) {
+    final uid = currentUserId ?? userId;
+    final updatedUpvotes = List<String>.from(upvotedUserIds);
+    final updatedDownvotes = List<String>.from(downvotedUserIds);
+
+    if (isDownvoted) {
+      // Remove downvote
+      if (uid.isNotEmpty) updatedDownvotes.remove(uid);
+      return copyWith(
+        votes: votes + 1,
+        isDownvoted: false,
+        downvotedUserIds: updatedDownvotes,
+      );
+    } else {
+      if (votes <= 0) return this;
+      if (uid.isNotEmpty) {
+        if (!updatedDownvotes.contains(uid)) updatedDownvotes.add(uid);
+        updatedUpvotes.remove(uid);
+      }
+      final diff = isUpvoted ? 2 : 1;
+      return copyWith(
+        votes: (votes - diff).clamp(0, 99999),
+        isDownvoted: true,
+        isUpvoted: false,
+        upvotedUserIds: updatedUpvotes,
+        downvotedUserIds: updatedDownvotes,
+      );
+    }
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'category': category.name,
+      'status': status.name,
+      'votes': votes,
+      'media': media.map((m) => m.path).toList(),
+      'severity': severity,
+      'officialResponse': officialResponse,
+      'comments': comments,
+      'userId': userId,
+      'userName': userName,
+      'userAvatar': userAvatar,
+      'appVersion': appVersion,
+      'createdAt': createdAt?.toIso8601String(),
+      'upvotedUserIds': upvotedUserIds,
+      'downvotedUserIds': downvotedUserIds,
+    };
+  }
+
+  factory FeedbackItem.fromMap(Map<String, dynamic> map, String docId, [String? currentUserId]) {
+    final categoryStr = map['category'] as String? ?? 'bug';
+    final category = FeedbackCategory.values.firstWhere(
+      (c) => c.name == categoryStr,
+      orElse: () => FeedbackCategory.bug,
+    );
+
+    final statusStr = map['status'] as String? ?? 'open';
+    final status = FeedbackStatus.values.firstWhere(
+      (s) => s.name == statusStr,
+      orElse: () => FeedbackStatus.open,
+    );
+
+    final mediaList = (map['media'] as List<dynamic>?)
+            ?.map((m) => FeedbackMedia.fromMap(m))
+            .toList() ??
+        [];
+
+    final commentsList = (map['comments'] as List<dynamic>?)
+            ?.map((c) => Map<String, dynamic>.from(c as Map))
+            .toList() ??
+        [];
+
+    final upvotedIds = (map['upvotedUserIds'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
+    final downvotedIds = (map['downvotedUserIds'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
+    DateTime? createdAt;
+    final createdRaw = map['createdAt'];
+    if (createdRaw is String) {
+      createdAt = DateTime.tryParse(createdRaw);
+    } else if (createdRaw != null) {
+      try {
+        createdAt = (createdRaw as dynamic).toDate() as DateTime?;
+      } catch (_) {}
+    }
+
+    final isUpvoted = currentUserId != null && currentUserId.isNotEmpty && upvotedIds.contains(currentUserId);
+    final isDownvoted = currentUserId != null && currentUserId.isNotEmpty && downvotedIds.contains(currentUserId);
+
+    return FeedbackItem(
+      id: docId,
+      title: map['title'] as String? ?? '',
+      description: map['description'] as String? ?? '',
+      category: category,
+      status: status,
+      votes: (map['votes'] as num?)?.toInt() ?? 0,
+      media: mediaList,
+      severity: map['severity'] as String?,
+      officialResponse: map['officialResponse'] as String?,
+      comments: commentsList,
+      userId: map['userId'] as String? ?? '',
+      userName: map['userName'] as String? ?? 'Anonymous',
+      userAvatar: map['userAvatar'] as String? ?? '',
+      appVersion: map['appVersion'] as String? ?? 'v1.0.0',
+      createdAt: createdAt,
+      upvotedUserIds: upvotedIds,
+      downvotedUserIds: downvotedIds,
+      isUpvoted: isUpvoted,
+      isDownvoted: isDownvoted,
+    );
+  }
 }

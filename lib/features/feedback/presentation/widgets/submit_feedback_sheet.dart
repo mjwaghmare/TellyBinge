@@ -4,24 +4,43 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/feedback_item.dart';
+import '../../domain/repositories/feedback_repository.dart';
+import '../../data/repositories/feedback_repository_impl.dart';
 
 class SubmitFeedbackSheet extends StatefulWidget {
-  final ValueChanged<FeedbackItem> onSubmit;
+  final ValueChanged<FeedbackItem>? onSubmit;
+  final FeedbackRepository? feedbackRepository;
 
-  const SubmitFeedbackSheet({super.key, required this.onSubmit});
+  const SubmitFeedbackSheet({
+    super.key,
+    this.onSubmit,
+    this.feedbackRepository,
+  });
 
-  static Future<void> show(BuildContext context, {required ValueChanged<FeedbackItem> onSubmit}) {
+  static Future<FeedbackItem?> show(
+    BuildContext context, {
+    ValueChanged<FeedbackItem>? onSubmit,
+    FeedbackRepository? feedbackRepository,
+  }) {
     final isLight = context.isLight;
-    return showModalBottomSheet(
+    return showModalBottomSheet<FeedbackItem>(
       context: context,
       isScrollControlled: true,
       backgroundColor: isLight ? Colors.white : const Color(0xFF161622),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24.0))),
-      builder: (context) => SubmitFeedbackSheet(onSubmit: onSubmit),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+      ),
+      builder: (context) => SubmitFeedbackSheet(
+        onSubmit: onSubmit,
+        feedbackRepository: feedbackRepository,
+      ),
     );
   }
 
@@ -30,16 +49,22 @@ class SubmitFeedbackSheet extends StatefulWidget {
 }
 
 class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
+  late final FeedbackRepository _repository;
   FeedbackCategory _selectedCategory = FeedbackCategory.bug;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _attachedMedia = [];
+  bool _isSubmitting = false;
 
   // Bug severity default is Minor
   String _selectedSeverity = 'Minor';
 
-  bool _isSubmitting = false;
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.feedbackRepository ?? FeedbackRepositoryImpl();
+  }
 
   @override
   void dispose() {
@@ -49,35 +74,58 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    if (_isSubmitting) return;
     HapticFeedback.lightImpact();
     try {
-      final image = await _picker.pickImage(source: source, maxWidth: 1280, maxHeight: 1280, imageQuality: 85);
+      final image = await _picker.pickImage(
+        source: source,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        imageQuality: 85,
+      );
       if (image != null && mounted) {
         setState(() {
           _attachedMedia.add(image);
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Failed to attach image. Please check permissions and try again.',
+            ),
+          ),
+        );
+      }
+    }
   }
 
   void _removeMedia(int index) {
+    if (_isSubmitting) return;
     HapticFeedback.lightImpact();
     setState(() {
       _attachedMedia.removeAt(index);
     });
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
+    if (_isSubmitting) return;
+
     final title = _titleController.text.trim();
     final message = _messageController.text.trim();
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a title')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a title')),
+      );
       return;
     }
 
     if (message.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a description / message')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a description / message')),
+      );
       return;
     }
 
@@ -86,23 +134,52 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
       _isSubmitting = true;
     });
 
-    final newItem = FeedbackItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: title,
-      description: message,
-      category: _selectedCategory,
-      status: FeedbackStatus.open,
-      votes: 1,
-      mediaUrls: _attachedMedia.map((f) => f.path).toList(),
-      userName: 'You',
-      userAvatar: '',
-      appVersion: 'v1.0.0',
-      timeAgo: 'Just now',
-      isUpvoted: true,
-    );
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final userId = user?.uid ?? '';
+      final userName = user?.displayName ??
+          (user?.email != null && user!.email!.contains('@')
+              ? user.email!.split('@').first
+              : 'PopVerse User');
+      final userAvatar = user?.photoURL ?? '';
 
-    widget.onSubmit(newItem);
-    Navigator.pop(context);
+      String appVersion = 'v1.0.0';
+      try {
+        final info = await PackageInfo.fromPlatform();
+        appVersion = 'v${info.version}+${info.buildNumber}';
+      } catch (_) {}
+
+      final newItem = await _repository.submitFeedback(
+        title: title,
+        description: message,
+        category: _selectedCategory,
+        severity: _selectedCategory == FeedbackCategory.bug
+            ? _selectedSeverity
+            : null,
+        localMediaPaths: _attachedMedia.map((f) => f.path).toList(),
+        userId: userId,
+        userName: userName,
+        userAvatar: userAvatar,
+        appVersion: appVersion,
+      );
+
+      if (mounted) {
+        widget.onSubmit?.call(newItem);
+        Navigator.pop(context, newItem);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit feedback: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -216,72 +293,112 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                 ],
 
                 // 6. Title Input with Character Limit (80 max)
-                _buildInputLabel('Title', isLight),
+                _buildFieldHeader('Title', _titleController.text.length, 80, isLight),
                 Container(
                   decoration: BoxDecoration(
-                    color: isLight ? const Color(0xFFF9FAFB) : const Color(0xFF1B182B),
+                    color: isLight ? const Color(0xFFF8F9FA) : const Color(0xFF1E1E2C),
                     borderRadius: BorderRadius.circular(12.0),
-                    border: Border.all(color: isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.08)),
+                    border: Border.all(
+                      color: isLight
+                          ? AppColors.borderLight
+                          : Colors.white.withValues(alpha: 0.08),
+                    ),
                   ),
                   child: TextField(
                     controller: _titleController,
                     maxLength: 80,
-                    style: TextStyle(color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary, fontSize: 14.5),
+                    buildCounter: (_,
+                            {required currentLength,
+                            required isFocused,
+                            maxLength}) =>
+                        null,
+                    onChanged: (_) => setState(() {}),
+                    style: TextStyle(
+                      color: isLight
+                          ? AppColors.lightTextPrimary
+                          : AppColors.textPrimary,
+                      fontSize: 14.5,
+                    ),
                     decoration: InputDecoration(
                       hintText: _getTitlePlaceholder(),
                       hintStyle: TextStyle(
-                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
+                        color: isLight
+                            ? AppColors.lightTextTertiary
+                            : const Color(0xFF8E8E93),
                         fontSize: 13.5,
                       ),
-                      counterStyle: TextStyle(
-                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
-                        fontSize: 11.0,
-                      ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.only(left: 14.0, right: 14.0, top: 12.0, bottom: 4.0),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14.0,
+                        vertical: 13.0,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.md),
 
                 // 7. Message / Description Input with Character Limit (500 max)
-                _buildInputLabel('Description', isLight),
+                _buildFieldHeader(
+                  'Description',
+                  _messageController.text.length,
+                  500,
+                  isLight,
+                ),
                 Container(
                   decoration: BoxDecoration(
-                    color: isLight ? const Color(0xFFF9FAFB) : const Color(0xFF1B182B),
+                    color: isLight ? const Color(0xFFF8F9FA) : const Color(0xFF1E1E2C),
                     borderRadius: BorderRadius.circular(12.0),
-                    border: Border.all(color: isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.08)),
+                    border: Border.all(
+                      color: isLight
+                          ? AppColors.borderLight
+                          : Colors.white.withValues(alpha: 0.08),
+                    ),
                   ),
                   child: TextField(
                     controller: _messageController,
                     maxLength: 500,
                     maxLines: 4,
+                    buildCounter: (_,
+                            {required currentLength,
+                            required isFocused,
+                            maxLength}) =>
+                        null,
+                    onChanged: (_) => setState(() {}),
                     style: TextStyle(
-                      color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                      color: isLight
+                          ? AppColors.lightTextPrimary
+                          : AppColors.textPrimary,
                       fontSize: 14.5,
                       height: 1.4,
                     ),
                     decoration: InputDecoration(
                       hintText: _getMessagePlaceholder(),
                       hintStyle: TextStyle(
-                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
+                        color: isLight
+                            ? AppColors.lightTextTertiary
+                            : const Color(0xFF8E8E93),
                         fontSize: 13.5,
-                      ),
-                      counterStyle: TextStyle(
-                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
-                        fontSize: 11.0,
+                        height: 1.35,
                       ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.only(left: 14.0, right: 14.0, top: 14.0, bottom: 4.0),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.all(14.0),
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.md),
 
                 // 8. Media Section (Camera + Upload buttons + Thumbnails)
-                _buildInputLabel('Media', isLight),
+                _buildFieldHeader(
+                  'Media',
+                  _attachedMedia.length,
+                  5,
+                  isLight,
+                  customSuffix: 'max 5',
+                ),
                 SizedBox(
-                  height: 84.0,
+                  height: 80.0,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
@@ -351,6 +468,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
+                      disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
                       padding: const EdgeInsets.symmetric(vertical: 15.0),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
                       elevation: 0,
@@ -358,9 +476,12 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                     onPressed: _isSubmitting ? null : _handleSubmit,
                     child: _isSubmitting
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator.adaptive(
+                              backgroundColor: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
                           )
                         : Text(
                             _getSubmitButtonText(),
@@ -451,12 +572,16 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 84.0,
-        height: 84.0,
+        width: 80.0,
+        height: 80.0,
         decoration: BoxDecoration(
-          color: isLight ? const Color(0xFFF9FAFB) : const Color(0xFF1B182B),
+          color: isLight ? const Color(0xFFF8F9FA) : const Color(0xFF1E1E2C),
           borderRadius: BorderRadius.circular(12.0),
-          border: Border.all(color: isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.08)),
+          border: Border.all(
+            color: isLight
+                ? AppColors.borderLight
+                : Colors.white.withValues(alpha: 0.08),
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -466,7 +591,11 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
               const SizedBox(height: 4.0),
               Text(
                 label,
-                style: const TextStyle(color: AppColors.primaryLight, fontSize: 11.0, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: AppColors.primaryLight,
+                  fontSize: 11.0,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ],
@@ -489,6 +618,42 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
     );
   }
 
+  Widget _buildFieldHeader(
+    String label,
+    int currentLength,
+    int maxLength,
+    bool isLight, {
+    String? customSuffix,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color:
+                  isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+              fontSize: 13.0,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            customSuffix ?? '$currentLength/$maxLength',
+            style: TextStyle(
+              color: isLight
+                  ? AppColors.lightTextTertiary
+                  : const Color(0xFF8E8E93),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _getTitlePlaceholder() {
     switch (_selectedCategory) {
       case FeedbackCategory.bug:
@@ -503,7 +668,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
   String _getMessagePlaceholder() {
     switch (_selectedCategory) {
       case FeedbackCategory.bug:
-        return '1. Describe what happened\n2. Steps to reproduce the issue\n3. What you expected to see';
+        return 'Describe what happened, steps to reproduce, and what you expected to see...';
       case FeedbackCategory.feature:
         return 'Explain how you imagine this feature working and why it would improve your tracking experience in PopVerse...';
       case FeedbackCategory.improvement:

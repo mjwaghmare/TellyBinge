@@ -6,13 +6,17 @@ import 'tmdb_cache_manager.dart';
 
 class TmdbClient {
   final Dio _dio;
-  static const String _baseUrl = 'https://api.themoviedb.org/3';
+  // static const String _baseUrl = 'https://api.themoviedb.org/3';
+  static const String _defaultBaseUrl =
+      'https://restless-bar-82ccpopverse-tmdb-proxy.mjwaghmare.workers.dev/3';
+  late final String _baseUrl;
 
   /// Cached API key to avoid reading dotenv on every request
   late final String? _apiKey;
   bool allowAdultContent = false;
 
   TmdbClient({Dio? dio}) : _dio = dio ?? Dio() {
+    _baseUrl = dotenv.env['TMDB_BASE_URL'] ?? _defaultBaseUrl;
     _apiKey = dotenv.env['TMDB_API_KEY'];
     if (_apiKey == null ||
         _apiKey.isEmpty ||

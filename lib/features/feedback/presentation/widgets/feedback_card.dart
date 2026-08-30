@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,7 +25,7 @@ class FeedbackCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
-    final canDownvote = item.votes > 0;
+    final canDownvote = item.votes > 0 || item.isDownvoted;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -61,10 +63,14 @@ class FeedbackCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Badges row: Category pill + Status pill
+                          // Badges row: Category pill + Severity pill + Status pill
                           Row(
                             children: [
                               _buildCategoryPill(item.category, isLight),
+                              if (item.severity != null && item.severity!.isNotEmpty) ...[
+                                const SizedBox(width: 6.0),
+                                _buildSeverityPill(item.severity!, isLight),
+                              ],
                               const SizedBox(width: 8.0),
                               _buildStatusPill(item.status, isLight),
                             ],
@@ -105,7 +111,7 @@ class FeedbackCard extends StatelessWidget {
                 ),
 
                 // 3. Media Preview (if any)
-                if (item.mediaUrls.isNotEmpty) ...[
+                if (item.media.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.md),
                   Padding(
                     padding: const EdgeInsets.only(left: 60.0),
@@ -113,10 +119,10 @@ class FeedbackCard extends StatelessWidget {
                       height: 72.0,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemCount: item.mediaUrls.length,
+                        itemCount: item.media.length,
                         separatorBuilder: (context, index) => const SizedBox(width: 8.0),
                         itemBuilder: (context, index) {
-                          final url = item.mediaUrls[index];
+                          final mediaItem = item.media[index];
                           return ClipRRect(
                             borderRadius: BorderRadius.circular(10.0),
                             child: Container(
@@ -132,25 +138,35 @@ class FeedbackCard extends StatelessWidget {
                                       : Colors.white.withValues(alpha: 0.08),
                                 ),
                               ),
-                              child: CachedNetworkImage(
-                                imageUrl: url,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Center(
-                                  child: SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.primaryLight,
+                              child: mediaItem.isLocal
+                                  ? Image.file(
+                                      File(mediaItem.path),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const Icon(
+                                        Icons.image_outlined,
+                                        color: AppColors.textTertiary,
+                                        size: 20,
+                                      ),
+                                    )
+                                  : CachedNetworkImage(
+                                      imageUrl: mediaItem.path,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => const Center(
+                                        child: SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator.adaptive(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) => const Icon(
+                                        Icons.image_outlined,
+                                        color: AppColors.textTertiary,
+                                        size: 20,
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                errorWidget: (context, url, error) => const Icon(
-                                  Icons.image_outlined,
-                                  color: AppColors.textTertiary,
-                                  size: 20,
-                                ),
-                              ),
                             ),
                           );
                         },
@@ -267,7 +283,7 @@ class FeedbackCard extends StatelessWidget {
   // --- SUB WIDGETS ---
 
   Widget _buildVoteCapsule(BuildContext context, bool isLight, bool canDownvote) {
-    final hasVoted = item.isUpvoted;
+    final hasVoted = item.isUpvoted || item.isDownvoted;
 
     return Container(
       width: 48.0,
@@ -304,7 +320,7 @@ class FeedbackCard extends StatelessWidget {
                 padding: const EdgeInsets.all(4.0),
                 child: Icon(
                   Icons.keyboard_arrow_up_rounded,
-                  color: hasVoted
+                  color: item.isUpvoted
                       ? AppColors.primary
                       : (isLight ? AppColors.lightTextPrimary : Colors.white),
                   size: 22,
@@ -330,7 +346,7 @@ class FeedbackCard extends StatelessWidget {
             ),
           ),
 
-          // Downvote button (Disabled when votes == 0)
+          // Downvote button (Disabled when votes == 0 and not downvoted)
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -345,9 +361,11 @@ class FeedbackCard extends StatelessWidget {
                 padding: const EdgeInsets.all(4.0),
                 child: Icon(
                   Icons.keyboard_arrow_down_rounded,
-                  color: canDownvote
-                      ? (isLight ? AppColors.lightTextSecondary : Colors.white70)
-                      : (isLight ? Colors.grey[300] : Colors.white24),
+                  color: item.isDownvoted
+                      ? AppColors.primary
+                      : (canDownvote
+                          ? (isLight ? AppColors.lightTextSecondary : Colors.white70)
+                          : (isLight ? Colors.grey[300] : Colors.white24)),
                   size: 22,
                 ),
               ),
@@ -372,6 +390,30 @@ class FeedbackCard extends StatelessWidget {
           fontSize: 11.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSeverityPill(String severity, bool isLight) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7.0, vertical: 3.0),
+      decoration: BoxDecoration(
+        color: isLight
+            ? AppColors.error.withValues(alpha: 0.1)
+            : AppColors.error.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: AppColors.error.withValues(alpha: isLight ? 0.25 : 0.35),
+          width: 0.8,
+        ),
+      ),
+      child: Text(
+        severity,
+        style: TextStyle(
+          color: isLight ? AppColors.error : const Color(0xFFFF6B6B),
+          fontSize: 11.0,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
