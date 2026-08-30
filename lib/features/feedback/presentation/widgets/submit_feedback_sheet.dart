@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,6 +15,7 @@ import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
+import 'feedback_image_viewer.dart';
 
 class SubmitFeedbackSheet extends StatefulWidget {
   final ValueChanged<FeedbackItem>? onSubmit;
@@ -76,6 +78,10 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
 
   Future<void> _pickImage(ImageSource source) async {
     if (_isSubmitting) return;
+    if (_attachedMedia.length >= 5) {
+      AppSnackbar.showInfo(context, 'You can attach up to 5 images.');
+      return;
+    }
     HapticFeedback.lightImpact();
     try {
       final image = await _picker.pickImage(
@@ -89,12 +95,58 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
           _attachedMedia.add(image);
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         AppSnackbar.showError(
           context,
-          'Failed to attach image. Please check permissions and try again.',
+          'Failed to capture image. Please check camera permissions.',
         );
+      }
+    }
+  }
+
+  Future<void> _pickGalleryMedia() async {
+    if (_isSubmitting) return;
+    if (_attachedMedia.length >= 5) {
+      AppSnackbar.showInfo(context, 'You can attach up to 5 images.');
+      return;
+    }
+    HapticFeedback.lightImpact();
+    final remainingSlots = 5 - _attachedMedia.length;
+    try {
+      final images = await _picker.pickMultiImage(
+        limit: remainingSlots,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        imageQuality: 85,
+      );
+      if (images.isNotEmpty && mounted) {
+        setState(() {
+          _attachedMedia.addAll(images.take(remainingSlots));
+        });
+        return;
+      }
+    } catch (_) {
+      // Fallback to single pick if pickMultiImage encounters platform limitations
+      try {
+        final image = await _picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1280,
+          maxHeight: 1280,
+          imageQuality: 85,
+        );
+        if (image != null && mounted) {
+          setState(() {
+            _attachedMedia.add(image);
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          AppSnackbar.showError(
+            context,
+            'Failed to attach image from gallery. Please check storage permissions.',
+          );
+        }
       }
     }
   }
@@ -452,7 +504,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                       _buildMediaPickerButton(
                         icon: Icons.file_upload_outlined,
                         label: '+ Upload',
-                        onTap: () => _pickImage(ImageSource.gallery),
+                        onTap: _pickGalleryMedia,
                         isLight: isLight,
                       ),
                       const SizedBox(width: 10.0),
@@ -465,25 +517,52 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                           padding: const EdgeInsets.only(right: 10.0),
                           child: Stack(
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12.0),
-                                child: Container(
-                                  width: 84.0,
-                                  height: 84.0,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
+                              GestureDetector(
+                                onTap: () => FeedbackImageViewer.show(
+                                  context,
+                                  imagePath: file.path,
+                                  isLocal: true,
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12.0),
+                                  child: Container(
+                                    width: 80.0,
+                                    height: 80.0,
+                                    decoration: BoxDecoration(
                                       color: isLight
-                                          ? AppColors.borderLight
-                                          : Colors.white24,
+                                          ? const Color(0xFFF3F4F6)
+                                          : const Color(0xFF1E1E2C),
+                                      border: Border.all(
+                                        color: isLight
+                                            ? AppColors.borderLight
+                                            : Colors.white24,
+                                      ),
                                     ),
-                                  ),
-                                  child: Image.file(
-                                    File(file.path),
-                                    fit: BoxFit.cover,
+                                    child: kIsWeb
+                                        ? Image.network(
+                                            file.path,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                const Icon(
+                                                  Icons.broken_image_outlined,
+                                                  color: AppColors.textTertiary,
+                                                  size: 24,
+                                                ),
+                                          )
+                                        : Image.file(
+                                            File(file.path),
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                const Icon(
+                                                  Icons.broken_image_outlined,
+                                                  color: AppColors.textTertiary,
+                                                  size: 24,
+                                                ),
+                                          ),
                                   ),
                                 ),
                               ),
-                              // Delete badge (Red trash)
+                              // Delete badge (Red close)
                               Positioned(
                                 top: 4,
                                 right: 4,
@@ -496,9 +575,9 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
-                                      Icons.delete_outline_rounded,
+                                      Icons.close_rounded,
                                       color: Colors.white,
-                                      size: 14,
+                                      size: 13,
                                     ),
                                   ),
                                 ),

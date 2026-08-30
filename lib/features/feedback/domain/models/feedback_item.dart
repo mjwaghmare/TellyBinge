@@ -113,12 +113,17 @@ class FeedbackMedia {
 
   factory FeedbackMedia.fromMap(dynamic map) {
     if (map is String) {
-      return FeedbackMedia(path: map, isLocal: false);
+      final isNetwork =
+          map.startsWith('http://') || map.startsWith('https://');
+      return FeedbackMedia(path: map, isLocal: !isNetwork);
     }
     if (map is Map<String, dynamic>) {
+      final path = map['path'] as String? ?? '';
+      final isNetwork =
+          path.startsWith('http://') || path.startsWith('https://');
       return FeedbackMedia(
-        path: map['path'] as String? ?? '',
-        isLocal: map['isLocal'] as bool? ?? false,
+        path: path,
+        isLocal: map['isLocal'] as bool? ?? !isNetwork,
       );
     }
     return const FeedbackMedia(path: '', isLocal: false);
@@ -310,10 +315,13 @@ class FeedbackItem {
         (map['comments'] as List<dynamic>?)
             ?.map((c) {
               final commentMap = Map<String, dynamic>.from(c as Map);
-              if (commentMap['id'] == null ||
-                  commentMap['id'].toString().isEmpty) {
+              final existingId = commentMap['id']?.toString().trim();
+              if (existingId == null || existingId.isEmpty) {
+                final userId = commentMap['userId'] ?? 'user';
+                final time = commentMap['time'] ?? '';
+                final timestamp = DateTime.now().microsecondsSinceEpoch;
                 commentMap['id'] =
-                    '${commentMap['userId']}_${commentMap['time']}';
+                    'comment_${userId}_${time.hashCode.abs()}_$timestamp';
               }
               return commentMap;
             })

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -12,6 +13,7 @@ import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
+import '../widgets/feedback_image_viewer.dart';
 
 class FeedbackDetailsPage extends StatefulWidget {
   final FeedbackItem item;
@@ -127,10 +129,13 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       return;
     }
 
-    final userName =
-        user.displayName ??
-        (user.email != null && user.email!.contains('@')
-            ? user.email!.split('@').first
+    final displayName = user.displayName?.trim();
+    final userName = (displayName != null && displayName.isNotEmpty)
+        ? displayName
+        : (user.email != null &&
+                user.email!.contains('@') &&
+                user.email!.split('@').first.trim().isNotEmpty
+            ? user.email!.split('@').first.trim()
             : 'PopVerse Fan');
     final userAvatar = user.photoURL ?? '';
     final userId = user.uid;
@@ -709,61 +714,85 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                   const SizedBox(width: 8.0),
                               itemBuilder: (context, index) {
                                 final mediaItem = _item.media[index];
-                                return ClipRRect(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  child: Container(
-                                    width: 130.0,
-                                    height: 90.0,
-                                    decoration: BoxDecoration(
-                                      color: isLight
-                                          ? Colors.grey[200]
-                                          : Colors.white.withValues(
-                                              alpha: 0.05,
-                                            ),
-                                      border: Border.all(
+                                final isLocal = mediaItem.isLocal;
+
+                                return GestureDetector(
+                                  onTap: () => FeedbackImageViewer.show(
+                                    context,
+                                    imagePath: mediaItem.path,
+                                    isLocal: isLocal,
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    child: Container(
+                                      width: 130.0,
+                                      height: 90.0,
+                                      decoration: BoxDecoration(
                                         color: isLight
-                                            ? AppColors.borderLight
+                                            ? Colors.grey[200]
                                             : Colors.white.withValues(
-                                                alpha: 0.08,
+                                                alpha: 0.05,
                                               ),
-                                      ),
-                                    ),
-                                    child: mediaItem.isLocal
-                                        ? Image.file(
-                                            File(mediaItem.path),
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) =>
-                                                    const Icon(
-                                                      Icons.image_outlined,
-                                                      color:
-                                                          AppColors.textTertiary,
-                                                      size: 24,
-                                                    ),
-                                          )
-                                        : CachedNetworkImage(
-                                            imageUrl: mediaItem.path,
-                                            fit: BoxFit.cover,
-                                            placeholder: (context, url) =>
-                                                const Center(
-                                                  child: SizedBox(
-                                                    width: 20,
-                                                    height: 20,
-                                                    child:
-                                                        CircularProgressIndicator.adaptive(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                  ),
+                                        border: Border.all(
+                                          color: isLight
+                                              ? AppColors.borderLight
+                                              : Colors.white.withValues(
+                                                  alpha: 0.08,
                                                 ),
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    const Icon(
-                                                      Icons.image_outlined,
-                                                      color:
-                                                          AppColors.textTertiary,
-                                                      size: 24,
+                                        ),
+                                      ),
+                                      child: isLocal
+                                          ? (kIsWeb
+                                              ? Image.network(
+                                                  mediaItem.path,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context,
+                                                          error,
+                                                          stackTrace) =>
+                                                      const Icon(
+                                                        Icons.image_outlined,
+                                                        color: AppColors
+                                                            .textTertiary,
+                                                        size: 24,
+                                                      ),
+                                                )
+                                              : Image.file(
+                                                  File(mediaItem.path),
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context,
+                                                          error,
+                                                          stackTrace) =>
+                                                      const Icon(
+                                                        Icons.image_outlined,
+                                                        color: AppColors
+                                                            .textTertiary,
+                                                        size: 24,
+                                                      ),
+                                                ))
+                                          : CachedNetworkImage(
+                                              imageUrl: mediaItem.path,
+                                              fit: BoxFit.cover,
+                                              placeholder: (context, url) =>
+                                                  const Center(
+                                                    child: SizedBox(
+                                                      width: 20,
+                                                      height: 20,
+                                                      child:
+                                                          CircularProgressIndicator.adaptive(
+                                                            strokeWidth: 2,
+                                                          ),
                                                     ),
-                                          ),
+                                                  ),
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      const Icon(
+                                                        Icons.image_outlined,
+                                                        color:
+                                                            AppColors.textTertiary,
+                                                        size: 24,
+                                                      ),
+                                            ),
+                                    ),
                                   ),
                                 );
                               },
