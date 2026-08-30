@@ -30,6 +30,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   late FeedbackItem _item;
   late final FeedbackRepository _repository;
   final TextEditingController _commentController = TextEditingController();
+  final FocusNode _commentFocusNode = FocusNode();
   late List<Map<String, dynamic>> _comments;
   String _currentUserId = '';
 
@@ -44,6 +45,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
   @override
   void dispose() {
+    _commentFocusNode.dispose();
     _commentController.dispose();
     super.dispose();
   }
@@ -75,6 +77,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     final userId = user?.uid ?? _currentUserId;
 
     HapticFeedback.lightImpact();
+    FocusScope.of(context).unfocus();
     setState(() {
       final newComment = {
         'userId': userId,
@@ -236,6 +239,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   }
 
   Future<void> _showDeleteCommentDialog(int index) async {
+    FocusScope.of(context).unfocus();
+    _commentFocusNode.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final isLight = context.isLight;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -260,7 +267,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, false),
+            onPressed: () {
+              FocusScope.of(context).unfocus();
+              Navigator.pop(dialogCtx, false);
+            },
             child: Text(
               'Cancel',
               style: TextStyle(
@@ -280,7 +290,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
               ),
               elevation: 0,
             ),
-            onPressed: () => Navigator.pop(dialogCtx, true),
+            onPressed: () {
+              FocusScope.of(context).unfocus();
+              Navigator.pop(dialogCtx, true);
+            },
             child: const Text(
               'Delete',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -290,7 +303,12 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       ),
     );
 
-    if (confirmed == true && mounted) {
+    if (!mounted) return;
+    FocusScope.of(context).unfocus();
+    _commentFocusNode.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    if (confirmed == true) {
       HapticFeedback.lightImpact();
       setState(() {
         _comments.removeAt(index);
@@ -484,12 +502,17 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
             ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              children: [
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                children: [
                 // 1. Main Detail Card with full description
                 Container(
                   decoration: BoxDecoration(
@@ -680,68 +703,70 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                         ),
                       ],
 
-                      const SizedBox(height: AppSpacing.md),
-                      Divider(
-                        height: 1,
-                        thickness: 0.6,
-                        color: isLight
-                            ? AppColors.borderLight
-                            : Colors.white.withValues(alpha: 0.06),
-                      ),
-                      const SizedBox(height: 10.0),
+                      if (!isOwner) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Divider(
+                          height: 1,
+                          thickness: 0.6,
+                          color: isLight
+                              ? AppColors.borderLight
+                              : Colors.white.withValues(alpha: 0.06),
+                        ),
+                        const SizedBox(height: 10.0),
 
-                      // Author Row
-                      Row(
-                        children: [
-                          Container(
-                            width: 26,
-                            height: 26,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.primary,
-                                  AppColors.primaryDark,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                        // Author Row
+                        Row(
+                          children: [
+                            Container(
+                              width: 26,
+                              height: 26,
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.primary,
+                                    AppColors.primaryDark,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                shape: BoxShape.circle,
                               ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                _item.userName.isNotEmpty
-                                    ? _item.userName[0].toUpperCase()
-                                    : 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                              child: Center(
+                                child: Text(
+                                  _item.userName.isNotEmpty
+                                      ? _item.userName[0].toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8.0),
-                          Text(
-                            'Submitted by ${_item.userName}',
-                            style: AppTextStyles.xsMedium.copyWith(
-                              color: isLight
-                                  ? AppColors.lightTextPrimary
-                                  : AppColors.textPrimary,
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(width: 8.0),
+                            Text(
+                              'Submitted by ${_item.userName}',
+                              style: AppTextStyles.xsMedium.copyWith(
+                                color: isLight
+                                    ? AppColors.lightTextPrimary
+                                    : AppColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            _item.timeAgo,
-                            style: AppTextStyles.xs.copyWith(
-                              color: isLight
-                                  ? AppColors.lightTextTertiary
-                                  : const Color(0xFF8E8E93),
-                              fontSize: 11.5,
+                            const Spacer(),
+                            Text(
+                              _item.timeAgo,
+                              style: AppTextStyles.xs.copyWith(
+                                color: isLight
+                                    ? AppColors.lightTextTertiary
+                                    : const Color(0xFF8E8E93),
+                                fontSize: 11.5,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1043,6 +1068,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     ),
                     child: TextField(
                       controller: _commentController,
+                      focusNode: _commentFocusNode,
                       onChanged: (_) => setState(() {}),
                       style: TextStyle(
                         color: isLight
@@ -1106,8 +1132,9 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // --- SUB WIDGETS ---
 

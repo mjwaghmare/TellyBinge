@@ -133,6 +133,43 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
     );
   }
 
+  Future<void> _handleRefresh() async {
+    HapticFeedback.lightImpact();
+    final completer = Completer<void>();
+    _subscription?.cancel();
+    _subscription = _repository
+        .getFeedbacksStream(currentUserId: _currentUserId)
+        .listen(
+          (items) {
+            if (mounted) {
+              setState(() {
+                _items = items;
+                _isLoading = false;
+              });
+            }
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          },
+          onError: (error) {
+            debugPrint('FeedbackBoardPage: Error in feedback stream: $error');
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          },
+        );
+
+    await Future.any([
+      completer.future,
+      Future.delayed(const Duration(milliseconds: 1500)),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
@@ -194,154 +231,165 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
           ),
         ],
       ),
-      body: _isLoading && _items.isEmpty
-          ? const Center(child: CircularProgressIndicator.adaptive())
-          : Column(
-              children: [
-                // 1. Search Bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.xs,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(
-                        alpha: isLight ? 0.06 : 0.10,
-                      ),
-                      borderRadius: BorderRadius.circular(14.0),
-                      border: Border.all(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: _isLoading && _items.isEmpty
+            ? const Center(child: CircularProgressIndicator.adaptive())
+            : Column(
+                children: [
+                  // 1. Search Bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
                         color: AppColors.primary.withValues(
-                          alpha: isLight ? 0.18 : 0.16,
+                          alpha: isLight ? 0.06 : 0.10,
                         ),
-                        width: 1.0,
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
-                      style: TextStyle(
-                        color: isLight
-                            ? AppColors.lightTextPrimary
-                            : AppColors.textPrimary,
-                        fontSize: 14.5,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Search feedback or ideas...',
-                        hintStyle: TextStyle(
-                          color: isLight
-                              ? AppColors.lightTextTertiary
-                              : AppColors.textTertiary,
-                          fontSize: 14.0,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          color: AppColors.primaryLight,
-                          size: 20,
-                        ),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.clear_rounded,
-                                  color: AppColors.primaryLight,
-                                  size: 18,
-                                ),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {
-                                    _searchQuery = '';
-                                  });
-                                },
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14.0,
-                          vertical: 12.0,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 2. Filter Pills
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: 8.0,
-                  ),
-                  child: Row(
-                    children: [
-                      _buildFilterChip('All', isLight),
-                      const SizedBox(width: 8.0),
-                      _buildFilterChip('Bug', isLight, label: '🪲 Bugs'),
-                      const SizedBox(width: 8.0),
-                      _buildFilterChip(
-                        'Feature',
-                        isLight,
-                        label: '💡 Features',
-                      ),
-                      const SizedBox(width: 8.0),
-                      _buildFilterChip(
-                        'Improvement',
-                        isLight,
-                        label: '✨ Improvements',
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 4.0),
-
-                // 3. Feedback Feed List
-                Expanded(
-                  child: items.isEmpty
-                      ? _buildEmptyState(isLight)
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                            vertical: AppSpacing.xs,
+                        borderRadius: BorderRadius.circular(14.0),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(
+                            alpha: isLight ? 0.18 : 0.16,
                           ),
-                          itemCount: items.length,
-                          itemBuilder: (context, index) {
-                            final item = items[index];
-                            return FeedbackCard(
-                              item: item,
-                              onUpvote: () => _handleUpvote(item),
-                              onTap: () async {
-                                HapticFeedback.lightImpact();
-                                final updated =
-                                    await Navigator.push<FeedbackItem>(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => FeedbackDetailsPage(
-                                          item: item,
-                                          feedbackRepository: _repository,
-                                        ),
-                                      ),
-                                    );
-                                if (updated != null) {
-                                  final idx = _items.indexWhere(
-                                    (i) => i.id == updated.id,
-                                  );
-                                  if (idx != -1) {
-                                    setState(() {
-                                      _items[idx] = updated;
-                                    });
-                                  }
-                                }
-                              },
-                            );
-                          },
+                          width: 1.0,
                         ),
-                ),
-              ],
-            ),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                        style: TextStyle(
+                          color: isLight
+                              ? AppColors.lightTextPrimary
+                              : AppColors.textPrimary,
+                          fontSize: 14.5,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Search feedback or ideas...',
+                          hintStyle: TextStyle(
+                            color: isLight
+                                ? AppColors.lightTextTertiary
+                                : AppColors.textTertiary,
+                            fontSize: 14.0,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search_rounded,
+                            color: AppColors.primaryLight,
+                            size: 20,
+                          ),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(
+                                    Icons.clear_rounded,
+                                    color: AppColors.primaryLight,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14.0,
+                            vertical: 12.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 2. Filter Pills
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: 8.0,
+                    ),
+                    child: Row(
+                      children: [
+                        _buildFilterChip('All', isLight),
+                        const SizedBox(width: 8.0),
+                        _buildFilterChip('Bug', isLight, label: '🪲 Bugs'),
+                        const SizedBox(width: 8.0),
+                        _buildFilterChip(
+                          'Feature',
+                          isLight,
+                          label: '💡 Features',
+                        ),
+                        const SizedBox(width: 8.0),
+                        _buildFilterChip(
+                          'Improvement',
+                          isLight,
+                          label: '✨ Improvements',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 4.0),
+
+                  // 3. Feedback Feed List with Pull-to-Refresh
+                  Expanded(
+                    child: RefreshIndicator.adaptive(
+                      onRefresh: _handleRefresh,
+                      color: AppColors.primary,
+                      child: items.isEmpty
+                          ? _buildEmptyState(isLight)
+                          : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                                vertical: AppSpacing.xs,
+                              ),
+                              itemCount: items.length,
+                              itemBuilder: (context, index) {
+                                final item = items[index];
+                                return FeedbackCard(
+                                  item: item,
+                                  onUpvote: () => _handleUpvote(item),
+                                  onTap: () async {
+                                    HapticFeedback.lightImpact();
+                                    final updated =
+                                        await Navigator.push<FeedbackItem>(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => FeedbackDetailsPage(
+                                              item: item,
+                                              feedbackRepository: _repository,
+                                            ),
+                                          ),
+                                        );
+                                    if (updated != null) {
+                                      final idx = _items.indexWhere(
+                                        (i) => i.id == updated.id,
+                                      );
+                                      if (idx != -1) {
+                                        setState(() {
+                                          _items[idx] = updated;
+                                        });
+                                      }
+                                    }
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
@@ -396,10 +444,12 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
   }
 
   Widget _buildEmptyState(bool isLight) {
-    final isBoardEmpty = _items.isEmpty;
+    final isFiltering = _selectedFilter != 'All' || _searchQuery.isNotEmpty;
 
     return Center(
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl,
           vertical: AppSpacing.xxl,
@@ -423,16 +473,20 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                 ),
               ),
               child: Icon(
-                isBoardEmpty
-                    ? Icons.mark_chat_unread_outlined
-                    : Icons.search_off_rounded,
+                isFiltering
+                    ? Icons.search_off_rounded
+                    : Icons.mark_chat_unread_outlined,
                 color: AppColors.primaryLight,
                 size: 34,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              isBoardEmpty ? 'No feedback yet' : 'No matching feedback',
+              isFiltering
+                  ? (_searchQuery.isNotEmpty
+                        ? 'No matching feedback'
+                        : 'No $_selectedFilter feedback yet')
+                  : 'No feedback yet',
               style: AppTextStyles.mdBold.copyWith(
                 color: isLight
                     ? AppColors.lightTextPrimary
@@ -443,9 +497,11 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              isBoardEmpty
-                  ? 'Be the first to share an idea, report an issue, or suggest improvements!'
-                  : 'Try adjusting your search query or selecting a different category filter.',
+              isFiltering
+                  ? (_searchQuery.isNotEmpty
+                        ? 'Try adjusting your search terms or filter.'
+                        : 'There is no feedback in this category yet.')
+                  : 'Be the first to share an idea, report an issue, or suggest improvements!',
               textAlign: TextAlign.center,
               style: AppTextStyles.sm.copyWith(
                 color: isLight
@@ -454,54 +510,6 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            if (isBoardEmpty)
-              ElevatedButton.icon(
-                onPressed: _openSubmitSheet,
-                icon: const Icon(Icons.add_rounded, size: 20),
-                label: const Text(
-                  'Submit Feedback',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-              )
-            else
-              OutlinedButton.icon(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  setState(() {
-                    _searchController.clear();
-                    _searchQuery = '';
-                    _selectedFilter = 'All';
-                  });
-                },
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('Reset Filters'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primaryLight,
-                  side: BorderSide(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                ),
-              ),
           ],
         ),
       ),
