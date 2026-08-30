@@ -40,7 +40,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
     _subscribeToFeedbacks();
   }
 
-  void _subscribeToFeedbacks() {
+  void _subscribeToFeedbacks([Completer<void>? refreshCompleter]) {
     _subscription?.cancel();
 
     // Fallback timeout to guarantee UI renders empty state without hanging
@@ -49,6 +49,9 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
         setState(() {
           _isLoading = false;
         });
+      }
+      if (refreshCompleter != null && !refreshCompleter.isCompleted) {
+        refreshCompleter.complete();
       }
     });
 
@@ -62,6 +65,9 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                 _isLoading = false;
               });
             }
+            if (refreshCompleter != null && !refreshCompleter.isCompleted) {
+              refreshCompleter.complete();
+            }
           },
           onError: (error) {
             debugPrint('FeedbackBoardPage: Error in feedback stream: $error');
@@ -69,6 +75,9 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
               setState(() {
                 _isLoading = false;
               });
+            }
+            if (refreshCompleter != null && !refreshCompleter.isCompleted) {
+              refreshCompleter.complete();
             }
           },
         );
@@ -103,19 +112,35 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
   }
 
   void _handleUpvote(FeedbackItem item) {
+    if (_currentUserId.isEmpty) {
+      AppSnackbar.showInfo(
+        context,
+        'Please sign in to vote on feedback.',
+      );
+      return;
+    }
+
+    if (item.userId == _currentUserId && item.isUpvoted) {
+      HapticFeedback.lightImpact();
+      AppSnackbar.showInfo(
+        context,
+        'You created this feedback — your upvote is permanent.',
+      );
+      return;
+    }
+
     final index = _items.indexWhere((i) => i.id == item.id);
     if (index == -1) return;
 
+    HapticFeedback.lightImpact();
     setState(() {
       _items[index] = _items[index].upvoted(_currentUserId);
     });
 
-    if (_currentUserId.isNotEmpty) {
-      _repository.toggleVote(
-        feedbackId: item.id,
-        userId: _currentUserId,
-      );
-    }
+    _repository.toggleVote(
+      feedbackId: item.id,
+      userId: _currentUserId,
+    );
   }
 
   void _openSubmitSheet() {
@@ -136,33 +161,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
   Future<void> _handleRefresh() async {
     HapticFeedback.lightImpact();
     final completer = Completer<void>();
-    _subscription?.cancel();
-    _subscription = _repository
-        .getFeedbacksStream(currentUserId: _currentUserId)
-        .listen(
-          (items) {
-            if (mounted) {
-              setState(() {
-                _items = items;
-                _isLoading = false;
-              });
-            }
-            if (!completer.isCompleted) {
-              completer.complete();
-            }
-          },
-          onError: (error) {
-            debugPrint('FeedbackBoardPage: Error in feedback stream: $error');
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-              });
-            }
-            if (!completer.isCompleted) {
-              completer.complete();
-            }
-          },
-        );
+    _subscribeToFeedbacks(completer);
 
     await Future.any([
       completer.future,

@@ -119,6 +119,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       if (!snapshot.exists) return;
 
       final data = snapshot.data() ?? {};
+      final ownerId = data['userId'] as String? ?? '';
       final upvotedIds = List<String>.from(
         (data['upvotedUserIds'] as List<dynamic>?)?.map((e) => e.toString()) ??
             [],
@@ -126,6 +127,10 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       int currentVotes = (data['votes'] as num?)?.toInt() ?? 0;
 
       if (upvotedIds.contains(userId)) {
+        // Creator's upvote is permanent baseline
+        if (userId == ownerId) {
+          return;
+        }
         // Cancel upvote (-1)
         upvotedIds.remove(userId);
         currentVotes = (currentVotes - 1).clamp(0, 99999);
@@ -149,8 +154,11 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
     required String userName,
     required String userAvatar,
     required String text,
+    String? commentId,
   }) async {
+    final id = commentId ?? '${userId}_${DateTime.now().microsecondsSinceEpoch}';
     final comment = {
+      'id': id,
       'userId': userId,
       'name': userName.isNotEmpty ? userName : 'PopVerse Fan',
       'userAvatar': userAvatar,

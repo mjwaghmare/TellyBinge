@@ -30,6 +30,7 @@ abstract class FeedbackRepository {
     required String userName,
     required String userAvatar,
     required String text,
+    String? commentId,
   });
 
   /// Updates comments list for a feedback item (e.g. after edit or delete)

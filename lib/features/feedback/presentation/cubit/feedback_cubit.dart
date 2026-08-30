@@ -77,6 +77,7 @@ class FeedbackCubit extends Cubit<FeedbackState> {
     required String userId,
   }) async {
     if (userId.isEmpty) return;
+    if (item.userId == userId && item.isUpvoted) return;
 
     // Optimistic UI update
     if (state is FeedbackLoaded) {
@@ -107,6 +108,7 @@ class FeedbackCubit extends Cubit<FeedbackState> {
     required String userName,
     required String userAvatar,
     required String text,
+    String? commentId,
   }) async {
     try {
       await feedbackRepository.addComment(
@@ -115,6 +117,7 @@ class FeedbackCubit extends Cubit<FeedbackState> {
         userName: userName,
         userAvatar: userAvatar,
         text: text,
+        commentId: commentId,
       );
     } catch (_) {}
   }

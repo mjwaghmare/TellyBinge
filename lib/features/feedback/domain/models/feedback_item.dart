@@ -308,7 +308,15 @@ class FeedbackItem {
 
     final commentsList =
         (map['comments'] as List<dynamic>?)
-            ?.map((c) => Map<String, dynamic>.from(c as Map))
+            ?.map((c) {
+              final commentMap = Map<String, dynamic>.from(c as Map);
+              if (commentMap['id'] == null ||
+                  commentMap['id'].toString().isEmpty) {
+                commentMap['id'] =
+                    '${commentMap['userId']}_${commentMap['time']}';
+              }
+              return commentMap;
+            })
             .toList() ??
         [];
 

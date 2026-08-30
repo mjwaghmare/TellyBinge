@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -33,6 +34,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   final FocusNode _commentFocusNode = FocusNode();
   late List<Map<String, dynamic>> _comments;
   String _currentUserId = '';
+  StreamSubscription<List<FeedbackItem>>? _feedbacksSubscription;
+  StreamSubscription<User?>? _authSubscription;
 
   @override
   void initState() {
@@ -41,75 +44,153 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     _currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
     _item = widget.item;
     _comments = List<Map<String, dynamic>>.from(_item.comments);
+
+    _subscribeToFeedbacks();
+
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (!mounted) return;
+      final newUid = user?.uid ?? '';
+      if (newUid != _currentUserId) {
+        setState(() {
+          _currentUserId = newUid;
+        });
+        _subscribeToFeedbacks();
+      }
+    });
+  }
+
+  void _subscribeToFeedbacks() {
+    _feedbacksSubscription?.cancel();
+    _feedbacksSubscription = _repository
+        .getFeedbacksStream(currentUserId: _currentUserId)
+        .listen((items) {
+      if (!mounted) return;
+      final index = items.indexWhere((i) => i.id == _item.id);
+      if (index != -1) {
+        setState(() {
+          _item = items[index];
+          _comments = List<Map<String, dynamic>>.from(_item.comments);
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
+    _feedbacksSubscription?.cancel();
     _commentFocusNode.dispose();
     _commentController.dispose();
     super.dispose();
   }
 
   void _handleUpvote() {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    _currentUserId = currentUserId;
+    if (currentUserId.isEmpty) {
+      AppSnackbar.showInfo(
+        context,
+        'Please sign in to vote on feedback.',
+      );
+      return;
+    }
+
+    if (_item.userId == currentUserId && _item.isUpvoted) {
+      HapticFeedback.lightImpact();
+      AppSnackbar.showInfo(
+        context,
+        'You created this feedback — your upvote is permanent.',
+      );
+      return;
+    }
+
     HapticFeedback.lightImpact();
     setState(() {
-      _item = _item.upvoted(_currentUserId);
+      _item = _item.upvoted(currentUserId);
     });
-    if (_currentUserId.isNotEmpty) {
-      _repository.toggleVote(
-        feedbackId: _item.id,
-        userId: _currentUserId,
-      );
-    }
+    _repository.toggleVote(
+      feedbackId: _item.id,
+      userId: currentUserId,
+    );
   }
 
-  void _addComment() {
+  Future<void> _addComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
     final user = FirebaseAuth.instance.currentUser;
+    if (user == null || user.uid.isEmpty) {
+      AppSnackbar.showInfo(
+        context,
+        'Please sign in to comment on feedback.',
+      );
+      return;
+    }
+
     final userName =
-        user?.displayName ??
-        (user?.email != null && user!.email!.contains('@')
+        user.displayName ??
+        (user.email != null && user.email!.contains('@')
             ? user.email!.split('@').first
             : 'PopVerse Fan');
-    final userAvatar = user?.photoURL ?? '';
-    final userId = user?.uid ?? _currentUserId;
+    final userAvatar = user.photoURL ?? '';
+    final userId = user.uid;
+    _currentUserId = userId;
 
     HapticFeedback.lightImpact();
     FocusScope.of(context).unfocus();
+    final commentId = '${userId}_${DateTime.now().microsecondsSinceEpoch}';
+    final timeStr = DateTime.now().toIso8601String();
+    final newComment = {
+      'id': commentId,
+      'userId': userId,
+      'name': userName,
+      'userAvatar': userAvatar,
+      'time': timeStr,
+      'text': text,
+    };
+
     setState(() {
-      final newComment = {
-        'userId': userId,
-        'name': userName,
-        'userAvatar': userAvatar,
-        'time': 'Just now',
-        'text': text,
-      };
       _comments.insert(0, newComment);
       _item = _item.copyWith(comments: _comments);
       _commentController.clear();
     });
 
-    _repository.addComment(
-      feedbackId: _item.id,
-      userId: userId,
-      userName: userName,
-      userAvatar: userAvatar,
-      text: text,
-    );
-  }
-
-  Future<void> _showEditCommentSheet(
-    int index,
+    try {
+      await _repository.addComment(
+        feedbackId: _item.id,
+        userId: userId,
+        userName: userName,
+        userAvatar: userAvatar,
+        text: text,
+        commentId: commentId,
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _comments.removeWhere(
+            (c) =>
+                c['id'] == commentId ||
+                (c['time'] == timeStr && c['userId'] == userId),
+          );
+          _item = _item.copyWith(comments: _comments);
+        });
+        AppSnackbar.showError(
+          context,
+          'Failed to post comment. Please try again.',
+        );
+      }
+    }
+  }  Future<void> _showEditCommentSheet(
     Map<String, dynamic> comment,
   ) async {
     final isLight = context.isLight;
     final editController = TextEditingController(
       text: comment['text'] as String? ?? '',
     );
+    final commentId = comment['id']?.toString() ?? '';
 
-    final updated = await showModalBottomSheet<String>(
+    try {
+      final updated = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: isLight ? Colors.white : const Color(0xFF161622),
@@ -221,29 +302,45 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       },
     );
 
-    if (updated != null && updated.isNotEmpty && mounted) {
-      HapticFeedback.lightImpact();
-      setState(() {
-        _comments[index] = {...comment, 'text': updated};
-        _item = _item.copyWith(comments: _comments);
-      });
+      if (updated != null && updated.isNotEmpty && mounted) {
+        final targetIndex = _comments.indexWhere(
+          (c) => commentId.isNotEmpty
+              ? c['id'] == commentId
+              : (c['time'] == comment['time'] && c['userId'] == comment['userId']),
+        );
+        if (targetIndex == -1) return;
 
-      _repository.updateComments(feedbackId: _item.id, comments: _comments);
+        HapticFeedback.lightImpact();
+        setState(() {
+          _comments[targetIndex] = {
+            ..._comments[targetIndex],
+            'text': updated,
+          };
+          _item = _item.copyWith(comments: _comments);
+        });
 
-      AppSnackbar.showSuccess(
-        context,
-        'Comment updated successfully',
-        duration: const Duration(seconds: 2),
-      );
+        _repository.updateComments(feedbackId: _item.id, comments: _comments);
+
+        AppSnackbar.showSuccess(
+          context,
+          'Comment updated successfully',
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } finally {
+      editController.dispose();
     }
   }
 
-  Future<void> _showDeleteCommentDialog(int index) async {
+  Future<void> _showDeleteCommentDialog(
+    Map<String, dynamic> comment,
+  ) async {
     FocusScope.of(context).unfocus();
     _commentFocusNode.unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
 
     final isLight = context.isLight;
+    final commentId = comment['id']?.toString() ?? '';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
@@ -309,9 +406,16 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (confirmed == true) {
+      final targetIndex = _comments.indexWhere(
+        (c) => commentId.isNotEmpty
+            ? c['id'] == commentId
+            : (c['time'] == comment['time'] && c['userId'] == comment['userId']),
+      );
+      if (targetIndex == -1) return;
+
       HapticFeedback.lightImpact();
       setState(() {
-        _comments.removeAt(index);
+        _comments.removeAt(targetIndex);
         _item = _item.copyWith(comments: _comments);
       });
 
@@ -454,8 +558,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
-    final canSubmitComment = _commentController.text.trim().isNotEmpty;
-    final isOwner = _currentUserId.isNotEmpty && _item.userId == _currentUserId;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? _currentUserId;
+    final isOwner = currentUserId.isNotEmpty && _item.userId == currentUserId;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -513,7 +617,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.all(AppSpacing.md),
                 children: [
-                // 1. Main Detail Card with full description
+                // 1. Main Detail Card
                 Container(
                   decoration: BoxDecoration(
                     color: isLight ? Colors.white : const Color(0xFF161622),
@@ -529,16 +633,20 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top Row: Upvote Button + Category Pill + Submitter Info
+                      // Top section: Left upvote button + Right content
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // 1. Upvote Button
                           _buildUpvoteButton(isLight),
                           const SizedBox(width: AppSpacing.md),
+
+                          // 2. Main content area
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Badges row: Category pill + Severity pill + Status pill
                                 Row(
                                   children: [
                                     _buildCategoryPill(_item.category, isLight),
@@ -550,223 +658,217 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                         isLight,
                                       ),
                                     ],
-                                    const Spacer(),
-                                    // App Version Badge
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8.0,
-                                        vertical: 3.0,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: isLight
-                                            ? Colors.grey[100]
-                                            : Colors.white.withValues(
-                                                alpha: 0.06,
-                                              ),
-                                        borderRadius: BorderRadius.circular(
-                                          10.0,
-                                        ),
-                                        border: Border.all(
-                                          color: isLight
-                                              ? AppColors.borderLight
-                                              : Colors.white.withValues(
-                                                  alpha: 0.04,
-                                                ),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        _item.appVersion,
-                                        style: AppTextStyles.xs.copyWith(
-                                          color: isLight
-                                              ? AppColors.lightTextSecondary
-                                              : AppColors.textSecondary,
-                                          fontSize: 11.0,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
+                                    const SizedBox(width: 8.0),
+                                    _buildStatusPill(_item.status, isLight),
                                   ],
                                 ),
                                 const SizedBox(height: 10.0),
+
                                 // Title
                                 Text(
                                   _item.title,
-                                  style: AppTextStyles.lg.copyWith(
+                                  style: AppTextStyles.mdBold.copyWith(
                                     color: isLight
                                         ? AppColors.lightTextPrimary
                                         : AppColors.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18.0,
+                                    fontSize: 16.5,
+                                    fontWeight: FontWeight.w700,
                                     height: 1.25,
                                   ),
                                 ),
                                 const SizedBox(height: 8.0),
-                                _buildStatusPill(_item.status, isLight),
+
+                                // Full Description
+                                Text(
+                                  _item.description,
+                                  style: AppTextStyles.sm.copyWith(
+                                    color: isLight
+                                        ? AppColors.lightTextSecondary
+                                        : AppColors.textSecondary,
+                                    height: 1.45,
+                                    fontSize: 13.5,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: AppSpacing.md),
-
-                      // Full Description (Unrestricted length)
-                      Text(
-                        _item.description,
-                        style: AppTextStyles.md.copyWith(
-                          color: isLight
-                              ? AppColors.lightTextSecondary
-                              : AppColors.textSecondary,
-                          height: 1.5,
-                          fontSize: 14.5,
-                        ),
-                      ),
-
-                      // Attached Media Gallery
+                      // 3. Media Gallery (if any)
                       if (_item.media.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          'ATTACHED MEDIA (${_item.media.length})',
-                          style: TextStyle(
-                            color: isLight
-                                ? AppColors.lightTextTertiary
-                                : const Color(0xFF8E8E93),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                        const SizedBox(height: 8.0),
-                        SizedBox(
-                          height: 140.0,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _item.media.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(width: 10.0),
-                            itemBuilder: (context, index) {
-                              final mediaItem = _item.media[index];
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(12.0),
-                                child: Container(
-                                  width: 220.0,
-                                  decoration: BoxDecoration(
-                                    color: isLight
-                                        ? Colors.grey[200]
-                                        : Colors.white.withValues(alpha: 0.05),
-                                    border: Border.all(
+                        const SizedBox(height: AppSpacing.md),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 60.0),
+                          child: SizedBox(
+                            height: 90.0,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _item.media.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(width: 8.0),
+                              itemBuilder: (context, index) {
+                                final mediaItem = _item.media[index];
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  child: Container(
+                                    width: 130.0,
+                                    height: 90.0,
+                                    decoration: BoxDecoration(
                                       color: isLight
-                                          ? AppColors.borderLight
+                                          ? Colors.grey[200]
                                           : Colors.white.withValues(
-                                              alpha: 0.08,
+                                              alpha: 0.05,
                                             ),
+                                      border: Border.all(
+                                        color: isLight
+                                            ? AppColors.borderLight
+                                            : Colors.white.withValues(
+                                                alpha: 0.08,
+                                              ),
+                                      ),
                                     ),
-                                  ),
-                                  child: mediaItem.isLocal
-                                      ? Image.file(
-                                          File(mediaItem.path),
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  const Icon(
-                                                    Icons.image_outlined,
-                                                    color:
-                                                        AppColors.textTertiary,
-                                                    size: 28,
+                                    child: mediaItem.isLocal
+                                        ? Image.file(
+                                            File(mediaItem.path),
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    const Icon(
+                                                      Icons.image_outlined,
+                                                      color:
+                                                          AppColors.textTertiary,
+                                                      size: 24,
+                                                    ),
+                                          )
+                                        : CachedNetworkImage(
+                                            imageUrl: mediaItem.path,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) =>
+                                                const Center(
+                                                  child: SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child:
+                                                        CircularProgressIndicator.adaptive(
+                                                          strokeWidth: 2,
+                                                        ),
                                                   ),
-                                        )
-                                      : CachedNetworkImage(
-                                          imageUrl: mediaItem.path,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) =>
-                                              const Center(
-                                                child: SizedBox(
-                                                  width: 24,
-                                                  height: 24,
-                                                  child:
-                                                      CircularProgressIndicator.adaptive(
-                                                        strokeWidth: 2,
-                                                      ),
                                                 ),
-                                              ),
-                                          errorWidget: (context, url, error) =>
-                                              const Icon(
-                                                Icons.image_outlined,
-                                                color: AppColors.textTertiary,
-                                                size: 28,
-                                              ),
-                                        ),
-                                ),
-                              );
-                            },
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    const Icon(
+                                                      Icons.image_outlined,
+                                                      color:
+                                                          AppColors.textTertiary,
+                                                      size: 24,
+                                                    ),
+                                          ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ],
 
-                      if (!isOwner) ...[
-                        const SizedBox(height: AppSpacing.md),
-                        Divider(
-                          height: 1,
-                          thickness: 0.6,
-                          color: isLight
-                              ? AppColors.borderLight
-                              : Colors.white.withValues(alpha: 0.06),
-                        ),
-                        const SizedBox(height: 10.0),
+                      const SizedBox(height: AppSpacing.md),
+                      Divider(
+                        height: 1,
+                        thickness: 0.6,
+                        color: isLight
+                            ? AppColors.borderLight
+                            : Colors.white.withValues(alpha: 0.06),
+                      ),
+                      const SizedBox(height: 10.0),
 
-                        // Author Row
-                        Row(
-                          children: [
-                            Container(
-                              width: 26,
-                              height: 26,
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppColors.primary,
-                                    AppColors.primaryDark,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                shape: BoxShape.circle,
+                      // 4. Bottom Author / Metadata Row
+                      Row(
+                        children: [
+                          // Avatar circle
+                          Container(
+                            width: 26,
+                            height: 26,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primaryDark,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                              child: Center(
-                                child: Text(
-                                  _item.userName.isNotEmpty
-                                      ? _item.userName[0].toUpperCase()
-                                      : 'U',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                _item.userName.isNotEmpty
+                                    ? _item.userName[0].toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8.0),
-                            Text(
-                              'Submitted by ${_item.userName}',
-                              style: AppTextStyles.xsMedium.copyWith(
+                          ),
+                          const SizedBox(width: 8.0),
+
+                          // Username
+                          Text(
+                            _item.userName,
+                            style: AppTextStyles.xsMedium.copyWith(
+                              color: isLight
+                                  ? AppColors.lightTextPrimary
+                                  : AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+
+                          // App Version Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                              vertical: 3.0,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isLight
+                                  ? Colors.grey[100]
+                                  : Colors.white.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(10.0),
+                              border: Border.all(
                                 color: isLight
-                                    ? AppColors.lightTextPrimary
-                                    : AppColors.textPrimary,
-                                fontWeight: FontWeight.w600,
+                                    ? AppColors.borderLight
+                                    : Colors.white.withValues(alpha: 0.04),
                               ),
                             ),
-                            const Spacer(),
-                            Text(
-                              _item.timeAgo,
+                            child: Text(
+                              _item.appVersion,
                               style: AppTextStyles.xs.copyWith(
                                 color: isLight
-                                    ? AppColors.lightTextTertiary
-                                    : const Color(0xFF8E8E93),
-                                fontSize: 11.5,
+                                    ? AppColors.lightTextSecondary
+                                    : AppColors.textSecondary,
+                                fontSize: 11.0,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(width: 8.0),
+
+                          // Timestamp
+                          Text(
+                            _item.timeAgo,
+                            style: AppTextStyles.xs.copyWith(
+                              color: isLight
+                                  ? AppColors.lightTextTertiary
+                                  : const Color(0xFF8E8E93),
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -894,13 +996,11 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     ),
                   )
                 else
-                  ..._comments.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final comment = entry.value;
+                  ..._comments.map((comment) {
                     final timeText = _formatCommentTime(comment['time']);
                     final isCommentOwner =
-                        _currentUserId.isNotEmpty &&
-                        comment['userId'] == _currentUserId;
+                        currentUserId.isNotEmpty &&
+                        comment['userId'] == currentUserId;
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8.0),
@@ -959,11 +1059,11 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                         ? Colors.white
                                         : const Color(0xFF1E1E2C),
                                     onSelected: (value) {
-                                      if (value == 'edit') {
-                                        _showEditCommentSheet(index, comment);
-                                      } else if (value == 'delete') {
-                                        _showDeleteCommentDialog(index);
-                                      }
+                                       if (value == 'edit') {
+                                         _showEditCommentSheet(comment);
+                                       } else if (value == 'delete') {
+                                         _showDeleteCommentDialog(comment);
+                                       }
                                     },
                                     itemBuilder: (context) => [
                                       PopupMenuItem(
@@ -1069,7 +1169,6 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     child: TextField(
                       controller: _commentController,
                       focusNode: _commentFocusNode,
-                      onChanged: (_) => setState(() {}),
                       style: TextStyle(
                         color: isLight
                             ? AppColors.lightTextPrimary
@@ -1090,42 +1189,51 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                           vertical: 10.0,
                         ),
                       ),
-                      onSubmitted: (_) {
-                        if (canSubmitComment) _addComment();
+                      onSubmitted: (val) {
+                        if (val.trim().isNotEmpty) _addComment();
                       },
                     ),
                   ),
                 ),
                 const SizedBox(width: 8.0),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    gradient: canSubmitComment
-                        ? const LinearGradient(
-                            colors: [AppColors.primary, AppColors.primaryDark],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    color: canSubmitComment
-                        ? null
-                        : (isLight
-                              ? Colors.grey[300]
-                              : Colors.white.withValues(alpha: 0.1)),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.send_rounded,
-                      color: canSubmitComment
-                          ? Colors.white
-                          : (isLight ? Colors.grey[500] : Colors.white38),
-                      size: 18,
-                    ),
-                    onPressed: canSubmitComment ? _addComment : null,
-                  ),
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _commentController,
+                  builder: (context, value, _) {
+                    final canSubmit = value.text.trim().isNotEmpty;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: canSubmit
+                            ? const LinearGradient(
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primaryDark,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                        color: canSubmit
+                            ? null
+                            : (isLight
+                                ? Colors.grey[300]
+                                : Colors.white.withValues(alpha: 0.1)),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.send_rounded,
+                          color: canSubmit
+                              ? Colors.white
+                              : (isLight ? Colors.grey[500] : Colors.white38),
+                          size: 18,
+                        ),
+                        onPressed: canSubmit ? _addComment : null,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
