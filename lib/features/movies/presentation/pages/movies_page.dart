@@ -23,7 +23,7 @@ class MoviesPage extends StatefulWidget {
 class MoviesPageState extends State<MoviesPage> {
   final ScrollController watchlistScrollController = ScrollController();
   final ScrollController upcomingScrollController = ScrollController();
-  final GlobalKey _watchNextKey = GlobalKey();
+
   bool _isGridView = true;
 
   @override
@@ -284,17 +284,17 @@ class MoviesPageState extends State<MoviesPage> {
 
     final watchedHistory = items.where((i) => i['isWatched'] == true).toList();
 
-    // Sort watchedHistory by watchedAt ascending (oldest first, newest at the bottom)
+    // Sort watchedHistory by watchedAt descending (newest first)
     watchedHistory.sort((a, b) {
       final aDateStr = a['watchedAt'] as String?;
       final bDateStr = b['watchedAt'] as String?;
       if (aDateStr == null && bDateStr == null) return 0;
-      if (aDateStr == null) return -1;
-      if (bDateStr == null) return 1;
+      if (aDateStr == null) return 1;
+      if (bDateStr == null) return -1;
       try {
         final aDate = DateTime.parse(aDateStr);
         final bDate = DateTime.parse(bDateStr);
-        return aDate.compareTo(bDate);
+        return bDate.compareTo(aDate);
       } catch (_) {
         return 0;
       }
@@ -325,26 +325,109 @@ class MoviesPageState extends State<MoviesPage> {
 
     return Skeletonizer(
       enabled: isLoading,
-      child: CustomScrollView(
-        controller: watchlistScrollController,
-        physics: isLoading ? const NeverScrollableScrollPhysics() : null,
-        center: _watchNextKey,
-        slivers: [
-          if (displayWatchedHistory.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Opacity(
-                opacity: 0.5,
-                child: _buildCenteredHeaderRow('WATCHED HISTORY'),
+      child: RefreshIndicator.adaptive(
+        onRefresh: () async {
+          // Movies use a Firestore stream that auto-updates.
+          // This provides a visual confirmation gesture.
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: CustomScrollView(
+          controller: watchlistScrollController,
+          physics: isLoading ? const NeverScrollableScrollPhysics() : null,
+          slivers: [
+            if (displayWatchNext.isNotEmpty) ...[
+              SliverMainAxisGroup(
+                slivers: [
+                  _buildStickyHeader('WATCH NEXT'),
+                  if (_isGridView)
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 2 / 3,
+                            ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => RepaintBoundary(
+                            key: ValueKey(
+                              'next_${displayWatchNext[index]['id']}',
+                            ),
+                            child: _buildMovieGridCard(
+                              displayWatchNext[index],
+                              uid,
+                            ),
+                          ),
+                          childCount: displayWatchNext.length,
+                          findChildIndexCallback: _findChildIndex(
+                            'next_',
+                            watchNextIndexMap,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => RepaintBoundary(
+                          key: ValueKey(
+                            'next_${displayWatchNext[index]['id']}',
+                          ),
+                          child: _buildMovieProgressCard(
+                            displayWatchNext[index],
+                            uid,
+                          ),
+                        ),
+                        childCount: displayWatchNext.length,
+                        findChildIndexCallback: _findChildIndex(
+                          'next_',
+                          watchNextIndexMap,
+                        ),
+                      ),
+                    ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 32.0)),
+                ],
               ),
-            ),
-            if (_isGridView)
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 2 / 3,
+            ],
+            if (displayWatchedHistory.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Opacity(
+                  opacity: 0.5,
+                  child: _buildCenteredHeaderRow('WATCHED HISTORY'),
+                ),
+              ),
+              if (_isGridView)
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 2 / 3,
+                        ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => RepaintBoundary(
+                        key: ValueKey(
+                          'history_${displayWatchedHistory[index]['id']}',
+                        ),
+                        child: Opacity(
+                          opacity: 0.5,
+                          child: _buildMovieGridCard(
+                            displayWatchedHistory[index],
+                            uid,
+                          ),
+                        ),
+                      ),
+                      childCount: displayWatchedHistory.length,
+                      findChildIndexCallback: _findChildIndex(
+                        'history_',
+                        watchedHistoryIndexMap,
+                      ),
+                    ),
                   ),
+                )
+              else
+                SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => RepaintBoundary(
                       key: ValueKey(
@@ -352,7 +435,7 @@ class MoviesPageState extends State<MoviesPage> {
                       ),
                       child: Opacity(
                         opacity: 0.5,
-                        child: _buildMovieGridCard(
+                        child: _buildMovieProgressCard(
                           displayWatchedHistory[index],
                           uid,
                         ),
@@ -365,93 +448,13 @@ class MoviesPageState extends State<MoviesPage> {
                     ),
                   ),
                 ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => RepaintBoundary(
-                    key: ValueKey(
-                      'history_${displayWatchedHistory[index]['id']}',
-                    ),
-                    child: Opacity(
-                      opacity: 0.5,
-                      child: _buildMovieProgressCard(
-                        displayWatchedHistory[index],
-                        uid,
-                      ),
-                    ),
-                  ),
-                  childCount: displayWatchedHistory.length,
-                  findChildIndexCallback: _findChildIndex(
-                    'history_',
-                    watchedHistoryIndexMap,
-                  ),
-                ),
-              ),
-            const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-          ],
-          if (displayWatchNext.isNotEmpty) ...[
-            SliverMainAxisGroup(
-              key: _watchNextKey,
-              slivers: [
-                _buildStickyHeader('WATCH NEXT'),
-                if (_isGridView)
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    sliver: SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            childAspectRatio: 2 / 3,
-                          ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => RepaintBoundary(
-                          key: ValueKey(
-                            'next_${displayWatchNext[index]['id']}',
-                          ),
-                          child: _buildMovieGridCard(
-                            displayWatchNext[index],
-                            uid,
-                          ),
-                        ),
-                        childCount: displayWatchNext.length,
-                        findChildIndexCallback: _findChildIndex(
-                          'next_',
-                          watchNextIndexMap,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => RepaintBoundary(
-                        key: ValueKey('next_${displayWatchNext[index]['id']}'),
-                        child: _buildMovieProgressCard(
-                          displayWatchNext[index],
-                          uid,
-                        ),
-                      ),
-                      childCount: displayWatchNext.length,
-                      findChildIndexCallback: _findChildIndex(
-                        'next_',
-                        watchNextIndexMap,
-                      ),
-                    ),
-                  ),
-                const SliverToBoxAdapter(child: SizedBox(height: 32.0)),
-              ],
-            ),
-          ] else ...[
-            SliverToBoxAdapter(
-              key: _watchNextKey,
-              child: const SizedBox.shrink(),
+              const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+            ],
+            const SliverPadding(
+              padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
             ),
           ],
-          const SliverPadding(
-            padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-          ),
-        ],
+        ),
       ),
     );
   }

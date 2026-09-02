@@ -148,4 +148,36 @@ class TmdbCacheManager {
       }
     } catch (_) {}
   }
+
+  /// Returns the total size of disk-cached TMDB JSON files in bytes.
+  Future<int> getCacheSizeBytes() async {
+    try {
+      final path = await _cacheDirPath;
+      final dir = Directory(path);
+      if (!await dir.exists()) return 0;
+      int total = 0;
+      await for (final entity in dir.list()) {
+        if (entity is File) {
+          total += await entity.length();
+        }
+      }
+      return total;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Clears all TMDB cache entries from memory and disk.
+  Future<void> clearAll() async {
+    _memoryCache.clear();
+    _memoryCacheTimestamps.clear();
+    try {
+      final path = await _cacheDirPath;
+      final dir = Directory(path);
+      if (await dir.exists()) {
+        await dir.delete(recursive: true);
+        await dir.create(recursive: true);
+      }
+    } catch (_) {}
+  }
 }

@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/network/tmdb_cache_manager.dart';
 import '../../../../core/services/app_update_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -29,11 +33,14 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   PackageInfo? _packageInfo;
+  int? _cacheSizeBytes;
+  bool _isClearingCache = false;
 
   @override
   void initState() {
     super.initState();
     _loadPackageInfo();
+    _loadCacheSize();
   }
 
   Future<void> _loadPackageInfo() async {
@@ -43,6 +50,37 @@ class _SettingsPageState extends State<SettingsPage> {
         _packageInfo = info;
       });
     }
+  }
+
+  Future<void> _loadCacheSize() async {
+    try {
+      int totalBytes = 0;
+      final tempDir = await getTemporaryDirectory();
+      if (await tempDir.exists()) {
+        await for (final entity in tempDir.list(recursive: true, followLinks: false)) {
+          if (entity is File) {
+            totalBytes += await entity.length();
+          }
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _cacheSizeBytes = totalBytes;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _cacheSizeBytes = 0;
+        });
+      }
+    }
+  }
+
+  String _formatCacheSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   String get _appVersionString {
@@ -312,7 +350,62 @@ class _SettingsPageState extends State<SettingsPage> {
             ],
           ),
 
-          // 5. LEGAL SECTION
+          // 5. DATA & STORAGE SECTION
+          _buildSectionHeader('DATA & STORAGE'),
+          _buildSectionCard(
+            children: [
+              _SettingsTile(
+                icon: Icons.storage_rounded,
+                iconColor: const Color(0xFF64B5F6),
+                iconBgColor: const Color(0xFF64B5F6).withValues(alpha: 0.14),
+                title: 'Clear Cache',
+                subtitle: _isClearingCache
+                    ? 'Clearing cache...'
+                    : _cacheSizeBytes != null
+                    ? 'Images & metadata — ${_formatCacheSize(_cacheSizeBytes!)}'
+                    : 'Calculating...',
+                trailing: _isClearingCache
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator.adaptive(
+                          strokeWidth: 2.0,
+                        ),
+                      )
+                    : _cacheSizeBytes != null && _cacheSizeBytes! > 0
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Clear',
+                          style: AppTextStyles.xsMedium.copyWith(
+                            color: AppColors.primaryLight,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        Icons.check_circle_outline_rounded,
+                        color: isLight
+                            ? AppColors.lightTextTertiary
+                            : const Color(0xFF8E8E93).withValues(alpha: 0.7),
+                        size: 20,
+                      ),
+                onTap: _cacheSizeBytes != null &&
+                        _cacheSizeBytes! > 0 &&
+                        !_isClearingCache
+                    ? () => _clearCache(context)
+                    : null,
+              ),
+            ],
+          ),
+
+          // 6. LEGAL SECTION
           _buildSectionHeader('LEGAL'),
           _buildSectionCard(
             children: [
@@ -502,6 +595,49 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // --- ACTIONS & SHEETS ---
+
+  Future<void> _clearCache(BuildContext context) async {
+    if (_isClearingCache) return;
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _isClearingCache = true;
+    });
+
+    try {
+      await Future.wait([
+        DefaultCacheManager().emptyCache(),
+        TmdbCacheManager.instance.clearAll(),
+        Future.delayed(const Duration(milliseconds: 500)),
+      ]);
+
+      // Also clear Flutter's in-memory image cache
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+
+      // Recalculate remaining cache size
+      await _loadCacheSize();
+
+      if (context.mounted) {
+        AppSnackbar.showSuccess(
+          context,
+          'Cache cleared successfully',
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppSnackbar.showError(
+          context,
+          'Failed to clear cache',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isClearingCache = false;
+        });
+      }
+    }
+  }
 
   void _showThemeSelectionSheet(BuildContext context, ThemeMode currentMode) {
     HapticFeedback.lightImpact();

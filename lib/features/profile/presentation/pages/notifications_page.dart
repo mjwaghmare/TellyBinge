@@ -1,10 +1,12 @@
 import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -14,6 +16,7 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
+import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 
 /// Clean Notification Model supporting poster, title, episode code, and deep link
@@ -410,36 +413,97 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     final payload = item.payload;
     if (payload != null && payload.isNotEmpty) {
+      int? showId;
+      int? movieId;
+
       if (payload.startsWith('tvtimeapp://show/')) {
         final idStr = payload.replaceFirst('tvtimeapp://show/', '');
-        final showId = int.tryParse(idStr);
-        if (showId != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ShowDetailsPage(
-                mediaId: showId,
-                mediaType: 'tv',
-                title: item.title,
-              ),
-            ),
-          );
-          return;
-        }
+        showId = int.tryParse(idStr);
       } else if (payload.startsWith('tvtimeapp://movie/')) {
         final idStr = payload.replaceFirst('tvtimeapp://movie/', '');
-        final movieId = int.tryParse(idStr);
-        if (movieId != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  MovieDetailsPage(movieId: movieId, title: item.title),
-            ),
-          );
-          return;
+        movieId = int.tryParse(idStr);
+      } else {
+        // Fallback URI parsing for any custom scheme variations
+        final uri = Uri.tryParse(payload);
+        if (uri != null) {
+          if (uri.host == 'show' || uri.path.contains('show')) {
+            final seg = uri.pathSegments.isNotEmpty
+                ? uri.pathSegments.last
+                : uri.path.replaceAll(RegExp(r'[^\d]'), '');
+            showId = int.tryParse(seg);
+          } else if (uri.host == 'movie' || uri.path.contains('movie')) {
+            final seg = uri.pathSegments.isNotEmpty
+                ? uri.pathSegments.last
+                : uri.path.replaceAll(RegExp(r'[^\d]'), '');
+            movieId = int.tryParse(seg);
+          }
         }
       }
+
+      if (showId != null) {
+        // Resolve show title from watchlist if available
+        String showTitle = item.title;
+        final tvState = context.read<TvShowWatchlistCubit>().state;
+        if (tvState is TvShowWatchlistSuccess) {
+          final show = tvState.shows.firstWhere((s) {
+            final sId =
+                (s['id'] as num?)?.toInt() ??
+                int.tryParse(s['id']?.toString() ?? '');
+            return sId == showId;
+          }, orElse: () => <String, dynamic>{});
+          if (show['name'] is String && (show['name'] as String).isNotEmpty) {
+            showTitle = show['name'] as String;
+          }
+        }
+
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+            builder: (context) => BlocProvider<ShowDetailsCubit>(
+              create: (context) =>
+                  ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+              child: ShowDetailsPage(
+                mediaId: showId!,
+                mediaType: 'tv',
+                title: showTitle,
+                initialTabIndex: 0,
+              ),
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (movieId != null) {
+        // Resolve movie title from watchlist if available
+        String movieTitle = item.title;
+        final movieState = context.read<MovieWatchlistCubit>().state;
+        if (movieState is MovieWatchlistSuccess) {
+          final movie = movieState.movies.firstWhere((m) {
+            final mId =
+                (m['id'] as num?)?.toInt() ??
+                int.tryParse(m['id']?.toString() ?? '');
+            return mId == movieId;
+          }, orElse: () => <String, dynamic>{});
+          if (movie['title'] is String &&
+              (movie['title'] as String).isNotEmpty) {
+            movieTitle = movie['title'] as String;
+          }
+        }
+
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+            builder: (_) => MovieDetailsPage(
+              movieId: movieId!,
+              title: movieTitle,
+              posterPath: item.posterPath,
+            ),
+          ),
+        );
+        return;
+      }
+
       NotificationService().onNotificationTap?.call(payload);
     }
   }
@@ -540,7 +604,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             )
-          : RefreshIndicator(
+          : RefreshIndicator.adaptive(
               onRefresh: () => _fetchReceivedNotifications(isRefresh: true),
               color: AppColors.primary,
               child: _errorMessage != null

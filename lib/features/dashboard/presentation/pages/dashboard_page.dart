@@ -32,7 +32,7 @@ class DashboardPage extends StatefulWidget {
 }
 
 class DashboardPageState extends State<DashboardPage> {
-  final GlobalKey _watchNextKey = GlobalKey();
+
   final ScrollController watchlistScrollController = ScrollController();
   final ScrollController upcomingScrollController = ScrollController();
   bool _isGridView = false;
@@ -146,7 +146,11 @@ class DashboardPageState extends State<DashboardPage> {
                     ],
                     child: TabBarView(
                       children: [
-                        _buildWatchListView(enrichedShows),
+                        _buildWatchListView(
+                          enrichedShows,
+                          watchlistState.shows,
+                          uid,
+                        ),
                         _buildUpcomingView(enrichedShows),
                       ],
                     ),
@@ -282,7 +286,11 @@ class DashboardPageState extends State<DashboardPage> {
 
   // --- VIEW BUILDERS ---
 
-  Widget _buildWatchListView(List<EnrichedShow> shows) {
+  Widget _buildWatchListView(
+    List<EnrichedShow> shows,
+    List<Map<String, dynamic>> rawShows,
+    String uid,
+  ) {
     final watchNext = <EnrichedShow>[];
     final haventStarted = <EnrichedShow>[];
 
@@ -340,140 +348,143 @@ class DashboardPageState extends State<DashboardPage> {
           builder: (context, historyState) {
             List<WatchHistoryItem> history = [];
             if (historyState is WatchHistoryLoaded) {
-              history = historyState.history;
+              history = List.of(historyState.history);
+              // Defensive sort: latest watched first
+              history.sort((a, b) => b.watchedAt.compareTo(a.watchedAt));
             }
 
             if (watchNext.isEmpty && haventStarted.isEmpty && history.isEmpty) {
               return _buildEmptyState('No shows in your Watch List yet.');
             }
 
-            return CustomScrollView(
-              controller: watchlistScrollController,
-              center: _watchNextKey,
-              slivers: [
-                if (history.isNotEmpty)
-                  SliverMainAxisGroup(
-                    slivers: [
-                      _buildStickyHeader('WATCHED HISTORY'),
-                      SliverPadding(
-                        padding: const EdgeInsets.only(bottom: 24.0, top: 4.0),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final item = history[index];
-                            return WatchedEpisodeCard(
-                              key: ValueKey('history_${item.id}'),
-                              item: item,
-                            );
-                          }, childCount: history.length),
+            return RefreshIndicator.adaptive(
+              onRefresh: () =>
+                  _enrichmentCubit.enrichShows(rawShows, uid, force: true),
+              child: CustomScrollView(
+                controller: watchlistScrollController,
+                slivers: [
+                  if (watchNext.isNotEmpty)
+                    SliverMainAxisGroup(
+                      slivers: [
+                        _buildStickyHeader('WATCH NEXT'),
+                        SliverPadding(
+                          padding: EdgeInsets.only(
+                            bottom: 24.0,
+                            left: _isGridView ? 12.0 : 0,
+                            right: _isGridView ? 12.0 : 0,
+                          ),
+                          sliver: _isGridView
+                              ? SliverGrid(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 2 / 3,
+                                      ),
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final item = watchNext[index];
+                                    return _buildShowGridCard(
+                                      item,
+                                      showProgress: true,
+                                    );
+                                  }, childCount: watchNext.length),
+                                )
+                              : SliverList(
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final item = watchNext[index];
+                                    return EpisodeProgressCard(
+                                      key: ValueKey(
+                                        'show_${item.rawShowData['id']}',
+                                      ),
+                                      enrichedShow: item,
+                                      isGridView: _isGridView,
+                                    );
+                                  }, childCount: watchNext.length),
+                                ),
                         ),
-                      ),
-                    ],
-                  ),
-                if (watchNext.isNotEmpty)
-                  SliverMainAxisGroup(
-                    key: _watchNextKey,
-                    slivers: [
-                      _buildStickyHeader('WATCH NEXT'),
-                      SliverPadding(
-                        padding: EdgeInsets.only(
-                          bottom: 24.0,
-                          left: _isGridView ? 12.0 : 0,
-                          right: _isGridView ? 12.0 : 0,
+                      ],
+                    ),
+                  if (haventStarted.isNotEmpty)
+                    SliverMainAxisGroup(
+                      slivers: [
+                        _buildStickyHeader('HAVEN\'T STARTED'),
+                        SliverPadding(
+                          padding: EdgeInsets.only(
+                            bottom: 32.0,
+                            left: _isGridView ? 12.0 : 0,
+                            right: _isGridView ? 12.0 : 0,
+                          ),
+                          sliver: _isGridView
+                              ? SliverGrid(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 2 / 3,
+                                      ),
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final item = haventStarted[index];
+                                    return _buildShowGridCard(
+                                      item,
+                                      showProgress: false,
+                                    );
+                                  }, childCount: haventStarted.length),
+                                )
+                              : SliverList(
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final item = haventStarted[index];
+                                    return EpisodeProgressCard(
+                                      key: ValueKey(
+                                        'show_${item.rawShowData['id']}',
+                                      ),
+                                      enrichedShow: item,
+                                      isGridView: _isGridView,
+                                    );
+                                  }, childCount: haventStarted.length),
+                                ),
                         ),
-                        sliver: _isGridView
-                            ? SliverGrid(
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 3,
-                                      childAspectRatio: 2 / 3,
-                                    ),
-                                delegate: SliverChildBuilderDelegate((
-                                  context,
-                                  index,
-                                ) {
-                                  final item = watchNext[index];
-                                  return _buildShowGridCard(
-                                    item,
-                                    showProgress: true,
-                                  );
-                                }, childCount: watchNext.length),
-                              )
-                            : SliverList(
-                                delegate: SliverChildBuilderDelegate((
-                                  context,
-                                  index,
-                                ) {
-                                  final item = watchNext[index];
-                                  return EpisodeProgressCard(
-                                    key: ValueKey(
-                                      'show_${item.rawShowData['id']}',
-                                    ),
-                                    enrichedShow: item,
-                                    isGridView: _isGridView,
-                                  );
-                                }, childCount: watchNext.length),
-                              ),
-                      ),
-                    ],
-                  ),
-                if (watchNext.isEmpty)
-                  SliverToBoxAdapter(
-                    key: _watchNextKey,
-                    child: const SizedBox.shrink(),
-                  ),
-                if (haventStarted.isNotEmpty)
-                  SliverMainAxisGroup(
-                    slivers: [
-                      _buildStickyHeader('HAVEN\'T STARTED'),
-                      SliverPadding(
-                        padding: EdgeInsets.only(
-                          bottom: 32.0,
-                          left: _isGridView ? 12.0 : 0,
-                          right: _isGridView ? 12.0 : 0,
+                      ],
+                    ),
+                  if (history.isNotEmpty)
+                    SliverMainAxisGroup(
+                      slivers: [
+                        _buildStickyHeader('WATCHED HISTORY'),
+                        SliverPadding(
+                          padding: const EdgeInsets.only(
+                            bottom: 24.0,
+                            top: 4.0,
+                          ),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final item = history[index];
+                              return WatchedEpisodeCard(
+                                key: ValueKey('history_${item.id}'),
+                                item: item,
+                              );
+                            }, childCount: history.length),
+                          ),
                         ),
-                        sliver: _isGridView
-                            ? SliverGrid(
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 3,
-                                      childAspectRatio: 2 / 3,
-                                    ),
-                                delegate: SliverChildBuilderDelegate((
-                                  context,
-                                  index,
-                                ) {
-                                  final item = haventStarted[index];
-                                  return _buildShowGridCard(
-                                    item,
-                                    showProgress: false,
-                                  );
-                                }, childCount: haventStarted.length),
-                              )
-                            : SliverList(
-                                delegate: SliverChildBuilderDelegate((
-                                  context,
-                                  index,
-                                ) {
-                                  final item = haventStarted[index];
-                                  return EpisodeProgressCard(
-                                    key: ValueKey(
-                                      'show_${item.rawShowData['id']}',
-                                    ),
-                                    enrichedShow: item,
-                                    isGridView: _isGridView,
-                                  );
-                                }, childCount: haventStarted.length),
-                              ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  const SliverPadding(
+                    padding:
+                        EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
                   ),
-                const SliverPadding(
-                  padding: EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),
