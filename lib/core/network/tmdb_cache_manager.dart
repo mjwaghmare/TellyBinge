@@ -20,6 +20,9 @@ class TmdbCacheManager {
   final Map<String, Map<String, dynamic>> _memoryCache = {};
   final Map<String, int> _memoryCacheTimestamps = {};
 
+  /// Generation counter to invalidate in-flight cache writes when clearAll occurs.
+  int _cacheGeneration = 0;
+
   /// Cached directory path to avoid repeated platform channel calls.
   String? _cachedDirPath;
 
@@ -60,6 +63,7 @@ class TmdbCacheManager {
 
   /// Write data to cache file and in-memory cache
   Future<void> writeCache(String key, Map<String, dynamic> data) async {
+    final currentGen = _cacheGeneration;
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     _memoryCache[key] = data;
     _memoryCacheTimestamps[key] = timestamp;
@@ -67,8 +71,10 @@ class TmdbCacheManager {
 
     try {
       final file = await _getCacheFile(key);
+      if (currentGen != _cacheGeneration) return;
       final cacheData = {'timestamp': timestamp, 'data': data};
       final encoded = await compute(jsonEncode, cacheData);
+      if (currentGen != _cacheGeneration) return;
       await file.writeAsString(encoded);
     } catch (e) {
       debugPrint('Error writing TMDb cache: $e');
@@ -169,6 +175,7 @@ class TmdbCacheManager {
 
   /// Clears all TMDB cache entries from memory and disk.
   Future<void> clearAll() async {
+    _cacheGeneration++;
     _memoryCache.clear();
     _memoryCacheTimestamps.clear();
     try {
@@ -178,6 +185,9 @@ class TmdbCacheManager {
         await dir.delete(recursive: true);
         await dir.create(recursive: true);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error clearing TMDb cache: $e');
+      rethrow;
+    }
   }
 }

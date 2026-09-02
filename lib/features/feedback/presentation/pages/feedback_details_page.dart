@@ -266,7 +266,13 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                             : AppColors.textTertiary,
                         fontSize: 13.5,
                       ),
+                      filled: false,
+                      fillColor: Colors.transparent,
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
                       contentPadding: const EdgeInsets.all(12.0),
                     ),
                   ),
@@ -1194,6 +1200,11 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                           ? const Color(0xFFF3F4F6)
                           : const Color(0xFF1E1E2C),
                       borderRadius: BorderRadius.circular(24.0),
+                      border: Border.all(
+                        color: isLight
+                            ? AppColors.borderLight
+                            : Colors.white.withValues(alpha: 0.08),
+                      ),
                     ),
                     child: TextField(
                       controller: _commentController,
@@ -1212,7 +1223,13 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                               : AppColors.textTertiary,
                           fontSize: 14.0,
                         ),
+                        filled: false,
+                        fillColor: Colors.transparent,
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
                           vertical: 10.0,
@@ -1333,6 +1350,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   }
 
   Widget _buildSeverityPill(String severity, bool isLight) {
+    final textColor = isLight ? AppColors.error : const Color(0xFFFF6B6B);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7.0, vertical: 3.0),
       decoration: BoxDecoration(
@@ -1341,14 +1359,14 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
             : AppColors.error.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8.0),
         border: Border.all(
-          color: AppColors.error.withValues(alpha: isLight ? 0.25 : 0.35),
+          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
           width: 0.8,
         ),
       ),
       child: Text(
         severity,
         style: TextStyle(
-          color: isLight ? AppColors.error : const Color(0xFFFF6B6B),
+          color: textColor,
           fontSize: 11.0,
           fontWeight: FontWeight.w600,
         ),
@@ -1357,16 +1375,21 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   }
 
   Widget _buildCategoryPill(FeedbackCategory category, bool isLight) {
+    final textColor = category.textColor(isLight);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9.0, vertical: 3.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
       decoration: BoxDecoration(
         color: category.backgroundColor(isLight),
         borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
+          width: 0.8,
+        ),
       ),
       child: Text(
         category.label,
         style: TextStyle(
-          color: category.textColor(isLight),
+          color: textColor,
           fontSize: 11.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.2,
@@ -1376,16 +1399,21 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   }
 
   Widget _buildStatusPill(FeedbackStatus status, bool isLight) {
+    final textColor = status.textColor(isLight);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9.0, vertical: 3.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
       decoration: BoxDecoration(
         color: status.backgroundColor(isLight),
         borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
+          width: 0.8,
+        ),
       ),
       child: Text(
         status.label,
         style: TextStyle(
-          color: status.textColor(isLight),
+          color: textColor,
           fontSize: 11.5,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.2,

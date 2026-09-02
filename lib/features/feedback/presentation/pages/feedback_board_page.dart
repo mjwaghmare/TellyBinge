@@ -245,14 +245,14 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(
-                          alpha: isLight ? 0.06 : 0.10,
-                        ),
+                        color: isLight
+                            ? Colors.white
+                            : const Color(0xFF161622),
                         borderRadius: BorderRadius.circular(14.0),
                         border: Border.all(
-                          color: AppColors.primary.withValues(
-                            alpha: isLight ? 0.18 : 0.16,
-                          ),
+                          color: isLight
+                              ? AppColors.borderLight
+                              : Colors.white.withValues(alpha: 0.08),
                           width: 1.0,
                         ),
                       ),
@@ -277,16 +277,20 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                                 : AppColors.textTertiary,
                             fontSize: 14.0,
                           ),
-                          prefixIcon: const Icon(
+                          prefixIcon: Icon(
                             Icons.search_rounded,
-                            color: AppColors.primaryLight,
+                            color: isLight
+                                ? AppColors.lightTextTertiary
+                                : AppColors.textTertiary,
                             size: 20,
                           ),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.clear_rounded,
-                                    color: AppColors.primaryLight,
+                                    color: isLight
+                                        ? AppColors.lightTextTertiary
+                                        : AppColors.textTertiary,
                                     size: 18,
                                   ),
                                   onPressed: () {
@@ -297,7 +301,13 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                                   },
                                 )
                               : null,
+                          filled: false,
+                          fillColor: Colors.transparent,
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 14.0,
                             vertical: 12.0,

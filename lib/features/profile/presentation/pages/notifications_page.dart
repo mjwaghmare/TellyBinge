@@ -159,31 +159,24 @@ class _NotificationsPageState extends State<NotificationsPage> {
         String? episodeSubtitle;
 
         if (payload != null) {
-          if (payload.startsWith('tvtimeapp://show/')) {
-            final idStr = payload.replaceFirst('tvtimeapp://show/', '');
-            final id = int.tryParse(idStr);
-            if (id != null) {
-              final show = showsList.firstWhere((s) {
-                final sId =
-                    (s['id'] as num?)?.toInt() ??
-                    int.tryParse(s['id']?.toString() ?? '');
-                return sId == id;
-              }, orElse: () => <String, dynamic>{});
-              posterPath = show['posterPath'] as String?;
-            }
-          } else if (payload.startsWith('tvtimeapp://movie/')) {
+          final parsed = _parsePayload(payload);
+          if (parsed.movieId != null) {
             isMovie = true;
-            final idStr = payload.replaceFirst('tvtimeapp://movie/', '');
-            final id = int.tryParse(idStr);
-            if (id != null) {
-              final movie = moviesList.firstWhere((m) {
-                final mId =
-                    (m['id'] as num?)?.toInt() ??
-                    int.tryParse(m['id']?.toString() ?? '');
-                return mId == id;
-              }, orElse: () => <String, dynamic>{});
-              posterPath = movie['posterPath'] as String?;
-            }
+            final movie = moviesList.firstWhere((m) {
+              final mId =
+                  (m['id'] as num?)?.toInt() ??
+                  int.tryParse(m['id']?.toString() ?? '');
+              return mId == parsed.movieId;
+            }, orElse: () => <String, dynamic>{});
+            posterPath = movie['posterPath'] as String?;
+          } else if (parsed.showId != null) {
+            final show = showsList.firstWhere((s) {
+              final sId =
+                  (s['id'] as num?)?.toInt() ??
+                  int.tryParse(s['id']?.toString() ?? '');
+              return sId == parsed.showId;
+            }, orElse: () => <String, dynamic>{});
+            posterPath = show['posterPath'] as String?;
           }
         }
 
@@ -413,32 +406,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     final payload = item.payload;
     if (payload != null && payload.isNotEmpty) {
-      int? showId;
-      int? movieId;
-
-      if (payload.startsWith('tvtimeapp://show/')) {
-        final idStr = payload.replaceFirst('tvtimeapp://show/', '');
-        showId = int.tryParse(idStr);
-      } else if (payload.startsWith('tvtimeapp://movie/')) {
-        final idStr = payload.replaceFirst('tvtimeapp://movie/', '');
-        movieId = int.tryParse(idStr);
-      } else {
-        // Fallback URI parsing for any custom scheme variations
-        final uri = Uri.tryParse(payload);
-        if (uri != null) {
-          if (uri.host == 'show' || uri.path.contains('show')) {
-            final seg = uri.pathSegments.isNotEmpty
-                ? uri.pathSegments.last
-                : uri.path.replaceAll(RegExp(r'[^\d]'), '');
-            showId = int.tryParse(seg);
-          } else if (uri.host == 'movie' || uri.path.contains('movie')) {
-            final seg = uri.pathSegments.isNotEmpty
-                ? uri.pathSegments.last
-                : uri.path.replaceAll(RegExp(r'[^\d]'), '');
-            movieId = int.tryParse(seg);
-          }
-        }
-      }
+      final parsed = _parsePayload(payload);
+      final showId = parsed.showId;
+      final movieId = parsed.movieId;
 
       if (showId != null) {
         // Resolve show title from watchlist if available
@@ -463,7 +433,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               create: (context) =>
                   ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
               child: ShowDetailsPage(
-                mediaId: showId!,
+                mediaId: showId,
                 mediaType: 'tv',
                 title: showTitle,
                 initialTabIndex: 0,
@@ -495,7 +465,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           context,
           CupertinoPageRoute(
             builder: (_) => MovieDetailsPage(
-              movieId: movieId!,
+              movieId: movieId,
               title: movieTitle,
               posterPath: item.posterPath,
             ),
@@ -506,6 +476,54 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
       NotificationService().onNotificationTap?.call(payload);
     }
+  }
+
+  static ({int? showId, int? movieId}) _parsePayload(String? payload) {
+    if (payload == null || payload.trim().isEmpty) {
+      return (showId: null, movieId: null);
+    }
+
+    final trimmed = payload.trim();
+    int? showId;
+    int? movieId;
+
+    if (trimmed.startsWith('tvtimeapp://show/') ||
+        trimmed.startsWith('tvtimeapp:///show/')) {
+      final idStr = trimmed.replaceFirst(
+        RegExp(r'^tvtimeapp:\/\/\/show\/|^tvtimeapp:\/\/show\/'),
+        '',
+      );
+      showId = int.tryParse(idStr);
+    } else if (trimmed.startsWith('tvtimeapp://movie/') ||
+        trimmed.startsWith('tvtimeapp:///movie/')) {
+      final idStr = trimmed.replaceFirst(
+        RegExp(r'^tvtimeapp:\/\/\/movie\/|^tvtimeapp:\/\/movie\/'),
+        '',
+      );
+      movieId = int.tryParse(idStr);
+    } else {
+      // Fallback URI parsing for any custom scheme variations
+      final uri = Uri.tryParse(trimmed);
+      if (uri != null) {
+        if (uri.host == 'show' ||
+            uri.pathSegments.contains('show') ||
+            uri.path.contains('show')) {
+          final seg = uri.pathSegments.isNotEmpty
+              ? uri.pathSegments.last
+              : uri.path.replaceAll(RegExp(r'[^\d]'), '');
+          showId = int.tryParse(seg);
+        } else if (uri.host == 'movie' ||
+            uri.pathSegments.contains('movie') ||
+            uri.path.contains('movie')) {
+          final seg = uri.pathSegments.isNotEmpty
+              ? uri.pathSegments.last
+              : uri.path.replaceAll(RegExp(r'[^\d]'), '');
+          movieId = int.tryParse(seg);
+        }
+      }
+    }
+
+    return (showId: showId, movieId: movieId);
   }
 
   Map<String, List<CleanNotificationItem>> _groupNotificationsByTimeline(

@@ -286,14 +286,37 @@ class MoviesPageState extends State<MoviesPage> {
 
     // Sort watchedHistory by watchedAt descending (newest first)
     watchedHistory.sort((a, b) {
-      final aDateStr = a['watchedAt'] as String?;
-      final bDateStr = b['watchedAt'] as String?;
-      if (aDateStr == null && bDateStr == null) return 0;
-      if (aDateStr == null) return 1;
-      if (bDateStr == null) return -1;
       try {
-        final aDate = DateTime.parse(aDateStr);
-        final bDate = DateTime.parse(bDateStr);
+        DateTime? normalize(Object? raw) {
+          if (raw == null) return null;
+          if (raw is DateTime) return raw;
+          if (raw is String) {
+            final trimmed = raw.trim();
+            if (trimmed.isEmpty || trimmed == 'null') return null;
+            return DateTime.tryParse(trimmed);
+          }
+          if (raw is num) {
+            final intVal = raw.toInt();
+            if (intVal < 10000000000) {
+              return DateTime.fromMillisecondsSinceEpoch(intVal * 1000);
+            }
+            return DateTime.fromMillisecondsSinceEpoch(intVal);
+          }
+          try {
+            final dynamic dyn = raw;
+            if (dyn.toDate is Function) {
+              return (dyn.toDate() as DateTime);
+            }
+          } catch (_) {}
+          return null;
+        }
+
+        final aDate = normalize(a['watchedAt']);
+        final bDate = normalize(b['watchedAt']);
+
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
         return bDate.compareTo(aDate);
       } catch (_) {
         return 0;

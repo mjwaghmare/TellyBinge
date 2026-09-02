@@ -55,14 +55,24 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadCacheSize() async {
     try {
       int totalBytes = 0;
+
+      // 1. TMDB metadata cache
+      totalBytes += await TmdbCacheManager.instance.getCacheSizeBytes();
+
+      // 2. DefaultCacheManager image cache (libCachedImageData)
       final tempDir = await getTemporaryDirectory();
-      if (await tempDir.exists()) {
-        await for (final entity in tempDir.list(recursive: true, followLinks: false)) {
+      final imageCacheDir = Directory('${tempDir.path}/libCachedImageData');
+      if (await imageCacheDir.exists()) {
+        await for (final entity in imageCacheDir.list(
+          recursive: true,
+          followLinks: false,
+        )) {
           if (entity is File) {
             totalBytes += await entity.length();
           }
         }
       }
+
       if (mounted) {
         setState(() {
           _cacheSizeBytes = totalBytes;

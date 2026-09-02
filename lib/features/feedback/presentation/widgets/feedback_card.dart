@@ -364,16 +364,21 @@ class FeedbackCard extends StatelessWidget {
   }
 
   Widget _buildCategoryPill(FeedbackCategory category, bool isLight) {
+    final textColor = category.textColor(isLight);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9.0, vertical: 3.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
       decoration: BoxDecoration(
         color: category.backgroundColor(isLight),
         borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
+          width: 0.8,
+        ),
       ),
       child: Text(
         category.label,
         style: TextStyle(
-          color: category.textColor(isLight),
+          color: textColor,
           fontSize: 11.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.2,
@@ -383,6 +388,7 @@ class FeedbackCard extends StatelessWidget {
   }
 
   Widget _buildSeverityPill(String severity, bool isLight) {
+    final textColor = isLight ? AppColors.error : const Color(0xFFFF6B6B);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7.0, vertical: 3.0),
       decoration: BoxDecoration(
@@ -391,14 +397,14 @@ class FeedbackCard extends StatelessWidget {
             : AppColors.error.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8.0),
         border: Border.all(
-          color: AppColors.error.withValues(alpha: isLight ? 0.25 : 0.35),
+          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
           width: 0.8,
         ),
       ),
       child: Text(
         severity,
         style: TextStyle(
-          color: isLight ? AppColors.error : const Color(0xFFFF6B6B),
+          color: textColor,
           fontSize: 11.0,
           fontWeight: FontWeight.w600,
         ),
@@ -407,16 +413,21 @@ class FeedbackCard extends StatelessWidget {
   }
 
   Widget _buildStatusPill(FeedbackStatus status, bool isLight) {
+    final textColor = status.textColor(isLight);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9.0, vertical: 3.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
       decoration: BoxDecoration(
         color: status.backgroundColor(isLight),
         borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
+          width: 0.8,
+        ),
       ),
       child: Text(
         status.label,
         style: TextStyle(
-          color: status.textColor(isLight),
+          color: textColor,
           fontSize: 11.5,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.2,
