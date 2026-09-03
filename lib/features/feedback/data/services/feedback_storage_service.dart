@@ -1,54 +1,79 @@
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class FeedbackStorageService {
-  final FirebaseStorage _storage;
+  final Dio _dio;
 
-  FeedbackStorageService({FirebaseStorage? storage})
-    : _storage = storage ?? FirebaseStorage.instance;
+  FeedbackStorageService({Dio? dio})
+      : _dio = dio ??
+            Dio(
+              BaseOptions(
+                connectTimeout: const Duration(seconds: 15),
+                sendTimeout: const Duration(seconds: 60),
+                receiveTimeout: const Duration(seconds: 30),
+              ),
+            );
 
-  /// Uploads media files for a specific feedback ID to Firebase Storage.
-  /// Storage hierarchy: `feedbacks/{feedbackId}/{fileName}`
-  /// Returns a list of public download URLs.
+  /// Uploads media files for a specific feedback ID to Cloudinary.
+  /// Uses an unsigned upload preset so no secret keys are exposed on the client.
+  /// Returns a list of secure HTTPS download URLs.
   Future<List<String>> uploadMedia({
     required String feedbackId,
     required List<String> localFilePaths,
   }) async {
     if (localFilePaths.isEmpty) return [];
 
-    final uploadFutures = localFilePaths.asMap().entries.map((entry) async {
-      final i = entry.key;
-      final path = entry.value;
-      final file = File(path);
+    final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME']?.trim() ?? '';
+    final uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET']?.trim() ?? '';
 
+    if (cloudName.isEmpty || uploadPreset.isEmpty) {
+      throw Exception(
+        'Cloudinary configuration missing. Please set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET in your .env file.',
+      );
+    }
+
+    final uploadUrl = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+
+    final uploadFutures = localFilePaths.map((path) async {
+      final file = File(path);
       if (!await file.exists()) {
         debugPrint('FeedbackStorageService: File does not exist at $path');
         return null;
       }
 
-      final ext = path.toLowerCase().endsWith('.png')
-          ? 'png'
-          : (path.toLowerCase().endsWith('.webp') ? 'webp' : 'jpg');
-      final mimeType = 'image/$ext';
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_media_$i.$ext';
-      final storagePath = 'feedbacks/$feedbackId/$fileName';
-      final ref = _storage.ref().child(storagePath);
+      final fileName = path.split(Platform.pathSeparator).last;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(path, filename: fileName),
+        'upload_preset': uploadPreset,
+        'folder': 'popverse_feedbacks/$feedbackId',
+      });
 
       try {
-        final uploadTask = ref.putFile(
-          file,
-          SettableMetadata(
-            contentType: mimeType,
-            customMetadata: {'feedbackId': feedbackId},
-          ),
+        final response = await _dio.post<Map<String, dynamic>>(
+          uploadUrl,
+          data: formData,
         );
 
-        final snapshot = await uploadTask;
-        return await snapshot.ref.getDownloadURL();
+        if (response.statusCode == 200 && response.data != null) {
+          final secureUrl = response.data!['secure_url'] as String?;
+          if (secureUrl != null && secureUrl.isNotEmpty) {
+            return secureUrl;
+          }
+        }
+        throw Exception(
+          'Cloudinary upload returned unexpected response: ${response.statusCode}',
+        );
+      } on DioException catch (e) {
+        final errorMsg = e.response?.data?['error']?['message'] ?? e.message;
+        debugPrint(
+          'FeedbackStorageService: Cloudinary upload failed for $path: $errorMsg',
+        );
+        throw Exception('Failed to upload image: $errorMsg');
       } catch (e) {
         debugPrint('FeedbackStorageService: Upload failed for $path: $e');
-        return null;
+        rethrow;
       }
     });
 
@@ -56,15 +81,12 @@ class FeedbackStorageService {
     return results.whereType<String>().toList();
   }
 
-  /// Deletes all media under `feedbacks/{feedbackId}`
+  /// Deletes feedback media folder if needed.
   Future<void> deleteFeedbackMedia(String feedbackId) async {
-    try {
-      final listResult = await _storage.ref('feedbacks/$feedbackId').listAll();
-      for (final item in listResult.items) {
-        await item.delete();
-      }
-    } catch (e) {
-      debugPrint('FeedbackStorageService: Failed to delete media folder: $e');
-    }
+    // Note: Cloudinary requires a signed Admin API call with API Secret to delete assets,
+    // which cannot be safely performed on the client. Assets can be managed via the Cloudinary dashboard.
+    debugPrint(
+      'FeedbackStorageService: deleteFeedbackMedia called for $feedbackId',
+    );
   }
 }

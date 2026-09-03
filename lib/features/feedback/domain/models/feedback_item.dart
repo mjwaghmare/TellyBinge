@@ -178,13 +178,13 @@ class FeedbackMedia {
           map.startsWith('http://') || map.startsWith('https://');
       return FeedbackMedia(path: map, isLocal: !isNetwork);
     }
-    if (map is Map<String, dynamic>) {
-      final path = map['path'] as String? ?? '';
+    if (map is Map) {
+      final path = (map['path'] as String?) ?? map['path']?.toString() ?? '';
       final isNetwork =
           path.startsWith('http://') || path.startsWith('https://');
       return FeedbackMedia(
         path: path,
-        isLocal: map['isLocal'] as bool? ?? !isNetwork,
+        isLocal: (map['isLocal'] as bool?) ?? !isNetwork,
       );
     }
     return const FeedbackMedia(path: '', isLocal: false);
@@ -374,6 +374,7 @@ class FeedbackItem {
     final mediaList =
         (map['media'] as List<dynamic>?)
             ?.map((m) => FeedbackMedia.fromMap(m))
+            .where((m) => m.path.trim().isNotEmpty)
             .toList() ??
         [];
 

@@ -219,7 +219,16 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
         setState(() {
           _isSubmitting = false;
         });
-        AppSnackbar.showError(context, 'Failed to submit feedback: $e');
+        final errorStr = e.toString().toLowerCase();
+        final String message;
+        if (errorStr.contains('cloudinary configuration missing')) {
+          message = 'Cloudinary configuration is missing in .env';
+        } else if (errorStr.contains('cloudinary') || errorStr.contains('failed to upload image')) {
+          message = 'Failed to upload media to Cloudinary. Please check credentials/network.';
+        } else {
+          message = 'Failed to submit feedback: $e';
+        }
+        AppSnackbar.showError(context, message);
       }
     }
   }
@@ -532,8 +541,13 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                               GestureDetector(
                                 onTap: () => FeedbackImageViewer.show(
                                   context,
-                                  imagePath: file.path,
-                                  isLocal: true,
+                                  mediaItems: _attachedMedia
+                                      .map((f) => FeedbackMedia(
+                                            path: f.path,
+                                            isLocal: true,
+                                          ))
+                                      .toList(),
+                                  initialIndex: index,
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12.0),

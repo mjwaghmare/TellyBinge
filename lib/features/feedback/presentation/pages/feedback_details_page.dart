@@ -1,9 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -13,7 +10,8 @@ import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
-import '../widgets/feedback_image_viewer.dart';
+import '../widgets/feedback_media_preview.dart';
+import '../widgets/feedback_pill.dart';
 
 class FeedbackDetailsPage extends StatefulWidget {
   final FeedbackItem item;
@@ -664,18 +662,24 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                   crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     if (_item.voteMilestone != null)
-                                      _buildMilestonePill(
-                                        _item.voteMilestone!,
-                                        isLight,
+                                      FeedbackPill.milestone(
+                                        milestone: _item.voteMilestone!,
+                                        isLight: isLight,
                                       ),
-                                    _buildCategoryPill(_item.category, isLight),
+                                    FeedbackPill.category(
+                                      category: _item.category,
+                                      isLight: isLight,
+                                    ),
                                     if (_item.severity != null &&
                                         _item.severity!.isNotEmpty)
-                                      _buildSeverityPill(
-                                        _item.severity!,
-                                        isLight,
+                                      FeedbackPill.severity(
+                                        severity: _item.severity!,
+                                        isLight: isLight,
                                       ),
-                                    _buildStatusPill(_item.status, isLight),
+                                    FeedbackPill.status(
+                                      status: _item.status,
+                                      isLight: isLight,
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 10.0),
@@ -716,98 +720,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                         const SizedBox(height: AppSpacing.md),
                         Padding(
                           padding: const EdgeInsets.only(left: 60.0),
-                          child: SizedBox(
-                            height: 90.0,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _item.media.length,
-                              separatorBuilder: (context, index) =>
-                                  const SizedBox(width: 8.0),
-                              itemBuilder: (context, index) {
-                                final mediaItem = _item.media[index];
-                                final isLocal = mediaItem.isLocal;
-
-                                return GestureDetector(
-                                  onTap: () => FeedbackImageViewer.show(
-                                    context,
-                                    imagePath: mediaItem.path,
-                                    isLocal: isLocal,
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                    child: Container(
-                                      width: 130.0,
-                                      height: 90.0,
-                                      decoration: BoxDecoration(
-                                        color: isLight
-                                            ? Colors.grey[200]
-                                            : Colors.white.withValues(
-                                                alpha: 0.05,
-                                              ),
-                                        border: Border.all(
-                                          color: isLight
-                                              ? AppColors.borderLight
-                                              : Colors.white.withValues(
-                                                  alpha: 0.08,
-                                                ),
-                                        ),
-                                      ),
-                                      child: isLocal
-                                          ? (kIsWeb
-                                              ? Image.network(
-                                                  mediaItem.path,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context,
-                                                          error,
-                                                          stackTrace) =>
-                                                      const Icon(
-                                                        Icons.image_outlined,
-                                                        color: AppColors
-                                                            .textTertiary,
-                                                        size: 24,
-                                                      ),
-                                                )
-                                              : Image.file(
-                                                  File(mediaItem.path),
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context,
-                                                          error,
-                                                          stackTrace) =>
-                                                      const Icon(
-                                                        Icons.image_outlined,
-                                                        color: AppColors
-                                                            .textTertiary,
-                                                        size: 24,
-                                                      ),
-                                                ))
-                                          : CachedNetworkImage(
-                                              imageUrl: mediaItem.path,
-                                              fit: BoxFit.cover,
-                                              placeholder: (context, url) =>
-                                                  const Center(
-                                                    child: SizedBox(
-                                                      width: 20,
-                                                      height: 20,
-                                                      child:
-                                                          CircularProgressIndicator.adaptive(
-                                                            strokeWidth: 2,
-                                                          ),
-                                                    ),
-                                                  ),
-                                              errorWidget:
-                                                  (context, url, error) =>
-                                                      const Icon(
-                                                        Icons.image_outlined,
-                                                        color:
-                                                            AppColors.textTertiary,
-                                                        size: 24,
-                                                      ),
-                                            ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                          child: FeedbackMediaPreview(
+                            media: _item.media,
+                            isLight: isLight,
+                            size: 54.0,
                           ),
                         ),
                       ],
@@ -1317,10 +1233,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          _handleUpvote();
-        },
+        onTap: _handleUpvote,
         borderRadius: BorderRadius.circular(12.0),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -1360,116 +1273,6 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSeverityPill(String severity, bool isLight) {
-    final textColor = isLight ? AppColors.error : const Color(0xFFFF6B6B);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7.0, vertical: 3.0),
-      decoration: BoxDecoration(
-        color: isLight
-            ? AppColors.error.withValues(alpha: 0.1)
-            : AppColors.error.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(
-          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
-          width: 0.8,
-        ),
-      ),
-      child: Text(
-        severity,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 11.0,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMilestonePill(
-    FeedbackVoteMilestone milestone,
-    bool isLight,
-  ) {
-    final textColor = milestone.textColor(isLight);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 3.0),
-      decoration: BoxDecoration(
-        color: milestone.backgroundColor(isLight),
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(
-          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
-          width: 0.8,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            milestone.emoji,
-            style: const TextStyle(fontSize: 11.0, height: 1.0),
-          ),
-          const SizedBox(width: 3.5),
-          Text(
-            milestone.label,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryPill(FeedbackCategory category, bool isLight) {
-    final textColor = category.textColor(isLight);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
-      decoration: BoxDecoration(
-        color: category.backgroundColor(isLight),
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(
-          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
-          width: 0.8,
-        ),
-      ),
-      child: Text(
-        category.label,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 11.5,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusPill(FeedbackStatus status, bool isLight) {
-    final textColor = status.textColor(isLight);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
-      decoration: BoxDecoration(
-        color: status.backgroundColor(isLight),
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(
-          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
-          width: 0.8,
-        ),
-      ),
-      child: Text(
-        status.label,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 11.5,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.2,
         ),
       ),
     );
