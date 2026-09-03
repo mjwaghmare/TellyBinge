@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -494,7 +495,9 @@ class _SettingsPageState extends State<SettingsPage> {
               _SettingsTile(
                 icon: Icons.star_outline_rounded,
                 title: 'Rate Popverse',
-                subtitle: 'Enjoying Popverse? Rate us on the App Store',
+                subtitle: defaultTargetPlatform == TargetPlatform.iOS
+                    ? 'Enjoying Popverse? Rate us on the App Store'
+                    : 'Enjoying Popverse? Rate us on Google Play',
                 trailing: const Icon(
                   Icons.open_in_new_rounded,
                   color: AppColors.primaryLight,
@@ -1377,12 +1380,40 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _launchAppRating(BuildContext context) async {
     HapticFeedback.lightImpact();
-    final Uri ratingUri = Uri.parse('https://apps.apple.com');
+
+    // Set with Apple App ID from App Store Connect once live (e.g. '6740000000')
+    const String appleAppId = 'YOUR_APPLE_APP_ID';
+    final String packageName =
+        _packageInfo?.packageName ?? 'com.mwstudio.popverse';
+
+    final Uri primaryUri;
+    final Uri fallbackUri;
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      primaryUri = Uri.parse(
+        'itms-apps://itunes.apple.com/app/id$appleAppId?action=write-review',
+      );
+      fallbackUri = Uri.parse(
+        'https://apps.apple.com/app/id$appleAppId?action=write-review',
+      );
+    } else {
+      primaryUri = Uri.parse('market://details?id=$packageName');
+      fallbackUri = Uri.parse(
+        'https://play.google.com/store/apps/details?id=$packageName',
+      );
+    }
+
     try {
-      if (await canLaunchUrl(ratingUri)) {
-        await launchUrl(ratingUri, mode: LaunchMode.externalApplication);
+      if (await canLaunchUrl(primaryUri)) {
+        await launchUrl(primaryUri, mode: LaunchMode.externalApplication);
+        return;
       }
-    } catch (_) {}
+      if (await canLaunchUrl(fallbackUri)) {
+        await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('Could not launch store review: $e');
+    }
   }
 
   Widget _buildSubheading(String text) {
