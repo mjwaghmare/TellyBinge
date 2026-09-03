@@ -7,9 +7,11 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
+import '../widgets/feedback_comment_tile.dart';
 import '../widgets/feedback_media_preview.dart';
 import '../widgets/feedback_pill.dart';
 
@@ -183,7 +185,9 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         );
       }
     }
-  }  Future<void> _showEditCommentSheet(
+  }
+
+  Future<void> _showEditCommentSheet(
     Map<String, dynamic> comment,
   ) async {
     final isLight = context.isLight;
@@ -194,122 +198,138 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
     try {
       final updated = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF161622),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
-      builder: (sheetCtx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
-            left: AppSpacing.md,
-            right: AppSpacing.md,
-            top: AppSpacing.md,
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Edit Comment',
-                      style: AppTextStyles.mdBold.copyWith(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: isLight
+            ? AppColors.lightSurface
+            : AppColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+        ),
+        builder: (sheetCtx) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              top: AppSpacing.sm,
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top drag handle
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      decoration: BoxDecoration(
                         color: isLight
-                            ? AppColors.lightTextPrimary
-                            : AppColors.textPrimary,
-                        fontSize: 17.0,
+                            ? AppColors.borderLight
+                            : Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 20),
-                      onPressed: () => Navigator.pop(sheetCtx),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Container(
-                  decoration: BoxDecoration(
-                    color: isLight
-                        ? const Color(0xFFF9FAFB)
-                        : const Color(0xFF1B182B),
-                    borderRadius: BorderRadius.circular(12.0),
-                    border: Border.all(
-                      color: isLight
-                          ? AppColors.borderLight
-                          : Colors.white.withValues(alpha: 0.08),
-                    ),
                   ),
-                  child: TextField(
-                    controller: editController,
-                    maxLines: 4,
-                    maxLength: 500,
-                    autofocus: true,
-                    style: TextStyle(
-                      color: isLight
-                          ? AppColors.lightTextPrimary
-                          : AppColors.textPrimary,
-                      fontSize: 14.5,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Edit your comment...',
-                      hintStyle: TextStyle(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Edit Comment',
+                        style: AppTextStyles.mdBold.copyWith(
+                          color: isLight
+                              ? AppColors.lightTextPrimary
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
                         color: isLight
                             ? AppColors.lightTextTertiary
                             : AppColors.textTertiary,
-                        fontSize: 13.5,
+                        onPressed: () => Navigator.pop(sheetCtx),
                       ),
-                      filled: false,
-                      fillColor: Colors.transparent,
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      errorBorder: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.all(12.0),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isLight
+                          ? AppColors.lightSurfaceElevated
+                          : AppColors.surface,
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: isLight
+                            ? AppColors.borderLight
+                            : AppColors.borderDark,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: editController,
+                      maxLines: 4,
+                      maxLength: 500,
+                      autofocus: true,
+                      style: AppTextStyles.sm.copyWith(
+                        color: isLight
+                            ? AppColors.lightTextPrimary
+                            : AppColors.textPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Edit your comment...',
+                        hintStyle: AppTextStyles.sm.copyWith(
+                          color: isLight
+                              ? AppColors.lightTextTertiary
+                              : AppColors.textTertiary,
+                        ),
+                        filled: false,
+                        fillColor: Colors.transparent,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(AppSpacing.sm),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 13.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
+                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        elevation: 0,
                       ),
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      final newText = editController.text.trim();
-                      if (newText.isNotEmpty) {
-                        Navigator.pop(sheetCtx, newText);
-                      }
-                    },
-                    child: const Text(
-                      'Save Changes',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14.5,
+                      onPressed: () {
+                        final newText = editController.text.trim();
+                        if (newText.isNotEmpty) {
+                          Navigator.pop(sheetCtx, newText);
+                        }
+                      },
+                      child: const Text(
+                        'Save Changes',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.5,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-              ],
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
 
       if (updated != null && updated.isNotEmpty && mounted) {
         final targetIndex = _comments.indexWhere(
@@ -353,7 +373,9 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: isLight ? Colors.white : const Color(0xFF161622),
+        backgroundColor: isLight
+            ? AppColors.lightSurface
+            : AppColors.surfaceElevated,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.0),
         ),
@@ -912,21 +934,27 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     const SizedBox(width: 6.0),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 7.0,
-                        vertical: 2.0,
+                        horizontal: 8.0,
+                        vertical: 2.5,
                       ),
                       decoration: BoxDecoration(
                         color: isLight
-                            ? Colors.grey[200]
-                            : Colors.white.withValues(alpha: 0.08),
+                            ? AppColors.lightSurfaceElevated
+                            : AppColors.surfaceElevated,
                         borderRadius: BorderRadius.circular(10.0),
+                        border: Border.all(
+                          color: isLight
+                              ? AppColors.borderLight
+                              : AppColors.borderDark,
+                          width: 0.8,
+                        ),
                       ),
                       child: Text(
                         '${_comments.length}',
                         style: AppTextStyles.xsMedium.copyWith(
                           color: isLight
-                              ? AppColors.lightTextPrimary
-                              : AppColors.textPrimary,
+                              ? AppColors.lightTextSecondary
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -934,20 +962,57 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
 
-                // 4. Comments List
+                // 4. Comments List / Empty State
                 if (_comments.isEmpty)
-                  Container(
+                  Padding(
                     padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.lg,
+                      vertical: AppSpacing.xxl,
                       horizontal: AppSpacing.md,
                     ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      'No comments yet. Start the discussion below!',
-                      style: AppTextStyles.sm.copyWith(
-                        color: isLight
-                            ? AppColors.lightTextTertiary
-                            : AppColors.textTertiary,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.primary.withValues(
+                                alpha: isLight ? 0.08 : 0.16,
+                              ),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(
+                                  alpha: isLight ? 0.2 : 0.25,
+                                ),
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              color: AppColors.primary,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'No comments yet',
+                            style: AppTextStyles.smBold.copyWith(
+                              color: isLight
+                                  ? AppColors.lightTextPrimary
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            'Be the first to share your thoughts or join the discussion.',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.xs.copyWith(
+                              color: isLight
+                                  ? AppColors.lightTextTertiary
+                                  : AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   )
@@ -957,137 +1022,19 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     final isCommentOwner =
                         currentUserId.isNotEmpty &&
                         comment['userId'] == currentUserId;
+                    final isOp = comment['userId'] == _item.userId;
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8.0),
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: isLight ? Colors.white : const Color(0xFF161622),
-                        borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(
-                          color: isLight
-                              ? AppColors.borderLight
-                              : Colors.white.withValues(alpha: 0.04),
-                        ),
+                    return FeedbackCommentTile(
+                      key: ValueKey(
+                        comment['id'] ??
+                            '${comment['userId']}_${comment['time']}',
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                comment['name'] ?? 'PopVerse User',
-                                style: AppTextStyles.smBold.copyWith(
-                                  color: isLight
-                                      ? AppColors.lightTextPrimary
-                                      : AppColors.textPrimary,
-                                  fontSize: 13.0,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                timeText,
-                                style: AppTextStyles.xs.copyWith(
-                                  color: isLight
-                                      ? AppColors.lightTextTertiary
-                                      : const Color(0xFF8E8E93),
-                                  fontSize: 11.0,
-                                ),
-                              ),
-                              if (isCommentOwner) ...[
-                                const SizedBox(width: 4.0),
-                                SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: PopupMenuButton<String>(
-                                    padding: EdgeInsets.zero,
-                                    iconSize: 18,
-                                    icon: Icon(
-                                      Icons.more_horiz_rounded,
-                                      color: isLight
-                                          ? AppColors.lightTextTertiary
-                                          : AppColors.textTertiary,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    color: isLight
-                                        ? Colors.white
-                                        : const Color(0xFF1E1E2C),
-                                    onSelected: (value) {
-                                       if (value == 'edit') {
-                                         _showEditCommentSheet(comment);
-                                       } else if (value == 'delete') {
-                                         _showDeleteCommentDialog(comment);
-                                       }
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'edit',
-                                        height: 38,
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.edit_outlined,
-                                              size: 16,
-                                              color: isLight
-                                                  ? AppColors.lightTextPrimary
-                                                  : AppColors.textPrimary,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Edit',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                color: isLight
-                                                    ? AppColors.lightTextPrimary
-                                                    : AppColors.textPrimary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'delete',
-                                        height: 38,
-                                        child: const Row(
-                                          children: [
-                                            Icon(
-                                              Icons.delete_outline_rounded,
-                                              size: 16,
-                                              color: AppColors.error,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'Delete',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                color: AppColors.error,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 4.0),
-                          Text(
-                            comment['text'] ?? '',
-                            style: AppTextStyles.sm.copyWith(
-                              color: isLight
-                                  ? AppColors.lightTextSecondary
-                                  : AppColors.textSecondary,
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      ),
+                      comment: comment,
+                      isOp: isOp,
+                      isOwner: isCommentOwner,
+                      formattedTime: timeText,
+                      onEdit: () => _showEditCommentSheet(comment),
+                      onDelete: () => _showDeleteCommentDialog(comment),
                     );
                   }),
               ],
@@ -1103,46 +1050,64 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
               bottom: MediaQuery.of(context).padding.bottom + AppSpacing.sm,
             ),
             decoration: BoxDecoration(
-              color: isLight ? Colors.white : const Color(0xFF161622),
+              color: isLight ? AppColors.lightSurface : AppColors.surface,
               border: Border(
                 top: BorderSide(
                   color: isLight
                       ? AppColors.borderLight
-                      : Colors.white.withValues(alpha: 0.06),
+                      : AppColors.borderDark,
                 ),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isLight ? 0.04 : 0.25),
+                  offset: const Offset(0, -2),
+                  blurRadius: 8,
+                ),
+              ],
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                // Current user profile avatar
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4.0),
+                  child: _buildCurrentUserAvatar(isLight),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+
+                // Text Field Capsule
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
                       color: isLight
-                          ? const Color(0xFFF3F4F6)
-                          : const Color(0xFF1E1E2C),
-                      borderRadius: BorderRadius.circular(24.0),
+                          ? AppColors.lightSurfaceElevated
+                          : AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(22.0),
                       border: Border.all(
                         color: isLight
                             ? AppColors.borderLight
-                            : Colors.white.withValues(alpha: 0.08),
+                            : AppColors.borderDark,
                       ),
                     ),
                     child: TextField(
                       controller: _commentController,
                       focusNode: _commentFocusNode,
-                      style: TextStyle(
+                      minLines: 1,
+                      maxLines: 4,
+                      textCapitalization: TextCapitalization.sentences,
+                      keyboardType: TextInputType.multiline,
+                      style: AppTextStyles.sm.copyWith(
                         color: isLight
                             ? AppColors.lightTextPrimary
                             : AppColors.textPrimary,
-                        fontSize: 14.0,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Add a comment...',
-                        hintStyle: TextStyle(
+                        hintStyle: AppTextStyles.sm.copyWith(
                           color: isLight
                               ? AppColors.lightTextTertiary
                               : AppColors.textTertiary,
-                          fontSize: 14.0,
                         ),
                         filled: false,
                         fillColor: Colors.transparent,
@@ -1152,8 +1117,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                         errorBorder: InputBorder.none,
                         disabledBorder: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 10.0,
+                          horizontal: AppSpacing.md,
+                          vertical: 9.0,
                         ),
                       ),
                       onSubmitted: (val) {
@@ -1162,42 +1127,62 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8.0),
+                const SizedBox(width: AppSpacing.xs),
+
+                // Animated Send Button
                 ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _commentController,
                   builder: (context, value, _) {
                     final canSubmit = value.text.trim().isNotEmpty;
-                    return AnimatedContainer(
+                    return AnimatedScale(
+                      scale: canSubmit ? 1.0 : 0.95,
                       duration: const Duration(milliseconds: 150),
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: canSubmit
-                            ? const LinearGradient(
-                                colors: [
-                                  AppColors.primary,
-                                  AppColors.primaryDark,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              )
-                            : null,
-                        color: canSubmit
-                            ? null
-                            : (isLight
-                                ? Colors.grey[300]
-                                : Colors.white.withValues(alpha: 0.1)),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.send_rounded,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          gradient: canSubmit
+                              ? const LinearGradient(
+                                  colors: [
+                                    AppColors.primary,
+                                    AppColors.primaryDark,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
                           color: canSubmit
-                              ? Colors.white
-                              : (isLight ? Colors.grey[500] : Colors.white38),
-                          size: 18,
+                              ? null
+                              : (isLight
+                                  ? AppColors.borderLight
+                                  : Colors.white.withValues(alpha: 0.08)),
+                          shape: BoxShape.circle,
+                          boxShadow: canSubmit
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.35,
+                                    ),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
                         ),
-                        onPressed: canSubmit ? _addComment : null,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: Icon(
+                            Icons.arrow_upward_rounded,
+                            color: canSubmit
+                                ? Colors.white
+                                : (isLight
+                                    ? AppColors.lightTextTertiary
+                                    : AppColors.textTertiary),
+                            size: 20,
+                          ),
+                          onPressed: canSubmit ? _addComment : null,
+                        ),
                       ),
                     );
                   },
@@ -1210,6 +1195,71 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     ),
   );
 }
+
+  Widget _buildCurrentUserAvatar(bool isLight) {
+    final user = FirebaseAuth.instance.currentUser;
+    final photoUrl = user?.photoURL?.trim() ?? '';
+    final displayName = user?.displayName?.trim() ?? '';
+    final initials = displayName.isNotEmpty
+        ? displayName[0].toUpperCase()
+        : (user?.email?.isNotEmpty == true
+            ? user!.email![0].toUpperCase()
+            : 'U');
+
+    if (photoUrl.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: photoUrl,
+        imageBuilder: (context, imageProvider) => Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
+            border: Border.all(
+              color: isLight ? AppColors.borderLight : AppColors.borderDark,
+              width: 1.0,
+            ),
+          ),
+        ),
+        placeholder: (context, url) => _buildUserInitialsAvatar(initials, isLight),
+        errorWidget: (context, url, error) => _buildUserInitialsAvatar(initials, isLight),
+      );
+    }
+    return _buildUserInitialsAvatar(initials, isLight);
+  }
+
+  Widget _buildUserInitialsAvatar(String initials, bool isLight) {
+    return Container(
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: isLight
+              ? [
+                  AppColors.primary.withValues(alpha: 0.15),
+                  AppColors.primaryLight.withValues(alpha: 0.25),
+                ]
+              : [
+                  AppColors.surfaceElevated,
+                  AppColors.primaryDark.withValues(alpha: 0.35),
+                ],
+        ),
+        border: Border.all(
+          color: isLight ? AppColors.borderLight : AppColors.borderDark,
+          width: 1.0,
+        ),
+      ),
+      child: Text(
+        initials,
+        style: AppTextStyles.xsBold.copyWith(
+          color: isLight ? AppColors.primaryDark : AppColors.primaryLight,
+          fontSize: 11.5,
+        ),
+      ),
+    );
+  }
 
   // --- SUB WIDGETS ---
 
