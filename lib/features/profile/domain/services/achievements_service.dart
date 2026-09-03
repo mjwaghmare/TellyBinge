@@ -382,6 +382,7 @@ class AchievementsService {
       currentValue: current,
       targetValue: activeTarget,
       isUnlocked: isUnlocked,
+      tierTargets: tiers,
     );
   }
 

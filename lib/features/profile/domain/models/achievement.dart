@@ -23,6 +23,9 @@ class Achievement extends Equatable {
   /// Asset path to the badge image in assets/awards/.
   final String assetPath;
 
+  /// For multi-tier badges, maps each tier to its required threshold.
+  final Map<AchievementTier, int>? tierTargets;
+
   const Achievement({
     required this.id,
     required this.title,
@@ -35,16 +38,41 @@ class Achievement extends Equatable {
     this.isUnlocked = false,
     this.unlockedAt,
     required this.assetPath,
+    this.tierTargets,
   });
 
   double get progress =>
       targetValue > 0 ? (currentValue / targetValue).clamp(0.0, 1.0) : 0.0;
+
+  bool get hasTiers => tierTargets != null && tierTargets!.isNotEmpty;
+
+  /// Returns true if this is a multi-tier achievement and the highest tier has been reached.
+  bool get isMaxTier =>
+      hasTiers && tier != AchievementTier.none && tier == tierTargets!.keys.last;
+
+  /// The next tier to unlock, or null if already at max tier or not a multi-tier achievement.
+  AchievementTier? get nextTier {
+    if (!hasTiers) return null;
+    for (final entry in tierTargets!.entries) {
+      if (currentValue < entry.value) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  /// Target value for the next tier.
+  int? get nextTierTarget {
+    final next = nextTier;
+    return next != null ? tierTargets![next] : null;
+  }
 
   Achievement copyWith({
     int? currentValue,
     bool? isUnlocked,
     DateTime? unlockedAt,
     AchievementTier? tier,
+    Map<AchievementTier, int>? tierTargets,
   }) {
     return Achievement(
       id: id,
@@ -58,6 +86,7 @@ class Achievement extends Equatable {
       isUnlocked: isUnlocked ?? this.isUnlocked,
       unlockedAt: unlockedAt ?? this.unlockedAt,
       assetPath: assetPath,
+      tierTargets: tierTargets ?? this.tierTargets,
     );
   }
 
@@ -71,5 +100,6 @@ class Achievement extends Equatable {
     targetValue,
     isUnlocked,
     unlockedAt,
+    tierTargets,
   ];
 }
