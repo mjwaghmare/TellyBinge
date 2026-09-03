@@ -954,6 +954,14 @@ class _BadgeEmblemState extends State<_BadgeEmblem>
   }
 
   @override
+  void didUpdateWidget(_BadgeEmblem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.achievement != oldWidget.achievement) {
+      _controller.forward(from: 0.0);
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

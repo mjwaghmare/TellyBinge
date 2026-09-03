@@ -47,18 +47,21 @@ class Achievement extends Equatable {
   bool get hasTiers => tierTargets != null && tierTargets!.isNotEmpty;
 
   /// Returns true if this is a multi-tier achievement and the highest tier has been reached.
-  bool get isMaxTier =>
-      hasTiers && tier != AchievementTier.none && tier == tierTargets!.keys.last;
+  bool get isMaxTier {
+    if (!hasTiers || tier == AchievementTier.none) return false;
+    final maxEntry = tierTargets!.entries.reduce(
+      (a, b) => a.value >= b.value ? a : b,
+    );
+    return tier == maxEntry.key;
+  }
 
   /// The next tier to unlock, or null if already at max tier or not a multi-tier achievement.
   AchievementTier? get nextTier {
     if (!hasTiers) return null;
-    for (final entry in tierTargets!.entries) {
-      if (currentValue < entry.value) {
-        return entry.key;
-      }
-    }
-    return null;
+    final candidates =
+        tierTargets!.entries.where((e) => e.value > currentValue);
+    if (candidates.isEmpty) return null;
+    return candidates.reduce((a, b) => a.value <= b.value ? a : b).key;
   }
 
   /// Target value for the next tier.

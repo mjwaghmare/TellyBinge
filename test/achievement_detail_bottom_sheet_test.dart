@@ -156,9 +156,66 @@ void main() {
 
     expect(find.byType(Image), findsOneWidget);
 
+    final settledTransforms = tester.widgetList<Transform>(
+      find.ancestor(of: find.byType(Image), matching: find.byType(Transform)),
+    ).toList();
+    // Index 1 corresponds to Transform.scale wrapping the emblem
+    final settledScale = settledTransforms[1].transform.storage[0];
+    expect(settledScale, equals(1.0));
+
     // Tap on badge to trigger interactive spin
     await tester.tap(find.byType(Image));
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150));
+
+    // Inspect the badge's Transform scale during in-progress replay and verify it differs from settled value
+    final inProgressTransforms = tester.widgetList<Transform>(
+      find.ancestor(of: find.byType(Image), matching: find.byType(Transform)),
+    ).toList();
+    final inProgressScale = inProgressTransforms[1].transform.storage[0];
+    expect(inProgressScale, isNot(equals(settledScale)));
+
     await tester.pumpAndSettle();
+
+    final finalTransforms = tester.widgetList<Transform>(
+      find.ancestor(of: find.byType(Image), matching: find.byType(Transform)),
+    ).toList();
+    expect(finalTransforms[1].transform.storage[0], equals(1.0));
+  });
+
+  test('isMaxTier and nextTier derive ordering from threshold values rather than map insertion order', () {
+    // Deliberately unordered map
+    const unorderedAchievement = Achievement(
+      id: 'custom',
+      title: 'Custom',
+      description: 'Test threshold ordering',
+      category: AchievementCategory.volume,
+      icon: Icons.star,
+      assetPath: 'assets/awards/first_step.jpg',
+      tier: AchievementTier.gold,
+      currentValue: 150,
+      targetValue: 250,
+      tierTargets: {
+        AchievementTier.diamond: 500,
+        AchievementTier.bronze: 25,
+        AchievementTier.gold: 250,
+        AchievementTier.silver: 100,
+      },
+    );
+
+    // Highest threshold is diamond (500), but active tier is gold (250) -> false
+    expect(unorderedAchievement.isMaxTier, isFalse);
+
+    // Smallest threshold > 150 is gold (250)
+    expect(unorderedAchievement.nextTier, equals(AchievementTier.gold));
+    expect(unorderedAchievement.nextTierTarget, equals(250));
+
+    // When at 500 (max threshold)
+    final maxAchievement = unorderedAchievement.copyWith(
+      tier: AchievementTier.diamond,
+      currentValue: 500,
+    );
+    expect(maxAchievement.isMaxTier, isTrue);
+    expect(maxAchievement.nextTier, isNull);
   });
 }
