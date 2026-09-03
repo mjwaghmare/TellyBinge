@@ -904,7 +904,8 @@ class _AchievementProgress extends StatelessWidget {
 }
 
 /// Renders the circular badge emblem with custom artwork, tier styling,
-/// and an entrance 3D coin flip + elastic pop + metallic gleam shine sweep.
+/// and a realistic 3D coin flip (3D perspective pitch tilt, dual-face metal back,
+/// dynamic specular lighting, and metallic gleam shimmer).
 class _BadgeEmblem extends StatefulWidget {
   final Achievement achievement;
   final List<Color> tierColors;
@@ -932,21 +933,27 @@ class _BadgeEmblemState extends State<_BadgeEmblem>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 950),
     );
 
-    _scaleAnim = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    _scaleAnim = Tween<double>(begin: 0.65, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.85, curve: Curves.easeOutBack),
+      ),
     );
 
     _flipAnim = Tween<double>(begin: math.pi * 2, end: 0.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.82, curve: Curves.easeOutCubic),
+      ),
     );
 
     _shimmerAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.45, 1.0, curve: Curves.easeInOut),
+        curve: const Interval(0.65, 1.0, curve: Curves.easeInOut),
       ),
     );
 
@@ -979,6 +986,7 @@ class _BadgeEmblemState extends State<_BadgeEmblem>
     final size = widget.size;
     final achievement = widget.achievement;
     final tierColors = widget.tierColors;
+    final primaryTierColor = tierColors.first;
 
     return RepaintBoundary(
       child: GestureDetector(
@@ -991,148 +999,244 @@ class _BadgeEmblemState extends State<_BadgeEmblem>
             final scaleVal = _scaleAnim.value;
             final shimmerVal = _shimmerAnim.value;
 
+            final cosVal = math.cos(flipVal);
+            final isFront = cosVal >= 0;
+            // Shading intensity: darkest when edge-on (cosVal ~ 0)
+            final edgeDarkness = (1.0 - cosVal.abs()).clamp(0.0, 1.0);
+            // 3D edge thickness offset in pixels
+            final edgeOffset = math.sin(flipVal) * 3.5;
+
             return Transform.scale(
               scale: scaleVal,
               child: Transform(
                 alignment: Alignment.center,
                 transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.0015)
-                  ..rotateY(flipVal),
+                  ..setEntry(3, 2, 0.0018) // realistic camera perspective
+                  ..rotateX(-0.14) // pitch tilt down so circular disc shows 3D elliptical depth
+                  ..rotateY(flipVal), // 3D spin
                 child: Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: achievement.isUnlocked
-                      ? [
-                          BoxShadow(
-                            color: tierColors.first.withValues(
-                              alpha: 0.38 * _controller.value,
+                  width: size,
+                  height: size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: achievement.isUnlocked
+                        ? [
+                            BoxShadow(
+                              color: primaryTierColor.withValues(
+                                alpha: 0.35 * _controller.value,
+                              ),
+                              blurRadius: 28,
+                              spreadRadius: 4,
                             ),
-                            blurRadius: 26,
-                            spreadRadius: 4,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Clip circular badge artwork
-                    ClipOval(
-                      child: Stack(
-                        children: [
-                          ColorFiltered(
-                            colorFilter: achievement.isUnlocked
-                                ? const ColorFilter.mode(
-                                    Colors.transparent,
-                                    BlendMode.multiply,
-                                  )
-                                : const ColorFilter.matrix(<double>[
-                                    0.2126,
-                                    0.7152,
-                                    0.0722,
-                                    0,
-                                    0,
-                                    0.2126,
-                                    0.7152,
-                                    0.0722,
-                                    0,
-                                    0,
-                                    0.2126,
-                                    0.7152,
-                                    0.0722,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    0.4,
-                                    0,
-                                  ]),
-                            child: Image.asset(
-                              achievement.assetPath,
-                              width: size,
-                              height: size,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
-                                width: size,
-                                height: size,
-                                color: isLight
-                                    ? AppColors.lightSurfaceElevated
-                                    : AppColors.surface,
-                                child: Icon(
-                                  achievement.icon,
-                                  size: size * 0.4,
-                                  color: tierColors.first,
-                                ),
+                          ]
+                        : null,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // 3D Coin Rim / Thickness (shows when medal is turned in 3D)
+                      if (edgeOffset.abs() > 0.4)
+                        Transform.translate(
+                          offset: Offset(edgeOffset, 0),
+                          child: Container(
+                            width: size,
+                            height: size,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: primaryTierColor.withValues(alpha: 0.5),
+                              border: Border.all(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                width: 2,
                               ),
                             ),
                           ),
+                        ),
 
-                          // Diagonal metallic gleam shine sweep across the badge
-                          if (achievement.isUnlocked &&
-                              shimmerVal > 0.0 &&
-                              shimmerVal < 1.0)
-                            Positioned.fill(
-                              child: IgnorePointer(
-                                child: Transform.rotate(
-                                  angle: -math.pi / 4,
-                                  child: Transform.translate(
-                                    offset: Offset(
-                                      -size + (shimmerVal * size * 2.5),
-                                      0,
-                                    ),
-                                    child: Container(
-                                      width: size * 0.45,
-                                      height: size * 2.2,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Colors.white.withValues(alpha: 0.0),
-                                            Colors.white.withValues(alpha: 0.45),
-                                            Colors.white.withValues(alpha: 0.0),
-                                          ],
-                                          stops: const [0.0, 0.5, 1.0],
+                      // Front and Back faces of the medal (Opacity maintains Image in tree)
+                      ClipOval(
+                        child: Stack(
+                          children: [
+                            // Back face (brushed metallic engraved medal back)
+                            Opacity(
+                              opacity: isFront ? 0.0 : 1.0,
+                              child: _buildBackFace(
+                                context,
+                                size,
+                                primaryTierColor,
+                                isLight,
+                              ),
+                            ),
+
+                            // Front face (badge artwork)
+                            Opacity(
+                              opacity: isFront ? 1.0 : 0.0,
+                              child: _buildFrontFace(context, size, isLight),
+                            ),
+
+                            // Dynamic 3D lighting shadow based on rotation angle
+                            if (edgeDarkness > 0.05)
+                              Positioned.fill(
+                                child: Container(
+                                  color: Colors.black.withValues(
+                                    alpha: edgeDarkness * 0.45,
+                                  ),
+                                ),
+                              ),
+
+                            // Metallic gleam sweep when front face settles
+                            if (isFront &&
+                                achievement.isUnlocked &&
+                                shimmerVal > 0.0 &&
+                                shimmerVal < 1.0)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: Transform.rotate(
+                                    angle: -math.pi / 4,
+                                    child: Transform.translate(
+                                      offset: Offset(
+                                        -size + (shimmerVal * size * 2.5),
+                                        0,
+                                      ),
+                                      child: Container(
+                                        width: size * 0.45,
+                                        height: size * 2.2,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.white.withValues(alpha: 0.0),
+                                              Colors.white.withValues(alpha: 0.45),
+                                              Colors.white.withValues(alpha: 0.0),
+                                            ],
+                                            stops: const [0.0, 0.5, 1.0],
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // Locked badge overlay indicator
-                    if (!achievement.isUnlocked)
-                      Container(
-                        width: size * 0.38,
-                        height: size * 0.38,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.black.withValues(alpha: 0.65),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            width: 1.5,
+                      // Locked badge overlay indicator
+                      if (!achievement.isUnlocked && isFront)
+                        Container(
+                          width: size * 0.38,
+                          height: size * 0.38,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withValues(alpha: 0.65),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.lock_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
                           ),
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.lock_rounded,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                  ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFrontFace(BuildContext context, double size, bool isLight) {
+    final achievement = widget.achievement;
+    final tierColors = widget.tierColors;
+
+    final imageContent = Image.asset(
+      achievement.assetPath,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(
+        width: size,
+        height: size,
+        color: isLight
+            ? AppColors.lightSurfaceElevated
+            : AppColors.surface,
+        child: Icon(
+          achievement.icon,
+          size: size * 0.4,
+          color: tierColors.first,
+        ),
+      ),
+    );
+
+    if (achievement.isUnlocked) {
+      return imageContent;
+    }
+
+    return ColorFiltered(
+      colorFilter: const ColorFilter.matrix(<double>[
+        0.2126, 0.7152, 0.0722, 0, 0,
+        0.2126, 0.7152, 0.0722, 0, 0,
+        0.2126, 0.7152, 0.0722, 0, 0,
+        0,      0,      0,      0.4, 0,
+      ]),
+      child: imageContent,
+    );
+  }
+
+  Widget _buildBackFace(
+    BuildContext context,
+    double size,
+    Color tierColor,
+    bool isLight,
+  ) {
+    return Transform.flip(
+      flipX: true,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              tierColor.withValues(alpha: 0.85),
+              tierColor.withValues(alpha: 0.4),
+              Colors.black87,
+            ],
+            stops: const [0.3, 0.75, 1.0],
+          ),
+          border: Border.all(
+            color: tierColor.withValues(alpha: 0.6),
+            width: 3.0,
+          ),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Inner concentric engraved medal ring
+            Container(
+              width: size * 0.75,
+              height: size * 0.75,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  width: 1.5,
                 ),
               ),
             ),
-          );
-        },
+            // Embossed star emblem on the back
+            Icon(
+              Icons.stars_rounded,
+              size: size * 0.38,
+              color: Colors.white.withValues(alpha: 0.65),
+            ),
+          ],
         ),
       ),
     );
