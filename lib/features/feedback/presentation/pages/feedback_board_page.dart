@@ -132,7 +132,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
     final index = _items.indexWhere((i) => i.id == item.id);
     if (index == -1) return;
 
-    HapticFeedback.lightImpact();
+    HapticFeedback.mediumImpact();
     setState(() {
       _items[index] = _items[index].upvoted(_currentUserId);
     });

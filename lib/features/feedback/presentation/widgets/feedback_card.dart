@@ -62,16 +62,18 @@ class FeedbackCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Badges row: Category pill + Severity pill + Status pill
-                          Row(
+                          // Badges row: Milestone pill (if any, FIRST) + Category pill + Severity pill + Status pill
+                          Wrap(
+                            spacing: 6.0,
+                            runSpacing: 4.0,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
+                              if (item.voteMilestone != null)
+                                _buildMilestonePill(item.voteMilestone!, isLight),
                               _buildCategoryPill(item.category, isLight),
                               if (item.severity != null &&
-                                  item.severity!.isNotEmpty) ...[
-                                const SizedBox(width: 6.0),
+                                  item.severity!.isNotEmpty)
                                 _buildSeverityPill(item.severity!, isLight),
-                              ],
-                              const SizedBox(width: 8.0),
                               _buildStatusPill(item.status, isLight),
                             ],
                           ),
@@ -306,30 +308,38 @@ class FeedbackCard extends StatelessWidget {
   Widget _buildUpvoteButton(BuildContext context, bool isLight) {
     final isUpvoted = item.isUpvoted;
 
+    final borderColor = isUpvoted
+        ? AppColors.primary
+        : (isLight
+            ? AppColors.borderLight
+            : Colors.white.withValues(alpha: 0.12));
+
+    final numberColor = isUpvoted
+        ? AppColors.primary
+        : (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary);
+
+    final arrowColor = isUpvoted
+        ? AppColors.primary
+        : (isLight ? AppColors.lightTextSecondary : Colors.white60);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          HapticFeedback.lightImpact();
+          HapticFeedback.mediumImpact();
           onUpvote?.call();
         },
         borderRadius: BorderRadius.circular(12.0),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          width: 48.0,
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+          width: 50.0,
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 3.0),
           decoration: BoxDecoration(
-            color: isUpvoted
-                ? AppColors.primary.withValues(alpha: isLight ? 0.15 : 0.22)
-                : (isLight ? const Color(0xFFF3F4F6) : const Color(0xFF1E1E2C)),
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(12.0),
             border: Border.all(
-              color: isUpvoted
-                  ? AppColors.primary
-                  : (isLight
-                        ? AppColors.borderLight
-                        : Colors.white.withValues(alpha: 0.08)),
-              width: isUpvoted ? 1.5 : 1.0,
+              color: borderColor,
+              width: isUpvoted ? 1.4 : 1.0,
             ),
           ),
           child: Column(
@@ -338,27 +348,61 @@ class FeedbackCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.keyboard_arrow_up_rounded,
-                color: isUpvoted
-                    ? AppColors.primary
-                    : (isLight ? AppColors.lightTextSecondary : Colors.white70),
-                size: 22,
+                color: arrowColor,
+                size: 23,
               ),
               const SizedBox(height: 1.0),
-              Text(
-                '${item.votes}',
-                style: AppTextStyles.smBold.copyWith(
-                  color: isUpvoted
-                      ? AppColors.primary
-                      : (isLight
-                            ? AppColors.lightTextPrimary
-                            : AppColors.textPrimary),
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  item.formattedVotes,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: numberColor,
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    height: 1.1,
+                  ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMilestonePill(FeedbackVoteMilestone milestone, bool isLight) {
+    final textColor = milestone.textColor(isLight);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 3.0),
+      decoration: BoxDecoration(
+        color: milestone.backgroundColor(isLight),
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: textColor.withValues(alpha: isLight ? 0.25 : 0.35),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            milestone.emoji,
+            style: const TextStyle(fontSize: 11.0, height: 1.0),
+          ),
+          const SizedBox(width: 3.5),
+          Text(
+            milestone.label,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }

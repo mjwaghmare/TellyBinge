@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 enum FeedbackCategory {
   bug(
@@ -103,6 +104,66 @@ enum FeedbackStatus {
   Color textColor(bool isLight) => isLight ? lightText : darkText;
 }
 
+enum FeedbackVoteMilestone {
+  hot(
+    minVotes: 5,
+    emoji: '🔥',
+    label: 'Hot',
+    lightBg: Color(0xFFFFEDD5),
+    lightText: Color(0xFFEA580C),
+    darkBg: Color(0xFF431407),
+    darkText: Color(0xFFFB923C),
+  ),
+  popular(
+    minVotes: 10,
+    emoji: '⚡',
+    label: 'Popular',
+    lightBg: Color(0xFFFEF3C7),
+    lightText: Color(0xFFD97706),
+    darkBg: Color(0xFF332005),
+    darkText: Color(0xFFFBBF24),
+  ),
+  topVoted(
+    minVotes: 15,
+    emoji: '🚀',
+    label: 'Top Voted',
+    lightBg: Color(0xFFEDE9FE),
+    lightText: Color(0xFF7C3AED),
+    darkBg: Color(0xFF261845),
+    darkText: Color(0xFFA78BFA),
+  );
+
+  final int minVotes;
+  final String emoji;
+  final String label;
+  final Color lightBg;
+  final Color lightText;
+  final Color darkBg;
+  final Color darkText;
+
+  const FeedbackVoteMilestone({
+    required this.minVotes,
+    required this.emoji,
+    required this.label,
+    required this.lightBg,
+    required this.lightText,
+    required this.darkBg,
+    required this.darkText,
+  });
+
+  String get displayText => '$emoji $label';
+
+  Color backgroundColor(bool isLight) => isLight ? lightBg : darkBg;
+  Color textColor(bool isLight) => isLight ? lightText : darkText;
+
+  static FeedbackVoteMilestone? fromVotes(int votes) {
+    if (votes >= 15) return FeedbackVoteMilestone.topVoted;
+    if (votes >= 10) return FeedbackVoteMilestone.popular;
+    if (votes >= 5) return FeedbackVoteMilestone.hot;
+    return null;
+  }
+}
+
 class FeedbackMedia {
   final String path;
   final bool isLocal;
@@ -199,6 +260,11 @@ class FeedbackItem {
       return 'Just now';
     }
   }
+
+  FeedbackVoteMilestone? get voteMilestone =>
+      FeedbackVoteMilestone.fromVotes(votes);
+
+  String get formattedVotes => NumberFormat.compact().format(votes);
 
   FeedbackItem copyWith({
     String? id,
