@@ -148,6 +148,49 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
   }
 
   @override
+  Stream<List<Map<String, dynamic>>> getCommentsStream(String feedbackId) {
+    return _feedbacksCollection
+        .doc(feedbackId)
+        .collection('comments')
+        .snapshots()
+        .asyncMap((subSnapshot) async {
+      if (subSnapshot.docs.isNotEmpty) {
+        final comments = subSnapshot.docs.map((doc) {
+          final data = Map<String, dynamic>.from(doc.data());
+          data['id'] = doc.id;
+          return data;
+        }).toList();
+
+        comments.sort((a, b) {
+          final aTime = a['time'] as String? ?? '';
+          final bTime = b['time'] as String? ?? '';
+          return bTime.compareTo(aTime);
+        });
+        return comments;
+      }
+
+      // Backward-compatibility: Check if parent doc has legacy comments array
+      try {
+        final parentDoc = await _feedbacksCollection.doc(feedbackId).get();
+        final rawComments = parentDoc.data()?['comments'] as List<dynamic>?;
+        if (rawComments != null && rawComments.isNotEmpty) {
+          final legacyList = rawComments
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
+          legacyList.sort((a, b) {
+            final aTime = a['time'] as String? ?? '';
+            final bTime = b['time'] as String? ?? '';
+            return bTime.compareTo(aTime);
+          });
+          return legacyList;
+        }
+      } catch (_) {}
+
+      return <Map<String, dynamic>>[];
+    });
+  }
+
+  @override
   Future<void> addComment({
     required String feedbackId,
     required String userId,
@@ -166,9 +209,39 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       'text': text,
     };
 
-    await _feedbacksCollection.doc(feedbackId).set({
-      'comments': FieldValue.arrayUnion([comment]),
-    }, SetOptions(merge: true));
+    await _feedbacksCollection
+        .doc(feedbackId)
+        .collection('comments')
+        .doc(id)
+        .set(comment);
+  }
+
+  @override
+  Future<void> editComment({
+    required String feedbackId,
+    required String commentId,
+    required String text,
+  }) async {
+    await _feedbacksCollection
+        .doc(feedbackId)
+        .collection('comments')
+        .doc(commentId)
+        .update({
+      'text': text,
+      'updatedAt': DateTime.now().toIso8601String(),
+    });
+  }
+
+  @override
+  Future<void> deleteComment({
+    required String feedbackId,
+    required String commentId,
+  }) async {
+    await _feedbacksCollection
+        .doc(feedbackId)
+        .collection('comments')
+        .doc(commentId)
+        .delete();
   }
 
   @override
@@ -176,12 +249,23 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
     required String feedbackId,
     required List<Map<String, dynamic>> comments,
   }) async {
-    await _feedbacksCollection.doc(feedbackId).update({'comments': comments});
+    try {
+      await _feedbacksCollection.doc(feedbackId).update({'comments': comments});
+    } catch (_) {}
   }
 
   @override
   Future<void> deleteFeedback(String feedbackId) async {
     await _storageService.deleteFeedbackMedia(feedbackId);
+    try {
+      final commentsSnapshot = await _feedbacksCollection
+          .doc(feedbackId)
+          .collection('comments')
+          .get();
+      for (final doc in commentsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+    } catch (_) {}
     await _feedbacksCollection.doc(feedbackId).delete();
   }
 }

@@ -79,9 +79,11 @@ class FeedbackCubit extends Cubit<FeedbackState> {
     if (userId.isEmpty) return;
     if (item.userId == userId && item.isUpvoted) return;
 
+    FeedbackLoaded? previousState;
     // Optimistic UI update
     if (state is FeedbackLoaded) {
       final currentLoaded = state as FeedbackLoaded;
+      previousState = currentLoaded;
       final updatedList = currentLoaded.items.map((i) {
         if (i.id == item.id) {
           return i.upvoted(userId);
@@ -93,12 +95,11 @@ class FeedbackCubit extends Cubit<FeedbackState> {
     }
 
     try {
-      await feedbackRepository.toggleVote(
-        feedbackId: item.id,
-        userId: userId,
-      );
+      await feedbackRepository.toggleVote(feedbackId: item.id, userId: userId);
     } catch (_) {
-      // Stream subscription will revert or reflect accurate state from Firestore
+      if (previousState != null && state is FeedbackLoaded) {
+        emit(previousState);
+      }
     }
   }
 

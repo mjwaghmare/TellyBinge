@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
@@ -30,6 +31,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
   String _selectedFilter = 'All';
   String _searchQuery = '';
   String _currentUserId = '';
+  final Set<String> _pendingVoteIds = <String>{};
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -111,7 +113,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
       ..sort((a, b) => b.votes.compareTo(a.votes)); // Sorted by top voted
   }
 
-  void _handleUpvote(FeedbackItem item) {
+  Future<void> _handleUpvote(FeedbackItem item) async {
     if (_currentUserId.isEmpty) {
       AppSnackbar.showInfo(
         context,
@@ -130,24 +132,49 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
     }
 
     final index = _items.indexWhere((i) => i.id == item.id);
-    if (index == -1) return;
+    if (index == -1 || _pendingVoteIds.contains(item.id)) return;
 
     HapticFeedback.mediumImpact();
     setState(() {
+      _pendingVoteIds.add(item.id);
       _items[index] = _items[index].upvoted(_currentUserId);
     });
 
-    _repository.toggleVote(
-      feedbackId: item.id,
-      userId: _currentUserId,
-    );
+    try {
+      await _repository.toggleVote(
+        feedbackId: item.id,
+        userId: _currentUserId,
+      );
+    } catch (_) {
+      if (mounted) {
+        final currentIndex = _items.indexWhere((entry) => entry.id == item.id);
+        setState(() {
+          if (currentIndex != -1) _items[currentIndex] = item;
+          _pendingVoteIds.remove(item.id);
+        });
+        AppSnackbar.showError(context, 'Failed to update your vote. Please try again.');
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _pendingVoteIds.remove(item.id));
   }
 
   void _openSubmitSheet() {
     HapticFeedback.lightImpact();
+    if (FirebaseAuth.instance.currentUser == null) {
+      AuthRequiredBottomSheet.show(
+        context,
+        title: 'Sign in to share feedback',
+        subtitle: 'Use your account to submit ideas, bugs, and improvements.',
+        icon: Icons.feedback_outlined,
+      );
+      return;
+    }
     SubmitFeedbackSheet.show(
       context,
       feedbackRepository: _repository,
+      existingItems: _items,
       onSubmit: (newItem) {
         AppSnackbar.showSuccess(
           context,
@@ -367,6 +394,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                                 final item = items[index];
                                 return FeedbackCard(
                                   item: item,
+                                  isVotePending: _pendingVoteIds.contains(item.id),
                                   onUpvote: () => _handleUpvote(item),
                                   onTap: () async {
                                     HapticFeedback.lightImpact();

@@ -13,24 +13,29 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
+import '../../domain/services/feedback_duplicate_detector.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
+import '../../data/services/feedback_submission_guard.dart';
 import 'feedback_image_viewer.dart';
 
 class SubmitFeedbackSheet extends StatefulWidget {
   final ValueChanged<FeedbackItem>? onSubmit;
   final FeedbackRepository? feedbackRepository;
+  final List<FeedbackItem> existingItems;
 
   const SubmitFeedbackSheet({
     super.key,
     this.onSubmit,
     this.feedbackRepository,
+    this.existingItems = const [],
   });
 
   static Future<FeedbackItem?> show(
     BuildContext context, {
     ValueChanged<FeedbackItem>? onSubmit,
     FeedbackRepository? feedbackRepository,
+    List<FeedbackItem> existingItems = const [],
   }) {
     final isLight = context.isLight;
     return showModalBottomSheet<FeedbackItem>(
@@ -43,6 +48,7 @@ class SubmitFeedbackSheet extends StatefulWidget {
       builder: (context) => SubmitFeedbackSheet(
         onSubmit: onSubmit,
         feedbackRepository: feedbackRepository,
+        existingItems: existingItems,
       ),
     );
   }
@@ -53,6 +59,7 @@ class SubmitFeedbackSheet extends StatefulWidget {
 
 class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
   late final FeedbackRepository _repository;
+  final FeedbackSubmissionGuard _submissionGuard = FeedbackSubmissionGuard();
   FeedbackCategory _selectedCategory = FeedbackCategory.bug;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
@@ -190,6 +197,34 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
               : 'PopVerse User');
       final userAvatar = user?.photoURL ?? '';
 
+      final duplicate = FeedbackDuplicateDetector.findDuplicate(
+        existingItems: widget.existingItems,
+        title: title,
+        description: message,
+        category: _selectedCategory,
+      );
+      if (duplicate != null) {
+        if (mounted) setState(() => _isSubmitting = false);
+        AppSnackbar.showInfo(
+          context,
+          'A matching feedback item already exists. Add an upvote or comment instead.',
+        );
+        return;
+      }
+
+      final remainingCooldown = await _submissionGuard.remainingCooldown(
+        userId,
+      );
+      if (!mounted) return;
+      if (remainingCooldown != null) {
+        setState(() => _isSubmitting = false);
+        AppSnackbar.showInfo(
+          context,
+          'Please wait ${remainingCooldown.inSeconds + 1}s before submitting again.',
+        );
+        return;
+      }
+
       String appVersion = 'v1.0.0';
       try {
         final info = await PackageInfo.fromPlatform();
@@ -210,6 +245,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
         appVersion: appVersion,
       );
 
+      await _submissionGuard.recordSubmission(userId);
       if (mounted) {
         widget.onSubmit?.call(newItem);
         Navigator.pop(context, newItem);

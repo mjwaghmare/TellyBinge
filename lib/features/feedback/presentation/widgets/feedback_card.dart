@@ -11,12 +11,14 @@ class FeedbackCard extends StatelessWidget {
   final FeedbackItem item;
   final VoidCallback? onUpvote;
   final VoidCallback? onTap;
+  final bool isVotePending;
 
   const FeedbackCard({
     super.key,
     required this.item,
     this.onUpvote,
     this.onTap,
+    this.isVotePending = false,
   });
 
   @override
@@ -258,10 +260,12 @@ class FeedbackCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          onUpvote?.call();
-        },
+        onTap: isVotePending
+            ? null
+            : () {
+                HapticFeedback.mediumImpact();
+                onUpvote?.call();
+              },
         borderRadius: BorderRadius.circular(12.0),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -275,32 +279,43 @@ class FeedbackCard extends StatelessWidget {
               width: isUpvoted ? 1.4 : 1.0,
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.keyboard_arrow_up_rounded,
-                color: arrowColor,
-                size: 23,
-              ),
-              const SizedBox(height: 1.0),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  item.formattedVotes,
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: numberColor,
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                    height: 1.1,
+          child: isVotePending
+              ? const SizedBox(
+                  height: 38,
+                  child: Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                    ),
                   ),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.keyboard_arrow_up_rounded,
+                      color: arrowColor,
+                      size: 23,
+                    ),
+                    const SizedBox(height: 1.0),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        item.formattedVotes,
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: numberColor,
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );

@@ -23,6 +23,9 @@ abstract class FeedbackRepository {
     required String userId,
   });
 
+  /// Streams real-time comments for a feedback item
+  Stream<List<Map<String, dynamic>>> getCommentsStream(String feedbackId);
+
   /// Adds a comment to a feedback item
   Future<void> addComment({
     required String feedbackId,
@@ -31,6 +34,19 @@ abstract class FeedbackRepository {
     required String userAvatar,
     required String text,
     String? commentId,
+  });
+
+  /// Edits an existing comment (author or admin only)
+  Future<void> editComment({
+    required String feedbackId,
+    required String commentId,
+    required String text,
+  });
+
+  /// Deletes a comment (author or admin only)
+  Future<void> deleteComment({
+    required String feedbackId,
+    required String commentId,
   });
 
   /// Updates comments list for a feedback item (e.g. after edit or delete)

@@ -36,7 +36,11 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   final FocusNode _commentFocusNode = FocusNode();
   late List<Map<String, dynamic>> _comments;
   String _currentUserId = '';
+  bool _isVotePending = false;
+  bool _isCommentMutationPending = false;
+  bool _isCommentSubmitting = false;
   StreamSubscription<List<FeedbackItem>>? _feedbacksSubscription;
+  StreamSubscription<List<Map<String, dynamic>>>? _commentsSubscription;
   StreamSubscription<User?>? _authSubscription;
 
   @override
@@ -48,6 +52,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     _comments = List<Map<String, dynamic>>.from(_item.comments);
 
     _subscribeToFeedbacks();
+    _subscribeToComments();
 
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (!mounted) return;
@@ -70,10 +75,22 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       final index = items.indexWhere((i) => i.id == _item.id);
       if (index != -1) {
         setState(() {
-          _item = items[index];
-          _comments = List<Map<String, dynamic>>.from(_item.comments);
+          _item = items[index].copyWith(comments: _comments);
         });
       }
+    });
+  }
+
+  void _subscribeToComments() {
+    _commentsSubscription?.cancel();
+    _commentsSubscription = _repository
+        .getCommentsStream(_item.id)
+        .listen((comments) {
+      if (!mounted) return;
+      setState(() {
+        _comments = List<Map<String, dynamic>>.from(comments);
+        _item = _item.copyWith(comments: _comments);
+      });
     });
   }
 
@@ -81,14 +98,16 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   void dispose() {
     _authSubscription?.cancel();
     _feedbacksSubscription?.cancel();
+    _commentsSubscription?.cancel();
     _commentFocusNode.dispose();
     _commentController.dispose();
     super.dispose();
   }
 
-  void _handleUpvote() {
+  Future<void> _handleUpvote() async {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
     _currentUserId = currentUserId;
+    if (_isVotePending) return;
     if (currentUserId.isEmpty) {
       AppSnackbar.showInfo(
         context,
@@ -106,17 +125,33 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       return;
     }
 
+    final previousItem = _item;
     HapticFeedback.mediumImpact();
     setState(() {
+      _isVotePending = true;
       _item = _item.upvoted(currentUserId);
     });
-    _repository.toggleVote(
-      feedbackId: _item.id,
-      userId: currentUserId,
-    );
+    try {
+      await _repository.toggleVote(
+        feedbackId: _item.id,
+        userId: currentUserId,
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _item = previousItem;
+          _isVotePending = false;
+        });
+        AppSnackbar.showError(context, 'Failed to update your vote. Please try again.');
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _isVotePending = false);
   }
 
   Future<void> _addComment() async {
+    if (_isCommentMutationPending || _isCommentSubmitting) return;
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
@@ -155,6 +190,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     };
 
     setState(() {
+      _isCommentSubmitting = true;
       _comments.insert(0, newComment);
       _item = _item.copyWith(comments: _comments);
       _commentController.clear();
@@ -169,6 +205,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         text: text,
         commentId: commentId,
       );
+      if (mounted) setState(() => _isCommentSubmitting = false);
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -178,6 +215,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 (c['time'] == timeStr && c['userId'] == userId),
           );
           _item = _item.copyWith(comments: _comments);
+          _isCommentSubmitting = false;
         });
         AppSnackbar.showError(
           context,
@@ -332,6 +370,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       );
 
       if (updated != null && updated.isNotEmpty && mounted) {
+        if (_isCommentMutationPending) return;
         final targetIndex = _comments.indexWhere(
           (c) => commentId.isNotEmpty
               ? c['id'] == commentId
@@ -339,8 +378,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         );
         if (targetIndex == -1) return;
 
+        final previousComments = List<Map<String, dynamic>>.from(_comments);
         HapticFeedback.lightImpact();
         setState(() {
+          _isCommentMutationPending = true;
           _comments[targetIndex] = {
             ..._comments[targetIndex],
             'text': updated,
@@ -348,13 +389,28 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
           _item = _item.copyWith(comments: _comments);
         });
 
-        _repository.updateComments(feedbackId: _item.id, comments: _comments);
-
-        AppSnackbar.showSuccess(
-          context,
-          'Comment updated successfully',
-          duration: const Duration(seconds: 2),
-        );
+        try {
+          await _repository.editComment(
+            feedbackId: _item.id,
+            commentId: commentId.isNotEmpty
+                ? commentId
+                : (comment['id']?.toString() ?? ''),
+            text: updated,
+          );
+          if (mounted) {
+            setState(() => _isCommentMutationPending = false);
+            AppSnackbar.showSuccess(context, 'Comment updated successfully', duration: const Duration(seconds: 2));
+          }
+        } catch (_) {
+          if (mounted) {
+            setState(() {
+              _comments = previousComments;
+              _item = _item.copyWith(comments: _comments);
+              _isCommentMutationPending = false;
+            });
+            AppSnackbar.showError(context, 'Failed to update comment. Please try again.');
+          }
+        }
       }
     } finally {
       editController.dispose();
@@ -437,6 +493,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (confirmed == true) {
+      if (_isCommentMutationPending) return;
       final targetIndex = _comments.indexWhere(
         (c) => commentId.isNotEmpty
             ? c['id'] == commentId
@@ -444,19 +501,35 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       );
       if (targetIndex == -1) return;
 
+      final previousComments = List<Map<String, dynamic>>.from(_comments);
       HapticFeedback.lightImpact();
       setState(() {
+        _isCommentMutationPending = true;
         _comments.removeAt(targetIndex);
         _item = _item.copyWith(comments: _comments);
       });
 
-      _repository.updateComments(feedbackId: _item.id, comments: _comments);
-
-      AppSnackbar.showSuccess(
-        context,
-        'Comment deleted',
-        duration: const Duration(seconds: 2),
-      );
+      try {
+        await _repository.deleteComment(
+          feedbackId: _item.id,
+          commentId: commentId.isNotEmpty
+              ? commentId
+              : (comment['id']?.toString() ?? ''),
+        );
+        if (mounted) {
+          setState(() => _isCommentMutationPending = false);
+          AppSnackbar.showSuccess(context, 'Comment deleted', duration: const Duration(seconds: 2));
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _comments = previousComments;
+            _item = _item.copyWith(comments: _comments);
+            _isCommentMutationPending = false;
+          });
+          AppSnackbar.showError(context, 'Failed to delete comment. Please try again.');
+        }
+      }
     }
   }
 
@@ -1133,7 +1206,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _commentController,
                   builder: (context, value, _) {
-                    final canSubmit = value.text.trim().isNotEmpty;
+                    final canSubmit =
+                        value.text.trim().isNotEmpty && !_isCommentSubmitting;
                     return AnimatedScale(
                       scale: canSubmit ? 1.0 : 0.95,
                       duration: const Duration(milliseconds: 150),
@@ -1172,15 +1246,23 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                         ),
                         child: IconButton(
                           padding: EdgeInsets.zero,
-                          icon: Icon(
-                            Icons.arrow_upward_rounded,
-                            color: canSubmit
-                                ? Colors.white
-                                : (isLight
-                                    ? AppColors.lightTextTertiary
-                                    : AppColors.textTertiary),
-                            size: 20,
-                          ),
+                          icon: _isCommentSubmitting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator.adaptive(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.arrow_upward_rounded,
+                                  color: canSubmit
+                                      ? Colors.white
+                                      : (isLight
+                                          ? AppColors.lightTextTertiary
+                                          : AppColors.textTertiary),
+                                  size: 20,
+                                ),
                           onPressed: canSubmit ? _addComment : null,
                         ),
                       ),
@@ -1283,7 +1365,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: _handleUpvote,
+        onTap: _isVotePending ? null : _handleUpvote,
         borderRadius: BorderRadius.circular(12.0),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -1297,7 +1379,18 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
               width: isUpvoted ? 1.4 : 1.0,
             ),
           ),
-          child: Column(
+          child: _isVotePending
+              ? const SizedBox(
+                  height: 38,
+                  child: Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              : Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

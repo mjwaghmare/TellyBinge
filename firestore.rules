@@ -85,22 +85,6 @@ service cloud.firestore {
                request.resource.data.votes >= 0;
       }
 
-      // Allow comments updates with validation
-      function isValidCommentUpdate() {
-        let diff = request.resource.data.diff(resource.data);
-        let beforeComments = resource.data.get('comments', []);
-        let afterComments = request.resource.data.get('comments', []);
-        let isAppend = afterComments.size() == beforeComments.size() + 1 &&
-                       afterComments.hasAll(beforeComments);
-        let isDelete = beforeComments.size() == afterComments.size() + 1 &&
-                       beforeComments.hasAll(afterComments);
-        let isEdit = beforeComments.size() == afterComments.size();
-
-        return isAuthenticated() &&
-               diff.affectedKeys().hasOnly(['comments']) &&
-               (isAppend || isDelete || isEdit);
-      }
-
       function isOwnerNonVoteUpdate() {
         let diff = request.resource.data.diff(resource.data);
         return isAuthenticated() &&
@@ -109,15 +93,24 @@ service cloud.firestore {
       }
 
       allow update: if isValidVoteUpdate() ||
-                       isValidCommentUpdate() ||
                        isOwnerNonVoteUpdate() ||
                        isAdmin();
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
 
       match /comments/{commentId} {
         allow read: if true;
-        allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-        allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+        allow create: if isAuthenticated() &&
+                         request.resource.data.userId == request.auth.uid &&
+                         request.resource.data.text is string &&
+                         request.resource.data.text.size() > 0 &&
+                         request.resource.data.text.size() <= 2000;
+        allow update: if isAuthenticated() &&
+                         (resource.data.userId == request.auth.uid || isAdmin()) &&
+                         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt']) &&
+                         request.resource.data.text is string &&
+                         request.resource.data.text.size() > 0 &&
+                         request.resource.data.text.size() <= 2000;
+        allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       }
     }
   }
