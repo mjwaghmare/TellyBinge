@@ -56,8 +56,18 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAuthenticated() &&
                        request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.status == 'open' &&
+                       request.resource.data.get('officialResponse', null) == null &&
                        request.resource.data.votes == 1 &&
-                       request.resource.data.upvotedUserIds == [request.auth.uid];
+                       request.resource.data.upvotedUserIds == [request.auth.uid] &&
+                       request.resource.data.title is string &&
+                       request.resource.data.title.size() > 0 &&
+                       request.resource.data.title.size() <= 200 &&
+                       request.resource.data.description is string &&
+                       request.resource.data.description.size() > 0 &&
+                       request.resource.data.description.size() <= 5000 &&
+                       request.resource.data.get('media', []).size() <= 10 &&
+                       request.resource.data.get('comments', []).size() == 0;
 
       // Allow vote updates with strict validation
       function isValidVoteUpdate() {
@@ -85,15 +95,22 @@ service cloud.firestore {
                request.resource.data.votes >= 0;
       }
 
-      function isOwnerNonVoteUpdate() {
+      // Allow creator to safely edit content fields only (status, officialResponse, votes, and author identity are strictly locked)
+      function isOwnerContentUpdate() {
         let diff = request.resource.data.diff(resource.data);
         return isAuthenticated() &&
                resource.data.userId == request.auth.uid &&
-               !diff.affectedKeys().hasAny(['votes', 'upvotedUserIds']);
+               diff.affectedKeys().hasOnly(['title', 'description', 'severity']) &&
+               request.resource.data.title is string &&
+               request.resource.data.title.size() > 0 &&
+               request.resource.data.title.size() <= 200 &&
+               request.resource.data.description is string &&
+               request.resource.data.description.size() > 0 &&
+               request.resource.data.description.size() <= 5000;
       }
 
       allow update: if isValidVoteUpdate() ||
-                       isOwnerNonVoteUpdate() ||
+                       isOwnerContentUpdate() ||
                        isAdmin();
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
 
