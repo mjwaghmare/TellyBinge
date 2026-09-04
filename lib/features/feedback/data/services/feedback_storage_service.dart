@@ -1,12 +1,23 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class FeedbackStorageService {
-  final Dio _dio;
+  static const int maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB per image
+  static const int maxFileCount = 5;
+  static const Set<String> allowedExtensions = {
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.webp',
+  };
 
-  FeedbackStorageService({Dio? dio})
+  final Dio _dio;
+  final FirebaseAuth _auth;
+
+  FeedbackStorageService({Dio? dio, FirebaseAuth? auth})
       : _dio = dio ??
             Dio(
               BaseOptions(
@@ -14,16 +25,27 @@ class FeedbackStorageService {
                 sendTimeout: const Duration(seconds: 60),
                 receiveTimeout: const Duration(seconds: 30),
               ),
-            );
+            ),
+        _auth = auth ?? FirebaseAuth.instance;
 
   /// Uploads media files for a specific feedback ID to Cloudinary.
   /// Uses an unsigned upload preset so no secret keys are exposed on the client.
+  /// Validates authentication, file count, allowed formats, and size limits before upload.
   /// Returns a list of secure HTTPS download URLs.
   Future<List<String>> uploadMedia({
     required String feedbackId,
     required List<String> localFilePaths,
   }) async {
     if (localFilePaths.isEmpty) return [];
+
+    final currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.uid.isEmpty) {
+      throw Exception('Authentication required to upload media.');
+    }
+
+    if (localFilePaths.length > maxFileCount) {
+      throw Exception('Maximum of $maxFileCount images allowed per feedback submission.');
+    }
 
     final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME']?.trim() ?? '';
     final uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET']?.trim() ?? '';
@@ -41,6 +63,18 @@ class FeedbackStorageService {
       if (!await file.exists()) {
         debugPrint('FeedbackStorageService: File does not exist at $path');
         return null;
+      }
+
+      final ext = path.contains('.') ? '.${path.split('.').last.toLowerCase()}' : '';
+      if (!allowedExtensions.contains(ext)) {
+        throw Exception(
+          'Unsupported file format "$ext". Allowed formats are JPG, JPEG, PNG, and WEBP.',
+        );
+      }
+
+      final fileSize = await file.length();
+      if (fileSize > maxFileSizeBytes) {
+        throw Exception('File exceeds maximum size limit of 10 MB.');
       }
 
       final fileName = path.split(Platform.pathSeparator).last;
