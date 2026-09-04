@@ -425,7 +425,10 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
       }).toList();
 
       // Immediate widget sync with optimistic data
-      await WidgetService.syncWatchlistDataToWidget(updatedShows, immediate: true);
+      await WidgetService.syncWatchlistDataToWidget(
+        updatedShows,
+        immediate: true,
+      );
 
       // Async TMDB enrichment — only if dotenv loaded (API key available)
       if (dotenvAvailable) {

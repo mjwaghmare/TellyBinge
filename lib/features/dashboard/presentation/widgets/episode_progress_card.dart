@@ -137,8 +137,11 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       builder: (sheetContext) {
         return Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).bottomSheetTheme.backgroundColor ??
-                (context.isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceDarkAlt),
+            color:
+                Theme.of(context).bottomSheetTheme.backgroundColor ??
+                (context.isLight
+                    ? AppColors.lightSurfaceElevated
+                    : AppColors.surfaceDarkAlt),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),

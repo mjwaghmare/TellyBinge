@@ -5,10 +5,7 @@ import 'package:popverse/features/profile/domain/services/achievements_service.d
 void main() {
   group('AchievementsService', () {
     test('first_step is unlocked when 1 item is watched', () {
-      final results0 = AchievementsService.evaluate(
-        movies: [],
-        shows: [],
-      );
+      final results0 = AchievementsService.evaluate(movies: [], shows: []);
       final firstStep0 = results0.firstWhere((a) => a.id == 'first_step');
       expect(firstStep0.isUnlocked, false);
       expect(firstStep0.currentValue, 0);
@@ -89,7 +86,13 @@ void main() {
         shows: [
           {
             'id': 1,
-            'watchedEpisodes': ['S01E01', 'S01E02', 'S01E03', 'S01E04', 'S01E05'],
+            'watchedEpisodes': [
+              'S01E01',
+              'S01E02',
+              'S01E03',
+              'S01E04',
+              'S01E05',
+            ],
             'episodeWatchedDates': {
               'S01E01': '2026-08-20T10:00:00.000Z',
               'S01E02': '2026-08-20T11:00:00.000Z',

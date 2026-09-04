@@ -40,4 +40,3 @@ class ProfileHeatmapCubit extends Cubit<ProfileHeatmapState> {
     }
   }
 }
-

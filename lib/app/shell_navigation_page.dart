@@ -265,7 +265,13 @@ class _CustomGlowBottomBar extends StatelessWidget {
 
               Row(
                 children: [
-                  _buildNavItem(context, 0, 'Shows', Icons.tv_outlined, Icons.tv),
+                  _buildNavItem(
+                    context,
+                    0,
+                    'Shows',
+                    Icons.tv_outlined,
+                    Icons.tv,
+                  ),
                   _buildNavItem(
                     context,
                     1,
@@ -345,9 +351,7 @@ class _CustomGlowBottomBar extends StatelessWidget {
               children: [
                 Icon(
                   isSelected ? activeIcon : icon,
-                  color: isSelected
-                      ? AppColors.primary
-                      : context.textTertiary,
+                  color: isSelected ? AppColors.primary : context.textTertiary,
                   size: 24,
                 ),
                 const SizedBox(height: 4),

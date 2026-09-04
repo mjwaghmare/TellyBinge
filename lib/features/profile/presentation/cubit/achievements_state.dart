@@ -14,21 +14,15 @@ class AchievementsLoaded extends AchievementsState {
   final List<Achievement> achievements;
   final AchievementCategory? activeFilter;
 
-  const AchievementsLoaded({
-    required this.achievements,
-    this.activeFilter,
-  });
+  const AchievementsLoaded({required this.achievements, this.activeFilter});
 
-  int get unlockedCount =>
-      achievements.where((a) => a.isUnlocked).length;
+  int get unlockedCount => achievements.where((a) => a.isUnlocked).length;
 
   int get totalCount => achievements.length;
 
   List<Achievement> get filtered => activeFilter == null
       ? achievements
-      : achievements
-            .where((a) => a.category == activeFilter)
-            .toList();
+      : achievements.where((a) => a.category == activeFilter).toList();
 
   AchievementsLoaded copyWith({
     List<Achievement>? achievements,
@@ -36,8 +30,7 @@ class AchievementsLoaded extends AchievementsState {
   }) {
     return AchievementsLoaded(
       achievements: achievements ?? this.achievements,
-      activeFilter:
-          activeFilter != null ? activeFilter() : this.activeFilter,
+      activeFilter: activeFilter != null ? activeFilter() : this.activeFilter,
     );
   }
 

@@ -445,14 +445,12 @@ class _ProfilePageState extends State<ProfilePage>
       movieWatchlistState,
       showWatchlistState,
     );
-    final rawMovies =
-        movieWatchlistState is MovieWatchlistSuccess
-            ? movieWatchlistState.movies
-            : const <Map<String, dynamic>>[];
-    final rawShows =
-        showWatchlistState is TvShowWatchlistSuccess
-            ? showWatchlistState.shows
-            : const <Map<String, dynamic>>[];
+    final rawMovies = movieWatchlistState is MovieWatchlistSuccess
+        ? movieWatchlistState.movies
+        : const <Map<String, dynamic>>[];
+    final rawShows = showWatchlistState is TvShowWatchlistSuccess
+        ? showWatchlistState.shows
+        : const <Map<String, dynamic>>[];
     final profileTag = _calculateProfileTag(
       watchedMoviesCount: profileStats.watchedMoviesCount,
       watchedShowsCount: profileStats.watchedShowsCount,
@@ -507,23 +505,21 @@ class _ProfilePageState extends State<ProfilePage>
                 child: CircleAvatar(
                   radius: 22,
                   backgroundColor: const Color(0xFF2E6930),
-                  backgroundImage:
-                      (photoURL != null && photoURL.isNotEmpty)
-                          ? CachedNetworkImageProvider(photoURL)
-                          : null,
-                  child:
-                      (photoURL == null || photoURL.isEmpty)
-                          ? Text(
-                            displayName.isNotEmpty
-                                ? displayName[0].toUpperCase()
-                                : 'U',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                          : null,
+                  backgroundImage: (photoURL != null && photoURL.isNotEmpty)
+                      ? CachedNetworkImageProvider(photoURL)
+                      : null,
+                  child: (photoURL == null || photoURL.isEmpty)
+                      ? Text(
+                          displayName.isNotEmpty
+                              ? displayName[0].toUpperCase()
+                              : 'U',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -662,27 +658,23 @@ class _ProfilePageState extends State<ProfilePage>
                         .where((m) => m['isWatched'] as bool? ?? false)
                         .toList();
                   } else if (_movieProgressOption == 'Not watched') {
-                    filteredMovies = filteredMovies
-                        .where((m) {
-                          final isWatched = m['isWatched'] as bool? ?? false;
-                          if (isWatched) return false;
-                          final dateStr = m['releaseDate'] as String? ?? '';
-                          final date = _parseDate(dateStr);
-                          if (date == null) return false;
-                          return !date.isAfter(DateTime.now());
-                        })
-                        .toList();
+                    filteredMovies = filteredMovies.where((m) {
+                      final isWatched = m['isWatched'] as bool? ?? false;
+                      if (isWatched) return false;
+                      final dateStr = m['releaseDate'] as String? ?? '';
+                      final date = _parseDate(dateStr);
+                      if (date == null) return false;
+                      return !date.isAfter(DateTime.now());
+                    }).toList();
                   } else if (_movieProgressOption == 'Upcoming') {
-                    filteredMovies = filteredMovies
-                        .where((m) {
-                          final isWatched = m['isWatched'] as bool? ?? false;
-                          if (isWatched) return false;
-                          final dateStr = m['releaseDate'] as String? ?? '';
-                          final date = _parseDate(dateStr);
-                          if (date == null) return true;
-                          return date.isAfter(DateTime.now());
-                        })
-                        .toList();
+                    filteredMovies = filteredMovies.where((m) {
+                      final isWatched = m['isWatched'] as bool? ?? false;
+                      if (isWatched) return false;
+                      final dateStr = m['releaseDate'] as String? ?? '';
+                      final date = _parseDate(dateStr);
+                      if (date == null) return true;
+                      return date.isAfter(DateTime.now());
+                    }).toList();
                   }
 
                   displayedMovies = filteredMovies
@@ -793,9 +785,9 @@ class _ProfilePageState extends State<ProfilePage>
 
                   // Secondary: user-chosen sort option
                   if (_movieSortOption == 'Alphabetical') {
-                    return a.title
-                        .toLowerCase()
-                        .compareTo(b.title.toLowerCase());
+                    return a.title.toLowerCase().compareTo(
+                      b.title.toLowerCase(),
+                    );
                   } else if (_movieSortOption == 'Last Added') {
                     final dateA = _parseDate(a.addedAt ?? '');
                     final dateB = _parseDate(b.addedAt ?? '');
@@ -837,9 +829,9 @@ class _ProfilePageState extends State<ProfilePage>
 
                   // Secondary: user-chosen sort option
                   if (_showSortOption == 'Alphabetical') {
-                    return a.title
-                        .toLowerCase()
-                        .compareTo(b.title.toLowerCase());
+                    return a.title.toLowerCase().compareTo(
+                      b.title.toLowerCase(),
+                    );
                   } else if (_showSortOption == 'Last added') {
                     final dateA = _parseDate(a.addedAt ?? '');
                     final dateB = _parseDate(b.addedAt ?? '');
@@ -903,9 +895,9 @@ class _ProfilePageState extends State<ProfilePage>
                                     ),
                                     color:
                                         Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? AppColors.borderLight
-                                            : AppColors.borderDark,
+                                            Brightness.light
+                                        ? AppColors.borderLight
+                                        : AppColors.borderDark,
                                   ),
                                   Expanded(
                                     child: _buildStatColumn(
@@ -939,9 +931,9 @@ class _ProfilePageState extends State<ProfilePage>
                                       style: TextStyle(
                                         color:
                                             Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? AppColors.primaryDark
-                                                : AppColors.primaryLight,
+                                                Brightness.light
+                                            ? AppColors.primaryDark
+                                            : AppColors.primaryLight,
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.w600,
                                         letterSpacing: 0.1,
@@ -953,9 +945,9 @@ class _ProfilePageState extends State<ProfilePage>
                                       size: 13,
                                       color:
                                           Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? AppColors.primaryDark
-                                              : AppColors.primaryLight,
+                                              Brightness.light
+                                          ? AppColors.primaryDark
+                                          : AppColors.primaryLight,
                                     ),
                                   ],
                                 ),
@@ -965,16 +957,15 @@ class _ProfilePageState extends State<ProfilePage>
                               alignment: Alignment.topCenter,
                               duration: const Duration(milliseconds: 500),
                               curve: Curves.easeInOut,
-                              child:
-                                  _isHeatmapExpanded
-                                      ? _buildHeatmapSection(
-                                        context,
-                                        user?.uid ?? '',
-                                      )
-                                      : const SizedBox(
-                                        width: double.infinity,
-                                        height: 0,
-                                      ),
+                              child: _isHeatmapExpanded
+                                  ? _buildHeatmapSection(
+                                      context,
+                                      user?.uid ?? '',
+                                    )
+                                  : const SizedBox(
+                                      width: double.infinity,
+                                      height: 0,
+                                    ),
                             ),
                           ],
                         ),
@@ -986,12 +977,12 @@ class _ProfilePageState extends State<ProfilePage>
                             controller: _tabController,
                             labelColor:
                                 Theme.of(context).brightness == Brightness.light
-                                    ? AppColors.lightTextPrimary
-                                    : AppColors.textPrimary,
+                                ? AppColors.lightTextPrimary
+                                : AppColors.textPrimary,
                             unselectedLabelColor:
                                 Theme.of(context).brightness == Brightness.light
-                                    ? AppColors.lightTextSecondary
-                                    : AppColors.textSecondary,
+                                ? AppColors.lightTextSecondary
+                                : AppColors.textSecondary,
                             labelStyle: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -1007,8 +998,8 @@ class _ProfilePageState extends State<ProfilePage>
                             indicatorSize: TabBarIndicatorSize.tab,
                             dividerColor:
                                 Theme.of(context).brightness == Brightness.light
-                                    ? AppColors.borderLight
-                                    : AppColors.borderDark,
+                                ? AppColors.borderLight
+                                : AppColors.borderDark,
                             tabs: const [
                               Tab(text: 'SHOWS'),
                               Tab(text: 'MOVIES'),
@@ -1310,15 +1301,13 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildProfileTag(ProfileTag tag) {
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final accentColor =
-        isLight ? AppColors.primaryDark : AppColors.primaryLight;
+    final accentColor = isLight
+        ? AppColors.primaryDark
+        : AppColors.primaryLight;
 
     return Container(
       margin: const EdgeInsets.only(top: 2),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 7,
-        vertical: 1.5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
       decoration: BoxDecoration(
         color: isLight
             ? AppColors.primary.withValues(alpha: 0.08)
@@ -1335,10 +1324,7 @@ class _ProfilePageState extends State<ProfilePage>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            tag.emoji,
-            style: const TextStyle(fontSize: 10, height: 1.1),
-          ),
+          Text(tag.emoji, style: const TextStyle(fontSize: 10, height: 1.1)),
           const SizedBox(width: 4),
           Text(
             tag.label,
@@ -1581,10 +1567,7 @@ class _ProfilePageState extends State<ProfilePage>
             ),
             const SizedBox(width: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 2,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: dotColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
@@ -1602,11 +1585,9 @@ class _ProfilePageState extends State<ProfilePage>
             Icon(
               Icons.chevron_right,
               size: 20,
-              color: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.color
-                  ?.withValues(alpha: 0.4),
+              color: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
             ),
           ],
         ),
@@ -1856,9 +1837,7 @@ class _ProfilePageState extends State<ProfilePage>
             HapticFeedback.mediumImpact();
             Navigator.pop(context);
             final authState = context.read<AuthCubit>().state;
-            final uid = authState is Authenticated
-                ? authState.user.uid
-                : null;
+            final uid = authState is Authenticated ? authState.user.uid : null;
             if (uid != null) {
               if (item.isMovie) {
                 context.read<MovieWatchlistCubit>().toggleFavorite(
@@ -1885,9 +1864,7 @@ class _ProfilePageState extends State<ProfilePage>
             HapticFeedback.mediumImpact();
             Navigator.pop(context);
             final authState = context.read<AuthCubit>().state;
-            final uid = authState is Authenticated
-                ? authState.user.uid
-                : null;
+            final uid = authState is Authenticated ? authState.user.uid : null;
             if (uid != null) {
               if (item.isMovie) {
                 context.read<MovieWatchlistCubit>().removeMovie(
@@ -1912,8 +1889,7 @@ class _ProfilePageState extends State<ProfilePage>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    MovieDetailsPage(movieId: item.movieId),
+                builder: (context) => MovieDetailsPage(movieId: item.movieId),
               ),
             );
           } else {
@@ -1921,9 +1897,8 @@ class _ProfilePageState extends State<ProfilePage>
               context,
               MaterialPageRoute(
                 builder: (context) => BlocProvider<ShowDetailsCubit>(
-                  create: (context) => ShowDetailsCubit(
-                    tmdbClient: context.read<TmdbClient>(),
-                  ),
+                  create: (context) =>
+                      ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
                   child: ShowDetailsPage(
                     mediaId: item.movieId,
                     mediaType: 'tv',
@@ -1946,22 +1921,19 @@ class _ProfilePageState extends State<ProfilePage>
                       fit: BoxFit.cover,
                       memCacheWidth: 360,
                       placeholder: (context, url) => Container(
-                        color:
-                            Theme.of(context).brightness == Brightness.light
+                        color: Theme.of(context).brightness == Brightness.light
                             ? Colors.grey[200]
                             : AppColors.surface,
                       ),
                       errorWidget: (context, url, error) => Container(
-                        color:
-                            Theme.of(context).brightness == Brightness.light
+                        color: Theme.of(context).brightness == Brightness.light
                             ? Colors.grey[200]
                             : AppColors.surface,
                         child: Center(
                           child: Icon(
                             Icons.movie_outlined,
                             color:
-                                Theme.of(context).brightness ==
-                                    Brightness.light
+                                Theme.of(context).brightness == Brightness.light
                                 ? Colors.grey[500]
                                 : AppColors.textTertiary,
                           ),
@@ -1969,16 +1941,14 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                     )
                   : Container(
-                      color:
-                          Theme.of(context).brightness == Brightness.light
+                      color: Theme.of(context).brightness == Brightness.light
                           ? Colors.grey[200]
                           : AppColors.surface,
                       child: Center(
                         child: Icon(
                           Icons.movie_outlined,
                           color:
-                              Theme.of(context).brightness ==
-                                  Brightness.light
+                              Theme.of(context).brightness == Brightness.light
                               ? Colors.grey[500]
                               : AppColors.textTertiary,
                         ),
@@ -1994,11 +1964,7 @@ class _ProfilePageState extends State<ProfilePage>
                       color: Colors.black54,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.favorite,
-                      color: Colors.red,
-                      size: 16,
-                    ),
+                    child: Icon(Icons.favorite, color: Colors.red, size: 16),
                   ),
                 ),
 
@@ -2345,9 +2311,9 @@ class _ProfilePageState extends State<ProfilePage>
                               style: TextStyle(
                                 color:
                                     Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? AppColors.lightTextSecondary
-                                        : AppColors.textTertiary,
+                                        Brightness.light
+                                    ? AppColors.lightTextSecondary
+                                    : AppColors.textTertiary,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2368,9 +2334,9 @@ class _ProfilePageState extends State<ProfilePage>
                               style: TextStyle(
                                 color:
                                     Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? AppColors.lightTextSecondary
-                                        : AppColors.textTertiary,
+                                        Brightness.light
+                                    ? AppColors.lightTextSecondary
+                                    : AppColors.textTertiary,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2489,13 +2455,13 @@ class _ProfilePageState extends State<ProfilePage>
                           cellColor = colorScale[4];
                         }
 
-                        final double cellLuminance =
-                            cellColor.computeLuminance();
+                        final double cellLuminance = cellColor
+                            .computeLuminance();
                         final Color dayTextColor = cellLuminance < 0.45
                             ? Colors.white
                             : (isLight
-                                ? AppColors.lightTextPrimary
-                                : AppColors.textPrimary);
+                                  ? AppColors.lightTextPrimary
+                                  : AppColors.textPrimary);
 
                         final itemText = isMovies ? 'movie' : 'episode';
                         final itemsText = isMovies ? 'movies' : 'episodes';
@@ -2735,36 +2701,15 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid>
 }
 
 enum ProfileTag {
-  freshWatcher(
-    emoji: '🌱',
-    label: 'Fresh Watcher',
-  ),
-  movieBuff(
-    emoji: '🎬',
-    label: 'Movie Buff',
-  ),
-  seriesExplorer(
-    emoji: '📺',
-    label: 'Series Explorer',
-  ),
-  screenExplorer(
-    emoji: '🍿',
-    label: 'Screen Explorer',
-  ),
-  onAStreak(
-    emoji: '🔥',
-    label: 'On a Streak',
-  ),
-  screenVeteran(
-    emoji: '🏆',
-    label: 'Screen Veteran',
-  );
+  freshWatcher(emoji: '🌱', label: 'Fresh Watcher'),
+  movieBuff(emoji: '🎬', label: 'Movie Buff'),
+  seriesExplorer(emoji: '📺', label: 'Series Explorer'),
+  screenExplorer(emoji: '🍿', label: 'Screen Explorer'),
+  onAStreak(emoji: '🔥', label: 'On a Streak'),
+  screenVeteran(emoji: '🏆', label: 'Screen Veteran');
 
   final String emoji;
   final String label;
 
-  const ProfileTag({
-    required this.emoji,
-    required this.label,
-  });
+  const ProfileTag({required this.emoji, required this.label});
 }

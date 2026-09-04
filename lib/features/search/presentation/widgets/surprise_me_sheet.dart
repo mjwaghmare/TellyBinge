@@ -65,7 +65,12 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     _shakeDetector = ShakeDetector.autoStart(
       onPhoneShake: (_) {
         final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
-        if (!mounted || !isCurrentRoute || _isCurrentTabLoading || _isShakeProcessing) return;
+        if (!mounted ||
+            !isCurrentRoute ||
+            _isCurrentTabLoading ||
+            _isShakeProcessing) {
+          return;
+        }
         _isShakeProcessing = true;
         HapticFeedback.heavyImpact();
         _shuffleCurrentTab();

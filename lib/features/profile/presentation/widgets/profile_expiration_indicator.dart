@@ -38,8 +38,8 @@ class _ProfileExpirationIndicatorState
   }
 
   Future<void> _loadExpirationDate() async {
-    final expirationDate =
-        await NotificationService().getProfileExpirationDate();
+    final expirationDate = await NotificationService()
+        .getProfileExpirationDate();
     if (!mounted) return;
     setState(() {
       _expirationDate = expirationDate;
@@ -78,9 +78,7 @@ class _ProfileExpirationIndicatorState
         return Container(
           decoration: BoxDecoration(
             color: sheetBg,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(20),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: EdgeInsets.only(
             top: AppSpacing.md,

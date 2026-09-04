@@ -65,7 +65,9 @@ class _AchievementsViewState extends State<_AchievementsView> {
           leading: IconButton(
             icon: Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+              color: isLight
+                  ? AppColors.lightTextPrimary
+                  : AppColors.textPrimary,
               size: 20,
             ),
             onPressed: () => Navigator.pop(context),
@@ -73,7 +75,9 @@ class _AchievementsViewState extends State<_AchievementsView> {
           title: Text(
             'Achievements',
             style: AppTextStyles.xl.copyWith(
-              color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+              color: isLight
+                  ? AppColors.lightTextPrimary
+                  : AppColors.textPrimary,
               fontSize: 26,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
@@ -84,18 +88,26 @@ class _AchievementsViewState extends State<_AchievementsView> {
         body: BlocBuilder<AchievementsCubit, AchievementsState>(
           builder: (context, state) {
             if (state is! AchievementsLoaded) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              );
             }
 
             return Column(
               children: [
                 // Unlocked summary
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
+                  ),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs + 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xxs + 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(20),
@@ -103,11 +115,17 @@ class _AchievementsViewState extends State<_AchievementsView> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.emoji_events_rounded, color: AppColors.primaryLight, size: 16),
+                            const Icon(
+                              Icons.emoji_events_rounded,
+                              color: AppColors.primaryLight,
+                              size: 16,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               '${state.unlockedCount} / ${state.totalCount} Unlocked',
-                              style: AppTextStyles.xsMedium.copyWith(color: AppColors.primaryLight),
+                              style: AppTextStyles.xsMedium.copyWith(
+                                color: AppColors.primaryLight,
+                              ),
                             ),
                           ],
                         ),
@@ -121,18 +139,22 @@ class _AchievementsViewState extends State<_AchievementsView> {
                   height: 34,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
                     children: [
                       _FilterChip(
                         label: 'All',
                         isSelected: state.activeFilter == null,
-                        onTap: () => context.read<AchievementsCubit>().setFilter(null),
+                        onTap: () =>
+                            context.read<AchievementsCubit>().setFilter(null),
                       ),
                       ...AchievementCategory.values.map(
                         (cat) => _FilterChip(
                           label: _categoryLabel(cat),
                           isSelected: state.activeFilter == cat,
-                          onTap: () => context.read<AchievementsCubit>().setFilter(cat),
+                          onTap: () =>
+                              context.read<AchievementsCubit>().setFilter(cat),
                         ),
                       ),
                     ],
@@ -143,13 +165,17 @@ class _AchievementsViewState extends State<_AchievementsView> {
                 // 3-column grid
                 Expanded(
                   child: GridView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: AppSpacing.md,
-                      crossAxisSpacing: AppSpacing.sm,
-                      childAspectRatio: 0.85,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
                     ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: AppSpacing.md,
+                          crossAxisSpacing: AppSpacing.sm,
+                          childAspectRatio: 0.85,
+                        ),
                     itemCount: state.filtered.length,
                     itemBuilder: (context, index) {
                       final achievement = state.filtered[index];
@@ -157,7 +183,10 @@ class _AchievementsViewState extends State<_AchievementsView> {
                         achievement: achievement,
                         onTap: () {
                           HapticFeedback.lightImpact();
-                          AchievementDetailBottomSheet.show(context, achievement);
+                          AchievementDetailBottomSheet.show(
+                            context,
+                            achievement,
+                          );
                         },
                       );
                     },
@@ -189,7 +218,11 @@ class _FilterChip extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.isSelected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -210,10 +243,14 @@ class _FilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primary
-                : (isLight ? Colors.black.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.06)),
+                : (isLight
+                      ? Colors.black.withValues(alpha: 0.04)
+                      : Colors.white.withValues(alpha: 0.06)),
             borderRadius: BorderRadius.circular(17),
             border: Border.all(
-              color: isSelected ? AppColors.primary : (isLight ? AppColors.borderLight : AppColors.borderDark),
+              color: isSelected
+                  ? AppColors.primary
+                  : (isLight ? AppColors.borderLight : AppColors.borderDark),
               width: 1,
             ),
           ),
@@ -222,7 +259,11 @@ class _FilterChip extends StatelessWidget {
             style: AppTextStyles.xsMedium.copyWith(
               fontSize: 12.5,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? Colors.white : (isLight ? AppColors.lightTextSecondary : AppColors.textSecondary),
+              color: isSelected
+                  ? Colors.white
+                  : (isLight
+                        ? AppColors.lightTextSecondary
+                        : AppColors.textSecondary),
             ),
           ),
         ),
@@ -249,7 +290,10 @@ class _AchievementGridTile extends StatelessWidget {
         // leaving enough vertical room for text and spacing
         const textReserve = 34.0;
         const spacing = AppSpacing.xs;
-        final maxH = (constraints.maxHeight - textReserve - spacing).clamp(48.0, 96.0);
+        final maxH = (constraints.maxHeight - textReserve - spacing).clamp(
+          48.0,
+          96.0,
+        );
         final maxW = (constraints.maxWidth - AppSpacing.xs).clamp(48.0, 96.0);
         final badgeSize = maxH < maxW ? maxH : maxW;
 
@@ -275,8 +319,12 @@ class _AchievementGridTile extends StatelessWidget {
                   style: AppTextStyles.xsMedium.copyWith(
                     fontWeight: FontWeight.w600,
                     color: achievement.isUnlocked
-                        ? (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary)
-                        : (isLight ? AppColors.lightTextTertiary : AppColors.textTertiary),
+                        ? (isLight
+                              ? AppColors.lightTextPrimary
+                              : AppColors.textPrimary)
+                        : (isLight
+                              ? AppColors.lightTextTertiary
+                              : AppColors.textTertiary),
                     fontSize: 12,
                     height: 1.2,
                   ),
@@ -299,7 +347,10 @@ class _AchievementGridTile extends StatelessWidget {
           ClipOval(
             child: ColorFiltered(
               colorFilter: achievement.isUnlocked
-                  ? const ColorFilter.mode(Colors.transparent, BlendMode.multiply)
+                  ? const ColorFilter.mode(
+                      Colors.transparent,
+                      BlendMode.multiply,
+                    )
                   : const ColorFilter.matrix(<double>[
                       0.2126,
                       0.7152,
@@ -336,7 +387,9 @@ class _AchievementGridTile extends StatelessWidget {
                     size: size * 0.4,
                     color: achievement.isUnlocked
                         ? AppColors.primary
-                        : (isLight ? AppColors.lightTextTertiary : AppColors.textTertiary),
+                        : (isLight
+                              ? AppColors.lightTextTertiary
+                              : AppColors.textTertiary),
                   ),
                 ),
               ),
@@ -349,7 +402,10 @@ class _AchievementGridTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.black.withValues(alpha: 0.65),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  width: 1,
+                ),
               ),
               child: Center(
                 child: Icon(

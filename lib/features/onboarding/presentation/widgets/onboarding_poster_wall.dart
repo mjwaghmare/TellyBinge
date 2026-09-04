@@ -11,4 +11,3 @@ class OnboardingPosterWall extends StatelessWidget {
   Widget build(BuildContext context) =>
       const PosterWall(posterPaths: loginWallPosterPaths);
 }
-

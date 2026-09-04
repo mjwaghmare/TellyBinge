@@ -7,10 +7,7 @@ class ThemeState extends Equatable {
   final ThemeMode themeMode;
   final bool isOledDarkMode;
 
-  const ThemeState({
-    required this.themeMode,
-    required this.isOledDarkMode,
-  });
+  const ThemeState({required this.themeMode, required this.isOledDarkMode});
 
   bool get isDarkMode => themeMode == ThemeMode.dark;
 
@@ -50,4 +47,3 @@ class ThemeCubit extends Cubit<ThemeState> {
     emit(ThemeState(themeMode: state.themeMode, isOledDarkMode: value));
   }
 }
-

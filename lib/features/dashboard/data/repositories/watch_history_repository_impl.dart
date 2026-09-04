@@ -24,11 +24,12 @@ class WatchHistoryRepositoryImpl implements WatchHistoryRepository {
         .where('watchedAt', isGreaterThan: cutoffDate)
         .orderBy('watchedAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-              final data = doc.data();
-              data['id'] = doc.id;
-              return WatchHistoryItem.fromMap(data);
-            }).toList());
+        .map(
+          (snapshot) => snapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return WatchHistoryItem.fromMap(data);
+          }).toList(),
+        );
   }
 }
-

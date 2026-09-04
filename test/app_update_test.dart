@@ -42,30 +42,21 @@ void main() {
     });
 
     test('getUpdateType returns force when isOptional is false', () {
-      const info = AppVersionInfo(
-        latestVersion: '2.0.0',
-        isOptional: false,
-      );
+      const info = AppVersionInfo(latestVersion: '2.0.0', isOptional: false);
 
       expect(info.getUpdateType('1.0.0'), AppUpdateType.force);
       expect(info.getUpdateType('1.9.9'), AppUpdateType.force);
     });
 
     test('getUpdateType returns optional when isOptional is true', () {
-      const info = AppVersionInfo(
-        latestVersion: '2.0.0',
-        isOptional: true,
-      );
+      const info = AppVersionInfo(latestVersion: '2.0.0', isOptional: true);
 
       expect(info.getUpdateType('1.0.0'), AppUpdateType.optional);
       expect(info.getUpdateType('1.9.9'), AppUpdateType.optional);
     });
 
     test('getUpdateType returns none when up to date or update disabled', () {
-      const info = AppVersionInfo(
-        latestVersion: '2.0.0',
-        isOptional: false,
-      );
+      const info = AppVersionInfo(latestVersion: '2.0.0', isOptional: false);
 
       expect(info.getUpdateType('2.0.0'), AppUpdateType.none);
       expect(info.getUpdateType('2.0.1'), AppUpdateType.none);
@@ -86,7 +77,10 @@ void main() {
 
     test('isUpdateSnoozed returns false when not snoozed', () async {
       final prefs = await SharedPreferences.getInstance();
-      final snoozed = await AppUpdateService.instance.isUpdateSnoozed('1.2.0', prefs: prefs);
+      final snoozed = await AppUpdateService.instance.isUpdateSnoozed(
+        '1.2.0',
+        prefs: prefs,
+      );
       expect(snoozed, isFalse);
     });
 
@@ -94,42 +88,67 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       await AppUpdateService.instance.snoozeUpdate('1.2.0', prefs: prefs);
 
-      final snoozed = await AppUpdateService.instance.isUpdateSnoozed('1.2.0', prefs: prefs);
+      final snoozed = await AppUpdateService.instance.isUpdateSnoozed(
+        '1.2.0',
+        prefs: prefs,
+      );
       expect(snoozed, isTrue);
     });
 
     test('isUpdateSnoozed returns false when 7 days have elapsed', () async {
       final prefs = await SharedPreferences.getInstance();
-      final eightDaysAgo = DateTime.now().toUtc().subtract(const Duration(days: 8));
+      final eightDaysAgo = DateTime.now().toUtc().subtract(
+        const Duration(days: 8),
+      );
 
-      await prefs.setString(AppUpdateService.prefSnoozedAt, eightDaysAgo.toIso8601String());
+      await prefs.setString(
+        AppUpdateService.prefSnoozedAt,
+        eightDaysAgo.toIso8601String(),
+      );
       await prefs.setString(AppUpdateService.prefSnoozedVersion, '1.2.0');
 
-      final snoozed = await AppUpdateService.instance.isUpdateSnoozed('1.2.0', prefs: prefs);
+      final snoozed = await AppUpdateService.instance.isUpdateSnoozed(
+        '1.2.0',
+        prefs: prefs,
+      );
       expect(snoozed, isFalse);
     });
 
-    test('isUpdateSnoozed returns false when a newer version is released', () async {
-      final prefs = await SharedPreferences.getInstance();
-      await AppUpdateService.instance.snoozeUpdate('1.2.0', prefs: prefs);
+    test(
+      'isUpdateSnoozed returns false when a newer version is released',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        await AppUpdateService.instance.snoozeUpdate('1.2.0', prefs: prefs);
 
-      // User snoozed 1.2.0, but server now has 1.3.0
-      final snoozed = await AppUpdateService.instance.isUpdateSnoozed('1.3.0', prefs: prefs);
-      expect(snoozed, isFalse);
-    });
+        // User snoozed 1.2.0, but server now has 1.3.0
+        final snoozed = await AppUpdateService.instance.isUpdateSnoozed(
+          '1.3.0',
+          prefs: prefs,
+        );
+        expect(snoozed, isFalse);
+      },
+    );
 
     test('clearSnooze removes snooze keys', () async {
       final prefs = await SharedPreferences.getInstance();
       await AppUpdateService.instance.snoozeUpdate('1.2.0', prefs: prefs);
-      expect(await AppUpdateService.instance.isUpdateSnoozed('1.2.0', prefs: prefs), isTrue);
+      expect(
+        await AppUpdateService.instance.isUpdateSnoozed('1.2.0', prefs: prefs),
+        isTrue,
+      );
 
       await AppUpdateService.instance.clearSnooze(prefs: prefs);
-      expect(await AppUpdateService.instance.isUpdateSnoozed('1.2.0', prefs: prefs), isFalse);
+      expect(
+        await AppUpdateService.instance.isUpdateSnoozed('1.2.0', prefs: prefs),
+        isFalse,
+      );
     });
   });
 
   group('AppUpdateDialog UI', () {
-    testWidgets('renders Optional update with Later and Update buttons', (tester) async {
+    testWidgets('renders Optional update with Later and Update buttons', (
+      tester,
+    ) async {
       bool updateClicked = false;
       bool laterClicked = false;
 
@@ -170,7 +189,9 @@ void main() {
       expect(laterClicked, isTrue);
     });
 
-    testWidgets('renders Force update with only Update Now button', (tester) async {
+    testWidgets('renders Force update with only Update Now button', (
+      tester,
+    ) async {
       bool updateClicked = false;
 
       const versionInfo = AppVersionInfo(

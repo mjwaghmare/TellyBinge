@@ -85,4 +85,3 @@ class WatchHistoryCubit extends Cubit<WatchHistoryState> {
     return super.close();
   }
 }
-

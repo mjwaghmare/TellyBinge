@@ -548,9 +548,7 @@ class _SplashScreen extends StatelessWidget {
               ),
             ),
             DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: _vignetteGradient,
-              ),
+              decoration: BoxDecoration(gradient: _vignetteGradient),
             ),
             Center(
               child: Hero(

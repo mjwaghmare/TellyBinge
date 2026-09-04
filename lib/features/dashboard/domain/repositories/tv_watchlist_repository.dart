@@ -49,6 +49,3 @@ abstract class TvWatchlistRepository {
   });
   Future<List<TvShowWatchlistItem>> getShows({required String uid});
 }
-
-
-

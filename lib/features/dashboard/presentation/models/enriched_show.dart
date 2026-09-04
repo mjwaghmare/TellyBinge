@@ -100,7 +100,8 @@ class EnrichedShow {
     }
 
     // Check if the next unwatched episode is actually an unreleased upcoming episode
-    final bool isNextUpcoming = hasUpcoming &&
+    final bool isNextUpcoming =
+        hasUpcoming &&
         upcomingDaysLeft != null &&
         upcomingDaysLeft > 0 &&
         upcomingEpisodeCode == derivedCode;

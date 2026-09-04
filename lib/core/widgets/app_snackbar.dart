@@ -3,11 +3,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
-enum AppSnackbarType {
-  info,
-  success,
-  error,
-}
+enum AppSnackbarType { info, success, error }
 
 class AppSnackbar {
   AppSnackbar._();
@@ -21,12 +17,7 @@ class AppSnackbar {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
-      create(
-        context,
-        message: message,
-        type: type,
-        duration: duration,
-      ),
+      create(context, message: message, type: type, duration: duration),
     );
   }
 
@@ -80,9 +71,9 @@ class AppSnackbar {
     final (Color accentColor, IconData icon) = switch (type) {
       AppSnackbarType.info => (AppColors.primary, Icons.info_outline_rounded),
       AppSnackbarType.success => (
-          AppColors.success,
-          Icons.check_circle_outline_rounded
-        ),
+        AppColors.success,
+        Icons.check_circle_outline_rounded,
+      ),
       AppSnackbarType.error => (AppColors.error, Icons.error_outline_rounded),
     };
 
@@ -126,11 +117,7 @@ class AppSnackbar {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: Icon(
-                icon,
-                color: accentColor,
-                size: 18,
-              ),
+              child: Icon(icon, color: accentColor, size: 18),
             ),
             AppSpacing.gapW12,
             Expanded(

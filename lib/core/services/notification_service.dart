@@ -26,15 +26,22 @@ class ReceivedNotificationItem {
     required this.timestamp,
   });
 
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'body': body, 'payload': payload, 'timestamp': timestamp};
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'body': body,
+    'payload': payload,
+    'timestamp': timestamp,
+  };
 
-  factory ReceivedNotificationItem.fromJson(Map<String, dynamic> json) => ReceivedNotificationItem(
-    id: json['id'] as String? ?? '',
-    title: json['title'] as String? ?? '',
-    body: json['body'] as String? ?? '',
-    payload: json['payload'] as String?,
-    timestamp: json['timestamp'] as String? ?? '',
-  );
+  factory ReceivedNotificationItem.fromJson(Map<String, dynamic> json) =>
+      ReceivedNotificationItem(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        body: json['body'] as String? ?? '',
+        payload: json['payload'] as String?,
+        timestamp: json['timestamp'] as String? ?? '',
+      );
 }
 
 /// Internal model for keeping track of alerts scheduled with the platform.
@@ -61,13 +68,16 @@ class _ScheduledRegistryItem {
     'scheduledDate': scheduledDate.toIso8601String(),
   };
 
-  factory _ScheduledRegistryItem.fromJson(Map<String, dynamic> json) => _ScheduledRegistryItem(
-    id: json['id'] as String? ?? '',
-    title: json['title'] as String? ?? '',
-    body: json['body'] as String? ?? '',
-    payload: json['payload'] as String?,
-    scheduledDate: DateTime.tryParse(json['scheduledDate'] as String? ?? '') ?? DateTime.now(),
-  );
+  factory _ScheduledRegistryItem.fromJson(Map<String, dynamic> json) =>
+      _ScheduledRegistryItem(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        body: json['body'] as String? ?? '',
+        payload: json['payload'] as String?,
+        scheduledDate:
+            DateTime.tryParse(json['scheduledDate'] as String? ?? '') ??
+            DateTime.now(),
+      );
 }
 
 /// Which watchlist a notification belongs to.
@@ -150,8 +160,16 @@ class NotificationService {
     required String showName,
     required String episodeCode,
   }) {
-    final epText = episodeCode.isNotEmpty ? 'Episode $episodeCode' : 'New episode';
-    final titles = ['🍿 $showName', '⏰ $showName', '📺 $showName', '🍿 $showName', '📺 $showName'];
+    final epText = episodeCode.isNotEmpty
+        ? 'Episode $episodeCode'
+        : 'New episode';
+    final titles = [
+      '🍿 $showName',
+      '⏰ $showName',
+      '📺 $showName',
+      '🍿 $showName',
+      '📺 $showName',
+    ];
     final index = showId.abs() % titles.length;
     return (titles[index], '$epText airs {time}.');
   }
@@ -162,12 +180,19 @@ class NotificationService {
     required int movieId,
     required String movieTitle,
   }) {
-    final titles = ['🎬 $movieTitle', '🍿 $movieTitle', '🎬 $movieTitle', '🍿 $movieTitle', '🌟 $movieTitle'];
+    final titles = [
+      '🎬 $movieTitle',
+      '🍿 $movieTitle',
+      '🎬 $movieTitle',
+      '🍿 $movieTitle',
+      '🌟 $movieTitle',
+    ];
     final index = movieId.abs() % titles.length;
     return (titles[index], '$movieTitle premieres {time}.');
   }
 
-  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   /// Each title reserves this many notification ids: two per media kind, one
   /// for the day-before alert and one for the optional hour-before alert.
@@ -199,7 +224,9 @@ class NotificationService {
   /// Matches the scheme the home-screen widget already uses, so notification
   /// taps route through the same handler.
   String _deepLinkFor(NotificationMedia media, int mediaId) =>
-      media == NotificationMedia.tv ? 'tvtimeapp://show/$mediaId' : 'tvtimeapp://movie/$mediaId';
+      media == NotificationMedia.tv
+      ? 'tvtimeapp://show/$mediaId'
+      : 'tvtimeapp://movie/$mediaId';
 
   /// Reactive notifier for whether unread notifications exist.
   final ValueNotifier<bool> hasUnreadNotifier = ValueNotifier<bool>(false);
@@ -223,7 +250,8 @@ class NotificationService {
   /// Initializes unread status from SharedPreferences.
   Future<void> _initUnreadStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    hasUnreadNotifier.value = prefs.getBool('has_unread_notifications') ?? false;
+    hasUnreadNotifier.value =
+        prefs.getBool('has_unread_notifications') ?? false;
   }
 
   /// Sets unread notification state and updates listeners & SharedPreferences.
@@ -256,7 +284,8 @@ class NotificationService {
       await prefs.setInt('reinstall_reminder_build_ts', installTimestamp);
     }
 
-    final alreadyScheduled = prefs.getBool('reinstall_reminder_scheduled') ?? false;
+    final alreadyScheduled =
+        prefs.getBool('reinstall_reminder_scheduled') ?? false;
     if (alreadyScheduled) {
       return;
     }
@@ -275,15 +304,18 @@ class NotificationService {
         final success = await _scheduleOne(
           id: _reinstallNotificationId,
           title: "⏳ 2 Days Left on Free Profile",
-          body: "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
+          body:
+              "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
           scheduledDate: reminderDate48h,
         );
         if (!success) allScheduled = false;
-      } else if (reminderDate48h.isBefore(now) && reminderDate24h.isAfter(now)) {
+      } else if (reminderDate48h.isBefore(now) &&
+          reminderDate24h.isAfter(now)) {
         await saveReceivedNotification(
           id: _reinstallNotificationId.toString(),
           title: "⏳ 2 Days Left on Free Profile",
-          body: "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
+          body:
+              "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
         );
       }
 
@@ -291,14 +323,16 @@ class NotificationService {
         final success = await _scheduleOne(
           id: _reinstallNotificationId24h,
           title: "🚨 Profile Expires Tomorrow!",
-          body: "Free developer profile expires in 24 hours. Rebuild with Xcode today to keep the app working! 💻",
+          body:
+              "Free developer profile expires in 24 hours. Rebuild with Xcode today to keep the app working! 💻",
           scheduledDate: reminderDate24h,
         );
         if (!success) allScheduled = false;
       } else {
         if (expirationDate.isAfter(now)) {
           const title = "🚨 Profile Expires Very Soon!";
-          const body = "Free developer profile expires in less than 24 hours! Connect to Xcode and rebuild now. 💻";
+          const body =
+              "Free developer profile expires in less than 24 hours! Connect to Xcode and rebuild now. 💻";
           final success = await _scheduleOne(
             id: _reinstallNotificationId24h,
             title: title,
@@ -364,9 +398,10 @@ class NotificationService {
     await cancelNotificationById(_reinstallNotificationId24h);
     await scheduleReinstallReminderIfNeeded();
 
-    return DateTime.fromMillisecondsSinceEpoch(nowMs).add(_profileExpirationDuration);
+    return DateTime.fromMillisecondsSinceEpoch(
+      nowMs,
+    ).add(_profileExpirationDuration);
   }
-
 
   Future<void> initialize() async {
     await _initUnreadStatus();
@@ -390,20 +425,21 @@ class NotificationService {
 
     // Icon names resolve against res/drawable, not res/mipmap, so the launcher
     // icon can't be referenced here. See _androidStatusBarIcon.
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
-      _androidStatusBarIcon,
-    );
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings(_androidStatusBarIcon);
 
-    const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        );
 
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     await _notificationsPlugin.initialize(
       settings: initializationSettings,
@@ -431,7 +467,8 @@ class NotificationService {
   /// A cold launch has no live callback to fire, so the launch details have to
   /// be read once the app is up and routed manually.
   Future<String?> takeLaunchPayload() async {
-    final details = await _notificationsPlugin.getNotificationAppLaunchDetails();
+    final details = await _notificationsPlugin
+        .getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp != true) return null;
     final payload = details?.notificationResponse?.payload;
     return (payload == null || payload.isEmpty) ? null : payload;
@@ -441,11 +478,15 @@ class NotificationService {
   /// tell the difference between "user turned it on" and "the OS said no".
   Future<bool> requestPermissions() async {
     final iosGranted = await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >()
         ?.requestPermissions(alert: true, badge: true, sound: true);
 
     final androidGranted = await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
 
     // Exactly one implementation resolves per platform; the other is null.
@@ -458,14 +499,19 @@ class NotificationService {
   /// settings long after enabling them here, and nothing in the app would
   /// otherwise notice.
   Future<bool> hasSystemPermission() async {
-    final ios = _notificationsPlugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    final ios = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     if (ios != null) {
       final options = await ios.checkPermissions();
       return options?.isEnabled ?? false;
     }
 
     final android = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
       return await android.areNotificationsEnabled() ?? false;
     }
@@ -475,22 +521,26 @@ class NotificationService {
 
   Future<void> sendTestNotification() async {
     final androidPlugin = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidPlugin?.deleteNotificationChannel(channelId: 'test_channel');
 
-    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'test_channel',
-      'Test Notifications',
-      importance: Importance.max,
-      priority: Priority.max,
-      icon: _androidStatusBarIcon,
-      largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
-    );
-    const DarwinNotificationDetails darwinPlatformChannelSpecifics = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'test_channel',
+          'Test Notifications',
+          importance: Importance.max,
+          priority: Priority.max,
+          icon: _androidStatusBarIcon,
+          largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
+        );
+    const DarwinNotificationDetails darwinPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: darwinPlatformChannelSpecifics,
@@ -499,7 +549,8 @@ class NotificationService {
     await _notificationsPlugin.cancel(id: _testNotificationId);
 
     const title = '🔔 Test Notification';
-    const body = 'Notifications are enabled and active! You will receive show & movie release alerts. 🍿';
+    const body =
+        'Notifications are enabled and active! You will receive show & movie release alerts. 🍿';
 
     await _notificationsPlugin.show(
       id: _testNotificationId,
@@ -528,19 +579,21 @@ class NotificationService {
       return false;
     }
 
-    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'release_channel',
-      'Release Notifications',
-      importance: Importance.max,
-      priority: Priority.max,
-      icon: _androidStatusBarIcon,
-      largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
-    );
-    const DarwinNotificationDetails darwinPlatformChannelSpecifics = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'release_channel',
+          'Release Notifications',
+          importance: Importance.max,
+          priority: Priority.max,
+          icon: _androidStatusBarIcon,
+          largeIcon: DrawableResourceAndroidBitmap(_androidLargeIcon),
+        );
+    const DarwinNotificationDetails darwinPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: darwinPlatformChannelSpecifics,
@@ -582,29 +635,36 @@ class NotificationService {
 
   /// Drops one title's alerts immediately, without waiting for its watchlist
   /// stream to round-trip and trigger a reconcile.
-  Future<void> cancelNotification(NotificationMedia media, int id) => _synchronized(() async {
-    final dayBeforeId = _notificationId(media, id, _slotDayBefore);
-    final hourBeforeId = _notificationId(media, id, _slotHourBefore);
+  Future<void> cancelNotification(NotificationMedia media, int id) =>
+      _synchronized(() async {
+        final dayBeforeId = _notificationId(media, id, _slotDayBefore);
+        final hourBeforeId = _notificationId(media, id, _slotHourBefore);
 
-    _canceledNotificationIds.add(dayBeforeId);
-    _canceledNotificationIds.add(hourBeforeId);
+        _canceledNotificationIds.add(dayBeforeId);
+        _canceledNotificationIds.add(hourBeforeId);
 
-    if (_desired.containsKey(media)) {
-      _desired[media]!.removeWhere((p) => p.mediaId == id);
-    }
+        if (_desired.containsKey(media)) {
+          _desired[media]!.removeWhere((p) => p.mediaId == id);
+        }
 
-    await _notificationsPlugin.cancel(id: dayBeforeId);
-    await _notificationsPlugin.cancel(id: hourBeforeId);
-    await _removeFromScheduledRegistryDirect([dayBeforeId.toString(), hourBeforeId.toString()]);
-    _lastScheduledSignature = null;
-  });
+        await _notificationsPlugin.cancel(id: dayBeforeId);
+        await _notificationsPlugin.cancel(id: hourBeforeId);
+        await _removeFromScheduledRegistryDirect([
+          dayBeforeId.toString(),
+          hourBeforeId.toString(),
+        ]);
+        _lastScheduledSignature = null;
+      });
 
   static const int _maxReceivedHistory = 20;
 
-  Future<void> _removeFromScheduledRegistryDirect(List<String> idsToRemove) async {
+  Future<void> _removeFromScheduledRegistryDirect(
+    List<String> idsToRemove,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final rawList = prefs.getStringList('scheduled_notifications_registry') ?? [];
+      final rawList =
+          prefs.getStringList('scheduled_notifications_registry') ?? [];
       if (rawList.isEmpty) return;
 
       final idSet = idsToRemove.toSet();
@@ -617,7 +677,10 @@ class NotificationService {
         }
       }).toList();
 
-      await prefs.setStringList('scheduled_notifications_registry', updatedList);
+      await prefs.setStringList(
+        'scheduled_notifications_registry',
+        updatedList,
+      );
     } catch (_) {}
   }
 
@@ -630,7 +693,8 @@ class NotificationService {
   Future<void> _promoteFiredNotificationsDirect() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final rawList = prefs.getStringList('scheduled_notifications_registry') ?? [];
+      final rawList =
+          prefs.getStringList('scheduled_notifications_registry') ?? [];
       if (rawList.isEmpty) return;
 
       final now = DateTime.now();
@@ -642,7 +706,8 @@ class NotificationService {
           final map = jsonDecode(jsonStr) as Map<String, dynamic>;
           final item = _ScheduledRegistryItem.fromJson(map);
           if (!item.scheduledDate.isAfter(now)) {
-            final occurrenceId = '${item.id}_${item.scheduledDate.millisecondsSinceEpoch}';
+            final occurrenceId =
+                '${item.id}_${item.scheduledDate.millisecondsSinceEpoch}';
             await _saveReceivedNotificationDirect(
               id: occurrenceId,
               title: item.title,
@@ -660,7 +725,10 @@ class NotificationService {
       }
 
       if (hasPromoted || remaining.length != rawList.length) {
-        await prefs.setStringList('scheduled_notifications_registry', remaining);
+        await prefs.setStringList(
+          'scheduled_notifications_registry',
+          remaining,
+        );
       }
     } catch (e) {
       debugPrint('Failed to promote fired scheduled notifications: $e');
@@ -721,12 +789,20 @@ class NotificationService {
     final parsedItems = <ReceivedNotificationItem>[];
     for (final jsonStr in updatedList) {
       try {
-        parsedItems.add(ReceivedNotificationItem.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>));
+        parsedItems.add(
+          ReceivedNotificationItem.fromJson(
+            jsonDecode(jsonStr) as Map<String, dynamic>,
+          ),
+        );
       } catch (_) {}
     }
     parsedItems.sort((a, b) {
-      final dateA = DateTime.tryParse(a.timestamp) ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final dateB = DateTime.tryParse(b.timestamp) ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final dateA =
+          DateTime.tryParse(a.timestamp) ??
+          DateTime.fromMillisecondsSinceEpoch(0);
+      final dateB =
+          DateTime.tryParse(b.timestamp) ??
+          DateTime.fromMillisecondsSinceEpoch(0);
       return dateB.compareTo(dateA);
     });
 
@@ -741,20 +817,22 @@ class NotificationService {
 
   /// Retrieves received notifications history (most recent first, max 20).
   /// Automatically runs promotion first so any newly fired alerts are included.
-  Future<List<ReceivedNotificationItem>> getReceivedNotifications() => _synchronized(() async {
-    await _promoteFiredNotificationsDirect();
-    final prefs = await SharedPreferences.getInstance();
-    final rawList = prefs.getStringList('received_notifications_history') ?? [];
+  Future<List<ReceivedNotificationItem>> getReceivedNotifications() =>
+      _synchronized(() async {
+        await _promoteFiredNotificationsDirect();
+        final prefs = await SharedPreferences.getInstance();
+        final rawList =
+            prefs.getStringList('received_notifications_history') ?? [];
 
-    final items = <ReceivedNotificationItem>[];
-    for (final jsonStr in rawList) {
-      try {
-        final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-        items.add(ReceivedNotificationItem.fromJson(map));
-      } catch (_) {}
-    }
-    return items;
-  });
+        final items = <ReceivedNotificationItem>[];
+        for (final jsonStr in rawList) {
+          try {
+            final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+            items.add(ReceivedNotificationItem.fromJson(map));
+          } catch (_) {}
+        }
+        return items;
+      });
 
   /// Removes a single received notification by ID from history.
   Future<void> removeReceivedNotification(String id) => _synchronized(() async {
@@ -769,7 +847,8 @@ class NotificationService {
     for (final jsonStr in rawList) {
       try {
         final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-        if (map['id']?.toString() != id && !map['id']!.toString().startsWith('${id}_')) {
+        if (map['id']?.toString() != id &&
+            !map['id']!.toString().startsWith('${id}_')) {
           updatedList.add(jsonStr);
         }
       } catch (_) {}
@@ -819,12 +898,14 @@ class NotificationService {
   });
 
   /// Returns all currently scheduled/pending notification items for display.
-  Future<List<ScheduledNotificationDisplayItem>> getPendingNotifications() async {
+  Future<List<ScheduledNotificationDisplayItem>>
+  getPendingNotifications() async {
     final Map<int, ScheduledNotificationDisplayItem> itemsById = {};
 
     // 1. Fetch platform-scheduled notification requests from local notifications plugin
     try {
-      final platformRequests = await _notificationsPlugin.pendingNotificationRequests();
+      final platformRequests = await _notificationsPlugin
+          .pendingNotificationRequests();
       for (final req in platformRequests) {
         if (req.title != null && req.body != null) {
           itemsById[req.id] = ScheduledNotificationDisplayItem(
@@ -1028,12 +1109,17 @@ class NotificationService {
     if (force) {
       _lastScheduledSignature = null;
       final androidPlugin = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      await androidPlugin?.deleteNotificationChannel(channelId: 'release_channel');
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await androidPlugin?.deleteNotificationChannel(
+        channelId: 'release_channel',
+      );
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final notificationsEnabled = prefs.getBool('notifications_enabled') ?? false;
+    final notificationsEnabled =
+        prefs.getBool('notifications_enabled') ?? false;
 
     // The in-app preference is necessary but not sufficient — a user who
     // revoked notifications in system settings keeps the toggle showing "on",
@@ -1065,8 +1151,13 @@ class NotificationService {
 
         // Primary alert: 1 hour before release
         final hourBefore = releaseDate.subtract(const Duration(hours: 1));
-        final hourBeforeId = _notificationId(pending.media, pending.mediaId, _slotHourBefore);
-        if (hourBefore.isAfter(now) && !_canceledNotificationIds.contains(hourBeforeId)) {
+        final hourBeforeId = _notificationId(
+          pending.media,
+          pending.mediaId,
+          _slotHourBefore,
+        );
+        if (hourBefore.isAfter(now) &&
+            !_canceledNotificationIds.contains(hourBeforeId)) {
           alerts.add(
             _ScheduledAlert(
               id: hourBeforeId,
@@ -1081,8 +1172,13 @@ class NotificationService {
         // Optional advance alert: 1 day before release
         if (notify1DayBefore) {
           final dayBefore = releaseDate.subtract(const Duration(days: 1));
-          final dayBeforeId = _notificationId(pending.media, pending.mediaId, _slotDayBefore);
-          if (dayBefore.isAfter(now) && !_canceledNotificationIds.contains(dayBeforeId)) {
+          final dayBeforeId = _notificationId(
+            pending.media,
+            pending.mediaId,
+            _slotDayBefore,
+          );
+          if (dayBefore.isAfter(now) &&
+              !_canceledNotificationIds.contains(dayBeforeId)) {
             alerts.add(
               _ScheduledAlert(
                 id: dayBeforeId,
@@ -1102,7 +1198,9 @@ class NotificationService {
     alerts.sort((a, b) => a.when.compareTo(b.when));
     final capped = alerts.take(_maxPending).toList();
 
-    final signature = capped.map((a) => '${a.id}@${a.when.millisecondsSinceEpoch}').join(',');
+    final signature = capped
+        .map((a) => '${a.id}@${a.when.millisecondsSinceEpoch}')
+        .join(',');
     if (!force && signature == _lastScheduledSignature) return;
 
     // Clear and rebuild. Cancelling wholesale is what makes stale alerts —
@@ -1128,13 +1226,17 @@ class NotificationService {
 
     // Keep the scheduled registry in sync with only successfully scheduled items
     final registryList = scheduledAlerts
-        .map((alert) => jsonEncode(_ScheduledRegistryItem(
+        .map(
+          (alert) => jsonEncode(
+            _ScheduledRegistryItem(
               id: alert.id.toString(),
               title: alert.title,
               body: alert.body,
               payload: alert.payload,
               scheduledDate: alert.when,
-            ).toJson()))
+            ).toJson(),
+          ),
+        )
         .toList();
     await prefs.setStringList('scheduled_notifications_registry', registryList);
 

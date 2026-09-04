@@ -38,7 +38,11 @@ class AchievementUnlockBanner {
 
     HapticFeedback.heavyImpact();
 
-    AchievementDetailBottomSheet.showStack(navContext, batch).then((_) {
+    AchievementDetailBottomSheet.showStack(
+      navContext,
+      batch,
+      isCelebration: true,
+    ).then((_) {
       _isShowing = false;
       if (_queue.isNotEmpty && context.mounted) {
         _showBatch(context);

@@ -130,4 +130,3 @@ extension BuildContextColorX on BuildContext {
   Color get textTertiary =>
       isLight ? AppColors.lightTextTertiary : AppColors.textTertiary;
 }
-
