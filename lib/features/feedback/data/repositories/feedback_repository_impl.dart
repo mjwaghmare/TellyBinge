@@ -74,6 +74,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       'severity': category == FeedbackCategory.bug ? severity : null,
       'officialResponse': null,
       'comments': <Map<String, dynamic>>[],
+      'commentCount': 0,
       'userId': userId,
       'userName': userName.isNotEmpty ? userName : 'PopVerse Fan',
       'userAvatar': userAvatar,
@@ -95,6 +96,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
           .map((url) => FeedbackMedia(path: url, isLocal: false))
           .toList(),
       severity: category == FeedbackCategory.bug ? severity : null,
+      commentCount: 0,
       userId: userId,
       userName: userName.isNotEmpty ? userName : 'PopVerse Fan',
       userAvatar: userAvatar,
@@ -148,10 +150,15 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
   }
 
   @override
-  Stream<List<Map<String, dynamic>>> getCommentsStream(String feedbackId) {
+  Stream<List<Map<String, dynamic>>> getCommentsStream(
+    String feedbackId, {
+    int limit = 50,
+  }) {
     return _feedbacksCollection
         .doc(feedbackId)
         .collection('comments')
+        .orderBy('time', descending: true)
+        .limit(limit)
         .snapshots()
         .asyncMap((subSnapshot) async {
       if (subSnapshot.docs.isNotEmpty) {
@@ -182,7 +189,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
             final bTime = b['time'] as String? ?? '';
             return bTime.compareTo(aTime);
           });
-          return legacyList;
+          return legacyList.take(limit).toList();
         }
       } catch (_) {}
 
@@ -209,11 +216,18 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       'text': text,
     };
 
-    await _feedbacksCollection
+    final commentRef = _feedbacksCollection
         .doc(feedbackId)
         .collection('comments')
-        .doc(id)
-        .set(comment);
+        .doc(id);
+    final feedbackRef = _feedbacksCollection.doc(feedbackId);
+
+    final batch = _firestore.batch();
+    batch.set(commentRef, comment);
+    batch.update(feedbackRef, {
+      'commentCount': FieldValue.increment(1),
+    });
+    await batch.commit();
   }
 
   @override
@@ -237,11 +251,18 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
     required String feedbackId,
     required String commentId,
   }) async {
-    await _feedbacksCollection
+    final commentRef = _feedbacksCollection
         .doc(feedbackId)
         .collection('comments')
-        .doc(commentId)
-        .delete();
+        .doc(commentId);
+    final feedbackRef = _feedbacksCollection.doc(feedbackId);
+
+    final batch = _firestore.batch();
+    batch.delete(commentRef);
+    batch.update(feedbackRef, {
+      'commentCount': FieldValue.increment(-1),
+    });
+    await batch.commit();
   }
 
   @override

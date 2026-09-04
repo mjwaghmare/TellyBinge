@@ -218,6 +218,29 @@ class FeedbackCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8.0),
 
+                    // Comment count (if any)
+                    if (item.commentCount > 0) ...[
+                      Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 12.0,
+                        color: isLight
+                            ? AppColors.lightTextTertiary
+                            : AppColors.textTertiary,
+                      ),
+                      const SizedBox(width: 3.5),
+                      Text(
+                        '${item.commentCount}',
+                        style: AppTextStyles.xs.copyWith(
+                          color: isLight
+                              ? AppColors.lightTextTertiary
+                              : AppColors.textTertiary,
+                          fontSize: 11.0,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                    ],
+
                     // Timestamp
                     Text(
                       item.timeAgo,

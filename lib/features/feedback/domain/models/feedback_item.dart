@@ -213,6 +213,7 @@ class FeedbackItem {
   final String? severity;
   final String? officialResponse;
   final List<Map<String, dynamic>> comments;
+  final int commentCount;
   final String userId;
   final String userName;
   final String userAvatar;
@@ -232,6 +233,7 @@ class FeedbackItem {
     this.severity,
     this.officialResponse,
     this.comments = const [],
+    this.commentCount = 0,
     this.userId = '',
     required this.userName,
     required this.userAvatar,
@@ -277,6 +279,7 @@ class FeedbackItem {
     String? severity,
     String? officialResponse,
     List<Map<String, dynamic>>? comments,
+    int? commentCount,
     String? userId,
     String? userName,
     String? userAvatar,
@@ -296,6 +299,7 @@ class FeedbackItem {
       severity: severity ?? this.severity,
       officialResponse: officialResponse ?? this.officialResponse,
       comments: comments ?? this.comments,
+      commentCount: commentCount ?? this.commentCount,
       userId: userId ?? this.userId,
       userName: userName ?? this.userName,
       userAvatar: userAvatar ?? this.userAvatar,
@@ -345,6 +349,7 @@ class FeedbackItem {
       'severity': severity,
       'officialResponse': officialResponse,
       'comments': comments,
+      'commentCount': commentCount,
       'userId': userId,
       'userName': userName,
       'userAvatar': userAvatar,
@@ -395,6 +400,9 @@ class FeedbackItem {
             .toList() ??
         [];
 
+    final rawCount = (map['commentCount'] as num?)?.toInt();
+    final commentCount = rawCount ?? commentsList.length;
+
     final upvotedIds =
         (map['upvotedUserIds'] as List<dynamic>?)
             ?.map((e) => e.toString())
@@ -427,6 +435,7 @@ class FeedbackItem {
       severity: map['severity'] as String?,
       officialResponse: map['officialResponse'] as String?,
       comments: commentsList,
+      commentCount: commentCount,
       userId: map['userId'] as String? ?? '',
       userName: map['userName'] as String? ?? 'Anonymous',
       userAvatar: map['userAvatar'] as String? ?? '',

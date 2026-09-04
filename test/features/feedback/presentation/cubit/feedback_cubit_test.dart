@@ -45,7 +45,10 @@ class FakeFeedbackRepository implements FeedbackRepository {
   }
 
   @override
-  Stream<List<Map<String, dynamic>>> getCommentsStream(String feedbackId) {
+  Stream<List<Map<String, dynamic>>> getCommentsStream(
+    String feedbackId, {
+    int limit = 50,
+  }) {
     return Stream.value(const []);
   }
 

@@ -67,7 +67,8 @@ service cloud.firestore {
                        request.resource.data.description.size() > 0 &&
                        request.resource.data.description.size() <= 5000 &&
                        request.resource.data.get('media', []).size() <= 10 &&
-                       request.resource.data.get('comments', []).size() == 0;
+                       request.resource.data.get('comments', []).size() == 0 &&
+                       request.resource.data.get('commentCount', 0) == 0;
 
       // Allow vote updates with strict validation
       function isValidVoteUpdate() {
@@ -95,6 +96,16 @@ service cloud.firestore {
                request.resource.data.votes >= 0;
       }
 
+      // Allow atomic commentCount increment/decrement by signed-in users
+      function isValidCommentCountUpdate() {
+        let diff = request.resource.data.diff(resource.data);
+        let countDelta = request.resource.data.get('commentCount', 0) - resource.data.get('commentCount', 0);
+        return isAuthenticated() &&
+               diff.affectedKeys().hasOnly(['commentCount']) &&
+               (countDelta == 1 || countDelta == -1) &&
+               request.resource.data.commentCount >= 0;
+      }
+
       // Allow creator to safely edit content fields only (status, officialResponse, votes, and author identity are strictly locked)
       function isOwnerContentUpdate() {
         let diff = request.resource.data.diff(resource.data);
@@ -110,6 +121,7 @@ service cloud.firestore {
       }
 
       allow update: if isValidVoteUpdate() ||
+                       isValidCommentCountUpdate() ||
                        isOwnerContentUpdate() ||
                        isAdmin();
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());

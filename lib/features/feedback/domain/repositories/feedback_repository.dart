@@ -23,8 +23,11 @@ abstract class FeedbackRepository {
     required String userId,
   });
 
-  /// Streams real-time comments for a feedback item
-  Stream<List<Map<String, dynamic>>> getCommentsStream(String feedbackId);
+  /// Streams real-time comments for a feedback item (bounded by limit for performance and scale)
+  Stream<List<Map<String, dynamic>>> getCommentsStream(
+    String feedbackId, {
+    int limit = 50,
+  });
 
   /// Adds a comment to a feedback item
   Future<void> addComment({

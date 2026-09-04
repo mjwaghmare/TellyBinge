@@ -1023,7 +1023,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                         ),
                       ),
                       child: Text(
-                        '${_comments.length}',
+                        '${_item.commentCount > 0 ? _item.commentCount : _comments.length}',
                         style: AppTextStyles.xsMedium.copyWith(
                           color: isLight
                               ? AppColors.lightTextSecondary
