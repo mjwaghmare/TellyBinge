@@ -17,8 +17,18 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       _firestore.collection('feedbacks');
 
   @override
-  Stream<List<FeedbackItem>> getFeedbacksStream({String? currentUserId}) {
-    return _feedbacksCollection.snapshots().map((snapshot) {
+  Stream<List<FeedbackItem>> getFeedbacksStream({
+    String? currentUserId,
+    int limit = 50,
+    FeedbackCategory? category,
+  }) {
+    Query<Map<String, dynamic>> query = _feedbacksCollection;
+    if (category != null) {
+      query = query.where('category', isEqualTo: category.name);
+    }
+    query = query.orderBy('createdAt', descending: true).limit(limit);
+
+    return query.snapshots().map((snapshot) {
       final list = snapshot.docs.map((doc) {
         return FeedbackItem.fromMap(doc.data(), doc.id, currentUserId);
       }).toList();
@@ -32,6 +42,17 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       });
 
       return list;
+    });
+  }
+
+  @override
+  Stream<FeedbackItem?> getFeedbackStream({
+    required String feedbackId,
+    String? currentUserId,
+  }) {
+    return _feedbacksCollection.doc(feedbackId).snapshots().map((doc) {
+      if (!doc.exists || doc.data() == null) return null;
+      return FeedbackItem.fromMap(doc.data()!, doc.id, currentUserId);
     });
   }
 

@@ -16,8 +16,19 @@ class FakeFeedbackRepository implements FeedbackRepository {
   void emit(List<FeedbackItem> items) => _controller.add(items);
 
   @override
-  Stream<List<FeedbackItem>> getFeedbacksStream({String? currentUserId}) =>
-      _controller.stream;
+  Stream<List<FeedbackItem>> getFeedbacksStream({
+    String? currentUserId,
+    int limit = 50,
+    FeedbackCategory? category,
+  }) => _controller.stream;
+
+  @override
+  Stream<FeedbackItem?> getFeedbackStream({
+    required String feedbackId,
+    String? currentUserId,
+  }) {
+    return Stream.value(feedbackItem);
+  }
 
   @override
   Future<FeedbackItem> submitFeedback({

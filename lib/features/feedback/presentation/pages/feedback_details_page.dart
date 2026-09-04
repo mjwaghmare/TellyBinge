@@ -39,7 +39,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   bool _isVotePending = false;
   bool _isCommentMutationPending = false;
   bool _isCommentSubmitting = false;
-  StreamSubscription<List<FeedbackItem>>? _feedbacksSubscription;
+  StreamSubscription<FeedbackItem?>? _feedbackSubscription;
   StreamSubscription<List<Map<String, dynamic>>>? _commentsSubscription;
   StreamSubscription<User?>? _authSubscription;
 
@@ -51,7 +51,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     _item = widget.item;
     _comments = List<Map<String, dynamic>>.from(_item.comments);
 
-    _subscribeToFeedbacks();
+    _subscribeToFeedback();
     _subscribeToComments();
 
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -61,23 +61,28 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         setState(() {
           _currentUserId = newUid;
         });
-        _subscribeToFeedbacks();
+        _subscribeToFeedback();
       }
     });
   }
 
-  void _subscribeToFeedbacks() {
-    _feedbacksSubscription?.cancel();
-    _feedbacksSubscription = _repository
-        .getFeedbacksStream(currentUserId: _currentUserId)
-        .listen((items) {
-      if (!mounted) return;
-      final index = items.indexWhere((i) => i.id == _item.id);
-      if (index != -1) {
-        setState(() {
-          _item = items[index].copyWith(comments: _comments);
-        });
-      }
+  void _subscribeToFeedback() {
+    _feedbackSubscription?.cancel();
+    _feedbackSubscription = _repository
+        .getFeedbackStream(
+          feedbackId: _item.id,
+          currentUserId: _currentUserId,
+        )
+        .listen((updatedItem) {
+      if (!mounted || updatedItem == null) return;
+      setState(() {
+        _item = updatedItem.copyWith(
+          comments: _comments,
+          commentCount: _comments.length > updatedItem.commentCount
+              ? _comments.length
+              : updatedItem.commentCount,
+        );
+      });
     });
   }
 
@@ -97,7 +102,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   @override
   void dispose() {
     _authSubscription?.cancel();
-    _feedbacksSubscription?.cancel();
+    _feedbackSubscription?.cancel();
     _commentsSubscription?.cancel();
     _commentFocusNode.dispose();
     _commentController.dispose();

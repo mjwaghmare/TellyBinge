@@ -1,8 +1,18 @@
 import '../models/feedback_item.dart';
 
 abstract class FeedbackRepository {
-  /// Streams all feedback items in real-time, optionally evaluated against current user ID for votes
-  Stream<List<FeedbackItem>> getFeedbacksStream({String? currentUserId});
+  /// Streams feedback items in real-time with optional limit and category filtering
+  Stream<List<FeedbackItem>> getFeedbacksStream({
+    String? currentUserId,
+    int limit = 50,
+    FeedbackCategory? category,
+  });
+
+  /// Streams a single feedback item in real-time by document ID
+  Stream<FeedbackItem?> getFeedbackStream({
+    required String feedbackId,
+    String? currentUserId,
+  });
 
   /// Submits new feedback, uploading any attached media first
   Future<FeedbackItem> submitFeedback({
