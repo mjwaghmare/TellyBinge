@@ -14,13 +14,18 @@ service cloud.firestore {
 
     // Helper function to check if the user is an admin
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.admin == true;
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        (request.auth.token.email == 'mjwaghmare.mtw@gmail.com' && request.auth.token.email_verified == true)
+      );
     }
 
     // Users collection and subcollections (watchlist, history)
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && isOwner(userId) && (request.resource.data.get('role', 'user') == 'user' || isAdmin());
+      allow update: if isAuthenticated() && isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin());
+      allow delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
 
       match /watchlist/{mediaId} {
         allow read, write: if isAuthenticated() && isOwner(userId);
@@ -131,8 +136,9 @@ service cloud.firestore {
         allow create: if isAuthenticated() &&
                          request.resource.data.userId == request.auth.uid &&
                          request.resource.data.text is string &&
-                         request.resource.data.text.size() > 0 &&
-                         request.resource.data.text.size() <= 2000;
+                         request.resource.data.text.size() <= 2000 &&
+                         (request.resource.data.text.size() > 0 || ('imageUrl' in request.resource.data && request.resource.data.imageUrl is string && request.resource.data.imageUrl.size() > 0)) &&
+                         (!('imageUrl' in request.resource.data) || (request.resource.data.imageUrl is string && request.resource.data.imageUrl.size() <= 2000));
         allow update: if isAuthenticated() &&
                          (resource.data.userId == request.auth.uid || isAdmin()) &&
                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt']) &&

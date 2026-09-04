@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +7,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import '../../domain/models/feedback_item.dart';
+import 'feedback_image_viewer.dart';
 
 /// A modern, industry-standard comment tile for the feedback discussion.
 /// Displays user avatar with network caching and initial fallback,
@@ -233,7 +237,10 @@ class FeedbackCommentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
-    final userName = comment['name'] as String? ?? 'PopVerse User';
+    final rawName = (comment['name'] as String? ?? 'PopVerse User').trim();
+    final displayName = rawName.length > 12
+        ? '${rawName.substring(0, 12)}...'
+        : rawName;
     final commentText = comment['text'] as String? ?? '';
 
     return InkWell(
@@ -241,7 +248,12 @@ class FeedbackCommentTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(12.0),
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.xs,
+          AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: isLight ? AppColors.lightSurface : AppColors.surface,
           borderRadius: BorderRadius.circular(12.0),
@@ -267,82 +279,89 @@ class FeedbackCommentTile extends StatelessWidget {
                   // Author Info Row
                   Row(
                     children: [
-                      // Name
-                      Flexible(
-                        child: Text(
-                          userName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.smBold.copyWith(
-                            color: isLight
-                                ? AppColors.lightTextPrimary
-                                : AppColors.textPrimary,
-                            fontSize: 13.5,
-                          ),
+                      // User Info & Badges
+                      Expanded(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Name
+                            Flexible(
+                              child: Text(
+                                displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.smBold.copyWith(
+                                  color: isLight
+                                      ? AppColors.lightTextPrimary
+                                      : AppColors.textPrimary,
+                                  fontSize: 14.5,
+                                ),
+                              ),
+                            ),
+
+                            // OP / Author Badge
+                            if (isOp) ...[
+                              const SizedBox(width: 6.0),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6.0,
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(
+                                    alpha: isLight ? 0.12 : 0.22,
+                                  ),
+                                  borderRadius: BorderRadius.circular(6.0),
+                                  border: Border.all(
+                                    color: AppColors.primary
+                                        .withValues(alpha: 0.35),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Author',
+                                  style: AppTextStyles.xsMedium.copyWith(
+                                    color: isLight
+                                        ? AppColors.primaryDark
+                                        : AppColors.primaryLight,
+                                    fontSize: 10.0,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(width: 6.0),
+                            Text(
+                              '•',
+                              style: AppTextStyles.xs.copyWith(
+                                color: isLight
+                                    ? AppColors.lightTextTertiary
+                                    : AppColors.textTertiary,
+                              ),
+                            ),
+                            const SizedBox(width: 6.0),
+
+                            // Timestamp
+                            Text(
+                              formattedTime,
+                              style: AppTextStyles.xs.copyWith(
+                                color: isLight
+                                    ? AppColors.lightTextTertiary
+                                    : AppColors.textTertiary,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-
-                      // OP / Author Badge
-                      if (isOp) ...[
-                        const SizedBox(width: 6.0),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6.0,
-                            vertical: 1.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(
-                              alpha: isLight ? 0.12 : 0.22,
-                            ),
-                            borderRadius: BorderRadius.circular(6.0),
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.35),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            'Author',
-                            style: AppTextStyles.xsMedium.copyWith(
-                              color: isLight
-                                  ? AppColors.primaryDark
-                                  : AppColors.primaryLight,
-                              fontSize: 10.0,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      const SizedBox(width: 6.0),
-                      Text(
-                        '•',
-                        style: AppTextStyles.xs.copyWith(
-                          color: isLight
-                              ? AppColors.lightTextTertiary
-                              : AppColors.textTertiary,
-                        ),
-                      ),
-                      const SizedBox(width: 6.0),
-
-                      // Timestamp
-                      Text(
-                        formattedTime,
-                        style: AppTextStyles.xs.copyWith(
-                          color: isLight
-                              ? AppColors.lightTextTertiary
-                              : AppColors.textTertiary,
-                          fontSize: 11.5,
-                        ),
-                      ),
-
-                      const Spacer(),
 
                       // Action button (3-dots)
                       InkWell(
                         onTap: () => _showCommentActionSheet(context),
                         borderRadius: BorderRadius.circular(16.0),
                         child: Padding(
-                          padding: const EdgeInsets.all(4.0),
+                          padding: const EdgeInsets.all(2.0),
                           child: Icon(
                             Icons.more_horiz_rounded,
                             size: 18.0,
@@ -355,23 +374,94 @@ class FeedbackCommentTile extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: AppSpacing.xxs),
+                  const SizedBox(height: 2.0),
 
                   // Comment Body Text
-                  Text(
-                    commentText,
-                    style: AppTextStyles.sm.copyWith(
-                      color: isLight
-                          ? AppColors.lightTextSecondary
-                          : AppColors.textSecondary,
-                      height: 1.45,
-                      fontSize: 13.5,
+                  if (commentText.isNotEmpty)
+                    Text(
+                      commentText,
+                      style: AppTextStyles.sm.copyWith(
+                        color: isLight
+                            ? AppColors.lightTextSecondary
+                            : AppColors.textSecondary,
+                        height: 1.45,
+                        fontSize: 13.5,
+                      ),
                     ),
-                  ),
+
+                  // Attached Media Image (if any)
+                  if ((comment['imageUrl'] as String? ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 6.0),
+                    _buildCommentImage(
+                      context,
+                      (comment['imageUrl'] as String).trim(),
+                      isLight,
+                    ),
+                  ],
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommentImage(BuildContext context, String path, bool isLight) {
+    final isLocal = !path.startsWith('http://') && !path.startsWith('https://');
+    return GestureDetector(
+      onTap: () => FeedbackImageViewer.show(
+        context,
+        mediaItems: [FeedbackMedia(path: path, isLocal: isLocal)],
+        initialIndex: 0,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10.0),
+        child: Container(
+          constraints: const BoxConstraints(
+            maxWidth: 220.0,
+            maxHeight: 160.0,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10.0),
+            border: Border.all(
+              color: isLight
+                  ? AppColors.borderLight
+                  : AppColors.borderDark.withValues(alpha: 0.6),
+              width: 1.0,
+            ),
+          ),
+          child: isLocal
+              ? Image.file(
+                  File(path),
+                  fit: BoxFit.cover,
+                )
+              : CachedNetworkImage(
+                  imageUrl: path,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    width: 120.0,
+                    height: 100.0,
+                    color: isLight
+                        ? AppColors.lightSurfaceElevated
+                        : AppColors.surfaceElevated,
+                    child: const Center(
+                      child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    width: 120.0,
+                    height: 100.0,
+                    color: isLight
+                        ? AppColors.lightSurfaceElevated
+                        : AppColors.surfaceElevated,
+                    child: const Icon(
+                      Icons.broken_image_outlined,
+                      size: 24,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ),
         ),
       ),
     );

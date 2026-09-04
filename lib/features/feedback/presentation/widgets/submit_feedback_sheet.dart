@@ -83,35 +83,6 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    if (_isSubmitting) return;
-    if (_attachedMedia.length >= 5) {
-      AppSnackbar.showInfo(context, 'You can attach up to 5 images.');
-      return;
-    }
-    HapticFeedback.lightImpact();
-    try {
-      final image = await _picker.pickImage(
-        source: source,
-        maxWidth: 1280,
-        maxHeight: 1280,
-        imageQuality: 85,
-      );
-      if (image != null && mounted) {
-        setState(() {
-          _attachedMedia.add(image);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        AppSnackbar.showError(
-          context,
-          'Failed to capture image. Please check camera permissions.',
-        );
-      }
-    }
-  }
-
   Future<void> _pickGalleryMedia() async {
     if (_isSubmitting) return;
     if (_attachedMedia.length >= 5) {
@@ -536,121 +507,134 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                 ),
                 const SizedBox(height: AppSpacing.md),
 
-                // 8. Media Section (Camera + Upload buttons + Thumbnails)
-                _buildFieldHeader(
-                  'Media',
-                  _attachedMedia.length,
-                  5,
-                  isLight,
-                  customSuffix: 'max 5',
-                ),
-                SizedBox(
-                  height: 80.0,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
+                // 8. Media Section (Header with '+ Add (Max 5)' button + Thumbnails)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Camera picker button
-                      _buildMediaPickerButton(
-                        icon: Icons.camera_alt_outlined,
-                        onTap: () => _pickImage(ImageSource.camera),
-                        isLight: isLight,
+                      Text(
+                        'Media',
+                        style: TextStyle(
+                          color: isLight
+                              ? AppColors.lightTextPrimary
+                              : AppColors.textPrimary,
+                          fontSize: 13.0,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      const SizedBox(width: 10.0),
-
-                      // Gallery upload button
-                      _buildMediaPickerButton(
-                        icon: Icons.file_upload_outlined,
-                        label: '+ Upload',
-                        onTap: _pickGalleryMedia,
-                        isLight: isLight,
-                      ),
-                      const SizedBox(width: 10.0),
-
-                      // Attached Media Previews
-                      ..._attachedMedia.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final file = entry.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 10.0),
-                          child: Stack(
-                            children: [
-                              GestureDetector(
-                                onTap: () => FeedbackImageViewer.show(
-                                  context,
-                                  mediaItems: _attachedMedia
-                                      .map((f) => FeedbackMedia(
-                                            path: f.path,
-                                            isLocal: true,
-                                          ))
-                                      .toList(),
-                                  initialIndex: index,
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  child: Container(
-                                    width: 80.0,
-                                    height: 80.0,
-                                    decoration: BoxDecoration(
-                                      color: isLight
-                                          ? const Color(0xFFF3F4F6)
-                                          : const Color(0xFF1E1E2C),
-                                      border: Border.all(
-                                        color: isLight
-                                            ? AppColors.borderLight
-                                            : Colors.white24,
-                                      ),
-                                    ),
-                                    child: kIsWeb
-                                        ? Image.network(
-                                            file.path,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) =>
-                                                const Icon(
-                                                  Icons.broken_image_outlined,
-                                                  color: AppColors.textTertiary,
-                                                  size: 24,
-                                                ),
-                                          )
-                                        : Image.file(
-                                            File(file.path),
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) =>
-                                                const Icon(
-                                                  Icons.broken_image_outlined,
-                                                  color: AppColors.textTertiary,
-                                                  size: 24,
-                                                ),
-                                          ),
-                                  ),
-                                ),
-                              ),
-                              // Delete badge (Red close)
-                              Positioned(
-                                top: 4,
-                                right: 4,
-                                child: GestureDetector(
-                                  onTap: () => _removeMedia(index),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.error,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.close_rounded,
-                                      color: Colors.white,
-                                      size: 13,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                      GestureDetector(
+                        onTap: _isSubmitting ? null : _pickGalleryMedia,
+                        child: Text(
+                          '+ Add (Max 5)',
+                          style: TextStyle(
+                            color: _attachedMedia.length >= 5
+                                ? (isLight
+                                    ? AppColors.lightTextTertiary
+                                    : AppColors.textTertiary)
+                                : AppColors.primary,
+                            fontSize: 13.0,
+                            fontWeight: FontWeight.w600,
                           ),
-                        );
-                      }),
+                        ),
+                      ),
                     ],
                   ),
                 ),
+
+                if (_attachedMedia.isNotEmpty) ...[
+                  const SizedBox(height: 6.0),
+                  SizedBox(
+                    height: 80.0,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _attachedMedia.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 10.0),
+                      itemBuilder: (context, index) {
+                        final file = _attachedMedia[index];
+                        return Stack(
+                          children: [
+                            GestureDetector(
+                              onTap: () => FeedbackImageViewer.show(
+                                context,
+                                mediaItems: _attachedMedia
+                                    .map((f) => FeedbackMedia(
+                                          path: f.path,
+                                          isLocal: true,
+                                        ))
+                                    .toList(),
+                                initialIndex: index,
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12.0),
+                                child: Container(
+                                  width: 80.0,
+                                  height: 80.0,
+                                  decoration: BoxDecoration(
+                                    color: isLight
+                                        ? const Color(0xFFF3F4F6)
+                                        : const Color(0xFF1E1E2C),
+                                    border: Border.all(
+                                      color: isLight
+                                          ? AppColors.borderLight
+                                          : Colors.white24,
+                                    ),
+                                  ),
+                                  child: kIsWeb
+                                      ? Image.network(
+                                          file.path,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error,
+                                                  stackTrace) =>
+                                              const Icon(
+                                            Icons.broken_image_outlined,
+                                            color:
+                                                AppColors.textTertiary,
+                                            size: 24,
+                                          ),
+                                        )
+                                      : Image.file(
+                                          File(file.path),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error,
+                                                  stackTrace) =>
+                                              const Icon(
+                                            Icons.broken_image_outlined,
+                                            color:
+                                                AppColors.textTertiary,
+                                            size: 24,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                            // Delete badge (Red close)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: () => _removeMedia(index),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.error,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.close_rounded,
+                                    color: Colors.white,
+                                    size: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: AppSpacing.lg),
 
@@ -776,46 +760,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
     );
   }
 
-  Widget _buildMediaPickerButton({
-    required IconData icon,
-    String? label,
-    required VoidCallback onTap,
-    required bool isLight,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 80.0,
-        height: 80.0,
-        decoration: BoxDecoration(
-          color: isLight ? const Color(0xFFF8F9FA) : const Color(0xFF1E1E2C),
-          borderRadius: BorderRadius.circular(12.0),
-          border: Border.all(
-            color: isLight
-                ? AppColors.borderLight
-                : Colors.white.withValues(alpha: 0.08),
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: AppColors.primaryLight, size: 24.0),
-            if (label != null) ...[
-              const SizedBox(height: 4.0),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppColors.primaryLight,
-                  fontSize: 11.0,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildInputLabel(String label, bool isLight) {
     return Padding(

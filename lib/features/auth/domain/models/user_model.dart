@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/constants/app_constants.dart';
 
 class UserModel extends Equatable {
   final String uid;
@@ -8,6 +9,8 @@ class UserModel extends Equatable {
   final int tvTimeSpentMinutes;
   final int episodesWatched;
   final int moviesWatched;
+  final String role;
+  final bool hasAdminClaim;
 
   const UserModel({
     required this.uid,
@@ -17,7 +20,17 @@ class UserModel extends Equatable {
     this.tvTimeSpentMinutes = 0,
     this.episodesWatched = 0,
     this.moviesWatched = 0,
+    this.role = 'user',
+    this.hasAdminClaim = false,
   });
+
+  bool get isAdmin {
+    if (hasAdminClaim) return true;
+    if (role.trim().toLowerCase() == 'admin') return true;
+    final normalized = email.trim().toLowerCase();
+    final fallback = AppConstants.fallbackAdminEmail.trim().toLowerCase();
+    return fallback.isNotEmpty && normalized == fallback;
+  }
 
   UserModel copyWith({
     String? uid,
@@ -27,6 +40,8 @@ class UserModel extends Equatable {
     int? tvTimeSpentMinutes,
     int? episodesWatched,
     int? moviesWatched,
+    String? role,
+    bool? hasAdminClaim,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -36,6 +51,8 @@ class UserModel extends Equatable {
       tvTimeSpentMinutes: tvTimeSpentMinutes ?? this.tvTimeSpentMinutes,
       episodesWatched: episodesWatched ?? this.episodesWatched,
       moviesWatched: moviesWatched ?? this.moviesWatched,
+      role: role ?? this.role,
+      hasAdminClaim: hasAdminClaim ?? this.hasAdminClaim,
     );
   }
 
@@ -45,6 +62,7 @@ class UserModel extends Equatable {
       'email': email,
       'displayName': displayName,
       'photoUrl': photoUrl,
+      'role': role,
       'stats': {
         'tvTimeSpentMinutes': tvTimeSpentMinutes,
         'episodesWatched': episodesWatched,
@@ -53,16 +71,28 @@ class UserModel extends Equatable {
     };
   }
 
-  factory UserModel.fromMap(Map<String, dynamic> map) {
+  factory UserModel.fromMap(
+    Map<String, dynamic> map, {
+    bool hasAdminClaim = false,
+  }) {
     final stats = map['stats'] as Map<String, dynamic>? ?? {};
+    final email = map['email'] as String? ?? '';
+    final normalized = email.trim().toLowerCase();
+    final fallback = AppConstants.fallbackAdminEmail.trim().toLowerCase();
+    final isFallbackAdmin = fallback.isNotEmpty && normalized == fallback;
+    final defaultRole = (hasAdminClaim || isFallbackAdmin) ? 'admin' : 'user';
+    final role = map['role'] as String? ?? defaultRole;
+
     return UserModel(
       uid: map['uid'] as String? ?? '',
-      email: map['email'] as String? ?? '',
+      email: email,
       displayName: map['displayName'] as String? ?? '',
       photoUrl: map['photoUrl'] as String? ?? '',
       tvTimeSpentMinutes: (stats['tvTimeSpentMinutes'] as num?)?.toInt() ?? 0,
       episodesWatched: (stats['episodesWatched'] as num?)?.toInt() ?? 0,
       moviesWatched: (stats['moviesWatched'] as num?)?.toInt() ?? 0,
+      role: role,
+      hasAdminClaim: hasAdminClaim,
     );
   }
 
@@ -75,5 +105,7 @@ class UserModel extends Equatable {
     tvTimeSpentMinutes,
     episodesWatched,
     moviesWatched,
+    role,
+    hasAdminClaim,
   ];
 }

@@ -70,6 +70,8 @@ class FakeFeedbackRepository implements FeedbackRepository {
     required String userName,
     required String userAvatar,
     required String text,
+    String? localImagePath,
+    String? imageUrl,
     String? commentId,
   }) async {}
 
@@ -94,6 +96,12 @@ class FakeFeedbackRepository implements FeedbackRepository {
 
   @override
   Future<void> deleteFeedback(String feedbackId) async {}
+
+  @override
+  Future<void> updateFeedbackStatus({
+    required String feedbackId,
+    required FeedbackStatus status,
+  }) async {}
 
   Future<void> dispose() => _controller.close();
 }

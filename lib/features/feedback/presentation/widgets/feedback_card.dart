@@ -132,6 +132,7 @@ class FeedbackCard extends StatelessWidget {
                       media: item.media,
                       isLight: isLight,
                       size: 54.0,
+                      maxCount: 3,
                     ),
                   ),
                 ],

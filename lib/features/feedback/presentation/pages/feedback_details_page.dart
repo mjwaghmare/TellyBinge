@@ -1,28 +1,34 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snackbar.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
 import '../widgets/feedback_comment_tile.dart';
 import '../widgets/feedback_media_preview.dart';
 import '../widgets/feedback_pill.dart';
+import '../../../auth/domain/models/user_model.dart';
+import '../../../auth/domain/repositories/auth_repository.dart';
+import '../../../auth/data/repositories/auth_repository_impl.dart';
 
 class FeedbackDetailsPage extends StatefulWidget {
   final FeedbackItem item;
   final FeedbackRepository? feedbackRepository;
+  final AuthRepository? authRepository;
 
   const FeedbackDetailsPage({
     super.key,
     required this.item,
     this.feedbackRepository,
+    this.authRepository,
   });
 
   @override
@@ -32,6 +38,8 @@ class FeedbackDetailsPage extends StatefulWidget {
 class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   late FeedbackItem _item;
   late final FeedbackRepository _repository;
+  late final AuthRepository _authRepository;
+  UserModel? _currentUserProfile;
   final TextEditingController _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
   late List<Map<String, dynamic>> _comments;
@@ -39,20 +47,27 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   bool _isVotePending = false;
   bool _isCommentMutationPending = false;
   bool _isCommentSubmitting = false;
+  bool _isStatusPending = false;
+  final ImagePicker _imagePicker = ImagePicker();
+  XFile? _attachedCommentImage;
   StreamSubscription<FeedbackItem?>? _feedbackSubscription;
   StreamSubscription<List<Map<String, dynamic>>>? _commentsSubscription;
   StreamSubscription<User?>? _authSubscription;
+
+  bool get _isAdmin => _currentUserProfile?.isAdmin ?? false;
 
   @override
   void initState() {
     super.initState();
     _repository = widget.feedbackRepository ?? FeedbackRepositoryImpl();
+    _authRepository = widget.authRepository ?? AuthRepositoryImpl();
     _currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
     _item = widget.item;
     _comments = List<Map<String, dynamic>>.from(_item.comments);
 
     _subscribeToFeedback();
     _subscribeToComments();
+    _loadUserProfile();
 
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (!mounted) return;
@@ -63,7 +78,18 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         });
         _subscribeToFeedback();
       }
+      _loadUserProfile();
     });
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final profile = await _authRepository.getCurrentUser();
+      if (!mounted) return;
+      setState(() {
+        _currentUserProfile = profile;
+      });
+    } catch (_) {}
   }
 
   void _subscribeToFeedback() {
@@ -155,10 +181,43 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     if (mounted) setState(() => _isVotePending = false);
   }
 
+  Future<void> _pickCommentImage() async {
+    if (_isCommentSubmitting) return;
+    HapticFeedback.lightImpact();
+    try {
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        imageQuality: 85,
+      );
+      if (image != null && mounted) {
+        setState(() {
+          _attachedCommentImage = image;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.showError(
+          context,
+          'Failed to pick image from gallery. Please check storage permissions.',
+        );
+      }
+    }
+  }
+
+  void _removeCommentImage() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _attachedCommentImage = null;
+    });
+  }
+
   Future<void> _addComment() async {
     if (_isCommentMutationPending || _isCommentSubmitting) return;
     final text = _commentController.text.trim();
-    if (text.isEmpty) return;
+    final attachedImage = _attachedCommentImage;
+    if (text.isEmpty && attachedImage == null) return;
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || user.uid.isEmpty) {
@@ -192,6 +251,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       'userAvatar': userAvatar,
       'time': timeStr,
       'text': text,
+      if (attachedImage != null) 'imageUrl': attachedImage.path,
     };
 
     setState(() {
@@ -199,6 +259,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       _comments.insert(0, newComment);
       _item = _item.copyWith(comments: _comments);
       _commentController.clear();
+      _attachedCommentImage = null;
     });
 
     try {
@@ -208,6 +269,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         userName: userName,
         userAvatar: userAvatar,
         text: text,
+        localImagePath: attachedImage?.path,
         commentId: commentId,
       );
       if (mounted) setState(() => _isCommentSubmitting = false);
@@ -664,10 +726,232 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     );
   }
 
+  Future<void> _updateStatus(FeedbackStatus newStatus) async {
+    if (_isStatusPending) return;
+    final oldStatus = _item.status;
+    if (oldStatus == newStatus) return;
+
+    // Optimistic local update and in-flight guard
+    setState(() {
+      _isStatusPending = true;
+      _item = _item.copyWith(status: newStatus);
+    });
+
+    try {
+      await _repository.updateFeedbackStatus(
+        feedbackId: _item.id,
+        status: newStatus,
+      );
+      if (mounted) {
+        AppSnackbar.showSuccess(
+          context,
+          'Status updated to "${newStatus.label}"',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        // Revert on error
+        setState(() {
+          _item = _item.copyWith(status: oldStatus);
+        });
+        AppSnackbar.showError(
+          context,
+          'Failed to update status: $e',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isStatusPending = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _showChangeStatusBottomSheet() async {
+    final isLight = context.isLight;
+    final statuses = FeedbackStatus.genericStatuses;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isLight ? Colors.white : const Color(0xFF161622),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
+      ),
+      builder: (sheetCtx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isLight
+                          ? Colors.grey.shade300
+                          : Colors.grey.shade700,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+
+                // Header title
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: const Icon(
+                        Icons.published_with_changes_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12.0),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Change Feedback Status',
+                            style: AppTextStyles.mdBold.copyWith(
+                              color: isLight
+                                  ? AppColors.lightTextPrimary
+                                  : AppColors.textPrimary,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 2.0),
+                          Text(
+                            'Current: ${_item.status.label}',
+                            style: AppTextStyles.xs.copyWith(
+                              color: isLight
+                                  ? AppColors.lightTextSecondary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16.0),
+                Divider(
+                  color: isLight
+                      ? Colors.grey.shade200
+                      : Colors.white.withValues(alpha: 0.08),
+                  height: 1,
+                ),
+                const SizedBox(height: 8.0),
+
+                // Status Options List
+                ...statuses.map((status) {
+                  final isCurrent = _item.status == status;
+                  return InkWell(
+                    onTap: _isStatusPending
+                        ? null
+                        : () async {
+                            Navigator.pop(sheetCtx);
+                            if (isCurrent) return;
+                            HapticFeedback.mediumImpact();
+                            await _updateStatus(status);
+                          },
+                    borderRadius: BorderRadius.circular(14.0),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 10.0,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isCurrent
+                            ? (isLight
+                                ? Colors.grey.shade100
+                                : Colors.white.withValues(alpha: 0.05))
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(14.0),
+                        border: isCurrent
+                            ? Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.4),
+                                width: 1.5,
+                              )
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          FeedbackPill.status(
+                            status: status,
+                            isLight: isLight,
+                          ),
+                          const SizedBox(width: 12.0),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  status.label,
+                                  style: AppTextStyles.smBold.copyWith(
+                                    color: isLight
+                                        ? AppColors.lightTextPrimary
+                                        : AppColors.textPrimary,
+                                    fontWeight: isCurrent
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2.0),
+                                Text(
+                                  status.description,
+                                  style: AppTextStyles.xs.copyWith(
+                                    color: isLight
+                                        ? AppColors.lightTextSecondary
+                                        : AppColors.textSecondary,
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isCurrent)
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 8.0),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? _currentUserId;
+    final currentUserId =
+        _currentUserProfile?.uid.isNotEmpty == true
+            ? _currentUserProfile!.uid
+            : (FirebaseAuth.instance.currentUser?.uid ?? _currentUserId);
+    final isAdmin = _isAdmin;
     final isOwner = currentUserId.isNotEmpty && _item.userId == currentUserId;
 
     return Scaffold(
@@ -693,24 +977,80 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         ),
         centerTitle: false,
         actions: [
-          if (isOwner)
+          if (isOwner || isAdmin)
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
-              child: TextButton.icon(
-                onPressed: _showDeleteConfirmationDialog,
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                  color: AppColors.error,
-                  size: 18,
+              child: PopupMenuButton<String>(
+                enabled: !_isStatusPending,
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  color: isLight
+                      ? AppColors.lightTextPrimary
+                      : AppColors.textPrimary,
+                  size: 22,
                 ),
-                label: const Text(
-                  'Delete',
-                  style: TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13.5,
-                  ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14.0),
                 ),
+                color: isLight ? Colors.white : const Color(0xFF1E1E2D),
+                elevation: 4,
+                onSelected: _isStatusPending
+                    ? null
+                    : (value) {
+                        if (value == 'status') {
+                          _showChangeStatusBottomSheet();
+                        } else if (value == 'delete') {
+                          _showDeleteConfirmationDialog();
+                        }
+                      },
+                itemBuilder: (ctx) => [
+                  if (isAdmin)
+                    PopupMenuItem<String>(
+                      value: 'status',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.published_with_changes_rounded,
+                            size: 20,
+                            color: isLight
+                                ? AppColors.lightTextPrimary
+                                : AppColors.textPrimary,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Change Status',
+                            style: AppTextStyles.smBold.copyWith(
+                              color: isLight
+                                  ? AppColors.lightTextPrimary
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (isOwner || isAdmin)
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: const [
+                          Icon(
+                            Icons.delete_outline_rounded,
+                            size: 20,
+                            color: AppColors.error,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Delete Feedback',
+                            style: TextStyle(
+                              color: AppColors.error,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ),
         ],
@@ -823,7 +1163,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                           child: FeedbackMediaPreview(
                             media: _item.media,
                             isLight: isLight,
-                            size: 54.0,
+                            size: 60.0,
+                            showAll: true,
                           ),
                         ),
                       ],
@@ -1123,9 +1464,11 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
           Container(
             padding: EdgeInsets.only(
               left: AppSpacing.md,
-              right: AppSpacing.md,
-              top: AppSpacing.sm,
-              bottom: MediaQuery.of(context).padding.bottom + AppSpacing.sm,
+              right: AppSpacing.xs,
+              top: 6.0,
+              bottom: MediaQuery.of(context).padding.bottom > 0
+                  ? (MediaQuery.of(context).padding.bottom - 4.0).clamp(4.0, 34.0)
+                  : 6.0,
             ),
             decoration: BoxDecoration(
               color: isLight ? AppColors.lightSurface : AppColors.surface,
@@ -1134,6 +1477,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                   color: isLight
                       ? AppColors.borderLight
                       : AppColors.borderDark,
+                  width: 0.8,
                 ),
               ),
               boxShadow: [
@@ -1144,135 +1488,265 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 ),
               ],
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Current user profile avatar
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4.0),
-                  child: _buildCurrentUserAvatar(isLight),
-                ),
-                const SizedBox(width: AppSpacing.xs),
+                // Attached Image Thumbnail Preview (Instagram / Slack style)
+                if (_attachedCommentImage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 4.0,
+                      bottom: AppSpacing.xs,
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 66,
+                          height: 66,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12.0),
+                            border: Border.all(
+                              color: isLight
+                                  ? AppColors.borderLight
+                                  : AppColors.borderDark,
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha: isLight ? 0.08 : 0.25,
+                                ),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10.5),
+                            child: Image.file(
+                              File(_attachedCommentImage!.path),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        // Close / Delete Badge
+                        Positioned(
+                          top: -6,
+                          right: -6,
+                          child: GestureDetector(
+                            onTap: _removeCommentImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(3.5),
+                              decoration: BoxDecoration(
+                                color: isLight
+                                    ? Colors.white
+                                    : const Color(0xFF2C2C3E),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isLight
+                                      ? AppColors.borderLight
+                                      : Colors.white24,
+                                  width: 1.0,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.18),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 13,
+                                color: isLight
+                                    ? AppColors.lightTextPrimary
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                // Text Field Capsule
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isLight
-                          ? AppColors.lightSurfaceElevated
-                          : AppColors.surfaceElevated,
-                      borderRadius: BorderRadius.circular(22.0),
-                      border: Border.all(
-                        color: isLight
-                            ? AppColors.borderLight
-                            : AppColors.borderDark,
+                // Main Input Row: [Borderless Text Field with clear X] -> [Image Gallery Button] -> [Sliding Send Button]
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // 1. Text Field Capsule (NO BORDER, reduced roundness, clear X at bottom right)
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isLight
+                              ? AppColors.lightSurfaceElevated
+                              : AppColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(14.0),
+                        ),
+                        child: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _commentController,
+                          builder: (context, val, _) {
+                            final showClear = val.text.isNotEmpty;
+                            return Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                TextField(
+                                  controller: _commentController,
+                                  focusNode: _commentFocusNode,
+                                  minLines: 1,
+                                  maxLines: 4,
+                                  textCapitalization: TextCapitalization.sentences,
+                                  keyboardType: TextInputType.multiline,
+                                  style: AppTextStyles.sm.copyWith(
+                                    color: isLight
+                                        ? AppColors.lightTextPrimary
+                                        : AppColors.textPrimary,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Add a comment...',
+                                    hintStyle: AppTextStyles.sm.copyWith(
+                                      color: isLight
+                                          ? AppColors.lightTextTertiary
+                                          : AppColors.textTertiary,
+                                    ),
+                                    filled: false,
+                                    fillColor: Colors.transparent,
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    errorBorder: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    contentPadding: EdgeInsets.only(
+                                      left: 14.0,
+                                      top: 9.0,
+                                      bottom: 9.0,
+                                      right: showClear ? 30.0 : 14.0,
+                                    ),
+                                  ),
+                                  onSubmitted: (textVal) {
+                                    if (textVal.trim().isNotEmpty ||
+                                        _attachedCommentImage != null) {
+                                      _addComment();
+                                    }
+                                  },
+                                ),
+                                if (showClear)
+                                  Positioned(
+                                    right: 4.0,
+                                    bottom: 3.0,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        HapticFeedback.lightImpact();
+                                        _commentController.clear();
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(4.0),
+                                        child: Icon(
+                                          Icons.cancel_rounded,
+                                          size: 17.0,
+                                          color: isLight
+                                              ? AppColors.lightTextTertiary
+                                              : AppColors.textTertiary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                     ),
-                    child: TextField(
-                      controller: _commentController,
-                      focusNode: _commentFocusNode,
-                      minLines: 1,
-                      maxLines: 4,
-                      textCapitalization: TextCapitalization.sentences,
-                      keyboardType: TextInputType.multiline,
-                      style: AppTextStyles.sm.copyWith(
+                    const SizedBox(width: 2.0),
+
+                    // 2. Image Gallery Button (To the right of field, to the left of send button - NO CIRCLE BG)
+                    IconButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        if (!_isCommentSubmitting) _pickCommentImage();
+                      },
+                      splashRadius: 20,
+                      padding: const EdgeInsets.all(6.0),
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      tooltip: 'Attach image from gallery',
+                      icon: Icon(
+                        Icons.image_outlined,
+                        size: 24,
                         color: isLight
                             ? AppColors.lightTextPrimary
                             : AppColors.textPrimary,
                       ),
-                      decoration: InputDecoration(
-                        hintText: 'Add a comment...',
-                        hintStyle: AppTextStyles.sm.copyWith(
-                          color: isLight
-                              ? AppColors.lightTextTertiary
-                              : AppColors.textTertiary,
-                        ),
-                        filled: false,
-                        fillColor: Colors.transparent,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        disabledBorder: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: 9.0,
-                        ),
-                      ),
-                      onSubmitted: (val) {
-                        if (val.trim().isNotEmpty) _addComment();
+                    ),
+
+                    // 3. Send Button (Hidden when empty, slides right to left when typing - NO CIRCLE BG)
+                    ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _commentController,
+                      builder: (context, value, _) {
+                        final hasContent = value.text.trim().isNotEmpty ||
+                            _attachedCommentImage != null;
+                        return AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 260),
+                          reverseDuration: const Duration(milliseconds: 200),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) {
+                            return ClipRect(
+                              child: SizeTransition(
+                                axis: Axis.horizontal,
+                                alignment: Alignment.centerLeft,
+                                sizeFactor: animation,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0.6, 0.0),
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          child: hasContent
+                              ? IconButton(
+                                  key: const ValueKey('send_comment_button'),
+                                  onPressed: () {
+                                    HapticFeedback.lightImpact();
+                                    _addComment();
+                                  },
+                                  splashRadius: 20,
+                                  padding: const EdgeInsets.all(6.0),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 36,
+                                    minHeight: 36,
+                                  ),
+                                  icon: _isCommentSubmitting
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator
+                                              .adaptive(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.send_rounded,
+                                          color: AppColors.primary,
+                                          size: 23,
+                                        ),
+                                )
+                              : const SizedBox.shrink(
+                                  key: ValueKey('empty_send_button'),
+                                ),
+                        );
                       },
                     ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-
-                // Animated Send Button
-                ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _commentController,
-                  builder: (context, value, _) {
-                    final canSubmit =
-                        value.text.trim().isNotEmpty && !_isCommentSubmitting;
-                    return AnimatedScale(
-                      scale: canSubmit ? 1.0 : 0.95,
-                      duration: const Duration(milliseconds: 150),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          gradient: canSubmit
-                              ? const LinearGradient(
-                                  colors: [
-                                    AppColors.primary,
-                                    AppColors.primaryDark,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                )
-                              : null,
-                          color: canSubmit
-                              ? null
-                              : (isLight
-                                  ? AppColors.borderLight
-                                  : Colors.white.withValues(alpha: 0.08)),
-                          shape: BoxShape.circle,
-                          boxShadow: canSubmit
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.primary.withValues(
-                                      alpha: 0.35,
-                                    ),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: _isCommentSubmitting
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator.adaptive(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.arrow_upward_rounded,
-                                  color: canSubmit
-                                      ? Colors.white
-                                      : (isLight
-                                          ? AppColors.lightTextTertiary
-                                          : AppColors.textTertiary),
-                                  size: 20,
-                                ),
-                          onPressed: canSubmit ? _addComment : null,
-                        ),
-                      ),
-                    );
-                  },
+                  ],
                 ),
               ],
             ),
@@ -1283,70 +1757,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   );
 }
 
-  Widget _buildCurrentUserAvatar(bool isLight) {
-    final user = FirebaseAuth.instance.currentUser;
-    final photoUrl = user?.photoURL?.trim() ?? '';
-    final displayName = user?.displayName?.trim() ?? '';
-    final initials = displayName.isNotEmpty
-        ? displayName[0].toUpperCase()
-        : (user?.email?.isNotEmpty == true
-            ? user!.email![0].toUpperCase()
-            : 'U');
 
-    if (photoUrl.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: photoUrl,
-        imageBuilder: (context, imageProvider) => Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
-            border: Border.all(
-              color: isLight ? AppColors.borderLight : AppColors.borderDark,
-              width: 1.0,
-            ),
-          ),
-        ),
-        placeholder: (context, url) => _buildUserInitialsAvatar(initials, isLight),
-        errorWidget: (context, url, error) => _buildUserInitialsAvatar(initials, isLight),
-      );
-    }
-    return _buildUserInitialsAvatar(initials, isLight);
-  }
-
-  Widget _buildUserInitialsAvatar(String initials, bool isLight) {
-    return Container(
-      width: 32,
-      height: 32,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: isLight
-              ? [
-                  AppColors.primary.withValues(alpha: 0.15),
-                  AppColors.primaryLight.withValues(alpha: 0.25),
-                ]
-              : [
-                  AppColors.surfaceElevated,
-                  AppColors.primaryDark.withValues(alpha: 0.35),
-                ],
-        ),
-        border: Border.all(
-          color: isLight ? AppColors.borderLight : AppColors.borderDark,
-          width: 1.0,
-        ),
-      ),
-      child: Text(
-        initials,
-        style: AppTextStyles.xsBold.copyWith(
-          color: isLight ? AppColors.primaryDark : AppColors.primaryLight,
-          fontSize: 11.5,
-        ),
-      ),
-    );
-  }
 
   // --- SUB WIDGETS ---
 

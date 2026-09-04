@@ -56,6 +56,21 @@ void main() {
       expect(item.media, isEmpty);
       expect(item.comments, isEmpty);
     });
+
+    test('parses closed status correctly and defines genericStatuses', () {
+      final item = FeedbackItem.fromMap({
+        'category': 'bug',
+        'status': 'closed',
+      }, 'feedback-2');
+
+      expect(item.status, FeedbackStatus.closed);
+      expect(FeedbackStatus.genericStatuses, [
+        FeedbackStatus.open,
+        FeedbackStatus.inProgress,
+        FeedbackStatus.resolved,
+        FeedbackStatus.closed,
+      ]);
+    });
   });
 
   group('FeedbackItem.upvoted', () {

@@ -45,6 +45,8 @@ enum FeedbackCategory {
 enum FeedbackStatus {
   open(
     label: 'Open',
+    description: 'Received and queued for review',
+    icon: Icons.radio_button_unchecked_rounded,
     lightBg: Color(0xFFF3F4F6),
     lightText: Color(0xFF4B5563),
     darkBg: Color(0xFF1F2937),
@@ -52,6 +54,8 @@ enum FeedbackStatus {
   ),
   underReview(
     label: 'Under Review',
+    description: 'Being reviewed by the team',
+    icon: Icons.visibility_outlined,
     lightBg: Color(0xFFEDE9FE),
     lightText: Color(0xFF6D28D9),
     darkBg: Color(0xFF231942),
@@ -59,6 +63,8 @@ enum FeedbackStatus {
   ),
   planned(
     label: 'Planned',
+    description: 'Scheduled for an upcoming release',
+    icon: Icons.event_note_rounded,
     lightBg: Color(0xFFE0F2FE),
     lightText: Color(0xFF0369A1),
     darkBg: Color(0xFF0C334E),
@@ -66,6 +72,8 @@ enum FeedbackStatus {
   ),
   inProgress(
     label: 'In Progress',
+    description: 'Currently being actively worked on',
+    icon: Icons.timelapse_rounded,
     lightBg: Color(0xFFFEF3C7),
     lightText: Color(0xFFB45309),
     darkBg: Color(0xFF352003),
@@ -73,13 +81,26 @@ enum FeedbackStatus {
   ),
   resolved(
     label: 'Resolved',
+    description: 'Fixed and completed in the app',
+    icon: Icons.check_circle_outline_rounded,
     lightBg: Color(0xFFDCFCE7),
     lightText: Color(0xFF15803D),
     darkBg: Color(0xFF052E16),
     darkText: Color(0xFF4ADE80),
   ),
+  closed(
+    label: 'Closed',
+    description: 'Closed or marked as won\'t fix',
+    icon: Icons.cancel_outlined,
+    lightBg: Color(0xFFFEE2E2),
+    lightText: Color(0xFFDC2626),
+    darkBg: Color(0xFF3B1212),
+    darkText: Color(0xFFF87171),
+  ),
   declined(
     label: 'Declined',
+    description: 'Declined by the team',
+    icon: Icons.cancel_outlined,
     lightBg: Color(0xFFFEE2E2),
     lightText: Color(0xFFDC2626),
     darkBg: Color(0xFF3B1212),
@@ -87,6 +108,8 @@ enum FeedbackStatus {
   );
 
   final String label;
+  final String description;
+  final IconData icon;
   final Color lightBg;
   final Color lightText;
   final Color darkBg;
@@ -94,6 +117,8 @@ enum FeedbackStatus {
 
   const FeedbackStatus({
     required this.label,
+    required this.description,
+    required this.icon,
     required this.lightBg,
     required this.lightText,
     required this.darkBg,
@@ -102,6 +127,14 @@ enum FeedbackStatus {
 
   Color backgroundColor(bool isLight) => isLight ? lightBg : darkBg;
   Color textColor(bool isLight) => isLight ? lightText : darkText;
+
+  /// The 4 generic statuses available for admin selection
+  static const List<FeedbackStatus> genericStatuses = [
+    FeedbackStatus.open,
+    FeedbackStatus.inProgress,
+    FeedbackStatus.resolved,
+    FeedbackStatus.closed,
+  ];
 }
 
 enum FeedbackVoteMilestone {

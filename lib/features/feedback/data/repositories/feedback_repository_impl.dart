@@ -225,9 +225,23 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
     required String userName,
     required String userAvatar,
     required String text,
+    String? localImagePath,
+    String? imageUrl,
     String? commentId,
   }) async {
     final id = commentId ?? '${userId}_${DateTime.now().microsecondsSinceEpoch}';
+
+    String? finalImageUrl = imageUrl;
+    if (finalImageUrl == null && localImagePath != null && localImagePath.isNotEmpty) {
+      final uploadedUrls = await _storageService.uploadMedia(
+        feedbackId: feedbackId,
+        localFilePaths: [localImagePath],
+      );
+      if (uploadedUrls.isNotEmpty) {
+        finalImageUrl = uploadedUrls.first;
+      }
+    }
+
     final comment = {
       'id': id,
       'userId': userId,
@@ -235,6 +249,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       'userAvatar': userAvatar,
       'time': DateTime.now().toIso8601String(),
       'text': text,
+      if (finalImageUrl != null && finalImageUrl.isNotEmpty) 'imageUrl': finalImageUrl,
     };
 
     final commentRef = _feedbacksCollection
@@ -309,5 +324,16 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       }
     } catch (_) {}
     await _feedbacksCollection.doc(feedbackId).delete();
+  }
+
+  @override
+  Future<void> updateFeedbackStatus({
+    required String feedbackId,
+    required FeedbackStatus status,
+  }) async {
+    await _feedbacksCollection.doc(feedbackId).update({
+      'status': status.name,
+      'statusUpdatedAt': FieldValue.serverTimestamp(),
+    });
   }
 }

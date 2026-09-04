@@ -46,6 +46,8 @@ abstract class FeedbackRepository {
     required String userName,
     required String userAvatar,
     required String text,
+    String? localImagePath,
+    String? imageUrl,
     String? commentId,
   });
 
@@ -70,4 +72,10 @@ abstract class FeedbackRepository {
 
   /// Deletes a feedback item (for author or admin)
   Future<void> deleteFeedback(String feedbackId);
+
+  /// Updates feedback status (admin only)
+  Future<void> updateFeedbackStatus({
+    required String feedbackId,
+    required FeedbackStatus status,
+  });
 }
