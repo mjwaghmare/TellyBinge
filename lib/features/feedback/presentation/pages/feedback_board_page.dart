@@ -26,6 +26,7 @@ class FeedbackBoardPage extends StatefulWidget {
 class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
   late final FeedbackRepository _repository;
   StreamSubscription<List<FeedbackItem>>? _subscription;
+  StreamSubscription<User?>? _authSubscription;
   List<FeedbackItem> _items = [];
   bool _isLoading = true;
   String _selectedFilter = 'All';
@@ -39,7 +40,32 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
     super.initState();
     _repository = widget.feedbackRepository ?? FeedbackRepositoryImpl();
     _currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    _subscribeToFeedbacks();
+
+    if (_currentUserId.isNotEmpty) {
+      _subscribeToFeedbacks();
+    } else {
+      _isLoading = false;
+    }
+
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (!mounted) return;
+      final newUid = user?.uid ?? '';
+      if (newUid != _currentUserId) {
+        setState(() {
+          _currentUserId = newUid;
+          _isLoading = newUid.isNotEmpty;
+        });
+        if (newUid.isNotEmpty) {
+          _subscribeToFeedbacks();
+        } else {
+          _subscription?.cancel();
+          setState(() {
+            _items = [];
+            _isLoading = false;
+          });
+        }
+      }
+    });
   }
 
   void _subscribeToFeedbacks([Completer<void>? refreshCompleter]) {
@@ -87,6 +113,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _subscription?.cancel();
     _searchController.dispose();
     super.dispose();
@@ -199,6 +226,45 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
+
+    if (_currentUserId.isEmpty) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+              size: 20,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            'Feedback & Requests',
+            style: AppTextStyles.lg.copyWith(
+              color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          centerTitle: false,
+        ),
+        body: const AuthRequiredView(
+          icon: Icons.rate_review_outlined,
+          title: 'Community Feedback',
+          subtitle:
+              'Sign in to explore community suggestions, report bugs, and vote on what gets built next.',
+          features: [
+            'Vote on feature requests and ideas',
+            'Submit bugs with screenshot attachments',
+            'Join discussions with the community',
+          ],
+        ),
+      );
+    }
+
     final items = _filteredItems;
 
     return Scaffold(
