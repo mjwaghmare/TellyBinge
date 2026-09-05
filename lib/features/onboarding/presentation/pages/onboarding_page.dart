@@ -7,7 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/onboarding_poster_wall.dart';
 import '../widgets/onboarding_slides.dart';
 
-/// Three-slide intro carousel shown once per install, ahead of the login
+/// Four-slide intro carousel shown once per install, ahead of the login
 /// screen. Calls [onFinished] when the user reaches the end or skips.
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key, required this.onFinished});
@@ -21,7 +21,8 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   static const List<Widget> _slides = [
     TrackingSlide(),
-    NotificationsSlide(),
+    ReleasesSlide(),
+    DiscoverSlide(),
     StatsSlide(),
   ];
 

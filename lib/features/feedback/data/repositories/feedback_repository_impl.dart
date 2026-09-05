@@ -1,17 +1,24 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
+import '../services/feedback_notification_service.dart';
 import '../services/feedback_storage_service.dart';
 
 class FeedbackRepositoryImpl implements FeedbackRepository {
   final FirebaseFirestore _firestore;
   final FeedbackStorageService _storageService;
+  final FeedbackNotificationService _notificationService;
 
   FeedbackRepositoryImpl({
     FirebaseFirestore? firestore,
     FeedbackStorageService? storageService,
+    FeedbackNotificationService? notificationService,
   }) : _firestore = firestore ?? FirebaseFirestore.instance,
-       _storageService = storageService ?? FeedbackStorageService();
+       _storageService = storageService ?? FeedbackStorageService(),
+       _notificationService =
+           notificationService ?? FeedbackNotificationService();
 
   CollectionReference<Map<String, dynamic>> get _feedbacksCollection =>
       _firestore.collection('feedbacks');
@@ -105,6 +112,24 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
     };
 
     await docRef.set(data);
+
+    // Notify admin via Web3Forms email in the background without blocking the user
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final userEmail = currentUser?.email;
+    unawaited(
+      _notificationService.notifyAdmin(
+        feedbackId: feedbackId,
+        title: title,
+        description: description,
+        category: category.name,
+        severity: category == FeedbackCategory.bug ? severity : null,
+        userName: userName,
+        userEmail: userEmail,
+        userId: userId,
+        appVersion: appVersion,
+        mediaUrls: mediaUrls,
+      ),
+    );
 
     return FeedbackItem(
       id: feedbackId,
