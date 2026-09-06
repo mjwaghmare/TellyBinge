@@ -10,6 +10,25 @@ class AppConstants {
   static const String appTagline =
       'Your premier destination for movie and TV show tracking, episode countdowns, and watch habits analysis.';
 
+  // --- MWStudio Social Links & Schemes ---
+  static const String mwStudioYoutubeUrl =
+      'https://youtube.com/@mwstudiooo?si=cLRErdAL_3ursDYV';
+  static const String mwStudioYoutubeAppScheme =
+      'vnd.youtube://www.youtube.com/@mwstudiooo';
+  static const String mwStudioYoutubeIosScheme =
+      'youtube://www.youtube.com/@mwstudiooo';
+
+  static const String mwStudioInstagramUrl =
+      'https://www.instagram.com/mwstudiooo?stkn=dTdxemNyNnVwdTV3&utm_source=qr';
+  static const String mwStudioInstagramAppScheme =
+      'instagram://user?username=mwstudiooo';
+
+  static const String mwStudioGithubUrl = 'https://github.com/mjwaghmare';
+  static const String mwStudioGithubAppScheme = 'github://';
+
+  static const String mwStudioBuyMeACoffeeUrl =
+      'https://buymeacoffee.com/mjwaghmare5';
+
   // --- Contact & Support ---
   static const String supportEmail = 'mjwaghmare.mtw@gmail.com';
   static const String supportEmailSubjectPrefix = 'PopVerse Support';

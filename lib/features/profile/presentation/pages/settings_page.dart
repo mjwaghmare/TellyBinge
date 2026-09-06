@@ -27,6 +27,7 @@ import 'achievements_page.dart';
 import 'terms_and_conditions_page.dart';
 import 'privacy_policy_page.dart';
 import '../../../feedback/presentation/pages/feedback_board_page.dart';
+import '../widgets/mw_studio_footer.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -456,7 +457,12 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ],
 
-          const SizedBox(height: AppSpacing.xxl),
+          const SizedBox(height: AppSpacing.lg),
+          MWStudioFooter(
+            appVersion: _packageInfo?.version,
+            buildNumber: _packageInfo?.buildNumber,
+          ),
+          const SizedBox(height: AppSpacing.xl),
         ],
       ),
     );
