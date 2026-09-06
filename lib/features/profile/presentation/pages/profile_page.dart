@@ -1308,7 +1308,7 @@ class _ProfilePageState extends State<ProfilePage>
         : AppColors.primaryLight;
 
     return Container(
-      margin: const EdgeInsets.only(top: 2),
+      margin: const EdgeInsets.only(top: 5),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
       decoration: BoxDecoration(
         color: isLight
