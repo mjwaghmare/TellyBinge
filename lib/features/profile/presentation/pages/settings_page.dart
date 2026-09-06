@@ -335,19 +335,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: 'Get help from our support team',
                 onTap: () => _launchSupportEmail(context),
               ),
-            ],
-          ),
-
-          // 6. ABOUT SECTION
-          _buildSectionHeader('ABOUT'),
-          _buildSectionCard(
-            children: [
-              _SettingsTile(
-                icon: Icons.info_outline_rounded,
-                title: 'About Popverse',
-                subtitle: _appVersionString,
-                onTap: () => _showAboutSheet(context),
-              ),
               _buildDivider(),
               _SettingsTile(
                 icon: Icons.system_update_rounded,
@@ -371,7 +358,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ],
           ),
 
-          // 7. LEGAL & PRIVACY SECTION
+          // 6. LEGAL & PRIVACY SECTION
           _buildSectionHeader('LEGAL & PRIVACY'),
           _buildSectionCard(
             children: [
@@ -857,72 +844,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showAboutSheet(BuildContext context) {
-    HapticFeedback.lightImpact();
-    final isLight = context.isLight;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryDark],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Center(child: Icon(Icons.movie_filter_rounded, color: Colors.white, size: 32)),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  AppConstants.appName,
-                  style: AppTextStyles.xl.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _appVersionString,
-                  style: AppTextStyles.sm.copyWith(
-                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  AppConstants.appTagline,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.sm.copyWith(
-                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  'Made with ♥️ by ${AppConstants.appCreator}',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryLight),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   String _encodeQueryParameters(Map<String, String> params) {
     return params.entries

@@ -1,6 +1,4 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -31,8 +29,21 @@ class _MWStudioFooterState extends State<MWStudioFooter> {
   static const double _iconGlyphSize = 20.0;
   static const double _touchTargetSize = 40.0;
 
+  late final ConfettiController _confettiController;
   int _tapCount = 0;
   DateTime? _lastTapTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(milliseconds: 1000));
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
 
   void _handleEasterEggTap(BuildContext context) {
     final now = DateTime.now();
@@ -44,134 +55,24 @@ class _MWStudioFooterState extends State<MWStudioFooter> {
     _lastTapTime = now;
 
     if (_tapCount < 5) {
-      HapticFeedback.selectionClick();
+      // Crisp tactile feedback on every tap of "Crafted with 💜 by MWStudio"
+      HapticFeedback.lightImpact();
     } else {
+      // Celebratory climax on 5th tap: heavy haptic punch, confetti blast & message
       _tapCount = 0;
-      HapticFeedback.mediumImpact();
-      _showEasterEggDialog(context);
-    }
-  }
+      HapticFeedback.heavyImpact();
+      _confettiController.stop();
+      _confettiController.play();
 
-  void _showEasterEggDialog(BuildContext context) {
-    final isLight = context.isLight;
-    final versionStr = widget.appVersion ?? AppConstants.defaultAppVersion;
-    final buildStr = widget.buildNumber?.isNotEmpty == true ? widget.buildNumber! : '1';
-
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Drag handle
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isLight ? AppColors.borderLight : AppColors.borderDark,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-
-                // Icon Badge
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.15), shape: BoxShape.circle),
-                  child: const Center(child: Text('💜', style: TextStyle(fontSize: 26))),
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Title & Subtitle
-                Text(
-                  'Creator Easter Egg! 🎉',
-                  style: AppTextStyles.lg.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  'You discovered the secret creator vault!\nThank you for loving and supporting ${AppConstants.appName}.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.sm.copyWith(
-                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Diagnostics Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: isLight ? Colors.white : AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isLight ? AppColors.borderLight : AppColors.borderDark),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildDiagnosticRow('Creator', AppConstants.appCreator, isLight: isLight),
-                      _buildDiagnosticRow('Version', 'v$versionStr ($buildStr)', isLight: isLight),
-                      _buildDiagnosticRow('Platform', Platform.operatingSystem, isLight: isLight),
-                      _buildDiagnosticRow(
-                        'Mode',
-                        kDebugMode ? 'Development' : 'Production',
-                        isLight: isLight,
-                        isLast: true,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-
-                // Close Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(sheetContext),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: const Text('Awesome!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-              ],
-            ),
-          ),
+      if (context.mounted) {
+        AppSnackbar.show(
+          context,
+          message: '🎉 You found the creator secret! Crafted with 💜 by ${AppConstants.appCreator}',
+          type: AppSnackbarType.info,
+          duration: const Duration(seconds: 3),
         );
-      },
-    );
-  }
-
-  Widget _buildDiagnosticRow(String label, String value, {required bool isLight, bool isLast = false}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.xs),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.sm.copyWith(color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary),
-          ),
-          Text(
-            value,
-            style: AppTextStyles.smBold.copyWith(color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary),
-          ),
-        ],
-      ),
-    );
+      }
+    }
   }
 
   Future<void> _launchSocialLink({
@@ -218,100 +119,127 @@ class _MWStudioFooterState extends State<MWStudioFooter> {
     final Color tertiaryColor = isLight ? AppColors.lightTextTertiary : AppColors.textTertiary;
     final versionStr = widget.appVersion ?? AppConstants.defaultAppVersion;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 1. BRANDING LINE WITH EASTER EGG TAP
-          GestureDetector(
-            onTap: () => _handleEasterEggTap(context),
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xxs),
-              child: Row(
+    return Stack(
+      alignment: Alignment.topCenter,
+      clipBehavior: Clip.none,
+      children: [
+        // CONFETTI CANNON (Smooth, floating celebratory burst in PopVerse brand colors)
+        ConfettiWidget(
+          confettiController: _confettiController,
+          blastDirectionality: BlastDirectionality.explosive,
+          shouldLoop: false,
+          emissionFrequency: 0.03,
+          numberOfParticles: 16,
+          gravity: 0.08,
+          particleDrag: 0.05,
+          maxBlastForce: 20,
+          minBlastForce: 6,
+          colors: const [
+            AppColors.primary,
+            AppColors.primaryLight,
+            AppColors.primaryDark,
+            AppColors.accentBlue,
+            AppColors.brandGreen,
+            Colors.amber,
+          ],
+        ),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 1. BRANDING LINE WITH EASTER EGG TAP
+              GestureDetector(
+                onTap: () => _handleEasterEggTap(context),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xxs),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Crafted with ', style: AppTextStyles.smMedium.copyWith(color: labelColor)),
+                      const Text('💜', style: TextStyle(fontSize: 13)),
+                      Text(
+                        ' by ${AppConstants.appCreator}',
+                        style: AppTextStyles.smMedium.copyWith(color: labelColor, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+
+              // 2. SOCIAL & SUPPORT OUTLINED ICONS ROW
+              Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Crafted with ', style: AppTextStyles.smMedium.copyWith(color: labelColor)),
-                  const Text('💜', style: TextStyle(fontSize: 13)),
-                  Text(
-                    ' by ${AppConstants.appCreator}',
-                    style: AppTextStyles.smMedium.copyWith(color: labelColor, fontWeight: FontWeight.w600),
+                  _SocialIconButton(
+                    tooltip: 'YouTube',
+                    size: _iconGlyphSize,
+                    touchSize: _touchTargetSize,
+                    color: iconColor,
+                    onTap: () => _launchSocialLink(
+                      context: context,
+                      webUrl: AppConstants.mwStudioYoutubeUrl,
+                      androidAppUrl: AppConstants.mwStudioYoutubeAppScheme,
+                      iosAppUrl: AppConstants.mwStudioYoutubeIosScheme,
+                    ),
+                    painter: _YouTubeOutlinePainter(color: iconColor),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  _SocialIconButton(
+                    tooltip: 'Instagram',
+                    size: _iconGlyphSize,
+                    touchSize: _touchTargetSize,
+                    color: iconColor,
+                    onTap: () => _launchSocialLink(
+                      context: context,
+                      webUrl: AppConstants.mwStudioInstagramUrl,
+                      androidAppUrl: AppConstants.mwStudioInstagramAppScheme,
+                      iosAppUrl: AppConstants.mwStudioInstagramAppScheme,
+                    ),
+                    painter: _InstagramOutlinePainter(color: iconColor),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  _SocialIconButton(
+                    tooltip: 'GitHub',
+                    size: _iconGlyphSize,
+                    touchSize: _touchTargetSize,
+                    color: iconColor,
+                    onTap: () => _launchSocialLink(
+                      context: context,
+                      webUrl: AppConstants.mwStudioGithubUrl,
+                      androidAppUrl: AppConstants.mwStudioGithubAppScheme,
+                      iosAppUrl: AppConstants.mwStudioGithubAppScheme,
+                    ),
+                    painter: _GitHubOutlinePainter(color: iconColor),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  _SocialIconButton(
+                    tooltip: 'Buy Me a Coffee',
+                    size: _iconGlyphSize,
+                    touchSize: _touchTargetSize,
+                    color: iconColor,
+                    onTap: () => _launchSocialLink(context: context, webUrl: AppConstants.mwStudioBuyMeACoffeeUrl),
+                    painter: _CoffeeOutlinePainter(color: iconColor),
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: AppSpacing.xs),
 
-          // 2. SOCIAL & SUPPORT OUTLINED ICONS ROW
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _SocialIconButton(
-                tooltip: 'YouTube',
-                size: _iconGlyphSize,
-                touchSize: _touchTargetSize,
-                color: iconColor,
-                onTap: () => _launchSocialLink(
-                  context: context,
-                  webUrl: AppConstants.mwStudioYoutubeUrl,
-                  androidAppUrl: AppConstants.mwStudioYoutubeAppScheme,
-                  iosAppUrl: AppConstants.mwStudioYoutubeIosScheme,
-                ),
-                painter: _YouTubeOutlinePainter(color: iconColor),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _SocialIconButton(
-                tooltip: 'Instagram',
-                size: _iconGlyphSize,
-                touchSize: _touchTargetSize,
-                color: iconColor,
-                onTap: () => _launchSocialLink(
-                  context: context,
-                  webUrl: AppConstants.mwStudioInstagramUrl,
-                  androidAppUrl: AppConstants.mwStudioInstagramAppScheme,
-                  iosAppUrl: AppConstants.mwStudioInstagramAppScheme,
-                ),
-                painter: _InstagramOutlinePainter(color: iconColor),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _SocialIconButton(
-                tooltip: 'GitHub',
-                size: _iconGlyphSize,
-                touchSize: _touchTargetSize,
-                color: iconColor,
-                onTap: () => _launchSocialLink(
-                  context: context,
-                  webUrl: AppConstants.mwStudioGithubUrl,
-                  androidAppUrl: AppConstants.mwStudioGithubAppScheme,
-                  iosAppUrl: AppConstants.mwStudioGithubAppScheme,
-                ),
-                painter: _GitHubOutlinePainter(color: iconColor),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _SocialIconButton(
-                tooltip: 'Buy Me a Coffee',
-                size: _iconGlyphSize,
-                touchSize: _touchTargetSize,
-                color: iconColor,
-                onTap: () => _launchSocialLink(context: context, webUrl: AppConstants.mwStudioBuyMeACoffeeUrl),
-                painter: _CoffeeOutlinePainter(color: iconColor),
+              // 3. APP VERSION & COPYRIGHT FOOTER
+              Text(
+                '${AppConstants.appName} v$versionStr • All rights reserved',
+                style: AppTextStyles.xs.copyWith(color: tertiaryColor, letterSpacing: 0.2),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.xs),
-
-          // 3. APP VERSION & COPYRIGHT FOOTER
-          Text(
-            '${AppConstants.appName} v$versionStr • All rights reserved',
-            style: AppTextStyles.xs.copyWith(color: tertiaryColor, letterSpacing: 0.2),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
