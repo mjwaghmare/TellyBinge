@@ -10,6 +10,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'app/shell_navigation_page.dart';
+import 'core/constants/app_assets.dart';
+import 'core/constants/app_constants.dart';
 import 'core/network/tmdb_client.dart';
 import 'core/services/app_update_service.dart';
 import 'core/services/widget_service.dart';
@@ -380,7 +382,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         child: BlocBuilder<ThemeCubit, ThemeState>(
           builder: (context, themeState) {
             return MaterialApp(
-              title: 'PopVerse',
+              title: AppConstants.appName,
               themeMode: themeState.themeMode,
               darkTheme: AppTheme.darkTheme(),
               theme: AppTheme.lightTheme(),
@@ -554,7 +556,7 @@ class _SplashScreen extends StatelessWidget {
               child: Hero(
                 tag: 'app_logo',
                 child: Image.asset(
-                  'assets/images/splash_logo.png',
+                  AppAssets.splashLogo,
                   width: 160,
                   height: 160,
                 ),

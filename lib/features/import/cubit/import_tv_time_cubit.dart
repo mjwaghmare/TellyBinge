@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/network/tmdb_client.dart';
 import 'import_tv_time_state.dart';
 
@@ -70,9 +71,9 @@ class ImportTvTimeCubit extends Cubit<ImportTvTimeState> {
     try {
       final uid = _auth.currentUser!.uid;
       final showsCollection = _firestore
-          .collection('users')
+          .collection(FirestoreCollections.users)
           .doc(uid)
-          .collection('shows');
+          .collection(FirestoreCollections.shows);
 
       emit(
         state.copyWith(
@@ -283,9 +284,9 @@ class ImportTvTimeCubit extends Cubit<ImportTvTimeState> {
       if (user == null) throw Exception('User not logged in');
 
       final moviesCollection = _firestore
-          .collection('users')
+          .collection(FirestoreCollections.users)
           .doc(user.uid)
-          .collection('movies');
+          .collection(FirestoreCollections.movies);
 
       // Fetch existing show and movie IDs for idempotency
       final existingShowsSnapshot = await showsCollection.get();

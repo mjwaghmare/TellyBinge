@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 
@@ -104,7 +105,7 @@ class _PosterTile extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: CachedNetworkImage(
-        imageUrl: 'https://image.tmdb.org/t/p/w342$posterPath',
+        imageUrl: AppConstants.tmdbImageUrl(posterPath, size: 'w342'),
         fit: BoxFit.cover,
         memCacheWidth: 342,
         fadeInDuration: const Duration(milliseconds: 350),

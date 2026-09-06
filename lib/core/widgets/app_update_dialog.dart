@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../constants/app_constants.dart';
 import '../models/app_version_info.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -64,11 +65,11 @@ class AppUpdateDialog extends StatelessWidget {
         ? AppColors.lightTextSecondary
         : AppColors.textSecondary;
 
-    const titleText = 'New Update Available';
+    const titleText = AppConstants.updateAvailableTitle;
 
     final descriptionText = isForceUpdate
-        ? 'A required update is available to keep PopVerse running smoothly. Please update to the latest version to continue.'
-        : 'A new version of PopVerse is available with performance improvements and new features.';
+        ? AppConstants.forceUpdateMessage
+        : AppConstants.optionalUpdateMessage;
 
     final dialogContent = Center(
       child: Material(
@@ -183,7 +184,7 @@ class AppUpdateDialog extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Update Now',
+                          AppConstants.updateNowButtonLabel,
                           style: AppTextStyles.mdBold.copyWith(
                             color: AppColors.textOnPrimary,
                           ),
@@ -216,7 +217,7 @@ class AppUpdateDialog extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            'Later',
+                            AppConstants.updateLaterButtonLabel,
                             style: AppTextStyles.smBold.copyWith(
                               color: secondaryText,
                             ),
@@ -241,7 +242,7 @@ class AppUpdateDialog extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            'Update',
+                            AppConstants.updateButtonLabel,
                             style: AppTextStyles.smBold.copyWith(
                               color: AppColors.textOnPrimary,
                             ),

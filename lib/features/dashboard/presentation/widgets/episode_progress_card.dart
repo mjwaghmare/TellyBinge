@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
@@ -290,14 +291,13 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
     );
     final showTitle = (show.rawShowData['name'] ?? 'Unknown').toUpperCase();
 
-    final imageUrl =
-        show.rawShowData['backdropPath'] != null &&
-            show.rawShowData['backdropPath'].toString().isNotEmpty
-        ? 'https://image.tmdb.org/t/p/w500${show.rawShowData['backdropPath']}'
-        : (show.rawShowData['posterPath'] != null &&
-                  show.rawShowData['posterPath'].toString().isNotEmpty
-              ? 'https://image.tmdb.org/t/p/w500${show.rawShowData['posterPath']}'
-              : '');
+    final String rawBackdrop = show.rawShowData['backdropPath']?.toString() ?? '';
+    final String rawPoster = show.rawShowData['posterPath']?.toString() ?? '';
+    final imageUrl = rawBackdrop.isNotEmpty
+        ? AppConstants.tmdbImageUrl(rawBackdrop, size: 'w500')
+        : (rawPoster.isNotEmpty
+            ? AppConstants.tmdbImageUrl(rawPoster, size: 'w500')
+            : '');
 
     bool isWatched = show.isUpToDate;
     final hasChips = (show.isPremiere || show.isNew) && !isWatched;

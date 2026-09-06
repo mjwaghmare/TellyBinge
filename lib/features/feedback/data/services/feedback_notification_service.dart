@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../../../core/constants/app_constants.dart';
 
 /// Service responsible for dispatching email notifications to the admin
 /// when a new feedback or bug report is submitted.
@@ -95,7 +96,7 @@ class FeedbackNotificationService {
 
     try {
       final response = await _dio.post<Map<String, dynamic>>(
-        'https://api.web3forms.com/submit',
+        AppConstants.web3FormsSubmitUrl,
         data: payload,
         options: Options(
           headers: {

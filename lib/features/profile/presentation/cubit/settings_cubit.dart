@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:equatable/equatable.dart';
+import '../../../../core/constants/app_storage_keys.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../onboarding/data/onboarding_storage.dart';
@@ -49,10 +50,13 @@ class SettingsState extends Equatable {
 class SettingsCubit extends Cubit<SettingsState> {
   final SharedPreferences prefs;
   final TmdbClient tmdbClient;
-  static const String _adultContentKey = 'allow_adult_content';
-  static const String _notificationsEnabledKey = 'notifications_enabled';
-  static const String _notify1HourBeforeKey = 'notify_1_hour_before';
-  static const String _notify1DayBeforeKey = 'notify_1_day_before';
+  static const String _adultContentKey = AppStorageKeys.allowAdultContent;
+  static const String _notificationsEnabledKey =
+      AppStorageKeys.notificationsEnabled;
+  static const String _notify1HourBeforeKey =
+      AppStorageKeys.notify1HourBefore;
+  static const String _notify1DayBeforeKey =
+      AppStorageKeys.notify1DayBefore;
 
   SettingsCubit({required this.prefs, required this.tmdbClient})
     : super(const SettingsState()) {

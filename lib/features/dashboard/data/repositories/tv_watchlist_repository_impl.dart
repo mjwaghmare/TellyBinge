@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/constants/firestore_collections.dart';
 import '../../domain/models/tv_show_watchlist_item.dart';
 import '../../domain/repositories/tv_watchlist_repository.dart';
 
@@ -8,12 +9,21 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
   TvWatchlistRepositoryImpl({FirebaseFirestore? firestore})
     : _firestore = firestore ?? FirebaseFirestore.instance;
 
+  CollectionReference<Map<String, dynamic>> _showsCollection(String uid) =>
+      _firestore
+          .collection(FirestoreCollections.users)
+          .doc(uid)
+          .collection(FirestoreCollections.shows);
+
+  CollectionReference<Map<String, dynamic>> _historyCollection(String uid) =>
+      _firestore
+          .collection(FirestoreCollections.users)
+          .doc(uid)
+          .collection(FirestoreCollections.history);
+
   @override
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) {
-    return _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
+    return _showsCollection(uid)
         .orderBy('addedAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
@@ -29,10 +39,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     required String? firstAirDate,
     required double voteAverage,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
+    await _showsCollection(uid)
         .doc(showId.toString())
         .set({
           'id': showId,
@@ -68,10 +75,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     required String uid,
     required int showId,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
+    await _showsCollection(uid)
         .doc(showId.toString())
         .update({'status': 'STOPPED'});
   }
@@ -81,20 +85,14 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     required String uid,
     required int showId,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
+    await _showsCollection(uid)
         .doc(showId.toString())
         .update({'status': FieldValue.delete()});
   }
 
   @override
   Future<void> removeShow({required String uid, required int showId}) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
+    await _showsCollection(uid)
         .doc(showId.toString())
         .delete();
   }
@@ -111,17 +109,8 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
   }) async {
     final batch = _firestore.batch();
 
-    final docRef = _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
-        .doc(showId.toString());
-
-    final historyRef = _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('history')
-        .doc('${showId}_$episodeKey');
+    final docRef = _showsCollection(uid).doc(showId.toString());
+    final historyRef = _historyCollection(uid).doc('${showId}_$episodeKey');
 
     if (isWatched) {
       final now = DateTime.now().toIso8601String();
@@ -162,12 +151,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
       updates['episodeWatchedDates.$key'] = now;
     }
 
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
-        .doc(showId.toString())
-        .update(updates);
+    await _showsCollection(uid).doc(showId.toString()).update(updates);
   }
 
   @override
@@ -183,12 +167,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
       updates['episodeWatchedDates.$key'] = FieldValue.delete();
     }
 
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
-        .doc(showId.toString())
-        .update(updates);
+    await _showsCollection(uid).doc(showId.toString()).update(updates);
   }
 
   @override
@@ -197,10 +176,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     required int showId,
     required bool isFavorite,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
+    await _showsCollection(uid)
         .doc(showId.toString())
         .update({'isFavorite': isFavorite});
   }
@@ -211,10 +187,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     required int showId,
     required Map<String, dynamic> enrichmentData,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
+    await _showsCollection(uid)
         .doc(showId.toString())
         .update(enrichmentData);
   }
@@ -224,12 +197,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     required String uid,
     required int showId,
   }) async {
-    final doc = await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
-        .doc(showId.toString())
-        .get();
+    final doc = await _showsCollection(uid).doc(showId.toString()).get();
     return doc.exists && doc.data() != null
         ? TvShowWatchlistItem.fromMap(doc.data()!)
         : null;
@@ -237,10 +205,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
 
   @override
   Future<List<TvShowWatchlistItem>> getShows({required String uid}) async {
-    final snapshot = await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('shows')
+    final snapshot = await _showsCollection(uid)
         .orderBy('addedAt', descending: true)
         .get();
     return snapshot.docs

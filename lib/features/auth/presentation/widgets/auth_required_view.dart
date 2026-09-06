@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
+import 'login_poster_wall.dart';
 
 /// Reusable full-tab prompt displayed when a guest user navigates to a tab
 /// requiring an account (e.g. Shows, Movies, Profile).
-class AuthRequiredView extends StatelessWidget {
+///
+/// Styled identically to the Login and Onboarding screens with the poster wall
+/// backdrop, scrim gradient, glassmorphic glowing icon, eyebrow badge, and
+/// smooth staggered entrance animations.
+class AuthRequiredView extends StatefulWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final List<String> features;
+  final String? badge;
+  final bool showPosterWall;
 
   const AuthRequiredView({
     super.key,
@@ -21,7 +29,81 @@ class AuthRequiredView extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.features,
+    this.badge,
+    this.showPosterWall = true,
   });
+
+  @override
+  State<AuthRequiredView> createState() => _AuthRequiredViewState();
+}
+
+class _AuthRequiredViewState extends State<AuthRequiredView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<Offset> _headerSlideAnimation;
+  late final Animation<Offset> _cardSlideAnimation;
+  late final Animation<Offset> _ctaSlideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 750),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.65, curve: Curves.easeOut),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.75, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+      ),
+    );
+
+    _headerSlideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.1, 0.65, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _cardSlideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.25, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _ctaSlideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.4, 0.95, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,101 +117,203 @@ class AuthRequiredView extends StatelessWidget {
         : AppColors.lightTextSecondary;
     final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
 
-    return SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.lg,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Icon Header with glowing gradient container
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    width: 2,
-                  ),
+    final scrimGradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: isDark
+          ? [
+              AppColors.background.withValues(alpha: 0.35),
+              AppColors.background.withValues(alpha: 0.75),
+              AppColors.background,
+              AppColors.background,
+            ]
+          : [
+              AppColors.lightBackground.withValues(alpha: 0.35),
+              AppColors.lightBackground.withValues(alpha: 0.80),
+              AppColors.lightBackground,
+              AppColors.lightBackground,
+            ],
+      stops: const [0.0, 0.32, 0.55, 1.0],
+    );
+
+    return Scaffold(
+      backgroundColor: isDark ? AppColors.background : AppColors.lightBackground,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (widget.showPosterWall) ...[
+            const LoginPosterWall(),
+            DecoratedBox(decoration: BoxDecoration(gradient: scrimGradient)),
+          ],
+          SafeArea(
+            bottom: false,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                  100.0, // Clearance for glowing bottom navigation bar
                 ),
-                child: Icon(icon, size: 40, color: AppColors.primary),
-              ),
-              AppSpacing.gapH24,
-
-              // Title
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.xl.withColor(textColor),
-              ),
-              AppSpacing.gapH12,
-
-              // Subtitle
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.md
-                    .withColor(textSecColor)
-                    .copyWith(height: 1.4),
-              ),
-              AppSpacing.gapH24,
-
-              // Feature Highlights Card
-              if (features.isNotEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: AppSpacing.allMD,
-                  decoration: BoxDecoration(
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(16.0),
-                    border: Border.all(color: borderColor),
-                  ),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      for (int i = 0; i < features.length; i++) ...[
-                        if (i > 0) AppSpacing.gapH12,
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(
-                              Icons.check_circle_rounded,
-                              size: 20,
-                              color: AppColors.brandGreen,
+                      // Eyebrow badge (matching onboarding style)
+                      if (widget.badge != null) ...[
+                        SlideTransition(
+                          position: _headerSlideAnimation,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.xxs,
                             ),
-                            AppSpacing.gapW12,
-                            Expanded(
-                              child: Text(
-                                features[i],
-                                style: AppTextStyles.smMedium.withColor(
-                                  textColor,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(6.0),
+                            ),
+                            child: Text(
+                              widget.badge!.toUpperCase(),
+                              style: AppTextStyles.xsBold
+                                  .withColor(AppColors.textOnPrimary)
+                                  .copyWith(letterSpacing: 0.8),
+                            ),
+                          ),
+                        ),
+                        AppSpacing.gapH16,
+                      ],
+
+                      // Glowing icon header with scale entrance
+                      ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.25),
+                                blurRadius: 24,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Icon(widget.icon, size: 36, color: AppColors.primary),
+                        ),
+                      ),
+                      AppSpacing.gapH20,
+
+                      // Title & Subtitle with slide entrance
+                      SlideTransition(
+                        position: _headerSlideAnimation,
+                        child: Column(
+                          children: [
+                            Text(
+                              widget.title,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.xl.withColor(textColor).copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            AppSpacing.gapH8,
+                            Text(
+                              widget.subtitle,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.sm
+                                  .withColor(textSecColor)
+                                  .copyWith(height: 1.45),
+                            ),
+                          ],
+                        ),
+                      ),
+                      AppSpacing.gapH24,
+
+                      // Feature Highlights Card
+                      if (widget.features.isNotEmpty)
+                        SlideTransition(
+                          position: _cardSlideAnimation,
+                          child: Container(
+                            width: double.infinity,
+                            padding: AppSpacing.allMD,
+                            decoration: BoxDecoration(
+                              color: surfaceColor,
+                              borderRadius: BorderRadius.circular(16.0),
+                              border: Border.all(color: borderColor),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(
+                                    alpha: isDark ? 0.3 : 0.05,
+                                  ),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
                                 ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                for (int i = 0; i < widget.features.length; i++) ...[
+                                  if (i > 0) AppSpacing.gapH12,
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 2.0),
+                                        child: Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 18,
+                                          color: AppColors.brandGreen,
+                                        ),
+                                      ),
+                                      AppSpacing.gapW12,
+                                      Expanded(
+                                        child: Text(
+                                          widget.features[i],
+                                          style: AppTextStyles.smMedium
+                                              .withColor(textColor)
+                                              .copyWith(height: 1.35),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      AppSpacing.gapH24,
+
+                      // Sign-in CTA & subtitle
+                      SlideTransition(
+                        position: _ctaSlideAnimation,
+                        child: Column(
+                          children: [
+                            const AuthGoogleSignInButton(),
+                            AppSpacing.gapH16,
+                            Text(
+                              'Sync your progress seamlessly across devices.',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.xs.withColor(
+                                AppColors.textTertiary,
                               ),
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
-              AppSpacing.gapH32,
-
-              // Sign-in CTA Button
-              const AuthGoogleSignInButton(),
-              AppSpacing.gapH16,
-              Text(
-                'Sync your progress seamlessly across devices.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.xs.withColor(AppColors.textTertiary),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -187,7 +371,7 @@ class AuthGoogleSignInButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
-                      'assets/images/google.png',
+                      AppAssets.googleLogo,
                       width: AppSpacing.xl,
                       height: AppSpacing.xl,
                       errorBuilder: (context, error, stackTrace) => const Icon(

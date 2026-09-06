@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -105,7 +106,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             foregroundColor: AppColors.textSecondary,
                           ),
                           child: Text(
-                            'Skip',
+                            AppConstants.onboardingSkipButton,
                             style: AppTextStyles.smMedium.withColor(
                               AppColors.textSecondary,
                             ),
@@ -143,7 +144,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         elevation: 0,
                       ),
                       child: Text(
-                        _isLastSlide ? 'Start tracking' : 'Next',
+                        _isLastSlide
+                            ? AppConstants.onboardingStartButton
+                            : AppConstants.onboardingNextButton,
                         style: AppTextStyles.mdBold.withColor(
                           AppColors.textOnPrimary,
                         ),

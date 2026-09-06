@@ -2,13 +2,13 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../constants/app_constants.dart';
 import 'tmdb_cache_manager.dart';
 
 class TmdbClient {
   final Dio _dio;
   // static const String _baseUrl = 'https://api.themoviedb.org/3';
-  static const String _defaultBaseUrl =
-      'https://restless-bar-82ccpopverse-tmdb-proxy.mjwaghmare.workers.dev/3';
+  static const String _defaultBaseUrl = AppConstants.tmdbDefaultBaseUrl;
   late final String _baseUrl;
 
   /// Cached API key to avoid reading dotenv on every request

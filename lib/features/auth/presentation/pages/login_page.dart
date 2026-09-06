@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -53,7 +54,7 @@ class LoginPage extends StatelessWidget {
                     Hero(
                       tag: 'app_logo',
                       child: Image.asset(
-                        'assets/images/splash_logo.png',
+                        AppAssets.splashLogo,
                         width: AppSpacing.huge,
                         height: AppSpacing.huge,
                       ),
@@ -147,7 +148,7 @@ class _GoogleSignInButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
-                      'assets/images/google.png',
+                      AppAssets.googleLogo,
                       width: AppSpacing.xl,
                       height: AppSpacing.xl,
                     ),

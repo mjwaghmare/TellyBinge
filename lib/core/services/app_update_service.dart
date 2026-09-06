@@ -6,6 +6,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../constants/app_constants.dart';
+import '../constants/app_storage_keys.dart';
+import '../constants/firestore_collections.dart';
 import '../models/app_version_info.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/app_update_dialog.dart';
@@ -14,8 +17,8 @@ class AppUpdateService {
   AppUpdateService._();
   static final AppUpdateService instance = AppUpdateService._();
 
-  static const String prefSnoozedAt = 'app_update_snoozed_at';
-  static const String prefSnoozedVersion = 'app_update_snoozed_version';
+  static const String prefSnoozedAt = AppStorageKeys.updateSnoozedAt;
+  static const String prefSnoozedVersion = AppStorageKeys.updateSnoozedVersion;
   static const int snoozeDurationDays = 7;
   static const Duration resumeThrottleDuration = Duration(hours: 1);
 
@@ -31,7 +34,7 @@ class AppUpdateService {
   }) async {
     final db = firestore ?? FirebaseFirestore.instance;
     try {
-      final docRef = db.collection('app_config').doc('version_info');
+      final docRef = db.collection(FirestoreCollections.appConfig).doc('version_info');
       DocumentSnapshot<Map<String, dynamic>> snapshot;
       try {
         snapshot = await docRef
@@ -46,7 +49,7 @@ class AppUpdateService {
       }
 
       // Fallback collection if app_config is empty
-      final fallbackRef = db.collection('system_configs').doc('version');
+      final fallbackRef = db.collection(FirestoreCollections.systemConfigs).doc('version');
       DocumentSnapshot<Map<String, dynamic>> fallbackSnapshot;
       try {
         fallbackSnapshot = await fallbackRef
@@ -286,11 +289,11 @@ class AppUpdateService {
     if (defaultTargetPlatform == TargetPlatform.android) {
       url = versionInfo.androidUrl.isNotEmpty
           ? versionInfo.androidUrl
-          : 'https://play.google.com/store/apps/details?id=$packageName';
+          : '${AppConstants.playStoreBaseUrl}$packageName';
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       url = versionInfo.iosUrl.isNotEmpty
           ? versionInfo.iosUrl
-          : 'https://apps.apple.com/app/id$packageName';
+          : '${AppConstants.appStoreBaseUrl}$packageName';
     } else {
       url = versionInfo.androidUrl.isNotEmpty
           ? versionInfo.androidUrl

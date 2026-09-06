@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/constants/firestore_collections.dart';
 import '../../domain/models/watch_history_item.dart';
 import '../../domain/repositories/watch_history_repository.dart';
 
@@ -18,9 +19,9 @@ class WatchHistoryRepositoryImpl implements WatchHistoryRepository {
         .toIso8601String();
 
     return _firestore
-        .collection('users')
+        .collection(FirestoreCollections.users)
         .doc(uid)
-        .collection('history')
+        .collection(FirestoreCollections.history)
         .where('watchedAt', isGreaterThan: cutoffDate)
         .orderBy('watchedAt', descending: true)
         .snapshots()

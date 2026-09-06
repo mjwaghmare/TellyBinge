@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
 import 'app_snackbar.dart';
 
@@ -55,7 +56,7 @@ class WatchTrailerButton extends StatelessWidget {
         } else {
           String urlStr = '';
           if (trailer['site'] == 'Vimeo') {
-            urlStr = 'https://vimeo.com/${trailer['key']}';
+            urlStr = '${AppConstants.vimeoBaseUrl}${trailer['key']}';
           }
           if (urlStr.isNotEmpty) {
             final url = Uri.tryParse(urlStr);
@@ -79,7 +80,7 @@ class WatchTrailerButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   child: CachedNetworkImage(
                     imageUrl:
-                        'https://img.youtube.com/vi/${trailer['key']}/0.jpg',
+                        '${AppConstants.youtubeThumbnailBaseUrl}${trailer['key']}/0.jpg',
                     width: 120,
                     height: 68,
                     fit: BoxFit.cover,
@@ -258,7 +259,7 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
     if (videoKey == null || videoKey.isEmpty) return;
 
     final appUri = Uri.parse('youtube://www.youtube.com/watch?v=$videoKey');
-    final webUri = Uri.parse('https://www.youtube.com/watch?v=$videoKey');
+    final webUri = Uri.parse('${AppConstants.youtubeWatchUrl}$videoKey');
 
     try {
       if (await canLaunchUrl(appUri)) {

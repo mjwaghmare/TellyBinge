@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../../../core/constants/app_assets.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -129,8 +131,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
   }
 
   String _getImageUrl(String? path, {String size = 'w500'}) {
-    if (path == null || path.isEmpty) return '';
-    return 'https://image.tmdb.org/t/p/$size$path';
+    return AppConstants.tmdbImageUrl(path ?? '', size: size);
   }
 
   String _formatDate(String? dateStr) {
@@ -277,7 +278,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/images/error_devices.png',
+                      AppAssets.errorDevices,
                       width: 140,
                       height: 140,
                       fit: BoxFit.contain,

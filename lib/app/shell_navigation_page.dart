@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../core/constants/app_assets.dart';
 import '../core/theme/app_colors.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/auth/presentation/cubit/auth_state.dart';
@@ -150,13 +151,14 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
                   )
                 : const AuthRequiredView(
                     icon: Icons.tv_rounded,
+                    badge: 'TV Tracker',
                     title: 'Track TV Shows',
                     subtitle:
                         'Never miss an episode. Track what you watch, get countdowns, and stay up to date.',
                     features: [
-                      'Personalized episode watchlist',
-                      'Release dates & countdowns',
-                      'Smart notifications for new episodes',
+                      'Up Next episode tracker with progress bars',
+                      'Release dates & episode air countdowns',
+                      'Smart notifications for upcoming episodes',
                     ],
                   ),
             isAuthenticated
@@ -171,13 +173,14 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
                   )
                 : const AuthRequiredView(
                     icon: Icons.movie_filter_rounded,
+                    badge: 'Movie Watchlist',
                     title: 'Movie Watchlist',
                     subtitle:
-                        'Keep track of movies you want to see and rate movies you have watched.',
+                        'Keep track of movies you want to see and manage the ones you have watched.',
                     features: [
                       'Build your custom movie watchlist',
-                      'Release calendars & premiere alerts',
-                      'Mark movies watched and rate them',
+                      'Release calendar & premiere alerts',
+                      'Mark movies watched and save favorites',
                     ],
                   ),
             SearchPage(
@@ -191,13 +194,14 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
                   )
                 : const AuthRequiredView(
                     icon: Icons.person_rounded,
+                    badge: 'Stats & Profile',
                     title: 'Your Profile & Stats',
                     subtitle:
-                        'Sign in to see your watching habits, total watch time, and achievements.',
+                        'Sign in to see your watching habits, total watch time, and unlock achievements.',
                     features: [
-                      'Detailed watch time stats & breakdown',
-                      'Personal watch history calendar & heatmap',
-                      'Custom badges & milestones',
+                      'Total watch time stats for shows & movies',
+                      'Daily watch activity heatmap & history',
+                      'Unlock badges, milestones & streaks',
                     ],
                   ),
           ];
@@ -215,7 +219,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
               child: Transform.scale(
                 scale: 1.7,
                 child: Lottie.asset(
-                  'assets/lottie/dice.json',
+                  AppAssets.diceLottie,
                   fit: BoxFit.contain,
                   animate: false,
                   errorBuilder: (context, error, stackTrace) =>

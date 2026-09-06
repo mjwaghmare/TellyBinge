@@ -253,6 +253,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
         ),
         body: const AuthRequiredView(
           icon: Icons.rate_review_outlined,
+          badge: 'Community',
           title: 'Community Feedback',
           subtitle:
               'Sign in to explore community suggestions, report bugs, and vote on what gets built next.',

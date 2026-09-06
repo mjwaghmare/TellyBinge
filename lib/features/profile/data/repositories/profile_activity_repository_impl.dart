@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/constants/firestore_collections.dart';
 import '../../domain/repositories/profile_activity_repository.dart';
 
 class ProfileActivityRepositoryImpl implements ProfileActivityRepository {
@@ -20,17 +21,17 @@ class ProfileActivityRepositoryImpl implements ProfileActivityRepository {
     final endStr = endOfMonth.toIso8601String();
 
     final tvSnapshot = await _firestore
-        .collection('users')
+        .collection(FirestoreCollections.users)
         .doc(uid)
-        .collection('history')
+        .collection(FirestoreCollections.history)
         .where('watchedAt', isGreaterThanOrEqualTo: startStr)
         .where('watchedAt', isLessThanOrEqualTo: endStr)
         .get();
 
     final moviesSnapshot = await _firestore
-        .collection('users')
+        .collection(FirestoreCollections.users)
         .doc(uid)
-        .collection('movies')
+        .collection(FirestoreCollections.movies)
         .where('watchedAt', isGreaterThanOrEqualTo: startStr)
         .where('watchedAt', isLessThanOrEqualTo: endStr)
         .get();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:popverse/core/constants/app_constants.dart';
 import 'package:popverse/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:popverse/features/onboarding/presentation/widgets/onboarding_slides.dart';
 
@@ -22,49 +23,49 @@ void main() {
 
     // Initial slide: Tracking
     expect(find.byType(TrackingSlide), findsOneWidget);
-    expect(find.text('TRACKING'), findsOneWidget);
-    expect(find.text('Track your shows and movies in one place'), findsOneWidget);
-    expect(find.text('Next'), findsOneWidget);
-    expect(find.text('Skip'), findsOneWidget);
+    expect(find.text(AppConstants.onboardingSlide1Badge.toUpperCase()), findsOneWidget);
+    expect(find.text(AppConstants.onboardingSlide1Title), findsOneWidget);
+    expect(find.text(AppConstants.onboardingNextButton), findsOneWidget);
+    expect(find.text(AppConstants.onboardingSkipButton), findsOneWidget);
 
     // Tap Next -> Slide 2 (Releases)
-    await tester.tap(find.text('Next'));
+    await tester.tap(find.text(AppConstants.onboardingNextButton));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(ReleasesSlide), findsOneWidget);
-    expect(find.text('RELEASES'), findsOneWidget);
-    expect(find.text('Never miss a premiere or finale'), findsOneWidget);
+    expect(find.text(AppConstants.onboardingSlide2Badge.toUpperCase()), findsOneWidget);
+    expect(find.text(AppConstants.onboardingSlide2Title), findsOneWidget);
 
     // Tap Next -> Slide 3 (Surprise Me)
-    await tester.tap(find.text('Next'));
+    await tester.tap(find.text(AppConstants.onboardingNextButton));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(DiscoverSlide), findsOneWidget);
-    expect(find.text('SURPRISE ME'), findsOneWidget);
-    expect(find.text('Can’t decide? Roll the dice'), findsOneWidget);
+    expect(find.text(AppConstants.onboardingSlide3Badge.toUpperCase()), findsOneWidget);
+    expect(find.text(AppConstants.onboardingSlide3Title), findsOneWidget);
 
     // Tap Next -> Slide 4 (Stats)
-    await tester.tap(find.text('Next'));
+    await tester.tap(find.text(AppConstants.onboardingNextButton));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(StatsSlide), findsOneWidget);
-    expect(find.text('YOUR STATS'), findsOneWidget);
-    expect(find.text('Your watch habits, beautifully visualized'), findsOneWidget);
-    expect(find.text('Start tracking'), findsOneWidget);
+    expect(find.text(AppConstants.onboardingSlide4Badge.toUpperCase()), findsOneWidget);
+    expect(find.text(AppConstants.onboardingSlide4Title), findsOneWidget);
+    expect(find.text(AppConstants.onboardingStartButton), findsOneWidget);
 
     final skipVisibility = tester.widget<Visibility>(
       find.ancestor(
-        of: find.text('Skip'),
+        of: find.text(AppConstants.onboardingSkipButton),
         matching: find.byType(Visibility),
       ),
     );
     expect(skipVisibility.visible, isFalse);
 
     // Tap 'Start tracking'
-    await tester.tap(find.text('Start tracking'));
+    await tester.tap(find.text(AppConstants.onboardingStartButton));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 

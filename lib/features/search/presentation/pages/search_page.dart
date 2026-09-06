@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -391,8 +392,7 @@ class _SearchPageState extends State<SearchPage>
   }
 
   String _getImageUrl(String? path, {String size = 'w185'}) {
-    if (path == null || path.isEmpty) return '';
-    return 'https://image.tmdb.org/t/p/$size$path';
+    return AppConstants.tmdbImageUrl(path ?? '', size: size);
   }
 
   @override

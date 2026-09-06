@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shake/shake.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -799,7 +800,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                   child: posterPath != null && posterPath.isNotEmpty
                       ? CachedNetworkImage(
                           imageUrl:
-                              'https://image.tmdb.org/t/p/w342$posterPath',
+                              AppConstants.tmdbImageUrl(posterPath, size: 'w342'),
                           fit: BoxFit.cover,
                           memCacheWidth: 342,
                           placeholder: (context, url) => Container(

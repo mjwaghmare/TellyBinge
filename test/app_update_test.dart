@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:popverse/core/constants/app_constants.dart';
 import 'package:popverse/core/models/app_version_info.dart';
 import 'package:popverse/core/services/app_update_service.dart';
 import 'package:popverse/core/widgets/app_update_dialog.dart';
@@ -172,20 +173,18 @@ void main() {
         ),
       );
 
-      expect(find.text('New Update Available'), findsOneWidget);
+      expect(find.text(AppConstants.updateAvailableTitle), findsOneWidget);
       expect(
-        find.text(
-          'A new version of PopVerse is available with performance improvements and new features.',
-        ),
+        find.text(AppConstants.optionalUpdateMessage),
         findsOneWidget,
       );
-      expect(find.text('Later'), findsOneWidget);
-      expect(find.text('Update'), findsOneWidget);
+      expect(find.text(AppConstants.updateLaterButtonLabel), findsOneWidget);
+      expect(find.text(AppConstants.updateButtonLabel), findsOneWidget);
 
-      await tester.tap(find.text('Update'));
+      await tester.tap(find.text(AppConstants.updateButtonLabel));
       expect(updateClicked, isTrue);
 
-      await tester.tap(find.text('Later'));
+      await tester.tap(find.text(AppConstants.updateLaterButtonLabel));
       expect(laterClicked, isTrue);
     });
 
@@ -213,21 +212,19 @@ void main() {
         ),
       );
 
-      expect(find.text('New Update Available'), findsOneWidget);
+      expect(find.text(AppConstants.updateAvailableTitle), findsOneWidget);
       expect(
-        find.text(
-          'A required update is available to keep PopVerse running smoothly. Please update to the latest version to continue.',
-        ),
+        find.text(AppConstants.forceUpdateMessage),
         findsOneWidget,
       );
-      expect(find.text('Update Now'), findsOneWidget);
-      expect(find.text('Later'), findsNothing);
+      expect(find.text(AppConstants.updateNowButtonLabel), findsOneWidget);
+      expect(find.text(AppConstants.updateLaterButtonLabel), findsNothing);
 
       // Verify PopScope cannot pop
       final popScope = tester.widget<PopScope>(find.byType(PopScope));
       expect(popScope.canPop, isFalse);
 
-      await tester.tap(find.text('Update Now'));
+      await tester.tap(find.text(AppConstants.updateNowButtonLabel));
       expect(updateClicked, isTrue);
     });
   });

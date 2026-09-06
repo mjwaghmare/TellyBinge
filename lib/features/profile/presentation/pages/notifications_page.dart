@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -686,10 +687,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget _buildNotificationCard(CleanNotificationItem item, bool isLight) {
     final String? posterFullUrl =
         item.posterPath != null && item.posterPath!.isNotEmpty
-        ? (item.posterPath!.startsWith('http')
-              ? item.posterPath!
-              : 'https://image.tmdb.org/t/p/w342${item.posterPath}')
-        : null;
+            ? AppConstants.tmdbImageUrl(item.posterPath!, size: 'w342')
+            : null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6.0),

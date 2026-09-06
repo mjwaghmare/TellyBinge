@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../../../features/auth/presentation/cubit/auth_state.dart';
@@ -81,7 +82,7 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
   Widget build(BuildContext context) {
     final posterPath = widget.item.showPoster;
     final imageUrl = (posterPath != null && posterPath.isNotEmpty)
-        ? 'https://image.tmdb.org/t/p/w500$posterPath'
+        ? AppConstants.tmdbImageUrl(posterPath, size: 'w500')
         : null;
 
     final showName = widget.item.showName.isNotEmpty

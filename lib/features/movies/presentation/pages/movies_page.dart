@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -51,9 +52,7 @@ class MoviesPageState extends State<MoviesPage> {
   }
 
   String _getImageUrl(String? path, {String size = 'w500'}) {
-    if (path == null || path.isEmpty) return '';
-    if (path.startsWith('http')) return path;
-    return 'https://image.tmdb.org/t/p/$size$path';
+    return AppConstants.tmdbImageUrl(path ?? '', size: size);
   }
 
   Map<int, int> _buildIndexMap(List<Map<String, dynamic>> items) {

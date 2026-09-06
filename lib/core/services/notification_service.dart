@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import '../constants/app_constants.dart';
+import '../constants/app_storage_keys.dart';
 import '../utils/executable_stat/executable_stat.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -212,11 +214,31 @@ class NotificationService {
   /// up with defType "drawable", so res/mipmap entries are invisible to it), and
   /// must be alpha-only: since API 21 the system discards colour in this slot
   /// and tints the alpha channel, so an opaque bitmap renders as a solid block.
-  static const String _androidStatusBarIcon = 'ic_stat_notification';
+  static const String _androidStatusBarIcon =
+      AppConstants.notificationAndroidStatusBarIcon;
 
   /// Full-colour logo shown as the notification's large icon. Also a drawable,
   /// because [DrawableResourceAndroidBitmap] decodes it with BitmapFactory.
-  static const String _androidLargeIcon = 'ic_notification_large';
+  static const String _androidLargeIcon =
+      AppConstants.notificationAndroidLargeIcon;
+
+  static const String _prefHasUnread = AppStorageKeys.hasUnreadNotifications;
+  static const String _prefReinstallReminderBuildTs =
+      AppStorageKeys.reinstallReminderBuildTs;
+  static const String _prefReinstallReminderScheduled =
+      AppStorageKeys.reinstallReminderScheduled;
+  static const String _prefAppInstallTimestamp =
+      AppStorageKeys.appInstallTimestamp;
+  static const String _prefLastActiveTimezone =
+      AppStorageKeys.lastActiveTimezone;
+  static const String _prefScheduledRegistry =
+      AppStorageKeys.scheduledNotificationsRegistry;
+  static const String _prefReceivedHistory =
+      AppStorageKeys.receivedNotificationsHistory;
+  static const String _prefNotify1DayBefore =
+      AppStorageKeys.notify1DayBefore;
+  static const String _prefNotificationsEnabled =
+      AppStorageKeys.notificationsEnabled;
 
   int _notificationId(NotificationMedia media, int mediaId, int slot) =>
       mediaId * _slotsPerTitle + (media == NotificationMedia.tv ? 0 : 2) + slot;
@@ -251,14 +273,14 @@ class NotificationService {
   Future<void> _initUnreadStatus() async {
     final prefs = await SharedPreferences.getInstance();
     hasUnreadNotifier.value =
-        prefs.getBool('has_unread_notifications') ?? false;
+        prefs.getBool(_prefHasUnread) ?? false;
   }
 
   /// Sets unread notification state and updates listeners & SharedPreferences.
   Future<void> _setHasUnread(bool value) async {
     hasUnreadNotifier.value = value;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_unread_notifications', value);
+    await prefs.setBool(_prefHasUnread, value);
   }
 
   /// Marks all notifications as read.
@@ -276,16 +298,16 @@ class NotificationService {
 
     final prefs = await SharedPreferences.getInstance();
     final installTimestamp = await getAppInstallTimestamp();
-    final lastScheduledBuild = prefs.getInt('reinstall_reminder_build_ts') ?? 0;
+    final lastScheduledBuild = prefs.getInt(_prefReinstallReminderBuildTs) ?? 0;
 
     // Reset scheduled flag if a new build timestamp is detected
     if (installTimestamp > lastScheduledBuild) {
-      await prefs.setBool('reinstall_reminder_scheduled', false);
-      await prefs.setInt('reinstall_reminder_build_ts', installTimestamp);
+      await prefs.setBool(_prefReinstallReminderScheduled, false);
+      await prefs.setInt(_prefReinstallReminderBuildTs, installTimestamp);
     }
 
     final alreadyScheduled =
-        prefs.getBool('reinstall_reminder_scheduled') ?? false;
+        prefs.getBool(_prefReinstallReminderScheduled) ?? false;
     if (alreadyScheduled) {
       return;
     }
@@ -349,7 +371,7 @@ class NotificationService {
       }
 
       if (allScheduled) {
-        await prefs.setBool('reinstall_reminder_scheduled', true);
+        await prefs.setBool(_prefReinstallReminderScheduled, true);
       }
     } catch (e) {
       debugPrint('Failed to schedule reinstall reminders: $e');
@@ -360,19 +382,19 @@ class NotificationService {
   /// Falls back to the persisted app install timestamp if file stat is unavailable.
   Future<int> getAppInstallTimestamp() async {
     final prefs = await SharedPreferences.getInstance();
-    int? installTimestamp = prefs.getInt('app_install_timestamp');
+    int? installTimestamp = prefs.getInt(_prefAppInstallTimestamp);
 
     final buildTime = getExecutableModifiedTimestamp();
     if (buildTime != null && buildTime > 0) {
       if (installTimestamp == null || buildTime > installTimestamp) {
         installTimestamp = buildTime;
-        await prefs.setInt('app_install_timestamp', installTimestamp);
+        await prefs.setInt(_prefAppInstallTimestamp, installTimestamp);
       }
     }
 
     if (installTimestamp == null) {
       installTimestamp = DateTime.now().millisecondsSinceEpoch;
-      await prefs.setInt('app_install_timestamp', installTimestamp);
+      await prefs.setInt(_prefAppInstallTimestamp, installTimestamp);
     }
 
     return installTimestamp;
@@ -391,8 +413,8 @@ class NotificationService {
   Future<DateTime> resetAppInstallTimestamp() async {
     final prefs = await SharedPreferences.getInstance();
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    await prefs.setInt('app_install_timestamp', nowMs);
-    await prefs.setBool('reinstall_reminder_scheduled', false);
+    await prefs.setInt(_prefAppInstallTimestamp, nowMs);
+    await prefs.setBool(_prefReinstallReminderScheduled, false);
 
     await cancelNotificationById(_reinstallNotificationId);
     await cancelNotificationById(_reinstallNotificationId24h);
@@ -414,11 +436,11 @@ class NotificationService {
       tz.setLocalLocation(tz.getLocation(timeZoneName));
 
       final prefs = await SharedPreferences.getInstance();
-      final lastTz = prefs.getString('last_active_timezone');
+      final lastTz = prefs.getString(_prefLastActiveTimezone);
       if (lastTz != null && lastTz != timeZoneName) {
         _lastScheduledSignature = null;
       }
-      await prefs.setString('last_active_timezone', timeZoneName);
+      await prefs.setString(_prefLastActiveTimezone, timeZoneName);
     } catch (_) {
       // Fallback: preserve existing initialized location if platform timezone lookup fails
     }
@@ -524,12 +546,14 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
-    await androidPlugin?.deleteNotificationChannel(channelId: 'test_channel');
+    await androidPlugin?.deleteNotificationChannel(
+      channelId: AppConstants.notificationTestChannelId,
+    );
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          'test_channel',
-          'Test Notifications',
+          AppConstants.notificationTestChannelId,
+          AppConstants.notificationTestChannelName,
           importance: Importance.max,
           priority: Priority.max,
           icon: _androidStatusBarIcon,
@@ -581,8 +605,8 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          'release_channel',
-          'Release Notifications',
+          AppConstants.notificationReleaseChannelId,
+          AppConstants.notificationReleaseChannelName,
           importance: Importance.max,
           priority: Priority.max,
           icon: _androidStatusBarIcon,
@@ -664,7 +688,7 @@ class NotificationService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final rawList =
-          prefs.getStringList('scheduled_notifications_registry') ?? [];
+          prefs.getStringList(_prefScheduledRegistry) ?? [];
       if (rawList.isEmpty) return;
 
       final idSet = idsToRemove.toSet();
@@ -678,7 +702,7 @@ class NotificationService {
       }).toList();
 
       await prefs.setStringList(
-        'scheduled_notifications_registry',
+        _prefScheduledRegistry,
         updatedList,
       );
     } catch (_) {}
@@ -694,7 +718,7 @@ class NotificationService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final rawList =
-          prefs.getStringList('scheduled_notifications_registry') ?? [];
+          prefs.getStringList(_prefScheduledRegistry) ?? [];
       if (rawList.isEmpty) return;
 
       final now = DateTime.now();
@@ -726,7 +750,7 @@ class NotificationService {
 
       if (hasPromoted || remaining.length != rawList.length) {
         await prefs.setStringList(
-          'scheduled_notifications_registry',
+          _prefScheduledRegistry,
           remaining,
         );
       }
@@ -761,7 +785,7 @@ class NotificationService {
     String? timestamp,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final rawList = prefs.getStringList('received_notifications_history') ?? [];
+    final rawList = prefs.getStringList(_prefReceivedHistory) ?? [];
 
     final itemId = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -811,7 +835,7 @@ class NotificationService {
         .map((e) => jsonEncode(e.toJson()))
         .toList();
 
-    await prefs.setStringList('received_notifications_history', sortedJsonList);
+    await prefs.setStringList(_prefReceivedHistory, sortedJsonList);
     await _setHasUnread(true);
   }
 
@@ -822,7 +846,7 @@ class NotificationService {
         await _promoteFiredNotificationsDirect();
         final prefs = await SharedPreferences.getInstance();
         final rawList =
-            prefs.getStringList('received_notifications_history') ?? [];
+            prefs.getStringList(_prefReceivedHistory) ?? [];
 
         final items = <ReceivedNotificationItem>[];
         for (final jsonStr in rawList) {
@@ -841,7 +865,7 @@ class NotificationService {
 
   Future<void> _removeReceivedNotificationDirect(String id) async {
     final prefs = await SharedPreferences.getInstance();
-    final rawList = prefs.getStringList('received_notifications_history') ?? [];
+    final rawList = prefs.getStringList(_prefReceivedHistory) ?? [];
     final updatedList = <String>[];
 
     for (final jsonStr in rawList) {
@@ -854,7 +878,7 @@ class NotificationService {
       } catch (_) {}
     }
 
-    await prefs.setStringList('received_notifications_history', updatedList);
+    await prefs.setStringList(_prefReceivedHistory, updatedList);
     if (updatedList.isEmpty) {
       await _setHasUnread(false);
     }
@@ -893,8 +917,8 @@ class NotificationService {
     _lastScheduledSignature = null;
     await _setHasUnread(false);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('received_notifications_history');
-    await prefs.remove('scheduled_notifications_registry');
+    await prefs.remove(_prefReceivedHistory);
+    await prefs.remove(_prefScheduledRegistry);
   });
 
   /// Returns all currently scheduled/pending notification items for display.
@@ -922,7 +946,7 @@ class NotificationService {
 
     // 2. Supplement with desired notifications from watchlists
     final prefs = await SharedPreferences.getInstance();
-    final notify1DayBefore = prefs.getBool('notify_1_day_before') ?? true;
+    final notify1DayBefore = prefs.getBool(_prefNotify1DayBefore) ?? true;
     final now = DateTime.now();
     for (final entry in _desired.entries) {
       final media = entry.key;
@@ -1000,8 +1024,8 @@ class NotificationService {
     await _notificationsPlugin.cancelAll();
     _lastScheduledSignature = null;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('received_notifications_history');
-    await prefs.remove('scheduled_notifications_registry');
+    await prefs.remove(_prefReceivedHistory);
+    await prefs.remove(_prefScheduledRegistry);
   });
 
   /// Turns a TMDB date string into the release moment that alerts are offset
@@ -1113,13 +1137,13 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin
           >();
       await androidPlugin?.deleteNotificationChannel(
-        channelId: 'release_channel',
+        channelId: AppConstants.notificationReleaseChannelId,
       );
     }
 
     final prefs = await SharedPreferences.getInstance();
     final notificationsEnabled =
-        prefs.getBool('notifications_enabled') ?? false;
+        prefs.getBool(_prefNotificationsEnabled) ?? false;
 
     // The in-app preference is necessary but not sufficient — a user who
     // revoked notifications in system settings keeps the toggle showing "on",
@@ -1129,7 +1153,7 @@ class NotificationService {
     if (!permitted) {
       if (_lastScheduledSignature != 'blocked' || force) {
         await _notificationsPlugin.cancelAll();
-        await prefs.remove('scheduled_notifications_registry');
+        await prefs.remove(_prefScheduledRegistry);
         _lastScheduledSignature = 'blocked';
       }
       return;
@@ -1138,7 +1162,7 @@ class NotificationService {
     // Preserve any alert that just reached or passed its fire time before rebuilding
     await _promoteFiredNotificationsDirect();
 
-    final notify1DayBefore = prefs.getBool('notify_1_day_before') ?? true;
+    final notify1DayBefore = prefs.getBool(_prefNotify1DayBefore) ?? true;
     final now = DateTime.now();
 
     // Expand every title into its alerts, dropping anything already past.
@@ -1238,7 +1262,7 @@ class NotificationService {
           ),
         )
         .toList();
-    await prefs.setStringList('scheduled_notifications_registry', registryList);
+    await prefs.setStringList(_prefScheduledRegistry, registryList);
 
     // Signature matches only what was actually successfully scheduled
     _lastScheduledSignature = scheduledAlerts

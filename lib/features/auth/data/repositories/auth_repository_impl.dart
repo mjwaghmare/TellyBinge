@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/firestore_collections.dart';
 import '../../domain/models/user_model.dart';
 import '../../domain/repositories/auth_repository.dart';
 
@@ -82,7 +83,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     // 1. Delete user profile document from Firestore
     try {
-      await _firestore.collection('users').doc(uid).delete();
+      await _firestore.collection(FirestoreCollections.users).doc(uid).delete();
     } catch (e) {
       // Continue even if Firestore doc deletion fails
     }
@@ -120,7 +121,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // 1. Try to fetch from local offline cache first (Instant startup)
       final doc = await _firestore
-          .collection('users')
+          .collection(FirestoreCollections.users)
           .doc(uid)
           .get(const GetOptions(source: Source.cache));
       if (doc.exists && doc.data() != null) {
@@ -132,7 +133,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     try {
       // 2. Fallback to server if cache doesn't exist
-      final doc = await _firestore.collection('users').doc(uid).get();
+      final doc = await _firestore.collection(FirestoreCollections.users).doc(uid).get();
       if (doc.exists && doc.data() != null) {
         return UserModel.fromMap(doc.data()!, hasAdminClaim: hasAdminClaim);
       }
@@ -149,7 +150,7 @@ class AuthRepositoryImpl implements AuthRepository {
       hasAdminClaim = tokenResult.claims?['admin'] == true;
     } catch (_) {}
 
-    final docRef = _firestore.collection('users').doc(firebaseUser.uid);
+    final docRef = _firestore.collection(FirestoreCollections.users).doc(firebaseUser.uid);
     final doc = await docRef.get();
     final userEmail = (firebaseUser.email ?? '').trim().toLowerCase();
     final fallbackAdmin = AppConstants.fallbackAdminEmail.trim().toLowerCase();

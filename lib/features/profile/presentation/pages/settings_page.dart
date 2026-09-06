@@ -7,6 +7,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_cache_manager.dart';
 import '../../../../core/services/app_update_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -23,6 +24,8 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../domain/services/achievements_service.dart';
 import '../cubit/settings_cubit.dart';
 import 'achievements_page.dart';
+import 'terms_and_conditions_page.dart';
+import 'privacy_policy_page.dart';
 import '../../../feedback/presentation/pages/feedback_board_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -375,14 +378,30 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.description_outlined,
                 title: 'Terms & Conditions',
                 subtitle: 'Read our terms and conditions',
-                onTap: () => _showTermsSheet(context),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TermsAndConditionsPage(),
+                    ),
+                  );
+                },
               ),
               _buildDivider(),
               _SettingsTile(
                 icon: Icons.shield_outlined,
                 title: 'Privacy Policy',
                 subtitle: 'Read our privacy policy',
-                onTap: () => _showPrivacyPolicySheet(context),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyPage(),
+                    ),
+                  );
+                },
               ),
               _buildDivider(),
               _SettingsTile(
@@ -418,9 +437,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   HapticFeedback.lightImpact();
                   showLicensePage(
                     context: context,
-                    applicationName: 'PopVerse',
-                    applicationVersion: _packageInfo?.version ?? '1.0.0',
-                    applicationLegalese: '© 2026 PopVerse. All rights reserved.',
+                    applicationName: AppConstants.appName,
+                    applicationVersion: _packageInfo?.version ?? AppConstants.defaultAppVersion,
+                    applicationLegalese: AppConstants.appLegalese,
                   );
                 },
               ),
@@ -776,84 +795,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showPrivacyPolicySheet(BuildContext context) {
-    HapticFeedback.lightImpact();
-    final isLight = context.isLight;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.75,
-          maxChildSize: 0.95,
-          minChildSize: 0.5,
-          builder: (context, scrollController) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                child: ListView(
-                  controller: scrollController,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isLight ? Colors.grey[300] : Colors.white24,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'Privacy Policy',
-                      style: AppTextStyles.xl.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Last updated: August 2026',
-                      style: AppTextStyles.xs.copyWith(
-                        color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _buildTextParagraph(
-                      'PopVerse respects your privacy and is committed to protecting your personal data.',
-                    ),
-                    _buildSubheading('1. Information We Collect'),
-                    _buildTextParagraph(
-                      '• Account Information: When you create an account, we store your email address and display name.\n• Watchlist & History: Shows and movies you add, mark as watched, or rate are securely stored in your personal profile.\n• Preferences: Your theme, notification, and app settings are stored locally on your device.',
-                    ),
-                    _buildSubheading('2. How We Use Information'),
-                    _buildTextParagraph(
-                      'We use your data strictly to provide, synchronize, and improve your tracking experience, deliver release notifications, and compute watch statistics.',
-                    ),
-                    _buildSubheading('3. Third-Party Services'),
-                    _buildTextParagraph(
-                      'We use TMDB for metadata and Firebase for secure authentication and cloud synchronization. We do not sell your personal data or track you across third-party apps.',
-                    ),
-                    _buildSubheading('4. Contact Us'),
-                    _buildTextParagraph(
-                      'If you have questions about this Privacy Policy, please contact us at support@popverse.app.',
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   void _showDataPrivacySheet(BuildContext context) {
     HapticFeedback.lightImpact();
     final isLight = context.isLight;
@@ -981,7 +922,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () async {
-                      final url = Uri.parse('https://www.themoviedb.org');
+                      final url = Uri.parse(AppConstants.tmdbWebsiteUrl);
                       if (await canLaunchUrl(url)) {
                         await launchUrl(url, mode: LaunchMode.externalApplication);
                       }
@@ -991,77 +932,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
-        );
-      },
-    );
-  }
-
-  void _showTermsSheet(BuildContext context) {
-    HapticFeedback.lightImpact();
-    final isLight = context.isLight;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.75,
-          maxChildSize: 0.95,
-          minChildSize: 0.5,
-          builder: (context, scrollController) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                child: ListView(
-                  controller: scrollController,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isLight ? Colors.grey[300] : Colors.white24,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'Terms & Conditions',
-                      style: AppTextStyles.xl.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Effective Date: August 2026',
-                      style: AppTextStyles.xs.copyWith(
-                        color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _buildSubheading('1. Acceptance of Terms'),
-                    _buildTextParagraph(
-                      'By using PopVerse, you agree to these Terms and Conditions. If you disagree with any part of these terms, please discontinue using the application.',
-                    ),
-                    _buildSubheading('2. Use of Service'),
-                    _buildTextParagraph(
-                      'PopVerse is an entertainment tracking application designed to organize watchlists, receive release reminders, and view statistics.',
-                    ),
-                    _buildSubheading('3. Content Attribution'),
-                    _buildTextParagraph(
-                      'All titles, artwork, posters, and summaries are copyrighted by their respective studio owners and supplied via the TMDb API.',
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
-                ),
-              ),
-            );
-          },
         );
       },
     );
@@ -1098,7 +968,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'PopVerse',
+                  AppConstants.appName,
                   style: AppTextStyles.xl.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
@@ -1113,7 +983,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Your premier destination for movie and TV show tracking, episode countdowns, and watch habits analysis.',
+                  AppConstants.appTagline,
                   textAlign: TextAlign.center,
                   style: AppTextStyles.sm.copyWith(
                     color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
@@ -1122,7 +992,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Made with ♥️ by MWStudio',
+                  'Made with ♥️ by ${AppConstants.appCreator}',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryLight),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -1134,45 +1004,203 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  String _encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((MapEntry<String, String> e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+  }
+
   Future<void> _launchSupportEmail(BuildContext context) async {
     HapticFeedback.lightImpact();
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'support@popverse.app',
-      query: 'subject=PopVerse Support ($_appVersionString)',
+      path: AppConstants.supportEmail,
+      query: _encodeQueryParameters(<String, String>{
+        'subject': '${AppConstants.supportEmailSubjectPrefix} ($_appVersionString)',
+      }),
     );
 
     try {
       if (await canLaunchUrl(emailUri)) {
-        await launchUrl(emailUri);
+        final bool launched = await launchUrl(
+          emailUri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (!launched && context.mounted) {
+          _showNoMailAppSheet(context);
+        }
       } else {
         if (context.mounted) {
-          AppSnackbar.showInfo(context, 'Support email: support@popverse.app');
+          _showNoMailAppSheet(context);
         }
       }
     } catch (_) {
       if (context.mounted) {
-        AppSnackbar.showInfo(context, 'Support email: support@popverse.app');
+        _showNoMailAppSheet(context);
       }
     }
+  }
+
+  void _showNoMailAppSheet(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    final isLight = context.isLight;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      builder: (bottomSheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.mail_outline_rounded,
+                      color: AppColors.primary,
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'No Mail App Found',
+                  style: AppTextStyles.lg.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'We could not open an email app on this device. You can copy our support email address to contact us directly:',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.sm.copyWith(
+                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isLight
+                        ? AppColors.lightSurfaceElevated
+                        : const Color(0xFF242424),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isLight ? AppColors.borderLight : AppColors.borderDark,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.alternate_email_rounded,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Flexible(
+                        child: Text(
+                          AppConstants.supportEmail,
+                          style: AppTextStyles.smBold.copyWith(
+                            color: isLight
+                                ? AppColors.lightTextPrimary
+                                : AppColors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      HapticFeedback.lightImpact();
+                      await Clipboard.setData(
+                        const ClipboardData(text: AppConstants.supportEmail),
+                      );
+                      if (bottomSheetContext.mounted) {
+                        Navigator.pop(bottomSheetContext);
+                      }
+                      if (context.mounted) {
+                        AppSnackbar.showSuccess(
+                          context,
+                          'Support email copied to clipboard!',
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.copy_rounded, size: 18),
+                    label: const Text('Copy Email Address'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.textOnPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(bottomSheetContext),
+                    child: Text(
+                      'Cancel',
+                      style: AppTextStyles.smMedium.copyWith(
+                        color: isLight
+                            ? AppColors.lightTextSecondary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _launchAppRating(BuildContext context) async {
     HapticFeedback.lightImpact();
 
     // Set with Apple App ID from App Store Connect once live (e.g. '6740000000')
-    const String appleAppId = 'YOUR_APPLE_APP_ID';
-    final String packageName = _packageInfo?.packageName ?? 'com.mwstudio.popverse';
+    const String appleAppId = AppConstants.appleAppId;
+    final String packageName = _packageInfo?.packageName ?? AppConstants.defaultPackageName;
 
     final Uri primaryUri;
     final Uri fallbackUri;
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      primaryUri = Uri.parse('itms-apps://itunes.apple.com/app/id$appleAppId?action=write-review');
-      fallbackUri = Uri.parse('https://apps.apple.com/app/id$appleAppId?action=write-review');
+      primaryUri = Uri.parse('${AppConstants.appStoreReviewScheme}$appleAppId?action=write-review');
+      fallbackUri = Uri.parse('${AppConstants.appStoreBaseUrl}$appleAppId?action=write-review');
     } else {
-      primaryUri = Uri.parse('market://details?id=$packageName');
-      fallbackUri = Uri.parse('https://play.google.com/store/apps/details?id=$packageName');
+      primaryUri = Uri.parse('${AppConstants.playStoreMarketScheme}$packageName');
+      fallbackUri = Uri.parse('${AppConstants.playStoreBaseUrl}$packageName');
     }
 
     try {
@@ -1186,27 +1214,6 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       debugPrint('Could not launch store review: $e');
     }
-  }
-
-  Widget _buildSubheading(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16.0, bottom: 6.0),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-    );
-  }
-
-  Widget _buildTextParagraph(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13.5,
-          height: 1.45,
-          color: context.isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-        ),
-      ),
-    );
   }
 
   Widget _buildInfoBullet(String text) {

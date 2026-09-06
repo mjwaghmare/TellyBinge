@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/constants/app_storage_keys.dart';
 
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -81,7 +82,8 @@ class AchievementsCubit extends Cubit<AchievementsState> {
     final preferences = prefs;
     if (preferences == null) return;
 
-    final storageKey = 'unlocked_achievements_${uid ?? 'guest'}';
+    final storageKey =
+        '${AppStorageKeys.unlockedAchievementsPrefix}${uid ?? 'guest'}';
     final savedList = preferences.getStringList(storageKey);
     final currentlyUnlocked = achievements.where((a) => a.isUnlocked).toList();
 

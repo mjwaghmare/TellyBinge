@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../../../core/constants/app_constants.dart';
 
 class FeedbackStorageService {
   static const int maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB per image
@@ -56,7 +57,7 @@ class FeedbackStorageService {
       );
     }
 
-    final uploadUrl = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+    final uploadUrl = '${AppConstants.cloudinaryBaseUploadUrl}$cloudName/image/upload';
 
     final uploadFutures = localFilePaths.map((path) async {
       final file = File(path);

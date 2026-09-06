@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/network/tmdb_client.dart';
@@ -823,7 +824,7 @@ class DashboardPageState extends State<DashboardPage> {
           children: [
             posterPath != null && posterPath.isNotEmpty
                 ? CachedNetworkImage(
-                    imageUrl: 'https://image.tmdb.org/t/p/w500$posterPath',
+                    imageUrl: AppConstants.tmdbImageUrl(posterPath, size: 'w500'),
                     fit: BoxFit.cover,
                     memCacheWidth: 360,
                     placeholder: (context, url) => Container(

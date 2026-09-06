@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../features/dashboard/data/repositories/tv_watchlist_repository_impl.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../features/dashboard/presentation/cubit/watchlist_enrichment_cubit.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/network/tmdb_client.dart';
 import '../../features/dashboard/presentation/models/enriched_show.dart';
 
@@ -65,10 +66,7 @@ class WidgetService {
               if (posterPath.startsWith('http')) {
                 fullPosterUrl = posterPath;
               } else {
-                final cleanPath = posterPath.startsWith('/')
-                    ? posterPath
-                    : '/$posterPath';
-                fullPosterUrl = 'https://image.tmdb.org/t/p/w500$cleanPath';
+                fullPosterUrl = AppConstants.tmdbImageUrl(posterPath, size: 'w500');
               }
               itemsCopy[i]['localPosterPath'] = fullPosterUrl;
             }

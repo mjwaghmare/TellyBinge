@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/constants/firestore_collections.dart';
 import '../../domain/repositories/movie_watchlist_repository.dart';
 
 class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
@@ -7,12 +8,15 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
   MovieWatchlistRepositoryImpl({FirebaseFirestore? firestore})
     : _firestore = firestore ?? FirebaseFirestore.instance;
 
+  CollectionReference<Map<String, dynamic>> _moviesCollection(String uid) =>
+      _firestore
+          .collection(FirestoreCollections.users)
+          .doc(uid)
+          .collection(FirestoreCollections.movies);
+
   @override
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) {
-    return _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('movies')
+    return _moviesCollection(uid)
         .orderBy('addedAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
@@ -32,10 +36,7 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
     bool isWatched = false,
     bool isFavorite = false,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('movies')
+    await _moviesCollection(uid)
         .doc(movieId.toString())
         .set({
           'id': movieId,
@@ -59,10 +60,7 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
     required int movieId,
     required bool isWatched,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('movies')
+    await _moviesCollection(uid)
         .doc(movieId.toString())
         .update({
           'isWatched': isWatched,
@@ -76,20 +74,14 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
     required int movieId,
     required bool isFavorite,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('movies')
+    await _moviesCollection(uid)
         .doc(movieId.toString())
         .update({'isFavorite': isFavorite});
   }
 
   @override
   Future<void> removeMovie({required String uid, required int movieId}) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('movies')
+    await _moviesCollection(uid)
         .doc(movieId.toString())
         .delete();
   }
@@ -100,10 +92,7 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
     required int movieId,
     required String genres,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('movies')
+    await _moviesCollection(uid)
         .doc(movieId.toString())
         .update({'genres': genres});
   }

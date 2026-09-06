@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../../core/constants/firestore_collections.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../services/feedback_notification_service.dart';
@@ -21,7 +22,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
            notificationService ?? FeedbackNotificationService();
 
   CollectionReference<Map<String, dynamic>> get _feedbacksCollection =>
-      _firestore.collection('feedbacks');
+      _firestore.collection(FirestoreCollections.feedbacks);
 
   @override
   Stream<List<FeedbackItem>> getFeedbacksStream({
@@ -202,7 +203,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
   }) {
     return _feedbacksCollection
         .doc(feedbackId)
-        .collection('comments')
+        .collection(FirestoreCollections.comments)
         .orderBy('time', descending: true)
         .limit(limit)
         .snapshots()
@@ -279,7 +280,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
 
     final commentRef = _feedbacksCollection
         .doc(feedbackId)
-        .collection('comments')
+        .collection(FirestoreCollections.comments)
         .doc(id);
     final feedbackRef = _feedbacksCollection.doc(feedbackId);
 
@@ -299,7 +300,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
   }) async {
     await _feedbacksCollection
         .doc(feedbackId)
-        .collection('comments')
+        .collection(FirestoreCollections.comments)
         .doc(commentId)
         .update({
       'text': text,
@@ -314,7 +315,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
   }) async {
     final commentRef = _feedbacksCollection
         .doc(feedbackId)
-        .collection('comments')
+        .collection(FirestoreCollections.comments)
         .doc(commentId);
     final feedbackRef = _feedbacksCollection.doc(feedbackId);
 
@@ -342,7 +343,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
     try {
       final commentsSnapshot = await _feedbacksCollection
           .doc(feedbackId)
-          .collection('comments')
+          .collection(FirestoreCollections.comments)
           .get();
       for (final doc in commentsSnapshot.docs) {
         await doc.reference.delete();

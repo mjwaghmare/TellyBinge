@@ -1,12 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:popverse/core/constants/app_constants.dart';
 import 'package:popverse/features/auth/domain/models/user_model.dart';
 
 void main() {
   group('UserModel admin and role tests', () {
-    test('identifies admin by specific email mjwaghmare.mtw@gmail.com', () {
+    test('identifies admin by specific email from AppConstants.fallbackAdminEmail', () {
       const adminUser = UserModel(
         uid: 'admin-1',
-        email: 'mjwaghmare.mtw@gmail.com',
+        email: AppConstants.fallbackAdminEmail,
         displayName: 'Dev Admin',
         photoUrl: '',
       );
@@ -15,9 +16,9 @@ void main() {
     });
 
     test('identifies admin by case-insensitive trimmed email', () {
-      const adminUser = UserModel(
+      final adminUser = UserModel(
         uid: 'admin-1',
-        email: '  MJWAGHMARE.MTW@GMAIL.COM  ',
+        email: '  ${AppConstants.fallbackAdminEmail.toUpperCase()}  ',
         displayName: 'Dev Admin',
         photoUrl: '',
       );
@@ -49,10 +50,10 @@ void main() {
       expect(normalUser.isAdmin, isFalse);
     });
 
-    test('fromMap automatically assigns admin role to mjwaghmare.mtw@gmail.com', () {
+    test('fromMap automatically assigns admin role to AppConstants.fallbackAdminEmail', () {
       final user = UserModel.fromMap({
         'uid': 'admin-3',
-        'email': 'mjwaghmare.mtw@gmail.com',
+        'email': AppConstants.fallbackAdminEmail,
         'displayName': 'Admin',
         'photoUrl': '',
       });

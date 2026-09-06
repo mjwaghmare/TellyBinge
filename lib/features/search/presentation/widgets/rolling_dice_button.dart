@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class RollingDiceButton extends StatefulWidget {
@@ -69,7 +70,7 @@ class _RollingDiceButtonState extends State<RollingDiceButton>
             child: Transform.scale(
               scale: 1.5,
               child: Lottie.asset(
-                'assets/lottie/dice.json',
+                AppAssets.diceLottie,
                 controller: _controller,
                 fit: BoxFit.contain,
                 onLoaded: (composition) {

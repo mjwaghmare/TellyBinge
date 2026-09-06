@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/app_assets.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -16,11 +18,9 @@ class TrackingSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const OnboardingSlide(
-      badge: 'Tracking',
-      title: 'Track your shows and movies in one place',
-      body:
-          'Mark episodes watched with a single tap, track your season '
-          'progress, and organize your complete movie watchlist.',
+      badge: AppConstants.onboardingSlide1Badge,
+      title: AppConstants.onboardingSlide1Title,
+      body: AppConstants.onboardingSlide1Body,
       child: _TrackingPreview(),
     );
   }
@@ -177,11 +177,9 @@ class ReleasesSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const OnboardingSlide(
-      badge: 'Releases',
-      title: 'Never miss a premiere or finale',
-      body:
-          'Follow upcoming air-dates on your schedule and receive smart '
-          'alerts the moment new episodes and movies drop.',
+      badge: AppConstants.onboardingSlide2Badge,
+      title: AppConstants.onboardingSlide2Title,
+      body: AppConstants.onboardingSlide2Body,
       child: _ReleasesPreview(),
     );
   }
@@ -241,7 +239,7 @@ class _ReleasesPreviewState extends State<_ReleasesPreview>
               ClipRRect(
                 borderRadius: BorderRadius.circular(8.0),
                 child: Image.asset(
-                  'assets/images/splash_logo.png',
+                  AppAssets.splashLogo,
                   width: 36.0,
                   height: 36.0,
                 ),
@@ -253,7 +251,7 @@ class _ReleasesPreviewState extends State<_ReleasesPreview>
                   children: [
                     Row(
                       children: [
-                        Text('PopVerse', style: AppTextStyles.smBold),
+                        Text(AppConstants.appName, style: AppTextStyles.smBold),
                         AppSpacing.gapW8,
                         Text(
                           'now',
@@ -292,11 +290,9 @@ class DiscoverSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const OnboardingSlide(
-      badge: 'Surprise Me',
-      title: 'Can’t decide? Roll the dice',
-      body:
-          'Tap Surprise Me to roll the dice and get instant, personalized '
-          'movie and TV show recommendations when you’re stuck.',
+      badge: AppConstants.onboardingSlide3Badge,
+      title: AppConstants.onboardingSlide3Title,
+      body: AppConstants.onboardingSlide3Body,
       child: _SurpriseMePreview(),
     );
   }
@@ -427,11 +423,9 @@ class StatsSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const OnboardingSlide(
-      badge: 'Your Stats',
-      title: 'Your watch habits, beautifully visualized',
-      body:
-          'Track your total watch time across shows and movies, build your '
-          'streak, and see your habits grow automatically.',
+      badge: AppConstants.onboardingSlide4Badge,
+      title: AppConstants.onboardingSlide4Title,
+      body: AppConstants.onboardingSlide4Body,
       child: _StatsPreview(),
     );
   }

@@ -725,3 +725,136 @@ body {
         gap: 30px;
     }
 }
+
+/* ==========================================================================
+   Legal Pages (Terms of Service, Privacy Policy)
+   ========================================================================== */
+.legal-page {
+    background-color: #0f1015;
+    color: #e4e4e7;
+    min-height: 100vh;
+    padding-top: 100px;
+    padding-bottom: 80px;
+}
+
+.legal-container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.legal-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.legal-badge {
+    display: inline-block;
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 0.5px;
+}
+
+.legal-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 12px;
+}
+
+.legal-updated {
+    font-size: 0.95rem;
+    color: #a1a1aa;
+}
+
+.legal-card {
+    background: #181922;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.legal-intro {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #d4d4d8;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.legal-section {
+    margin-bottom: 36px;
+}
+
+.legal-section:last-child {
+    margin-bottom: 0;
+}
+
+.legal-section h2 {
+    font-size: 1.25rem;
+    color: #ffffff;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legal-section p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #a1a1aa;
+    margin-bottom: 12px;
+}
+
+.legal-section ul {
+    margin-left: 20px;
+    margin-bottom: 12px;
+    color: #a1a1aa;
+}
+
+.legal-section li {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+.legal-disclaimer-box {
+    background: rgba(255, 193, 7, 0.08);
+    border-left: 4px solid #ffc107;
+    padding: 16px 20px;
+    border-radius: 0 10px 10px 0;
+    margin: 16px 0;
+}
+
+.legal-disclaimer-box p {
+    color: #fef08a;
+    font-size: 0.92rem;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.legal-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffc107;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+    transition: transform 0.2s ease;
+}
+
+.legal-back-link:hover {
+    transform: translateX(-4px);
+}
+

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 
@@ -91,11 +92,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         width: 1,
                       ),
                     ),
-                    child: const CircleAvatar(
+                    child: CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.transparent,
-                      backgroundImage: CachedNetworkImageProvider(
-                        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+                      backgroundImage: const CachedNetworkImageProvider(
+                        AppConstants.defaultAvatarUrl,
                       ),
                     ),
                   ),

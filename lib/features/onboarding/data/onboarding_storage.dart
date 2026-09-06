@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/constants/app_storage_keys.dart';
 
 /// Remembers whether the intro carousel has already been shown, so it only ever
 /// runs once per install — whether the user skipped it or read it through.
 class OnboardingStorage {
   const OnboardingStorage(this._prefs);
 
-  static const String seenKey = 'has_seen_onboarding';
+  static const String seenKey = AppStorageKeys.hasSeenOnboarding;
 
   final SharedPreferences _prefs;
 
