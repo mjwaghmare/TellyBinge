@@ -405,13 +405,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               _buildDivider(),
               _SettingsTile(
-                icon: Icons.lock_outline_rounded,
-                title: 'Data & Privacy',
-                subtitle: 'Manage your data and privacy preferences',
-                onTap: () => _showDataPrivacySheet(context),
-              ),
-              _buildDivider(),
-              _SettingsTile(
                 customIcon: _buildTmdbBadge(),
                 title: 'TMDB',
                 subtitle: 'Movie & TV information powered by TMDB',
@@ -795,85 +788,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showDataPrivacySheet(BuildContext context) {
-    HapticFeedback.lightImpact();
-    final isLight = context.isLight;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isLight ? Colors.grey[300] : Colors.white24,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryLight),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Text(
-                      'Data & Privacy',
-                      style: AppTextStyles.lg.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Your watch history and library items are stored securely and encrypted in Google Cloud Firestore.',
-                  style: AppTextStyles.sm.copyWith(
-                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _buildInfoBullet('Zero tracking cookies or cross-app identifiers'),
-                _buildInfoBullet('Watchlist data is never sold or shared with advertisers'),
-                _buildInfoBullet('Instant and permanent data deletion upon request'),
-                const SizedBox(height: AppSpacing.lg),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Got It'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   void _showTmdbAttributionSheet(BuildContext context) {
     HapticFeedback.lightImpact();
@@ -1216,27 +1130,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Widget _buildInfoBullet(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 13,
-                color: context.isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _SettingsTile extends StatelessWidget {
