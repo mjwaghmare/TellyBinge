@@ -256,6 +256,10 @@ class NotificationService {
   /// Single service-level operation queue to serialize all registry and history mutations.
   Future<void> _operationQueue = Future<void>.value();
 
+  /// Override flag to simulate release mode in unit tests.
+  @visibleForTesting
+  static bool? debugReleaseModeOverride;
+
   Future<T> _synchronized<T>(Future<T> Function() action) {
     final completer = Completer<T>();
     _operationQueue = _operationQueue.then((_) async {
@@ -288,95 +292,120 @@ class NotificationService {
     await _setHasUnread(false);
   }
 
-  /// Schedules reinstall reminder notifications ONLY on iOS Release builds
-  /// for free-tier personal developer provisioning expiration.
-  /// Schedules Day 5 (48h left) and Day 6 (24h left) notifications.
-  Future<void> scheduleReinstallReminderIfNeeded() async {
-    if (!kReleaseMode || defaultTargetPlatform != TargetPlatform.iOS) {
-      return;
-    }
-
+  /// Cancels any scheduled iOS free developer provisioning profile reminders directly without queueing.
+  Future<void> _cancelReinstallRemindersDirect() async {
+    await _cancelNotificationByIdDirect(_reinstallNotificationId);
+    await _cancelNotificationByIdDirect(_reinstallNotificationId24h);
     final prefs = await SharedPreferences.getInstance();
-    final installTimestamp = await getAppInstallTimestamp();
-    final lastScheduledBuild = prefs.getInt(_prefReinstallReminderBuildTs) ?? 0;
-
-    // Reset scheduled flag if a new build timestamp is detected
-    if (installTimestamp > lastScheduledBuild) {
-      await prefs.setBool(_prefReinstallReminderScheduled, false);
-      await prefs.setInt(_prefReinstallReminderBuildTs, installTimestamp);
-    }
-
-    final alreadyScheduled =
-        prefs.getBool(_prefReinstallReminderScheduled) ?? false;
-    if (alreadyScheduled) {
-      return;
-    }
-
-    final installDate = DateTime.fromMillisecondsSinceEpoch(installTimestamp);
-    final expirationDate = installDate.add(_profileExpirationDuration);
-    final now = DateTime.now();
-
-    // 48h left (2 days before expiration) and 24h left (1 day before expiration)
-    final reminderDate48h = expirationDate.subtract(const Duration(days: 2));
-    final reminderDate24h = expirationDate.subtract(const Duration(days: 1));
-
-    bool allScheduled = true;
-    try {
-      if (reminderDate48h.isAfter(now)) {
-        final success = await _scheduleOne(
-          id: _reinstallNotificationId,
-          title: "⏳ 2 Days Left on Free Profile",
-          body:
-              "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
-          scheduledDate: reminderDate48h,
-        );
-        if (!success) allScheduled = false;
-      } else if (reminderDate48h.isBefore(now) &&
-          reminderDate24h.isAfter(now)) {
-        await saveReceivedNotification(
-          id: _reinstallNotificationId.toString(),
-          title: "⏳ 2 Days Left on Free Profile",
-          body:
-              "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
-        );
-      }
-
-      if (reminderDate24h.isAfter(now)) {
-        final success = await _scheduleOne(
-          id: _reinstallNotificationId24h,
-          title: "🚨 Profile Expires Tomorrow!",
-          body:
-              "Free developer profile expires in 24 hours. Rebuild with Xcode today to keep the app working! 💻",
-          scheduledDate: reminderDate24h,
-        );
-        if (!success) allScheduled = false;
-      } else {
-        if (expirationDate.isAfter(now)) {
-          const title = "🚨 Profile Expires Very Soon!";
-          const body =
-              "Free developer profile expires in less than 24 hours! Connect to Xcode and rebuild now. 💻";
-          final success = await _scheduleOne(
-            id: _reinstallNotificationId24h,
-            title: title,
-            body: body,
-            scheduledDate: now.add(const Duration(minutes: 1)),
-          );
-          if (!success) allScheduled = false;
-          await saveReceivedNotification(
-            id: _reinstallNotificationId24h.toString(),
-            title: title,
-            body: body,
-          );
-        }
-      }
-
-      if (allScheduled) {
-        await prefs.setBool(_prefReinstallReminderScheduled, true);
-      }
-    } catch (e) {
-      debugPrint('Failed to schedule reinstall reminders: $e');
-    }
+    await prefs.setBool(_prefReinstallReminderScheduled, false);
   }
+
+  /// Cancels any scheduled iOS free developer provisioning profile reminders.
+  Future<void> cancelReinstallReminders() =>
+      _synchronized(() => _cancelReinstallRemindersDirect());
+
+  /// Schedules reinstall reminder notifications ONLY on iOS Release builds
+  /// for free-tier personal developer provisioning expiration, exclusively for admins.
+  /// Schedules Day 5 (48h left) and Day 6 (24h left) notifications.
+  Future<void> scheduleReinstallReminderIfNeeded({bool isAdmin = false}) =>
+      _synchronized(() async {
+        if (defaultTargetPlatform != TargetPlatform.iOS || !isAdmin) {
+          if (defaultTargetPlatform == TargetPlatform.iOS) {
+            await _cancelReinstallRemindersDirect();
+          }
+          return;
+        }
+
+        final isRelease = debugReleaseModeOverride ?? kReleaseMode;
+        if (!isRelease) {
+          return;
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        final installTimestamp = await getAppInstallTimestamp();
+        final lastScheduledBuild =
+            prefs.getInt(_prefReinstallReminderBuildTs) ?? 0;
+
+        // Reset scheduled flag if a new build timestamp is detected
+        if (installTimestamp > lastScheduledBuild) {
+          await prefs.setBool(_prefReinstallReminderScheduled, false);
+          await prefs.setInt(_prefReinstallReminderBuildTs, installTimestamp);
+        }
+
+        final alreadyScheduled =
+            prefs.getBool(_prefReinstallReminderScheduled) ?? false;
+        if (alreadyScheduled) {
+          return;
+        }
+
+        final installDate =
+            DateTime.fromMillisecondsSinceEpoch(installTimestamp);
+        final expirationDate = installDate.add(_profileExpirationDuration);
+        final now = DateTime.now();
+
+        // 48h left (2 days before expiration) and 24h left (1 day before expiration)
+        final reminderDate48h =
+            expirationDate.subtract(const Duration(days: 2));
+        final reminderDate24h =
+            expirationDate.subtract(const Duration(days: 1));
+
+        bool allScheduled = true;
+        try {
+          if (reminderDate48h.isAfter(now)) {
+            final success = await _scheduleOne(
+              id: _reinstallNotificationId,
+              title: "⏳ 2 Days Left on Free Profile",
+              body:
+                  "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
+              scheduledDate: reminderDate48h,
+            );
+            if (!success) allScheduled = false;
+          } else if (reminderDate48h.isBefore(now) &&
+              reminderDate24h.isAfter(now)) {
+            await _saveReceivedNotificationDirect(
+              id: _reinstallNotificationId.toString(),
+              title: "⏳ 2 Days Left on Free Profile",
+              body:
+                  "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
+            );
+          }
+
+          if (reminderDate24h.isAfter(now)) {
+            final success = await _scheduleOne(
+              id: _reinstallNotificationId24h,
+              title: "🚨 Profile Expires Tomorrow!",
+              body:
+                  "Free developer profile expires in 24 hours. Rebuild with Xcode today to keep the app working! 💻",
+              scheduledDate: reminderDate24h,
+            );
+            if (!success) allScheduled = false;
+          } else {
+            if (expirationDate.isAfter(now)) {
+              const title = "🚨 Profile Expires Very Soon!";
+              const body =
+                  "Free developer profile expires in less than 24 hours! Connect to Xcode and rebuild now. 💻";
+              final success = await _scheduleOne(
+                id: _reinstallNotificationId24h,
+                title: title,
+                body: body,
+                scheduledDate: now.add(const Duration(minutes: 1)),
+              );
+              if (!success) allScheduled = false;
+              await _saveReceivedNotificationDirect(
+                id: _reinstallNotificationId24h.toString(),
+                title: title,
+                body: body,
+              );
+            }
+          }
+
+          if (allScheduled) {
+            await prefs.setBool(_prefReinstallReminderScheduled, true);
+          }
+        } catch (e) {
+          debugPrint('Failed to schedule reinstall reminders: $e');
+        }
+      });
 
   /// Returns the actual build/deployment timestamp of the app executable.
   /// Falls back to the persisted app install timestamp if file stat is unavailable.
@@ -410,7 +439,7 @@ class NotificationService {
 
   /// Resets the app install timestamp to now (used when app is rebuilt)
   /// and updates scheduled notifications accordingly.
-  Future<DateTime> resetAppInstallTimestamp() async {
+  Future<DateTime> resetAppInstallTimestamp({bool isAdmin = true}) async {
     final prefs = await SharedPreferences.getInstance();
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     await prefs.setInt(_prefAppInstallTimestamp, nowMs);
@@ -418,7 +447,7 @@ class NotificationService {
 
     await cancelNotificationById(_reinstallNotificationId);
     await cancelNotificationById(_reinstallNotificationId24h);
-    await scheduleReinstallReminderIfNeeded();
+    await scheduleReinstallReminderIfNeeded(isAdmin: isAdmin);
 
     return DateTime.fromMillisecondsSinceEpoch(
       nowMs,
@@ -474,7 +503,7 @@ class NotificationService {
       },
     );
 
-    await scheduleReinstallReminderIfNeeded();
+    await scheduleReinstallReminderIfNeeded(isAdmin: false);
   }
 
   /// Invoked with a `tvtimeapp://…` deep link when the user taps a scheduled
@@ -884,7 +913,7 @@ class NotificationService {
     }
   }
 
-  Future<void> cancelNotificationById(int id) => _synchronized(() async {
+  Future<void> _cancelNotificationByIdDirect(int id) async {
     _canceledNotificationIds.add(id);
 
     for (final list in _desired.values) {
@@ -899,7 +928,10 @@ class NotificationService {
     await _removeReceivedNotificationDirect(id.toString());
     await _removeFromScheduledRegistryDirect([id.toString()]);
     _lastScheduledSignature = null;
-  });
+  }
+
+  Future<void> cancelNotificationById(int id) =>
+      _synchronized(() => _cancelNotificationByIdDirect(id));
 
   /// Cancels platform notifications and resets the scheduled signature.
   /// Does NOT mutate _desired.

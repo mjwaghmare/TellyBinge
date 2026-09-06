@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -19,8 +20,22 @@ class AuthCubit extends Cubit<AuthState> {
       (user) {
         if (user != null) {
           emit(Authenticated(user));
+          if (defaultTargetPlatform == TargetPlatform.iOS) {
+            if (user.isAdmin) {
+              unawaited(
+                NotificationService().scheduleReinstallReminderIfNeeded(
+                  isAdmin: true,
+                ),
+              );
+            } else {
+              unawaited(NotificationService().cancelReinstallReminders());
+            }
+          }
         } else {
           emit(Unauthenticated());
+          if (defaultTargetPlatform == TargetPlatform.iOS) {
+            unawaited(NotificationService().cancelReinstallReminders());
+          }
         }
       },
       onError: (error) {
@@ -30,6 +45,9 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void continueAsGuest() {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      unawaited(NotificationService().cancelReinstallReminders());
+    }
     emit(AuthGuest());
   }
 

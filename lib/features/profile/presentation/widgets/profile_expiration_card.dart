@@ -235,8 +235,8 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
         children: [
           Text(
             value,
-            style: AppTextStyles.lg.withTabularFigures().copyWith(
-              fontWeight: FontWeight.bold,
+            style: AppTextStyles.posterStat.withTabularFigures().copyWith(
+              fontSize: 22.0,
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),

@@ -203,10 +203,11 @@ class _AuthRequiredViewState extends State<AuthRequiredView>
                                         Text(
                                           widget.title,
                                           textAlign: TextAlign.center,
-                                          style: AppTextStyles.xl
+                                          style: AppTextStyles.posterTitle
                                               .withColor(textColor)
                                               .copyWith(
-                                                fontWeight: FontWeight.bold,
+                                                fontSize: 32.0,
+                                                letterSpacing: 1.0,
                                               ),
                                         ),
                                         AppSpacing.gapH8,

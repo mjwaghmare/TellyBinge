@@ -11,6 +11,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/action_circle_button.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
@@ -383,6 +384,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
     final String title = details['name'] ?? details['title'] ?? widget.title;
     final String? backdropPath = details['backdrop_path'];
+    final String tagline = (details['tagline'] as String? ?? '').trim();
     final String overview = details['overview'] ?? '';
     final double voteAverage =
         (details['vote_average'] as num?)?.toDouble() ?? 0.0;
@@ -612,7 +614,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [Expanded(child: _buildTrackButton(details))]),
+            if (isLoading)
+              AppSpacing.gapH24
+            else
+              Row(children: [Expanded(child: _buildTrackButton(details))]),
             const Text(
               'Show info',
               style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
@@ -677,6 +682,17 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 ],
               ],
             ),
+            if (tagline.isNotEmpty) ...[
+              AppSpacing.gapH8,
+              Text(
+                '“$tagline”',
+                style: AppTextStyles.editorialTagline.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withValues(alpha: 0.75),
+                ),
+              ),
+            ],
             AppSpacing.gapH12,
             Text(
               overview.isNotEmpty ? overview : 'No overview available.',
@@ -696,9 +712,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 (details['credits']['cast'] as List).isNotEmpty) ...[
               const Divider(height: 1, thickness: 0.5),
               AppSpacing.gapH24,
-              const Text(
-                'Cast',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                'CAST & CREW',
+                style: AppTextStyles.posterHeader.copyWith(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
               ),
               AppSpacing.gapH16,
               Skeletonizer(
@@ -737,9 +755,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 (details['similar']['results'] as List).isNotEmpty) ...[
               const Divider(height: 1, thickness: 0.5),
               AppSpacing.gapH24,
-              const Text(
-                'More Like This',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                'MORE LIKE THIS',
+                style: AppTextStyles.posterHeader.copyWith(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
               ),
               AppSpacing.gapH16,
               BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(

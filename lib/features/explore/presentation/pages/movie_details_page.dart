@@ -9,6 +9,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/action_circle_button.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -375,6 +376,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         final backdropPath = movie['backdrop_path'] as String?;
         final releaseDate = movie['release_date'] as String?;
         final genres = _formatGenres(movie['genres'] as List<dynamic>?);
+        final tagline = (movie['tagline'] as String? ?? '').trim();
         final overview = movie['overview'] as String? ?? '';
         final voteAverage = (movie['vote_average'] as num?)?.toDouble() ?? 0.0;
         final voteCount = (movie['vote_count'] as num?)?.toInt() ?? 0;
@@ -886,6 +888,16 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     ],
                                   ],
                                 ),
+                                if (tagline.isNotEmpty) ...[
+                                  const SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    '“$tagline”',
+                                    style: AppTextStyles.editorialTagline.copyWith(
+                                      color: context.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: AppSpacing.md),
                                 AppSpacing.gapH16,
                                 Divider(
                                   color: Theme.of(context).dividerColor,
@@ -896,11 +908,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
 
                                 // Movie Info Section
                                 Text(
-                                  'Movie info',
-                                  style: TextStyle(
+                                  'MOVIE INFO',
+                                  style: AppTextStyles.posterHeader.copyWith(
                                     color: context.textPrimary,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 AppSpacing.gapH8,
@@ -985,11 +995,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 // Cast Section
                                 if (cast.isNotEmpty) ...[
                                   Text(
-                                    'Cast',
-                                    style: TextStyle(
+                                    'CAST & CREW',
+                                    style: AppTextStyles.posterHeader.copyWith(
                                       color: context.textPrimary,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.md),
@@ -1087,11 +1095,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   ),
                                   const SizedBox(height: AppSpacing.lg),
                                   Text(
-                                    'More Like This',
-                                    style: TextStyle(
+                                    'MORE LIKE THIS',
+                                    style: AppTextStyles.posterHeader.copyWith(
                                       color: context.textPrimary,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.md),

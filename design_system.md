@@ -68,6 +68,18 @@ Typography is driven globally by **Google Fonts Plus Jakarta Sans** via `AppThem
 | `AppTextStyles.xl` | 24.0pt | Bold (w700) | Regular | Page hero titles |
 | `AppTextStyles.xxl` | 32.0pt | Bold (w700) | Regular | Hero stats numbers |
 
+### Display Accent Fonts (Curated Highlights)
+In addition to the primary Plus Jakarta Sans typeface, PopVerse uses two curated display accent fonts for cinematic personality:
+
+| Style Token | Font Family | Style / Weight | Usage |
+| :--- | :--- | :--- | :--- |
+| `AppTextStyles.posterTitle` | **Bebas Neue** | Bold condensed (32pt) | Large landing hero billboard headlines |
+| `AppTextStyles.posterHeader` | **Bebas Neue** | Bold condensed (22pt) | Movie & show section titles (`MOVIE INFO`, `CAST & CREW`) |
+| `AppTextStyles.posterStat` | **Bebas Neue** | Bold condensed (22pt) | Live countdown digits & profile stat numbers |
+| `AppTextStyles.editorialTagline`| **Playfair Display**| Italic serif (15pt) | Movie / TV show official taglines |
+| `AppTextStyles.editorialQuote` | **Playfair Display**| Italic serif (17pt) | Critic reviews and spotlight editorial quotes |
+| `AppTextStyles.editorialTitle` | **Playfair Display**| SemiBold serif (24pt) | Prestige festival / award-winner headers |
+
 ### Tabular Figures (`FontFeature.tabularFigures()`)
 For live countdown timers, ratings, and stats counters, always apply `.withTabularFigures()` or `fontFeatures: const [FontFeature.tabularFigures()]` to ensure fixed-width digits and prevent UI jitter as numerical values update.
 

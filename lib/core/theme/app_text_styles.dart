@@ -58,6 +58,58 @@ class AppTextStyles {
     letterSpacing: -0.5,
     color: AppColors.textPrimary,
   );
+
+  // ---------------------------------------------------------------------------
+  // Display Accent 1: Bebas Neue (Cinematic, Poster, Bold Condensed)
+  // ---------------------------------------------------------------------------
+
+  /// Hero title style for large cinematic headlines.
+  static TextStyle get posterTitle => GoogleFonts.bebasNeue(
+    fontSize: 32.0,
+    letterSpacing: 1.2,
+    color: AppColors.textPrimary,
+  );
+
+  /// Section headers for movie & show pages (e.g., 'MOVIE INFO', 'CAST & CREW').
+  static TextStyle get posterHeader => GoogleFonts.bebasNeue(
+    fontSize: 22.0,
+    letterSpacing: 1.0,
+    color: AppColors.textPrimary,
+  );
+
+  /// Display numbers for countdown timers, watch hours, and profile metrics.
+  static TextStyle get posterStat => GoogleFonts.bebasNeue(
+    fontSize: 22.0,
+    letterSpacing: 0.8,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Display Accent 2: Playfair Display (Prestige, Editorial, Award-Winning Serif)
+  // ---------------------------------------------------------------------------
+
+  /// Movie/Show taglines and critic quotes.
+  static TextStyle get editorialTagline => GoogleFonts.playfairDisplay(
+    fontSize: 15.0,
+    fontStyle: FontStyle.italic,
+    height: 1.35,
+    letterSpacing: 0.2,
+  );
+
+  /// Editorial quotes or spotlight titles.
+  static TextStyle get editorialQuote => GoogleFonts.playfairDisplay(
+    fontSize: 17.0,
+    fontStyle: FontStyle.italic,
+    height: 1.4,
+    color: AppColors.textPrimary,
+  );
+
+  /// Elegant serif titles for prestige features or awards.
+  static TextStyle get editorialTitle => GoogleFonts.playfairDisplay(
+    fontSize: 24.0,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+    color: AppColors.textPrimary,
+  );
 }
 
 extension TextStyleColorX on TextStyle {

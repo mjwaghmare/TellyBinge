@@ -548,7 +548,8 @@ class _ProfilePageState extends State<ProfilePage>
           ],
         ),
         actions: [
-          if (defaultTargetPlatform == TargetPlatform.iOS)
+          if (defaultTargetPlatform == TargetPlatform.iOS &&
+              (user?.isAdmin ?? false))
             const ProfileExpirationIndicator(),
           IconButton(
             icon: ValueListenableBuilder<bool>(
@@ -1483,14 +1484,14 @@ class _ProfilePageState extends State<ProfilePage>
                 children: [
                   Text(
                     count,
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: isLight
-                          ? AppColors.lightTextPrimary
-                          : AppColors.textPrimary,
-                      letterSpacing: -0.3,
-                    ),
+                    style: AppTextStyles.posterStat
+                        .withTabularFigures()
+                        .copyWith(
+                          fontSize: 22.0,
+                          color: isLight
+                              ? AppColors.lightTextPrimary
+                              : AppColors.textPrimary,
+                        ),
                   ),
                   const SizedBox(height: 1),
                   Text(
