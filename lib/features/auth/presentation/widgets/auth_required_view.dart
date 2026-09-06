@@ -21,6 +21,8 @@ class AuthRequiredView extends StatefulWidget {
   final IconData? icon;
   final String? badge;
   final bool showPosterWall;
+  final ValueNotifier<int>? tabNotifier;
+  final int? tabIndex;
 
   const AuthRequiredView({
     super.key,
@@ -30,6 +32,8 @@ class AuthRequiredView extends StatefulWidget {
     this.icon,
     this.badge,
     this.showPosterWall = true,
+    this.tabNotifier,
+    this.tabIndex,
   });
 
   @override
@@ -43,6 +47,7 @@ class _AuthRequiredViewState extends State<AuthRequiredView>
   late final Animation<Offset> _headerSlideAnimation;
   late final Animation<Offset> _cardSlideAnimation;
   late final Animation<Offset> _ctaSlideAnimation;
+  late final List<Animation<double>> _checkmarkAnimations;
 
   @override
   void initState() {
@@ -87,11 +92,36 @@ class _AuthRequiredViewState extends State<AuthRequiredView>
       ),
     );
 
-    _controller.forward();
+    final totalFeatures = widget.features.length;
+    _checkmarkAnimations = List.generate(totalFeatures, (i) {
+      final start = (0.28 + (i * 0.12)).clamp(0.0, 0.85);
+      final end = (start + 0.35).clamp(0.0, 1.0);
+      return Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Interval(start, end, curve: Curves.elasticOut),
+        ),
+      );
+    });
+
+    widget.tabNotifier?.addListener(_onTabChanged);
+
+    // If no tabNotifier is bound or this tab is currently selected, animate in immediately.
+    if (widget.tabNotifier == null ||
+        widget.tabNotifier?.value == widget.tabIndex) {
+      _controller.forward();
+    }
+  }
+
+  void _onTabChanged() {
+    if (widget.tabNotifier?.value == widget.tabIndex) {
+      _controller.forward(from: 0.0);
+    }
   }
 
   @override
   void dispose() {
+    widget.tabNotifier?.removeListener(_onTabChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -157,7 +187,7 @@ class _AuthRequiredViewState extends State<AuthRequiredView>
                               AppSpacing.xl,
                               AppSpacing.md,
                               AppSpacing.xl,
-                              100.0, // Clearance for glowing bottom navigation bar
+                              128.0, // Clearance for elevated center dice and bottom bar
                             ),
                             child: FadeTransition(
                               opacity: _fadeAnimation,
@@ -224,27 +254,33 @@ class _AuthRequiredViewState extends State<AuthRequiredView>
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
-                                                  const Padding(
-                                                    padding: EdgeInsets.only(
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(
                                                       top: 2.0,
                                                     ),
-                                                    child: Icon(
-                                                      Icons.check_circle_rounded,
-                                                      size: 18,
-                                                      color:
-                                                          AppColors.brandGreen,
+                                                    child: ScaleTransition(
+                                                      scale: _checkmarkAnimations[i],
+                                                      child: const Icon(
+                                                        Icons.check_circle_rounded,
+                                                        size: 18,
+                                                        color:
+                                                            AppColors.brandGreen,
+                                                      ),
                                                     ),
                                                   ),
                                                   AppSpacing.gapW12,
                                                   Expanded(
-                                                    child: Text(
-                                                      widget.features[i],
-                                                      style: AppTextStyles
-                                                          .smMedium
-                                                          .withColor(textColor)
-                                                          .copyWith(
-                                                            height: 1.35,
-                                                          ),
+                                                    child: FadeTransition(
+                                                      opacity: _checkmarkAnimations[i],
+                                                      child: Text(
+                                                        widget.features[i],
+                                                        style: AppTextStyles
+                                                            .smMedium
+                                                            .withColor(textColor)
+                                                            .copyWith(
+                                                              height: 1.35,
+                                                            ),
+                                                      ),
                                                     ),
                                                   ),
                                                 ],

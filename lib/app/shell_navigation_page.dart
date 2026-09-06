@@ -149,13 +149,13 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
                       _exploreSubTabNotifier.value = 0;
                     },
                   )
-                : const AuthRequiredView(
-                    icon: Icons.tv_rounded,
-                    badge: 'TV Tracker',
+                : AuthRequiredView(
+                    tabNotifier: _tabNotifier,
+                    tabIndex: 0,
                     title: 'Track TV Shows',
                     subtitle:
                         'Never miss an episode. Track what you watch, get countdowns, and stay up to date.',
-                    features: [
+                    features: const [
                       'Up Next episode tracker with progress bars',
                       'Release dates & episode air countdowns',
                       'Smart notifications for upcoming episodes',
@@ -171,13 +171,13 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
                       _exploreSubTabNotifier.value = 1;
                     },
                   )
-                : const AuthRequiredView(
-                    icon: Icons.movie_filter_rounded,
-                    badge: 'Movie Watchlist',
+                : AuthRequiredView(
+                    tabNotifier: _tabNotifier,
+                    tabIndex: 1,
                     title: 'Movie Watchlist',
                     subtitle:
                         'Keep track of movies you want to see and manage the ones you have watched.',
-                    features: [
+                    features: const [
                       'Build your custom movie watchlist',
                       'Release calendar & premiere alerts',
                       'Mark movies watched and save favorites',
@@ -192,13 +192,13 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
                     create: (context) => ProfileHeatmapCubit(),
                     child: ProfilePage(tabNotifier: _tabNotifier),
                   )
-                : const AuthRequiredView(
-                    icon: Icons.person_rounded,
-                    badge: 'Stats & Profile',
+                : AuthRequiredView(
+                    tabNotifier: _tabNotifier,
+                    tabIndex: 3,
                     title: 'Your Profile & Stats',
                     subtitle:
                         'Sign in to see your watching habits, total watch time, and unlock achievements.',
-                    features: [
+                    features: const [
                       'Total watch time stats for shows & movies',
                       'Daily watch activity heatmap & history',
                       'Unlock badges, milestones & streaks',
