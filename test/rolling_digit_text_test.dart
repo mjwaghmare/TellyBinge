@@ -211,5 +211,29 @@ void main() {
     expect(find.text('2'), findsOneWidget);
     expect(find.text('0'), findsOneWidget);
   });
+
+  testWidgets('RollingDigitText defaults to 10 initial steps for entrance roll', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: RollingDigitText(
+            value: 50,
+            animateInitial: true,
+            style: TextStyle(fontSize: 20),
+          ),
+        ),
+      ),
+    );
+
+    // Default maxInitialSteps is 10, so frame 0 starts at 50 - 10 = 40 ('4', '0')
+    expect(find.text('4'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
+
+    await tester.pumpAndSettle();
+
+    // After settling: '5', '0'
+    expect(find.text('5'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
+  });
 }
 

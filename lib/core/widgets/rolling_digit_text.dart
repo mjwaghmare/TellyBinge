@@ -24,10 +24,10 @@ class RollingDigitText extends StatefulWidget {
     super.key,
     required this.value,
     required this.style,
-    this.duration = const Duration(milliseconds: 380),
+    this.duration = const Duration(milliseconds: 400),
     this.curve = Curves.easeOutCubic,
     this.animateInitial = true,
-    this.maxInitialSteps = 6,
+    this.maxInitialSteps = 10,
     this.animationTrigger,
   });
 
@@ -97,11 +97,11 @@ class _RollingDigitTextState extends State<RollingDigitText> {
   void _scheduleEntranceSpin(int start, int end, int steps) {
     if (steps <= 0) return;
 
-    // Decelerating step intervals (faster at start, slower at end)
-    // E.g. for 6 steps: ~50ms, 55ms, 65ms, 80ms, 100ms, 120ms (total ~470ms)
+    // Smooth decelerating step intervals (natural mechanical counter deceleration)
+    // Scales dynamically across steps (e.g. for 10 steps: ~50ms to 150ms, ~920ms total)
     final intervals = <int>[];
     const baseMs = 50.0;
-    const maxMs = 120.0;
+    const maxMs = 150.0;
     for (int i = 0; i < steps; i++) {
       final progress = steps == 1 ? 1.0 : i / (steps - 1);
       final interval =
@@ -119,15 +119,15 @@ class _RollingDigitTextState extends State<RollingDigitText> {
         if (!mounted) return;
         setState(() {
           _stepDurationOverride =
-              Duration(milliseconds: (stepDurationMs * 0.95).round());
+              Duration(milliseconds: (stepDurationMs * 0.98).round());
           _previousDisplayValue = _displayValue;
           _displayValue = targetStepVal;
         });
 
-        // Clear step duration override after final step settles
+        // Clear step duration override after final step settles smoothly
         if (targetStepVal == end) {
           final settleTimer =
-              Timer(Duration(milliseconds: stepDurationMs), () {
+              Timer(Duration(milliseconds: stepDurationMs + 40), () {
             if (!mounted) return;
             setState(() {
               _stepDurationOverride = null;
@@ -215,17 +215,17 @@ class _RollingDigitTextState extends State<RollingDigitText> {
               );
 
               // When incrementing (e.g. 100 -> 101):
-              // - Incoming digit rolls up from bottom: (0, 1) -> (0, 0)
-              // - Outgoing digit rolls up and out: (0, 0) -> (0, -1)
+              // - Incoming digit rolls up from bottom: (0, 0.75) -> (0, 0)
+              // - Outgoing digit rolls up and out: (0, 0) -> (0, -0.75)
               // When decrementing:
-              // - Incoming digit rolls down from top: (0, -1) -> (0, 0)
-              // - Outgoing digit rolls down and out: (0, 0) -> (0, 1)
+              // - Incoming digit rolls down from top: (0, -0.75) -> (0, 0)
+              // - Outgoing digit rolls down and out: (0, 0) -> (0, 0.75)
               final Offset inBegin = isIncrement
-                  ? const Offset(0.0, 1.0)
-                  : const Offset(0.0, -1.0);
+                  ? const Offset(0.0, 0.75)
+                  : const Offset(0.0, -0.75);
               final Offset outEnd = isIncrement
-                  ? const Offset(0.0, -1.0)
-                  : const Offset(0.0, 1.0);
+                  ? const Offset(0.0, -0.75)
+                  : const Offset(0.0, 0.75);
 
               final tween = isCurrent
                   ? Tween<Offset>(begin: inBegin, end: Offset.zero)
@@ -233,7 +233,10 @@ class _RollingDigitTextState extends State<RollingDigitText> {
 
               return SlideTransition(
                 position: tween.animate(curved),
-                child: child,
+                child: FadeTransition(
+                  opacity: curved,
+                  child: child,
+                ),
               );
             },
             child: Text(
