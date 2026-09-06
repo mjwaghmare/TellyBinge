@@ -34,6 +34,7 @@ import '../cubit/profile_heatmap_state.dart';
 import 'notifications_page.dart';
 import 'settings_page.dart';
 import '../../../../core/services/widget_service.dart';
+import '../../../../core/widgets/rolling_digit_text.dart';
 
 class HorizontalItem {
   final int movieId;
@@ -107,6 +108,7 @@ class _ProfilePageState extends State<ProfilePage>
   int _lastWatchedShowsCount = 0;
   int _lastTotalEpisodesCount = 0;
   int _lastTotalShowMinutes = 0;
+  int _profileVisitCount = 0;
 
   String _formatTime(int mins) {
     if (mins == 0) return '0m';
@@ -207,6 +209,11 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   void initState() {
     super.initState();
+    final isCurrentTab =
+        widget.tabNotifier == null || widget.tabNotifier?.value == 3;
+    if (isCurrentTab) {
+      _profileVisitCount = 1;
+    }
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (_tabController.index != _previousTabIndex) {
@@ -249,17 +256,35 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   void _onAppTabChanged() {
-    if (widget.tabNotifier != null && widget.tabNotifier!.value != 3) {
-      // 3 is the index of ProfilePage in ShellNavigationPage
-      setState(() {
-        _movieSortOption = 'Last Added';
-        _movieProgressOption = 'All';
-        _showSortOption = 'Last added';
-        _showProgressOption = 'All';
-        _isHeatmapExpanded = false;
-        _isLocalLoading = false;
-        _shimmerTimer?.cancel();
-      });
+    if (widget.tabNotifier != null) {
+      if (widget.tabNotifier!.value == 3) {
+        // 3 is the index of ProfilePage in ShellNavigationPage
+        setState(() {
+          _profileVisitCount++;
+        });
+      } else {
+        setState(() {
+          _movieSortOption = 'Last Added';
+          _movieProgressOption = 'All';
+          _showSortOption = 'Last added';
+          _showProgressOption = 'All';
+          _isHeatmapExpanded = false;
+          _isLocalLoading = false;
+          _shimmerTimer?.cancel();
+        });
+      }
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tabNotifier != widget.tabNotifier) {
+      oldWidget.tabNotifier?.removeListener(_onAppTabChanged);
+      widget.tabNotifier?.addListener(_onAppTabChanged);
+      if (widget.tabNotifier == null || widget.tabNotifier?.value == 3) {
+        _profileVisitCount++;
+      }
     }
   }
 
@@ -627,7 +652,6 @@ class _ProfilePageState extends State<ProfilePage>
               builder: (context, showWatchlistState) {
                 List<HorizontalItem> watchedMovies = [];
                 List<HorizontalItem> displayedMovies = [];
-                List<HorizontalItem> watchedShows = [];
                 List<HorizontalItem> displayedShows = [];
                 bool isLoadingMovies = watchlistState is MovieWatchlistLoading;
                 bool isLoadingShows =
@@ -712,10 +736,6 @@ class _ProfilePageState extends State<ProfilePage>
                 }
 
                 if (showWatchlistState is TvShowWatchlistSuccess) {
-                  watchedShows = showWatchlistState.shows
-                      .map((s) => _showToHorizontalItem(s))
-                      .toList();
-
                   var filteredShows = showWatchlistState.shows;
 
                   // 1. Progress Filter
@@ -866,7 +886,7 @@ class _ProfilePageState extends State<ProfilePage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Stats Section (Shows added & Movies watched)
+                            // Stats Section (Episodes watched & Movies watched)
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: AppSpacing.md,
@@ -881,8 +901,8 @@ class _ProfilePageState extends State<ProfilePage>
                                         color: AppColors.primary,
                                         size: 24,
                                       ),
-                                      count: '${watchedShows.length}',
-                                      label: 'Shows added',
+                                      count: '${stats.totalEpisodesCount}',
+                                      label: 'Episodes watched',
                                       timeSpent: _formatTime(totalShowMinutes),
                                       onTap: () {
                                         _toggleHeatmap(0);
@@ -1482,17 +1502,32 @@ class _ProfilePageState extends State<ProfilePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    count,
-                    style: AppTextStyles.posterStat
-                        .withTabularFigures()
-                        .copyWith(
-                          fontSize: 22.0,
-                          color: isLight
-                              ? AppColors.lightTextPrimary
-                              : AppColors.textPrimary,
-                        ),
-                  ),
+                  if (int.tryParse(count) != null)
+                    RollingDigitText(
+                      value: int.parse(count),
+                      animationTrigger: _profileVisitCount,
+                      animateInitial: _profileVisitCount > 0,
+                      style: AppTextStyles.posterStat
+                          .withTabularFigures()
+                          .copyWith(
+                            fontSize: 22.0,
+                            color: isLight
+                                ? AppColors.lightTextPrimary
+                                : AppColors.textPrimary,
+                          ),
+                    )
+                  else
+                    Text(
+                      count,
+                      style: AppTextStyles.posterStat
+                          .withTabularFigures()
+                          .copyWith(
+                            fontSize: 22.0,
+                            color: isLight
+                                ? AppColors.lightTextPrimary
+                                : AppColors.textPrimary,
+                          ),
+                    ),
                   const SizedBox(height: 1),
                   Text(
                     label,
