@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import 'profile_page.dart'; // For HorizontalItem
 import '../../../../features/explore/presentation/pages/movie_details_page.dart';
 
@@ -24,7 +25,7 @@ class WatchedMoviesPage extends StatelessWidget {
         elevation: 0,
         title: Text(
           title,
-          style: TextStyle(
+          style: AppTextStyles.lg.copyWith(
             color: Theme.of(context).textTheme.bodyLarge?.color,
             fontSize: 18.0,
             fontWeight: FontWeight.bold,
@@ -41,15 +42,15 @@ class WatchedMoviesPage extends StatelessWidget {
       ),
       body: GridView.builder(
         padding: const EdgeInsets.fromLTRB(
-          12.0,
-          12.0,
-          12.0,
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.sm,
           AppSpacing.bottomTabPadding,
         ),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 12,
+          crossAxisSpacing: AppSpacing.xs,
+          mainAxisSpacing: AppSpacing.sm,
           childAspectRatio: 0.52,
         ),
         itemCount: watchedMovies.length,
@@ -73,7 +74,7 @@ class WatchedMoviesPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.0),
                     child: Container(
                       color: context.adaptiveColor(
-                        light: Colors.grey[300]!,
+                        light: AppColors.lightSurfaceElevated,
                         dark: AppColors.surfaceLight,
                       ),
                       width: double.infinity,
@@ -87,7 +88,7 @@ class WatchedMoviesPage extends StatelessWidget {
                                   Icons.movie_creation_outlined,
                                   size: 32,
                                   color: context.adaptiveColor(
-                                    light: Colors.grey[500]!,
+                                    light: AppColors.lightTextTertiary,
                                     dark: AppColors.textTertiary,
                                   ),
                                 ),
@@ -98,7 +99,7 @@ class WatchedMoviesPage extends StatelessWidget {
                                 Icons.movie_creation_outlined,
                                 size: 32,
                                 color: context.adaptiveColor(
-                                  light: Colors.grey[500]!,
+                                  light: AppColors.lightTextTertiary,
                                   dark: AppColors.textTertiary,
                                 ),
                               ),
@@ -112,7 +113,7 @@ class WatchedMoviesPage extends StatelessWidget {
                   movie.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: AppTextStyles.xsMedium.copyWith(
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
@@ -127,7 +128,7 @@ class WatchedMoviesPage extends StatelessWidget {
                       const SizedBox(width: 3),
                       Text(
                         movie.voteAverage.toStringAsFixed(1),
-                        style: TextStyle(
+                        style: AppTextStyles.xs.copyWith(
                           fontSize: 10.0,
                           color:
                               Theme.of(context).textTheme.bodyMedium?.color ??
@@ -135,20 +136,20 @@ class WatchedMoviesPage extends StatelessWidget {
                         ),
                       ),
                       if (_getYear(movie.releaseDate).isNotEmpty) ...[
-                        const SizedBox(width: 4),
+                        AppSpacing.gapW4,
                         Text(
                           '•',
-                          style: TextStyle(
+                          style: AppTextStyles.xs.copyWith(
                             fontSize: 10.0,
                             color:
                                 Theme.of(context).textTheme.bodyMedium?.color ??
                                 AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        AppSpacing.gapW4,
                         Text(
                           _getYear(movie.releaseDate),
-                          style: TextStyle(
+                          style: AppTextStyles.xs.copyWith(
                             fontSize: 10.0,
                             color:
                                 Theme.of(context).textTheme.bodyMedium?.color ??
@@ -159,7 +160,7 @@ class WatchedMoviesPage extends StatelessWidget {
                     ] else if (_getYear(movie.releaseDate).isNotEmpty) ...[
                       Text(
                         _getYear(movie.releaseDate),
-                        style: TextStyle(
+                        style: AppTextStyles.xs.copyWith(
                           fontSize: 10.0,
                           color:
                               Theme.of(context).textTheme.bodyMedium?.color ??

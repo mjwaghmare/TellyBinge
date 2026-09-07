@@ -219,7 +219,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 movieId: widget.movieId,
               );
             },
-            child: const Text('Remove movie'),
+            child: const Text('Remove from watchlist'),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
@@ -274,7 +274,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             ),
             body: Center(
               child: Padding(
-                padding: const EdgeInsets.all(32.0),
+                padding: AppSpacing.allXXL,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -284,12 +284,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                       height: 140,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 32),
+                    AppSpacing.gapH32,
                     Text(
                       'Oops! Something went wrong',
-                      style: TextStyle(
+                      style: AppTextStyles.lg.copyWith(
                         color: context.textPrimary,
-                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
                       ),
@@ -298,14 +297,13 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                     AppSpacing.gapH12,
                     Text(
                       userFriendlyError,
-                      style: TextStyle(
+                      style: AppTextStyles.sm.copyWith(
                         color: context.textSecondary,
-                        fontSize: 15,
                         height: 1.4,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    AppSpacing.gapH32,
                     ElevatedButton(
                       onPressed: () {
                         context.read<MovieDetailsCubit>().loadMovieDetails(
@@ -323,10 +321,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                           vertical: AppSpacing.sm,
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'RETRY',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                        style: AppTextStyles.smBold.copyWith(
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -508,18 +505,16 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.textOnPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 14.0),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, size: 22),
+                          const Icon(Icons.add, size: 22),
                           AppSpacing.gapW8,
                           Text(
-                            'ADD MOVIE',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
+                            'ADD TO WATCHLIST',
+                            style: AppTextStyles.smBold.copyWith(
                               letterSpacing: 1.0,
                             ),
                           ),
@@ -551,7 +546,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.6),
+                                    color: AppColors.surface.withValues(alpha: 0.6),
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -559,7 +554,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     icon: const Icon(
                                       Icons.more_horiz,
                                       size: 24,
-                                      color: Colors.white,
+                                      color: AppColors.textOnPrimary,
                                     ),
                                     onPressed: () => _showMoreActions(
                                       context: context,
@@ -585,10 +580,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                           30;
                                   final titleColor = isCollapsed
                                       ? context.textPrimary
-                                      : Colors.white;
+                                      : AppColors.textOnPrimary;
                                   final genresColor = isCollapsed
                                       ? context.textSecondary
-                                      : Colors.white.withValues(alpha: 0.8);
+                                      : AppColors.textOnPrimary
+                                          .withValues(alpha: 0.8);
 
                                   return FlexibleSpaceBar(
                                     centerTitle: false,
@@ -597,7 +593,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       bottom: isCollapsed
                                           ? AppSpacing.sm
                                           : AppSpacing.md,
-                                      right: 48,
+                                      right: AppSpacing.xxxl,
                                     ),
                                     title: Column(
                                       mainAxisSize: MainAxisSize.min,
@@ -606,10 +602,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       children: [
                                         Text(
                                           title,
-                                          style: TextStyle(
+                                          style: AppTextStyles.mdBold.copyWith(
                                             color: titleColor,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -618,9 +612,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                           const SizedBox(height: 2),
                                           Text(
                                             genres,
-                                            style: TextStyle(
+                                            style: AppTextStyles.xs.copyWith(
                                               color: genresColor,
-                                              fontSize: 10,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -641,11 +634,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             errorWidget:
                                                 (context, url, error) =>
                                                     Container(
-                                                      color: Colors.grey[900],
+                                                      color: AppColors.surface,
                                                     ),
                                           )
                                         else
-                                          Container(color: Colors.grey[900]),
+                                          Container(color: AppColors.surface),
                                         const DecoratedBox(
                                           decoration: BoxDecoration(
                                             gradient: LinearGradient(
@@ -687,29 +680,26 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                         const SizedBox(width: 6),
                                         Text(
                                           _formatDate(releaseDate),
-                                          style: TextStyle(
+                                          style: AppTextStyles.sm.copyWith(
                                             color: context.textSecondary,
-                                            fontSize: 14,
                                           ),
                                         ),
                                         if (runtime.isNotEmpty) ...[
                                           Padding(
                                             padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
+                                              horizontal: AppSpacing.xs,
                                             ),
                                             child: Text(
                                               '•',
-                                              style: TextStyle(
+                                              style: AppTextStyles.sm.copyWith(
                                                 color: context.textTertiary,
-                                                fontSize: 14,
                                               ),
                                             ),
                                           ),
                                           Text(
                                             runtime,
-                                            style: TextStyle(
+                                            style: AppTextStyles.sm.copyWith(
                                               color: context.textTertiary,
-                                              fontSize: 14,
                                             ),
                                           ),
                                         ],
@@ -762,29 +752,21 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             },
                                             activeIcon: Icons.favorite,
                                             inactiveIcon: Icons.favorite_border,
-                                            activeIconColor: Colors.red,
+                                            activeIconColor: AppColors.error,
                                             inactiveIconColor: context.isLight
                                                 ? AppColors.lightTextSecondary
-                                                : Colors.white,
+                                                : AppColors.textPrimary,
                                             activeBgColor: context.isLight
-                                                ? Colors.grey.withValues(
-                                                    alpha: 0.15,
-                                                  )
-                                                : Colors.grey.withValues(
-                                                    alpha: 0.3,
-                                                  ),
+                                                ? AppColors.error.withValues(alpha: 0.12)
+                                                : AppColors.error.withValues(alpha: 0.2),
                                             inactiveBgColor: context.isLight
-                                                ? Colors.grey.withValues(
-                                                    alpha: 0.15,
-                                                  )
-                                                : Colors.grey.withValues(
-                                                    alpha: 0.3,
-                                                  ),
+                                                ? AppColors.borderLight.withValues(alpha: 0.5)
+                                                : AppColors.surfaceElevated.withValues(alpha: 0.5),
                                             size: 28.0,
                                             iconSize: 16.0,
                                           ),
                                         ),
-                                        if (released) const SizedBox(width: 12),
+                                        if (released) AppSpacing.gapW12,
                                         if (released)
                                           Skeleton.ignore(
                                             child: ActionCircleButton(
@@ -840,21 +822,18 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                               },
                                               activeIcon: Icons.check,
                                               inactiveIcon: Icons.check,
-                                              activeIconColor: Colors.white,
+                                              activeIconColor: AppColors.success,
                                               inactiveIconColor: context.isLight
                                                   ? AppColors.lightTextSecondary
-                                                  : Colors.white,
-                                              activeBgColor:
-                                                  AppColors.brandGreen,
+                                                  : AppColors.textPrimary,
+                                              activeBgColor: context.isLight
+                                                  ? AppColors.success.withValues(alpha: 0.12)
+                                                  : AppColors.success.withValues(alpha: 0.2),
                                               inactiveBgColor: context.isLight
-                                                  ? Colors.grey.withValues(
-                                                      alpha: 0.15,
-                                                    )
-                                                  : Colors.grey.withValues(
-                                                      alpha: 0.3,
-                                                    ),
+                                                  ? AppColors.borderLight.withValues(alpha: 0.5)
+                                                  : AppColors.surfaceElevated.withValues(alpha: 0.5),
                                               size: 28.0,
-                                              iconSize: 18.0,
+                                              iconSize: 16.0,
                                             ),
                                           ),
                                       ],
@@ -865,9 +844,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                         children: [
                                           Icon(
                                             Icons.remove_red_eye_outlined,
-                                            color: context.isLight
-                                                ? const Color(0xFF2E7D32)
-                                                : Colors.greenAccent,
+                                            color: AppColors.success,
                                             size: 14,
                                           ),
                                           AppSpacing.gapW4,
@@ -875,12 +852,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             watchedAtStr != null
                                                 ? _formatDate(watchedAtStr)
                                                 : 'Watched',
-                                            style: TextStyle(
-                                              color: context.isLight
-                                                  ? const Color(0xFF2E7D32)
-                                                  : Colors.greenAccent,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
+                                            style: AppTextStyles.xsBold.copyWith(
+                                              color: AppColors.success,
                                             ),
                                           ),
                                         ],
@@ -922,21 +895,18 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       color: AppColors.primary,
                                       size: 16,
                                     ),
-                                    const SizedBox(width: 4),
+                                    AppSpacing.gapW4,
                                     Text(
                                       '${voteAverage.toStringAsFixed(1)} / 10',
-                                      style: TextStyle(
+                                      style: AppTextStyles.smBold.copyWith(
                                         color: context.textPrimary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     AppSpacing.gapW8,
                                     Text(
                                       '(${_formatVoteCount(voteCount)})',
-                                      style: TextStyle(
+                                      style: AppTextStyles.xs.copyWith(
                                         color: context.textTertiary,
-                                        fontSize: 13,
                                       ),
                                     ),
                                   ],
@@ -953,9 +923,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       const SizedBox(width: 6),
                                       Text(
                                         'Language: $language',
-                                        style: TextStyle(
+                                        style: AppTextStyles.xs.copyWith(
                                           color: context.textSecondary,
-                                          fontSize: 13,
                                         ),
                                       ),
                                     ],
@@ -965,9 +934,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 if (overview.isNotEmpty)
                                   Text(
                                     overview,
-                                    style: TextStyle(
+                                    style: AppTextStyles.sm.copyWith(
                                       color: context.textPrimary,
-                                      fontSize: 14,
                                       height: 1.5,
                                     ),
                                   ),
@@ -1007,7 +975,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       scrollDirection: Axis.horizontal,
                                       itemCount: cast.length,
                                       separatorBuilder: (context, index) =>
-                                          const SizedBox(width: 12),
+                                          AppSpacing.gapW12,
                                       itemBuilder: (context, index) {
                                         final actor =
                                             cast[index] as Map<String, dynamic>;
@@ -1043,9 +1011,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   const SizedBox(height: AppSpacing.lg),
                                   Text(
                                     collectionSectionTitle,
-                                    style: TextStyle(
+                                    style: AppTextStyles.lg.copyWith(
                                       color: context.textPrimary,
-                                      fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -1167,8 +1134,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                     top: MediaQuery.paddingOf(context).top + 6,
                     left: 16,
                     child: Container(
-                      width: 36,
-                      height: 36,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
                         shape: BoxShape.circle,
@@ -1178,7 +1145,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                         icon: const Icon(
                           Icons.arrow_back_ios_new,
                           size: 18,
-                          color: Colors.white,
+                          color: AppColors.textOnPrimary,
                         ),
                         onPressed: () => Navigator.pop(context),
                       ),
@@ -1211,7 +1178,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         borderRadius: BorderRadius.circular(8),
         color: context.adaptiveColor(
           light: AppColors.lightSurfaceElevated,
-          dark: Colors.white10,
+          dark: AppColors.surface,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -1226,15 +1193,15 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               fit: BoxFit.cover,
               errorWidget: (context, url, error) => Container(
                 color: context.adaptiveColor(
-                  light: Colors.grey[300]!,
-                  dark: Colors.grey[800]!,
+                  light: AppColors.lightSurfaceElevated,
+                  dark: AppColors.surfaceElevated,
                 ),
                 child: Center(
                   child: Icon(
                     Icons.person,
                     color: context.adaptiveColor(
-                      light: Colors.grey[500]!,
-                      dark: Colors.white24,
+                      light: AppColors.lightTextTertiary,
+                      dark: AppColors.textTertiary,
                     ),
                     size: 40,
                   ),
@@ -1246,15 +1213,15 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               width: 120,
               height: 180,
               color: context.adaptiveColor(
-                light: Colors.grey[300]!,
-                dark: Colors.grey[800]!,
+                light: AppColors.lightSurfaceElevated,
+                dark: AppColors.surfaceElevated,
               ),
               child: Center(
                 child: Icon(
                   Icons.person,
                   color: context.adaptiveColor(
-                    light: Colors.grey[500]!,
-                    dark: Colors.white24,
+                    light: AppColors.lightTextTertiary,
+                    dark: AppColors.textTertiary,
                   ),
                   size: 40,
                 ),
@@ -1289,10 +1256,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               children: [
                 Text(
                   realName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
+                  style: AppTextStyles.xsBold.copyWith(
+                    color: AppColors.textOnPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1300,7 +1265,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 const SizedBox(height: 2),
                 Text(
                   characterName,
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  style: AppTextStyles.xs.copyWith(color: AppColors.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1328,7 +1293,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
       title: item['title'] ?? item['name'] ?? 'Unknown',
       posterPath: item['poster_path'] as String?,
       backdropPath: item['backdrop_path'] as String?,
-      releaseDate: item['release_date'] as String?,
+      releaseDate:
+          item['release_date'] ?? item['first_air_date'] as String? ?? '',
       voteAverage: (item['vote_average'] as num?)?.toDouble() ?? 0.0,
     );
   }
@@ -1345,21 +1311,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     required bool isAdded,
     required String? uid,
   }) {
-    final hasImage = posterPath != null && posterPath.isNotEmpty;
-
-    String year = '';
-    if (releaseDate != null && releaseDate.isNotEmpty) {
-      try {
-        year = DateTime.parse(releaseDate).year.toString();
-      } catch (_) {
-        if (releaseDate.length >= 4) {
-          year = releaseDate.substring(0, 4);
-        }
-      }
-    }
+    final year = (releaseDate != null && releaseDate.isNotEmpty)
+        ? releaseDate.split('-')[0]
+        : '';
 
     return GestureDetector(
-      key: ValueKey(movieId),
       onTap: () {
         Navigator.push(
           context,
@@ -1375,135 +1331,99 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         );
       },
       child: SizedBox(
-        width: 100,
+        width: 110,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Movie Poster Image (100x140)
             ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
               child: Stack(
                 children: [
-                  Container(
-                    height: 140,
-                    width: 100,
-                    color: context.adaptiveColor(
-                      light: Colors.grey[300]!,
-                      dark: AppColors.surfaceLight,
-                    ),
-                    child: hasImage
+                  AspectRatio(
+                    aspectRatio: 2 / 3,
+                    child: posterPath != null && posterPath.isNotEmpty
                         ? CachedNetworkImage(
-                            imageUrl: _getImageUrl(posterPath, size: 'w185'),
+                            imageUrl: _getImageUrl(posterPath, size: 'w342'),
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
-                              color: context.adaptiveColor(
-                                light: Colors.grey[300]!,
-                                dark: AppColors.surfaceLight,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? AppColors.lightSurfaceElevated
+                                  : AppColors.surfaceLight,
+                              child: const Center(
+                                child: CircularProgressIndicator.adaptive(
+                                  strokeWidth: 2,
+                                ),
                               ),
                             ),
-                            errorWidget: (context, url, error) => Center(
+                            errorWidget: (context, url, error) => Container(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? AppColors.lightSurfaceElevated
+                                  : AppColors.surfaceLight,
                               child: Icon(
-                                Icons.movie_creation_outlined,
-                                size: 24,
-                                color: context.textTertiary,
+                                Icons.broken_image,
+                                color: context.adaptiveColor(
+                                  light: AppColors.lightTextTertiary,
+                                  dark: AppColors.textTertiary,
+                                ),
+                                size: 30,
                               ),
                             ),
                           )
-                        : Center(
+                        : Container(
+                            color: Theme.of(context).brightness ==
+                                    Brightness.light
+                                ? AppColors.lightSurfaceElevated
+                                : AppColors.surfaceLight,
                             child: Icon(
-                              Icons.movie_creation_outlined,
-                              size: 24,
-                              color: context.textTertiary,
+                              Icons.movie,
+                              color: context.adaptiveColor(
+                                light: AppColors.lightTextTertiary,
+                                dark: AppColors.textTertiary,
+                              ),
+                              size: 30,
                             ),
                           ),
                   ),
-                  if (isAdded)
-                    Container(
-                      height: 140,
-                      width: 100,
-                      color: Colors.black.withValues(
-                        alpha: 0.15,
-                      ), // Very light overlay
-                    ),
-                  if (isAdded && uid != null)
-                    Positioned(
-                      top: -10,
-                      right: -5,
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          context.read<MovieWatchlistCubit>().removeMovie(
-                            uid: uid,
-                            movieId: movieId,
-                          );
-                        },
-                        child: Container(
-                          color: Colors.transparent, // Expands hit area
-                          padding: const EdgeInsets.only(
-                            left: 8,
-                            right: 4,
-                            bottom: 8,
-                            top: 0,
-                          ),
-                          child: const Icon(
-                            Icons.bookmark_sharp,
-                            color: AppColors
-                                .primary, // Using the app's brand color
-                            size: 40,
-                            shadows: [
-                              Shadow(
-                                blurRadius: 4.0,
-                                color: Colors.black87,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
-            const SizedBox(height: 6),
+            AppSpacing.gapH8,
             // Movie Title
             Text(
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: AppTextStyles.xsBold.copyWith(
                 color: context.textPrimary,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 2),
+            AppSpacing.gapH4,
             // Rating & Year Row
             Row(
               children: [
                 if (voteAverage > 0.0) ...[
                   const Icon(Icons.star, color: AppColors.primary, size: 10.0),
-                  const SizedBox(width: 3),
+                  AppSpacing.gapW4,
                   Text(
                     voteAverage.toStringAsFixed(1),
-                    style: TextStyle(
-                      fontSize: 10.0,
+                    style: AppTextStyles.xs.copyWith(
                       color: context.textSecondary,
                     ),
                   ),
                   if (year.isNotEmpty) ...[
-                    const SizedBox(width: 4),
+                    AppSpacing.gapW4,
                     Text(
                       '•',
-                      style: TextStyle(
-                        fontSize: 10.0,
+                      style: AppTextStyles.xs.copyWith(
                         color: context.textTertiary,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    AppSpacing.gapW4,
                     Text(
                       year,
-                      style: TextStyle(
-                        fontSize: 10.0,
+                      style: AppTextStyles.xs.copyWith(
                         color: context.textSecondary,
                       ),
                     ),
@@ -1511,8 +1431,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 ] else if (year.isNotEmpty) ...[
                   Text(
                     year,
-                    style: TextStyle(
-                      fontSize: 10.0,
+                    style: AppTextStyles.xs.copyWith(
                       color: context.textSecondary,
                     ),
                   ),

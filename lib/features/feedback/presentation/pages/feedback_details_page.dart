@@ -334,7 +334,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                       decoration: BoxDecoration(
                         color: isLight
                             ? AppColors.borderLight
-                            : Colors.white.withValues(alpha: 0.2),
+                            : AppColors.borderDark,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -406,7 +406,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.textOnPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 14.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.0),
@@ -535,7 +535,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.textOnPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.0),
               ),
@@ -630,7 +630,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       builder: (dialogCtx) => StatefulBuilder(
         builder: (_, setDialogState) {
           return AlertDialog(
-            backgroundColor: isLight ? Colors.white : const Color(0xFF161622),
+            backgroundColor:
+                isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16.0),
             ),
@@ -666,7 +667,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.textOnPrimary,
                   disabledBackgroundColor: AppColors.error.withValues(
                     alpha: 0.6,
                   ),
@@ -710,7 +711,9 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator.adaptive(
-                          backgroundColor: Colors.white,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.textOnPrimary,
+                          ),
                           strokeWidth: 2,
                         ),
                       )
@@ -774,7 +777,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF161622),
+      backgroundColor:
+          isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
       ),
@@ -796,8 +800,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     height: 4,
                     decoration: BoxDecoration(
                       color: isLight
-                          ? Colors.grey.shade300
-                          : Colors.grey.shade700,
+                          ? AppColors.borderLight
+                          : AppColors.borderDark,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -850,8 +854,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 const SizedBox(height: 16.0),
                 Divider(
                   color: isLight
-                      ? Colors.grey.shade200
-                      : Colors.white.withValues(alpha: 0.08),
+                      ? AppColors.borderLight
+                      : AppColors.borderDark,
                   height: 1,
                 ),
                 const SizedBox(height: 8.0),
@@ -878,8 +882,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                       decoration: BoxDecoration(
                         color: isCurrent
                             ? (isLight
-                                ? Colors.grey.shade100
-                                : Colors.white.withValues(alpha: 0.05))
+                                ? AppColors.lightSurfaceElevated
+                                : AppColors.surfaceLight)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(14.0),
                         border: isCurrent
@@ -992,7 +996,8 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14.0),
                 ),
-                color: isLight ? Colors.white : const Color(0xFF1E1E2D),
+                color:
+                    isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
                 elevation: 4,
                 onSelected: _isStatusPending
                     ? null
@@ -1032,19 +1037,17 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     PopupMenuItem<String>(
                       value: 'delete',
                       child: Row(
-                        children: const [
-                          Icon(
+                        children: [
+                          const Icon(
                             Icons.delete_outline_rounded,
                             size: 20,
                             color: AppColors.error,
                           ),
-                          SizedBox(width: 12),
+                          const SizedBox(width: 12),
                           Text(
                             'Delete Feedback',
-                            style: TextStyle(
+                            style: AppTextStyles.smBold.copyWith(
                               color: AppColors.error,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -1069,12 +1072,13 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                 // 1. Main Detail Card
                 Container(
                   decoration: BoxDecoration(
-                    color: isLight ? Colors.white : const Color(0xFF161622),
+                    color:
+                        isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(16.0),
                     border: Border.all(
                       color: isLight
                           ? AppColors.borderLight
-                          : Colors.white.withValues(alpha: 0.05),
+                          : AppColors.borderDark,
                       width: 1.0,
                     ),
                   ),
@@ -1175,7 +1179,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                         thickness: 0.6,
                         color: isLight
                             ? AppColors.borderLight
-                            : Colors.white.withValues(alpha: 0.06),
+                            : AppColors.borderDark,
                       ),
                       const SizedBox(height: 10.0),
 
@@ -1202,10 +1206,9 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                 _item.userName.isNotEmpty
                                     ? _item.userName[0].toUpperCase()
                                     : 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: AppTextStyles.xsBold.copyWith(
+                                  color: AppColors.textOnPrimary,
                                   fontSize: 11,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
@@ -1232,13 +1235,13 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                             ),
                             decoration: BoxDecoration(
                               color: isLight
-                                  ? Colors.grey[100]
-                                  : Colors.white.withValues(alpha: 0.06),
+                                  ? AppColors.lightSurfaceElevated
+                                  : AppColors.surfaceLight,
                               borderRadius: BorderRadius.circular(10.0),
                               border: Border.all(
                                 color: isLight
                                     ? AppColors.borderLight
-                                    : Colors.white.withValues(alpha: 0.04),
+                                    : AppColors.borderDark,
                               ),
                             ),
                             child: Text(
@@ -1260,7 +1263,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                             style: AppTextStyles.xs.copyWith(
                               color: isLight
                                   ? AppColors.lightTextTertiary
-                                  : const Color(0xFF8E8E93),
+                                  : AppColors.textTertiary,
                               fontSize: 11.5,
                             ),
                           ),
@@ -1280,7 +1283,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     decoration: BoxDecoration(
                       color: isLight
                           ? AppColors.primary.withValues(alpha: 0.06)
-                          : const Color(0xFF1E1A30),
+                          : AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14.0),
                       border: Border.all(
                         color: AppColors.primary.withValues(alpha: 0.3),
@@ -1300,7 +1303,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                               ),
                               child: const Icon(
                                 Icons.verified_rounded,
-                                color: Colors.white,
+                                color: AppColors.textOnPrimary,
                                 size: 14,
                               ),
                             ),
@@ -1541,13 +1544,13 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                               padding: const EdgeInsets.all(3.5),
                               decoration: BoxDecoration(
                                 color: isLight
-                                    ? Colors.white
-                                    : const Color(0xFF2C2C3E),
+                                    ? AppColors.lightSurfaceElevated
+                                    : AppColors.surfaceElevated,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: isLight
                                       ? AppColors.borderLight
-                                      : Colors.white24,
+                                      : AppColors.borderDark,
                                   width: 1.0,
                                 ),
                                 boxShadow: [
@@ -1766,9 +1769,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
     final borderColor = isUpvoted
         ? AppColors.primary
-        : (isLight
-            ? AppColors.borderLight
-            : Colors.white.withValues(alpha: 0.12));
+        : (isLight ? AppColors.borderLight : AppColors.borderDark);
 
     final numberColor = isUpvoted
         ? AppColors.primary
@@ -1776,7 +1777,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
     final arrowColor = isUpvoted
         ? AppColors.primary
-        : (isLight ? AppColors.lightTextSecondary : Colors.white60);
+        : (isLight ? AppColors.lightTextSecondary : AppColors.textSecondary);
 
     return Material(
       color: Colors.transparent,

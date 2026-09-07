@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../../../features/auth/presentation/cubit/auth_state.dart';
 import '../../domain/models/watch_history_item.dart';
@@ -95,7 +97,7 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
     return Opacity(
       opacity: _isReverting ? 0.3 : 0.6,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+        margin: AppSpacing.cardMargin,
         clipBehavior: Clip.antiAlias,
         height: 96.0,
         decoration: BoxDecoration(
@@ -117,19 +119,19 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                         memCacheWidth: 300,
                         placeholder: (context, url) => Container(
                           color: context.adaptiveColor(
-                            light: Colors.grey[200]!,
+                            light: AppColors.lightSurfaceElevated,
                             dark: AppColors.surfaceLight,
                           ),
                         ),
                         errorWidget: (context, url, error) => Container(
                           color: context.adaptiveColor(
-                            light: Colors.grey[200]!,
+                            light: AppColors.lightSurfaceElevated,
                             dark: AppColors.surfaceLight,
                           ),
                           child: Icon(
                             Icons.tv,
                             color: context.adaptiveColor(
-                              light: Colors.grey[500]!,
+                              light: AppColors.lightTextTertiary,
                               dark: AppColors.textTertiary,
                             ),
                           ),
@@ -137,25 +139,30 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                       )
                     : Container(
                         color: context.adaptiveColor(
-                          light: Colors.grey[200]!,
+                          light: AppColors.lightSurfaceElevated,
                           dark: AppColors.surfaceLight,
                         ),
                         child: Icon(
                           Icons.tv,
                           color: context.adaptiveColor(
-                            light: Colors.grey[500]!,
+                            light: AppColors.lightTextTertiary,
                             dark: AppColors.textTertiary,
                           ),
                         ),
                       ),
               ),
             ),
-            const SizedBox(width: 12),
+            AppSpacing.gapW12,
 
             // Info
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(0.0, 16.0, 16.0, 16.0),
+                padding: const EdgeInsets.fromLTRB(
+                  0.0,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -163,14 +170,14 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                     // Show Name Badge
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10.0,
-                        vertical: 4.0,
+                        horizontal: AppSpacing.xs,
+                        vertical: AppSpacing.xxs,
                       ),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white24
-                              : Colors.black12,
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
                           width: 1.0,
                         ),
                         borderRadius: BorderRadius.circular(16.0),
@@ -183,38 +190,36 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                               showName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: AppTextStyles.xsBold.copyWith(
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black87,
+                                    ? AppColors.textPrimary
+                                    : AppColors.lightTextPrimary,
                                 fontSize: 9.0,
-                                fontWeight: FontWeight.bold,
                                 letterSpacing: 1.0,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 4),
+                          AppSpacing.gapW4,
                           Icon(
                             Icons.chevron_right,
                             size: 14,
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white70
-                                : Colors.black54,
+                                ? AppColors.textSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    AppSpacing.gapH4,
 
                     // Episode Code
                     Text(
                       displayCode,
-                      style: TextStyle(
+                      style: AppTextStyles.smMedium.copyWith(
                         color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 14.0,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
                       ),
@@ -223,10 +228,10 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
                     // Episode Title
                     Text(
                       episodeTitle.isNotEmpty ? episodeTitle : 'TBA',
-                      style: TextStyle(
+                      style: AppTextStyles.xs.copyWith(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? AppColors.textSecondary
-                            : Colors.black54,
+                            : AppColors.lightTextSecondary,
                         fontSize: 11.0,
                       ),
                       maxLines: 1,
@@ -239,30 +244,38 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
 
             // Checkmark
             Padding(
-              padding: const EdgeInsets.only(right: 16.0),
+              padding: const EdgeInsets.only(right: AppSpacing.md),
               child: Center(
                 child: GestureDetector(
                   onTap: _handleUnwatch,
                   behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.brandGreen, // TV Time Green
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.brandGreen, width: 2),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 48.0,
+                      minHeight: 48.0,
                     ),
-                    child: _isReverting
-                        ? const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: CircularProgressIndicator.adaptive(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : Icon(Icons.check, color: Colors.white, size: 24),
+                    child: Center(
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.brandGreen, // TV Time Green
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.brandGreen, width: 2),
+                        ),
+                        child: _isReverting
+                            ? const Padding(
+                                padding: AppSpacing.allXS,
+                                child: CircularProgressIndicator.adaptive(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.textOnPrimary,
+                                  ),
+                                ),
+                              )
+                            : const Icon(Icons.check, color: AppColors.textOnPrimary, size: 24),
+                      ),
+                    ),
                   ),
                 ),
               ),

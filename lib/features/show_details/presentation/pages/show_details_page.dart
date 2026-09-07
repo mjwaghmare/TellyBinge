@@ -162,7 +162,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 showId: widget.mediaId,
               );
             },
-            child: const Text('Remove from watchlist'),
+            child: Text(
+              widget.mediaType == 'movie'
+                  ? 'Remove from watchlist'
+                  : 'Stop tracking show',
+            ),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
@@ -251,7 +255,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             ),
             body: Center(
               child: Padding(
-                padding: const EdgeInsets.all(32.0),
+                padding: AppSpacing.allXXL,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -261,12 +265,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       height: 140,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 32),
+                    AppSpacing.gapH32,
                     Text(
                       'Oops! Something went wrong',
-                      style: TextStyle(
+                      style: AppTextStyles.lg.copyWith(
                         color: context.textPrimary,
-                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
                       ),
@@ -275,14 +278,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     AppSpacing.gapH12,
                     Text(
                       userFriendlyError,
-                      style: TextStyle(
+                      style: AppTextStyles.md.copyWith(
                         color: context.textSecondary,
-                        fontSize: 15,
                         height: 1.4,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    AppSpacing.gapH32,
                     ElevatedButton(
                       onPressed: () => context
                           .read<ShowDetailsCubit>()
@@ -298,10 +300,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           vertical: AppSpacing.sm,
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'RETRY',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                        style: AppTextStyles.smBold.copyWith(
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -339,8 +340,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 top: MediaQuery.paddingOf(context).top + 6,
                 left: 16,
                 child: Container(
-                  width: 36,
-                  height: 36,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.6),
                     shape: BoxShape.circle,
@@ -350,7 +351,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     icon: const Icon(
                       Icons.arrow_back_ios_new,
                       size: 18,
-                      color: Colors.white,
+                      color: AppColors.textOnPrimary,
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -425,7 +426,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               opacity: isCollapsed ? 1.0 : 0.0,
               child: Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: AppTextStyles.mdBold,
               ),
             );
           },
@@ -452,10 +453,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   }
                   if (isTracked && uid != null) {
                     return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
+                      padding: const EdgeInsets.only(right: AppSpacing.xs),
                       child: Container(
-                        width: 36,
-                        height: 36,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,
@@ -465,7 +466,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           icon: const Icon(
                             Icons.more_horiz,
                             size: 24,
-                            color: Colors.white,
+                            color: AppColors.textOnPrimary,
                           ),
                           onPressed: () => _showMoreActions(
                             context: context,
@@ -522,10 +523,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
-                              fontSize: 28.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                            style: AppTextStyles.xxl.copyWith(
+                              color: AppColors.textPrimary,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -535,9 +534,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             widget.mediaType == 'tv'
                                 ? '$numberOfSeasons season${numberOfSeasons == 1 ? '' : 's'} • $status • $networkName'
                                 : _getYear(details['release_date']),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13.0,
+                            style: AppTextStyles.sm.copyWith(
+                              color: AppColors.textSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -582,16 +580,20 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             } else {
                               AppSnackbar.showInfo(
                                 context,
-                                'Add show to watchlist first',
+                                widget.mediaType == 'movie'
+                                    ? 'Add movie to watchlist first'
+                                    : 'Track show first',
                               );
                             }
                           },
                           activeIcon: Icons.favorite,
                           inactiveIcon: Icons.favorite_border,
-                          activeIconColor: Colors.red,
-                          inactiveIconColor: Colors.white,
-                          activeBgColor: Colors.grey.withValues(alpha: 0.3),
-                          inactiveBgColor: Colors.grey.withValues(alpha: 0.3),
+                          activeIconColor: AppColors.error,
+                          inactiveIconColor: AppColors.textOnPrimary,
+                          activeBgColor:
+                              AppColors.surfaceElevated.withValues(alpha: 0.6),
+                          inactiveBgColor:
+                              AppColors.surfaceElevated.withValues(alpha: 0.6),
                           size: 28.0,
                           iconSize: 16.0,
                         );
@@ -618,18 +620,15 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               AppSpacing.gapH24
             else
               Row(children: [Expanded(child: _buildTrackButton(details))]),
-            const Text(
+            Text(
               'Show info',
-              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+              style: AppTextStyles.mdBold,
             ),
             AppSpacing.gapH4,
             Text(
               '${_getYear(details['first_air_date'] ?? details['release_date'])} • ${_getGenresString(details['genres'])}',
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                fontSize: 13.0,
+              style: AppTextStyles.sm.copyWith(
+                color: context.textSecondary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -643,14 +642,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     color: Theme.of(context).disabledColor,
                     size: 14,
                   ),
-                  const SizedBox(width: 6),
+                  AppSpacing.gapW8,
                   Text(
                     'Language: $language',
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                      fontSize: 13.0,
+                    style: AppTextStyles.sm.copyWith(
+                      color: context.textSecondary,
                     ),
                   ),
                 ],
@@ -660,23 +656,17 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             Row(
               children: [
                 const Icon(Icons.star, color: AppColors.primary, size: 16),
-                const SizedBox(width: 4),
+                AppSpacing.gapW4,
                 Text(
                   '${voteAverage.toStringAsFixed(1)} / 10',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14.0,
-                  ),
+                  style: AppTextStyles.smBold,
                 ),
                 if (voteCount > 0) ...[
                   AppSpacing.gapW8,
                   Text(
                     '(${_formatVoteCount(voteCount)})',
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-                      fontSize: 13.0,
+                    style: AppTextStyles.sm.copyWith(
+                      color: context.textTertiary,
                     ),
                   ),
                 ],
@@ -696,7 +686,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             AppSpacing.gapH12,
             Text(
               overview.isNotEmpty ? overview : 'No overview available.',
-              style: const TextStyle(fontSize: 14.0, height: 1.4),
+              style: AppTextStyles.sm.copyWith(height: 1.4),
             ),
             AppSpacing.gapH24,
             if (trailer != null) ...[
@@ -845,8 +835,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                   Container(
                                                     color: context
                                                         .adaptiveColor(
-                                                          light:
-                                                              Colors.grey[200]!,
+                                                          light: AppColors
+                                                              .lightSurfaceElevated,
                                                           dark: AppColors
                                                               .surfaceLight,
                                                         ),
@@ -859,8 +849,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                   ) => Container(
                                                     color: context
                                                         .adaptiveColor(
-                                                          light:
-                                                              Colors.grey[200]!,
+                                                          light: AppColors
+                                                              .lightSurfaceElevated,
                                                           dark: AppColors
                                                               .surfaceLight,
                                                         ),
@@ -869,10 +859,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                         Icons.movie_outlined,
                                                         color: context
                                                             .adaptiveColor(
-                                                              light: Colors
-                                                                  .grey[500]!,
-                                                              dark: Colors
-                                                                  .white24,
+                                                              light: AppColors
+                                                                  .lightTextTertiary,
+                                                              dark: AppColors
+                                                                  .textTertiary,
                                                             ),
                                                         size: 40,
                                                       ),
@@ -881,7 +871,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                             )
                                           : Container(
                                               color: context.adaptiveColor(
-                                                light: Colors.grey[200]!,
+                                                light: AppColors
+                                                    .lightSurfaceElevated,
                                                 dark: AppColors.surfaceLight,
                                               ),
                                               padding: const EdgeInsets.all(
@@ -895,22 +886,23 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                     Icons.movie_outlined,
                                                     color: context
                                                         .adaptiveColor(
-                                                          light:
-                                                              Colors.grey[500]!,
-                                                          dark: Colors.white24,
+                                                          light: AppColors
+                                                              .lightTextTertiary,
+                                                          dark: AppColors
+                                                              .textTertiary,
                                                         ),
                                                     size: 40,
                                                   ),
-                                                  const SizedBox(height: 8),
+                                                  AppSpacing.gapH8,
                                                   Text(
                                                     item['name'] ?? '',
-                                                    style: TextStyle(
+                                                    style: AppTextStyles.xs.copyWith(
                                                       color: context.adaptiveColor(
                                                         light: AppColors
                                                             .lightTextSecondary,
-                                                        dark: Colors.white70,
+                                                        dark: AppColors
+                                                            .textSecondary,
                                                       ),
-                                                      fontSize: 11,
                                                     ),
                                                     maxLines: 2,
                                                     textAlign: TextAlign.center,
@@ -954,8 +946,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                         right: isAdded ? 36 : 8,
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
+                                            horizontal: AppSpacing.xs,
+                                            vertical: AppSpacing.micro,
                                           ),
                                           decoration: BoxDecoration(
                                             color: Colors.black.withValues(
@@ -970,17 +962,15 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                             children: [
                                               const Icon(
                                                 Icons.star,
-                                                color: Colors.amber,
+                                                color: AppColors.gold,
                                                 size: 12,
                                               ),
-                                              const SizedBox(width: 4),
+                                              AppSpacing.gapW4,
                                               Text(
                                                 (item['vote_average'] as num)
                                                     .toStringAsFixed(1),
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
+                                                style: AppTextStyles.xsBold.copyWith(
+                                                  color: AppColors.textOnPrimary,
                                                 ),
                                               ),
                                             ],
@@ -1013,7 +1003,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
+            AppSpacing.gapH24,
             _buildSeasonsAccordion(
               details['seasons'] as List<dynamic>? ?? [],
               seasonsData,
@@ -1113,7 +1103,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     : 'Sign in to Track Shows',
                 subtitle: widget.mediaType == 'movie'
                     ? 'Sign in to add movies to your personal watchlist.'
-                    : 'Sign in to add shows to your personal watchlist.',
+                    : 'Sign in to track shows and episodes.',
                 icon: widget.mediaType == 'movie'
                     ? Icons.movie_filter_rounded
                     : Icons.tv_rounded,
@@ -1213,18 +1203,20 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     required bool isTracked,
     required VoidCallback onPressed,
   }) {
-    if (isTracked) return const SizedBox(height: 24.0);
+    if (isTracked) return AppSpacing.gapH24;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 16.0, bottom: 24.0),
+      padding: const EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.xl),
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         ),
-        child: const Text('Add to Watchlist'),
+        child: Text(
+          widget.mediaType == 'movie' ? 'Add to Watchlist' : 'Track Show',
+        ),
       ),
     );
   }
@@ -1342,7 +1334,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   );
 
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
+                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: (_expandedSeasons[seasonNumber] ?? false)
                           ? Colors.transparent
@@ -1368,8 +1360,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             'season_${widget.mediaId}_$seasonNumber',
                           ),
                           tilePadding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 14.0,
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.sm,
                           ),
                           childrenPadding: EdgeInsets.zero,
                           shape: const Border(),
@@ -1383,10 +1375,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             children: [
                               Text(
                                 name,
-                                style: TextStyle(
+                                style: AppTextStyles.mdBold.copyWith(
                                   color: context.textPrimary,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -1404,13 +1394,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             children: [
                               Text(
                                 '$watchedCount/$epCount',
-                                style: TextStyle(
+                                style: AppTextStyles.sm.copyWith(
                                   color: context.textSecondary,
-                                  fontSize: 13,
                                 ),
                               ),
-                              if (hasAnyReleased) ...[
-                                const SizedBox(width: 12),
+                              if (isTracked && hasAnyReleased) ...[
+                                AppSpacing.gapW12,
                                 GestureDetector(
                                   onTap: () {
                                     HapticFeedback.lightImpact();
@@ -1428,7 +1417,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                     if (!isTracked) {
                                       AppSnackbar.showInfo(
                                         context,
-                                        'Add show to watchlist first',
+                                        'Track show first',
                                       );
                                       return;
                                     }
@@ -1459,7 +1448,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                       color: allReleasedWatched
                                           ? AppColors.brandGreen
                                           : context.adaptiveColor(
-                                              light: Colors.grey[300]!,
+                                              light: AppColors.borderLight,
                                               dark: AppColors.borderDark,
                                             ),
                                     ),
@@ -1467,10 +1456,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                       Icons.check,
                                       size: 20,
                                       color: allReleasedWatched
-                                          ? Colors.white
+                                          ? AppColors.textOnPrimary
                                           : context.adaptiveColor(
-                                              light: Colors.grey[600]!,
-                                              dark: Colors.grey[400]!,
+                                              light: AppColors.lightTextSecondary,
+                                              dark: AppColors.textSecondary,
                                             ),
                                     ),
                                   ),
@@ -1546,7 +1535,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                       child: Container(
                                         height: 4,
                                         color: allWatched
-                                            ? Colors.green
+                                            ? AppColors.success
                                             : AppColors.primary,
                                       ),
                                     );
@@ -1635,9 +1624,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             children: [
                               Text(
                                 name,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                style: AppTextStyles.mdBold.copyWith(
                                   color: context.textPrimary,
                                 ),
                                 maxLines: 2,
@@ -1648,16 +1635,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                   children: [
                                     const Icon(
                                       Icons.star,
-                                      color: Colors.amber,
+                                      color: AppColors.gold,
                                       size: 16,
                                     ),
-                                    const SizedBox(width: 4),
+                                    AppSpacing.gapW4,
                                     Text(
                                       '${voteAverage.toStringAsFixed(1)}/10 ($voteCount)',
-                                      style: TextStyle(
-                                        fontSize: 13,
+                                      style: AppTextStyles.smMedium.copyWith(
                                         color: context.textTertiary,
-                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                   ],
@@ -1669,8 +1654,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         AppSpacing.gapW12,
                         Text(
                           airDate,
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: AppTextStyles.sm.copyWith(
                             color: context.textTertiary,
                           ),
                         ),
@@ -1680,8 +1664,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     if (overview.isNotEmpty)
                       Text(
                         overview,
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: AppTextStyles.sm.copyWith(
                           color: context.textSecondary,
                           height: 1.5,
                         ),
@@ -1689,8 +1672,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     else
                       Text(
                         'No description available.',
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: AppTextStyles.sm.copyWith(
                           color: context.textTertiary,
                           fontStyle: FontStyle.italic,
                         ),
@@ -1727,7 +1709,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Text(
           'No episodes listed for this season.',
-          style: TextStyle(color: context.textTertiary),
+          style: AppTextStyles.sm.copyWith(color: context.textTertiary),
         ),
       );
     }
@@ -1775,7 +1757,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         final String episodeLabel = 'E${epNum.toString().padLeft(2, '0')}';
 
         return Container(
-          margin: const EdgeInsets.only(left: 2.0, right: 2.0, bottom: 10.0),
+          margin: const EdgeInsets.only(left: AppSpacing.micro, right: AppSpacing.micro, bottom: AppSpacing.xs),
           decoration: BoxDecoration(
             color: context.adaptiveColor(
               light: AppColors.lightSurface,
@@ -1807,7 +1789,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   width: 90,
                   height: 90,
                   color: context.adaptiveColor(
-                    light: Colors.grey[200]!,
+                    light: AppColors.lightSurfaceElevated,
                     dark: AppColors.surfaceLight,
                   ),
                   child: stillPath != null && stillPath.isNotEmpty
@@ -1816,7 +1798,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
                             color: context.adaptiveColor(
-                              light: Colors.grey[200]!,
+                              light: AppColors.lightSurfaceElevated,
                               dark: AppColors.surfaceLight,
                             ),
                           ),
@@ -1836,7 +1818,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           ),
                         ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: AppSpacing.md),
                 // Episode info
                 Expanded(
                   child: Column(
@@ -1845,24 +1827,21 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     children: [
                       Text(
                         '$seasonLabel | $episodeLabel',
-                        style: TextStyle(
-                          fontSize: 15.0,
-                          fontWeight: FontWeight.bold,
+                        style: AppTextStyles.smBold.copyWith(
                           color: context.textPrimary,
                           letterSpacing: 0.3,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      AppSpacing.gapH4,
                       Text(
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13.0,
+                        style: AppTextStyles.sm.copyWith(
                           color: context.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      AppSpacing.gapH4,
                       Row(
                         children: [
                           Icon(
@@ -1870,11 +1849,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             size: 11,
                             color: context.textTertiary,
                           ),
-                          const SizedBox(width: 4),
+                          AppSpacing.gapW4,
                           Text(
                             airDate,
-                            style: TextStyle(
-                              fontSize: 11.0,
+                            style: AppTextStyles.xs.copyWith(
                               color: context.textTertiary,
                             ),
                           ),
@@ -1922,27 +1900,25 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           }
                           if (!isWatched) return const SizedBox.shrink();
                           return Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
+                            padding: const EdgeInsets.only(top: AppSpacing.xxs),
                             child: Row(
                               children: [
                                 Icon(
                                   Icons.remove_red_eye_outlined,
                                   color: context.isLight
-                                      ? const Color(0xFF2E7D32)
-                                      : Colors.greenAccent,
+                                      ? AppColors.brandGreen
+                                      : AppColors.success,
                                   size: 11,
                                 ),
-                                const SizedBox(width: 4),
+                                AppSpacing.gapW4,
                                 Text(
                                   watchedAtStr != null
                                       ? _formatDate(watchedAtStr)
                                       : 'Watched',
-                                  style: TextStyle(
+                                  style: AppTextStyles.xsBold.copyWith(
                                     color: context.isLight
-                                        ? const Color(0xFF2E7D32)
-                                        : Colors.greenAccent,
-                                    fontSize: 11.0,
-                                    fontWeight: FontWeight.w600,
+                                        ? AppColors.brandGreen
+                                        : AppColors.success,
                                   ),
                                 ),
                               ],
@@ -1953,7 +1929,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                AppSpacing.gapW12,
                 // Checkmark / days-until-release
                 if (isReleased)
                   BlocBuilder<AuthCubit, AuthState>(
@@ -2008,7 +1984,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                               if (!isTracked) {
                                 AppSnackbar.showInfo(
                                   context,
-                                  'Add show to watchlist first',
+                                  'Track show first',
                                 );
                                 return;
                               }
@@ -2041,15 +2017,21 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                             Theme.of(
                                               context,
                                             ).colorScheme.surface,
-                                        title: Text(
-                                          'Mark Previous Episodes?',
-                                          style: TextStyle(
-                                            color: context.textPrimary,
-                                          ),
+                                        title: Row(
+                                          children: [
+                                            Text(
+                                              'Mark Previous Episodes',
+                                              style: AppTextStyles.mdBold.copyWith(
+                                                color: context.textPrimary,
+                                              ),
+                                            ),
+                                            AppSpacing.gapW8,
+                                            Icon(Icons.warning_amber_rounded, size: 20),
+                                          ],
                                         ),
                                         content: Text(
                                           'You have ${unwatchedPrev.length} unwatched previous episodes. Would you like to mark them as watched too?',
-                                          style: TextStyle(
+                                          style: AppTextStyles.sm.copyWith(
                                             color: context.textSecondary,
                                           ),
                                         ),
@@ -2090,7 +2072,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                             },
                                             child: Text(
                                               'No, just this one',
-                                              style: TextStyle(
+                                              style: AppTextStyles.smBold.copyWith(
                                                 color: context.textTertiary,
                                               ),
                                             ),
@@ -2124,9 +2106,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                                 }
                                               }
                                             },
-                                            child: const Text(
+                                            child: Text(
                                               'Yes, mark all',
-                                              style: TextStyle(
+                                              style: AppTextStyles.smBold.copyWith(
                                                 color: AppColors.primary,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -2178,14 +2160,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isWatched
-                                    ? Colors.green
+                                    ? AppColors.success
                                     : Colors.transparent,
                                 border: Border.all(
                                   color: isWatched
-                                      ? Colors.green
+                                      ? AppColors.success
                                       : (context.isLight
-                                            ? Colors.grey[400]!
-                                            : Colors.white38),
+                                            ? AppColors.lightTextTertiary
+                                            : AppColors.textTertiary),
                                   width: 2,
                                 ),
                               ),
@@ -2195,10 +2177,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                       Icons.check,
                                       size: 20,
                                       color: isWatched
-                                          ? Colors.white
+                                          ? AppColors.textOnPrimary
                                           : (context.isLight
-                                                ? Colors.grey[400]
-                                                : Colors.white38),
+                                                ? AppColors.lightTextTertiary
+                                                : AppColors.textTertiary),
                                     ),
                             ),
                           );
@@ -2214,26 +2196,23 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       Text(
                         '$daysUntilRelease',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: AppTextStyles.lg.copyWith(
                           color: context.textPrimary,
-                          fontSize: 20.0,
-                          fontWeight: FontWeight.bold,
                           height: 1.0,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      AppSpacing.gapH4,
                       Text(
                         daysUntilRelease == 1 ? 'DAY' : 'DAYS',
                         textAlign: TextAlign.right,
-                        style: TextStyle(
+                        style: AppTextStyles.xsBold.copyWith(
                           color: context.textTertiary,
-                          fontSize: 10.0,
                           letterSpacing: 1.0,
                         ),
                       ),
                     ],
                   ),
-                const SizedBox(width: 12),
+                AppSpacing.gapW12,
               ],
             ),
           ),
@@ -2253,7 +2232,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         width: 120,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: Colors.white10,
+          color: context.adaptiveColor(
+            light: AppColors.lightSurfaceElevated,
+            dark: AppColors.surface,
+          ),
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
@@ -2266,9 +2248,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 height: 180,
                 fit: BoxFit.cover,
                 errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[800],
-                  child: const Center(
-                    child: Icon(Icons.person, color: Colors.white24, size: 40),
+                  color: context.adaptiveColor(
+                    light: AppColors.lightSurfaceElevated,
+                    dark: AppColors.surfaceElevated,
+                  ),
+                  child: Center(
+                    child: Icon(Icons.person, color: context.textTertiary, size: 40),
                   ),
                 ),
               )
@@ -2276,9 +2261,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               Container(
                 width: 120,
                 height: 180,
-                color: Colors.grey[800],
-                child: const Center(
-                  child: Icon(Icons.person, color: Colors.white24, size: 40),
+                color: context.adaptiveColor(
+                  light: AppColors.lightSurfaceElevated,
+                  dark: AppColors.surfaceElevated,
+                ),
+                child: Center(
+                  child: Icon(Icons.person, color: context.textTertiary, size: 40),
                 ),
               ),
             // Gradient for text readability
@@ -2310,18 +2298,18 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 children: [
                   Text(
                     realName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                    style: AppTextStyles.smBold.copyWith(
+                      color: AppColors.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  AppSpacing.gapH4,
                   Text(
                     characterName,
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    style: AppTextStyles.xs.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

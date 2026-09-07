@@ -129,9 +129,8 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
                   AppSpacing.gapW8,
                   Text(
                     'Profile Expiration',
-                    style: TextStyle(
+                    style: AppTextStyles.mdBold.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
-                      fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
                   ),
@@ -149,10 +148,9 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
                 ),
                 child: Text(
                   statusLabel,
-                  style: TextStyle(
+                  style: AppTextStyles.xsBold.copyWith(
                     color: statusColor,
                     fontSize: 11,
-                    fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -199,11 +197,10 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
           AppSpacing.gapH16,
           Text(
             'Free 6-day Apple Developer provisioning profile. Connect to Xcode and rebuild before the timer reaches zero to prevent app launch failure.',
-            style: TextStyle(
+            style: AppTextStyles.xs.copyWith(
               color: Theme.of(
                 context,
               ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-              fontSize: 12,
               height: 1.4,
             ),
           ),
@@ -243,9 +240,8 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
+            style: AppTextStyles.xsBold.copyWith(
               fontSize: 9,
-              fontWeight: FontWeight.bold,
               color: accentColor,
               letterSpacing: 0.5,
             ),
@@ -257,12 +253,11 @@ class _ProfileExpirationCardState extends State<ProfileExpirationCard> {
 
   Widget _buildColon(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Text(
         ':',
-        style: TextStyle(
+        style: AppTextStyles.mdBold.copyWith(
           fontSize: 18,
-          fontWeight: FontWeight.bold,
           color: Theme.of(
             context,
           ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),

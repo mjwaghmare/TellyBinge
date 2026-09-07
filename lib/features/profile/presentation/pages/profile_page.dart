@@ -303,7 +303,7 @@ class _ProfilePageState extends State<ProfilePage>
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).brightness == Brightness.light
-          ? Colors.grey[200]
+          ? AppColors.lightSurfaceElevated
           : AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
@@ -329,9 +329,9 @@ class _ProfilePageState extends State<ProfilePage>
               Divider(color: Theme.of(context).dividerColor),
               ListTile(
                 leading: const Icon(Icons.logout, color: AppColors.error),
-                title: const Text(
+                title: Text(
                   'Sign Out',
-                  style: TextStyle(color: AppColors.error),
+                  style: AppTextStyles.sm.copyWith(color: AppColors.error),
                 ),
                 onTap: () {
                   Navigator.pop(menuContext);
@@ -351,7 +351,8 @@ class _ProfilePageState extends State<ProfilePage>
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
+      backgroundColor:
+          isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
       ),
@@ -401,11 +402,11 @@ class _ProfilePageState extends State<ProfilePage>
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                           side: BorderSide(
                             color: isLight
                                 ? AppColors.borderLight
-                                : Colors.white24,
+                                : AppColors.borderDark,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -414,11 +415,10 @@ class _ProfilePageState extends State<ProfilePage>
                         onPressed: () => Navigator.pop(sheetContext),
                         child: Text(
                           'Cancel',
-                          style: TextStyle(
+                          style: AppTextStyles.smBold.copyWith(
                             color: isLight
                                 ? AppColors.lightTextPrimary
                                 : AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -428,7 +428,7 @@ class _ProfilePageState extends State<ProfilePage>
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.error,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -437,11 +437,10 @@ class _ProfilePageState extends State<ProfilePage>
                           Navigator.pop(sheetContext);
                           context.read<AuthCubit>().signOut();
                         },
-                        child: const Text(
+                        child: Text(
                           'Sign Out',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          style: AppTextStyles.smBold.copyWith(
+                            color: AppColors.textOnPrimary,
                           ),
                         ),
                       ),
@@ -517,20 +516,20 @@ class _ProfilePageState extends State<ProfilePage>
           children: [
             // Avatar with ring
             Container(
-              padding: const EdgeInsets.all(2.5),
+              padding: AppSpacing.allMicro,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primary,
               ),
               child: Container(
-                padding: const EdgeInsets.all(2),
+                padding: AppSpacing.allMicro,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
                   shape: BoxShape.circle,
                 ),
                 child: CircleAvatar(
                   radius: 22,
-                  backgroundColor: const Color(0xFF2E6930),
+                  backgroundColor: AppColors.brandGreen,
                   backgroundImage: (photoURL != null && photoURL.isNotEmpty)
                       ? CachedNetworkImageProvider(photoURL)
                       : null,
@@ -539,9 +538,8 @@ class _ProfilePageState extends State<ProfilePage>
                           displayName.isNotEmpty
                               ? displayName[0].toUpperCase()
                               : 'U',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
+                          style: AppTextStyles.lg.copyWith(
+                            color: AppColors.textOnPrimary,
                             fontWeight: FontWeight.bold,
                           ),
                         )
@@ -557,10 +555,9 @@ class _ProfilePageState extends State<ProfilePage>
                 children: [
                   Text(
                     username,
-                    style: TextStyle(
+                    style: AppTextStyles.lg.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
                       letterSpacing: -0.2,
                     ),
                     maxLines: 1,
@@ -942,26 +939,23 @@ class _ProfilePageState extends State<ProfilePage>
                             Center(
                               child: Padding(
                                 padding: const EdgeInsets.only(
-                                  top: 2.0,
-                                  bottom: 6.0,
+                                  top: AppSpacing.micro,
+                                  bottom: AppSpacing.xxs,
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
                                       'Tap any card to view Watch Activity',
-                                      style: TextStyle(
+                                      style: AppTextStyles.xsBold.copyWith(
                                         color:
                                             Theme.of(context).brightness ==
                                                 Brightness.light
                                             ? AppColors.primaryDark
                                             : AppColors.primaryLight,
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.1,
                                       ),
                                     ),
-                                    const SizedBox(width: 4),
+                                    AppSpacing.gapW4,
                                     Icon(
                                       Icons.info_outline_rounded,
                                       size: 13,
@@ -1005,15 +999,13 @@ class _ProfilePageState extends State<ProfilePage>
                                 Theme.of(context).brightness == Brightness.light
                                 ? AppColors.lightTextSecondary
                                 : AppColors.textSecondary,
-                            labelStyle: const TextStyle(
-                              fontSize: 14,
+                            labelStyle: AppTextStyles.smBold.copyWith(
+                              letterSpacing: 0.5,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
                             ),
-                            unselectedLabelStyle: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                            unselectedLabelStyle: AppTextStyles.smBold.copyWith(
                               letterSpacing: 0.5,
+                              fontWeight: FontWeight.w700,
                             ),
                             indicatorColor: AppColors.primary,
                             indicatorWeight: 3.0,
@@ -1079,14 +1071,14 @@ class _ProfilePageState extends State<ProfilePage>
                                   _showSortOption != 'Last added' ||
                                   _showProgressOption != 'All';
                               final fabWidget = Container(
-                                margin: const EdgeInsets.only(bottom: 100),
+                                margin: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
                                 height: 40,
                                 decoration: isShowFilterActive
                                     ? BoxDecoration(
                                         borderRadius: BorderRadius.circular(20),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.greenAccent
+                                            color: AppColors.success
                                                 .withValues(alpha: 0.5),
                                             blurRadius: 8,
                                             spreadRadius: 1,
@@ -1146,12 +1138,12 @@ class _ProfilePageState extends State<ProfilePage>
                                     elevation: isShowFilterActive ? 0 : 4,
                                     side: isShowFilterActive
                                         ? BorderSide(
-                                            color: Colors.greenAccent,
+                                            color: AppColors.success,
                                             width: 1.5,
                                           )
                                         : null,
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
+                                      horizontal: AppSpacing.xl,
                                       vertical: 0,
                                     ),
                                     shape: const StadiumBorder(),
@@ -1159,8 +1151,7 @@ class _ProfilePageState extends State<ProfilePage>
                                   icon: Icon(Icons.tune, size: 20),
                                   label: Text(
                                     'FILTERS',
-                                    style: TextStyle(
-                                      fontSize: 13,
+                                    style: AppTextStyles.xs.copyWith(
                                       letterSpacing: 0.8,
                                     ),
                                   ),
@@ -1204,14 +1195,14 @@ class _ProfilePageState extends State<ProfilePage>
                                   _movieSortOption != 'Last Added' ||
                                   _movieProgressOption != 'All';
                               final fabWidget = Container(
-                                margin: const EdgeInsets.only(bottom: 100),
+                                margin: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
                                 height: 40,
                                 decoration: isMovieFilterActive
                                     ? BoxDecoration(
                                         borderRadius: BorderRadius.circular(20),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.greenAccent
+                                            color: AppColors.success
                                                 .withValues(alpha: 0.5),
                                             blurRadius: 8,
                                             spreadRadius: 1,
@@ -1271,12 +1262,12 @@ class _ProfilePageState extends State<ProfilePage>
                                     elevation: isMovieFilterActive ? 0 : 4,
                                     side: isMovieFilterActive
                                         ? BorderSide(
-                                            color: Colors.greenAccent,
+                                            color: AppColors.success,
                                             width: 1.5,
                                           )
                                         : null,
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
+                                      horizontal: AppSpacing.xl,
                                       vertical: 0,
                                     ),
                                     shape: const StadiumBorder(),
@@ -1284,8 +1275,7 @@ class _ProfilePageState extends State<ProfilePage>
                                   icon: Icon(Icons.tune, size: 20),
                                   label: Text(
                                     'FILTERS',
-                                    style: TextStyle(
-                                      fontSize: 13,
+                                    style: AppTextStyles.xs.copyWith(
                                       letterSpacing: 0.8,
                                     ),
                                   ),
@@ -1328,8 +1318,8 @@ class _ProfilePageState extends State<ProfilePage>
         : AppColors.primaryLight;
 
     return Container(
-      margin: const EdgeInsets.only(top: 5),
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
+      margin: const EdgeInsets.only(top: AppSpacing.xxs),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
       decoration: BoxDecoration(
         color: isLight
             ? AppColors.primary.withValues(alpha: 0.08)
@@ -1346,14 +1336,12 @@ class _ProfilePageState extends State<ProfilePage>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(tag.emoji, style: const TextStyle(fontSize: 10, height: 1.1)),
-          const SizedBox(width: 4),
+          Text(tag.emoji, style: AppTextStyles.xs.copyWith(height: 1.1)),
+          AppSpacing.gapW4,
           Text(
             tag.label,
-            style: TextStyle(
+            style: AppTextStyles.xsBold.copyWith(
               color: accentColor,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
               letterSpacing: 0.1,
               height: 1.1,
             ),
@@ -1489,7 +1477,7 @@ class _ProfilePageState extends State<ProfilePage>
               height: 48,
               decoration: BoxDecoration(
                 color: isLight
-                    ? const Color(0xFFF3E8FF)
+                    ? AppColors.primaryLight.withValues(alpha: 0.2)
                     : AppColors.primary.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
@@ -1531,9 +1519,7 @@ class _ProfilePageState extends State<ProfilePage>
                   const SizedBox(height: 1),
                   Text(
                     label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                    style: AppTextStyles.xsMedium.copyWith(
                       color: isLight
                           ? AppColors.lightTextPrimary
                           : AppColors.textPrimary,
@@ -1545,12 +1531,10 @@ class _ProfilePageState extends State<ProfilePage>
                     const SizedBox(height: 1),
                     Text(
                       timeSpent,
-                      style: TextStyle(
+                      style: AppTextStyles.xsMedium.copyWith(
                         color: isLight
                             ? AppColors.lightTextSecondary
                             : AppColors.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1576,9 +1560,9 @@ class _ProfilePageState extends State<ProfilePage>
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,
-          16,
           AppSpacing.md,
-          10,
+          AppSpacing.md,
+          AppSpacing.xs,
         ),
         child: Row(
           children: [
@@ -1593,28 +1577,24 @@ class _ProfilePageState extends State<ProfilePage>
             const SizedBox(width: AppSpacing.sm),
             Text(
               label,
-              style: TextStyle(
+              style: AppTextStyles.smBold.copyWith(
                 color: Theme.of(context).brightness == Brightness.light
                     ? AppColors.lightTextPrimary
                     : AppColors.textPrimary,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
                 letterSpacing: 0.2,
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
               decoration: BoxDecoration(
                 color: dotColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 '$count',
-                style: TextStyle(
+                style: AppTextStyles.xsBold.copyWith(
                   color: dotColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
@@ -1638,7 +1618,7 @@ class _ProfilePageState extends State<ProfilePage>
       final rowItems = items.sublist(i, min(i + 3, items.length));
       rows.add(
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.micro, vertical: 1.0),
           child: Row(
             children: [
               for (int j = 0; j < 3; j++)
@@ -1684,9 +1664,8 @@ class _ProfilePageState extends State<ProfilePage>
           padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
           child: Text(
             emptyMessage,
-            style: TextStyle(
+            style: AppTextStyles.sm.copyWith(
               color: Theme.of(context).disabledColor,
-              fontSize: 14,
             ),
           ),
         ),
@@ -1739,7 +1718,7 @@ class _ProfilePageState extends State<ProfilePage>
     children.add(const SizedBox(height: 160));
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.only(top: AppSpacing.micro),
       itemCount: children.length,
       itemBuilder: (context, index) => children[index],
     );
@@ -1788,9 +1767,8 @@ class _ProfilePageState extends State<ProfilePage>
           padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
           child: Text(
             emptyMessage,
-            style: TextStyle(
+            style: AppTextStyles.sm.copyWith(
               color: Theme.of(context).disabledColor,
-              fontSize: 14,
             ),
           ),
         ),
@@ -1836,7 +1814,7 @@ class _ProfilePageState extends State<ProfilePage>
     children.add(const SizedBox(height: 160));
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.only(top: AppSpacing.micro),
       itemCount: children.length,
       itemBuilder: (context, index) => children[index],
     );
@@ -1849,9 +1827,8 @@ class _ProfilePageState extends State<ProfilePage>
           padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
           child: Text(
             emptyMessage,
-            style: TextStyle(
+            style: AppTextStyles.sm.copyWith(
               color: Theme.of(context).disabledColor,
-              fontSize: 14,
             ),
           ),
         ),
@@ -1860,7 +1837,7 @@ class _ProfilePageState extends State<ProfilePage>
     final rows = _buildGridRows(items);
     rows.add(const SizedBox(height: 160));
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.only(top: AppSpacing.micro),
       itemCount: rows.length,
       itemBuilder: (context, index) => rows[index],
     );
@@ -1959,19 +1936,19 @@ class _ProfilePageState extends State<ProfilePage>
                       memCacheWidth: 360,
                       placeholder: (context, url) => Container(
                         color: Theme.of(context).brightness == Brightness.light
-                            ? Colors.grey[200]
+                            ? AppColors.lightSurfaceElevated
                             : AppColors.surface,
                       ),
                       errorWidget: (context, url, error) => Container(
                         color: Theme.of(context).brightness == Brightness.light
-                            ? Colors.grey[200]
+                            ? AppColors.lightSurfaceElevated
                             : AppColors.surface,
                         child: Center(
                           child: Icon(
                             Icons.movie_outlined,
                             color:
                                 Theme.of(context).brightness == Brightness.light
-                                ? Colors.grey[500]
+                                ? AppColors.lightTextTertiary
                                 : AppColors.textTertiary,
                           ),
                         ),
@@ -1979,14 +1956,14 @@ class _ProfilePageState extends State<ProfilePage>
                     )
                   : Container(
                       color: Theme.of(context).brightness == Brightness.light
-                          ? Colors.grey[200]
+                          ? AppColors.lightSurfaceElevated
                           : AppColors.surface,
                       child: Center(
                         child: Icon(
                           Icons.movie_outlined,
                           color:
                               Theme.of(context).brightness == Brightness.light
-                              ? Colors.grey[500]
+                              ? AppColors.lightTextTertiary
                               : AppColors.textTertiary,
                         ),
                       ),
@@ -1996,12 +1973,12 @@ class _ProfilePageState extends State<ProfilePage>
                   top: 4,
                   right: 4,
                   child: Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: AppSpacing.allXXS,
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.favorite, color: Colors.red, size: 16),
+                    child: const Icon(Icons.favorite, color: AppColors.error, size: 16),
                   ),
                 ),
 
@@ -2028,7 +2005,7 @@ class _ProfilePageState extends State<ProfilePage>
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 6,
-                      vertical: 2,
+                      vertical: AppSpacing.micro,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.7),
@@ -2036,10 +2013,8 @@ class _ProfilePageState extends State<ProfilePage>
                     ),
                     child: Text(
                       '${item.watchedCount.clamp(0, item.totalEpisodes)}/${item.totalEpisodes}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                      style: AppTextStyles.xsBold.copyWith(
+                        color: AppColors.textOnPrimary,
                       ),
                     ),
                   ),
@@ -2051,8 +2026,8 @@ class _ProfilePageState extends State<ProfilePage>
                   right: 6,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: AppSpacing.xs,
+                      vertical: AppSpacing.xxs,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.9),
@@ -2060,10 +2035,8 @@ class _ProfilePageState extends State<ProfilePage>
                     ),
                     child: Text(
                       'STOPPED',
-                      style: TextStyle(
+                      style: AppTextStyles.xsBold.copyWith(
                         color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 9.0,
-                        fontWeight: FontWeight.w800,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -2154,7 +2127,7 @@ class _ProfilePageState extends State<ProfilePage>
         return Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
-            vertical: 8.0,
+            vertical: AppSpacing.xs,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2164,12 +2137,10 @@ class _ProfilePageState extends State<ProfilePage>
                 children: [
                   Text(
                     'WATCH ACTIVITY',
-                    style: TextStyle(
+                    style: AppTextStyles.xsBold.copyWith(
                       color: Theme.of(context).brightness == Brightness.light
                           ? AppColors.lightTextPrimary
                           : AppColors.textPrimary.withValues(alpha: 0.7),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -2177,7 +2148,7 @@ class _ProfilePageState extends State<ProfilePage>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _isSignUpMonthOrPast(currentMonth)
-                          ? const SizedBox(width: 24)
+                          ? AppSpacing.gapW24
                           : IconButton(
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
@@ -2186,7 +2157,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 color: Theme.of(
                                   context,
                                 ).textTheme.bodyLarge?.color,
-                                size: 24,
+                                size: 20,
                               ),
                               onPressed: isLoading
                                   ? null
@@ -2211,18 +2182,17 @@ class _ProfilePageState extends State<ProfilePage>
                                           .loadMonthActivity(uid, prevMonth);
                                     },
                             ),
-                      const SizedBox(width: 8),
+                      AppSpacing.gapW8,
                       Text(
                         DateFormat('MMMM yyyy').format(currentMonth),
-                        style: TextStyle(
+                        style: AppTextStyles.xsBold.copyWith(
                           color: Theme.of(context).textTheme.bodyLarge?.color,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      AppSpacing.gapW8,
                       _isCurrentMonthOrFuture(currentMonth)
-                          ? const SizedBox(width: 24)
+                          ? AppSpacing.gapW24
                           : IconButton(
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
@@ -2231,7 +2201,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 color: Theme.of(
                                   context,
                                 ).textTheme.bodyLarge?.color,
-                                size: 24,
+                                size: 20,
                               ),
                               onPressed: isLoading
                                   ? null
@@ -2329,11 +2299,11 @@ class _ProfilePageState extends State<ProfilePage>
                                     ? (Theme.of(
                                             context,
                                           ).textTheme.bodyLarge?.color ??
-                                          Colors.white)
+                                          AppColors.textPrimary)
                                     : (Theme.of(context).brightness ==
                                               Brightness.light
-                                          ? const Color(0xFFD1D5DB)
-                                          : Colors.white30),
+                                          ? AppColors.borderLight
+                                          : AppColors.borderDark),
                               ),
                             );
                           }),
@@ -2343,17 +2313,15 @@ class _ProfilePageState extends State<ProfilePage>
                           children: [
                             Text(
                               'Less',
-                              style: TextStyle(
+                              style: AppTextStyles.xsBold.copyWith(
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.light
                                     ? AppColors.lightTextSecondary
                                     : AppColors.textTertiary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            AppSpacing.gapW4,
                             _buildLegendSquare(activeLegendColors[0]),
                             const SizedBox(width: 3),
                             _buildLegendSquare(activeLegendColors[1]),
@@ -2363,17 +2331,15 @@ class _ProfilePageState extends State<ProfilePage>
                             _buildLegendSquare(activeLegendColors[3]),
                             const SizedBox(width: 3),
                             _buildLegendSquare(activeLegendColors[4]),
-                            const SizedBox(width: 4),
+                            AppSpacing.gapW4,
                             Text(
                               'More',
-                              style: TextStyle(
+                              style: AppTextStyles.xsBold.copyWith(
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.light
                                     ? AppColors.lightTextSecondary
                                     : AppColors.textTertiary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -2410,19 +2376,17 @@ class _ProfilePageState extends State<ProfilePage>
         Center(
           child: Text(
             isMovies ? 'MOVIES WATCHED' : 'EPISODES WATCHED',
-            style: TextStyle(
+            style: AppTextStyles.xsBold.copyWith(
               color: isLight
                   ? AppColors.lightTextSecondary
                   : AppColors.textTertiary,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
               letterSpacing: 1.1,
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        AppSpacing.gapH12,
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
           child: Column(
             children: [
               Row(
@@ -2433,12 +2397,10 @@ class _ProfilePageState extends State<ProfilePage>
                       child: Center(
                         child: Text(
                           day,
-                          style: TextStyle(
+                          style: AppTextStyles.xsBold.copyWith(
                             color: isLight
                                 ? AppColors.lightTextSecondary
                                 : AppColors.textTertiary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -2446,7 +2408,7 @@ class _ProfilePageState extends State<ProfilePage>
                   },
                 ).toList(),
               ),
-              const SizedBox(height: 8),
+              AppSpacing.gapH8,
               showShimmer
                   ? _RippleShimmerGrid(totalSlots: totalSlots)
                   : GridView.builder(
@@ -2463,7 +2425,7 @@ class _ProfilePageState extends State<ProfilePage>
                       itemBuilder: (context, index) {
                         if (index < offset || index >= totalSlots) {
                           return Container(
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: Colors.transparent,
                             ),
                           );
@@ -2493,7 +2455,7 @@ class _ProfilePageState extends State<ProfilePage>
                         final double cellLuminance = cellColor
                             .computeLuminance();
                         final Color dayTextColor = cellLuminance < 0.45
-                            ? Colors.white
+                            ? AppColors.textOnPrimary
                             : (isLight
                                   ? AppColors.lightTextPrimary
                                   : AppColors.textPrimary);
@@ -2515,16 +2477,14 @@ class _ProfilePageState extends State<ProfilePage>
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               padding: const EdgeInsets.only(
-                                bottom: 2.0,
-                                right: 4.0,
+                                bottom: AppSpacing.micro,
+                                right: AppSpacing.xxs,
                               ),
                               alignment: Alignment.bottomRight,
                               child: Text(
                                 '$day',
-                                style: TextStyle(
+                                style: AppTextStyles.xsBold.copyWith(
                                   color: dayTextColor,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
@@ -2697,13 +2657,13 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid>
 
             final Color cellColor = isLight
                 ? Color.lerp(
-                    const Color(0xFFE5E7EB),
-                    const Color(0xFFD1D5DB),
+                    AppColors.heatmapEmptyLight,
+                    AppColors.borderLight,
                     wave,
                   )!
                 : Color.lerp(
                     AppColors.heatmapEmptyDark,
-                    const Color(0xFF2D333B),
+                    AppColors.borderDark,
                     wave,
                   )!;
 

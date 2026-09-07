@@ -39,6 +39,11 @@ class AppConstants {
     defaultValue: supportEmail,
   );
 
+  // --- Authentication & OAuth ---
+  /// Web/Server OAuth Client ID used for Google Sign-In.
+  static const String googleServerClientId =
+      '236216751300-nvkb8jbs3u64as2jbgt4ad2rlhb9r6c5.apps.googleusercontent.com';
+
   // --- Store & Attribution ---
   static const String appleAppId = 'YOUR_APPLE_APP_ID';
   static const String playStoreBaseUrl =

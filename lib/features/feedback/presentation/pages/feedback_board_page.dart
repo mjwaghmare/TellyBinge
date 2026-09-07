@@ -292,7 +292,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
         centerTitle: false,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12.0),
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: Container(
               width: 38,
               height: 38,
@@ -315,7 +315,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                 padding: EdgeInsets.zero,
                 icon: const Icon(
                   Icons.add_rounded,
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                   size: 24,
                 ),
                 onPressed: _openSubmitSheet,
@@ -340,13 +340,13 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: isLight
-                            ? Colors.white
-                            : const Color(0xFF161622),
+                            ? AppColors.lightSurface
+                            : AppColors.surface,
                         borderRadius: BorderRadius.circular(14.0),
                         border: Border.all(
                           color: isLight
                               ? AppColors.borderLight
-                              : Colors.white.withValues(alpha: 0.08),
+                              : AppColors.borderDark,
                           width: 1.0,
                         ),
                       ),
@@ -357,7 +357,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                             _searchQuery = value;
                           });
                         },
-                        style: TextStyle(
+                        style: AppTextStyles.sm.copyWith(
                           color: isLight
                               ? AppColors.lightTextPrimary
                               : AppColors.textPrimary,
@@ -365,11 +365,10 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                         ),
                         decoration: InputDecoration(
                           hintText: 'Search feedback or ideas...',
-                          hintStyle: TextStyle(
+                          hintStyle: AppTextStyles.sm.copyWith(
                             color: isLight
                                 ? AppColors.lightTextTertiary
                                 : AppColors.textTertiary,
-                            fontSize: 14.0,
                           ),
                           prefixIcon: Icon(
                             Icons.search_rounded,
@@ -403,43 +402,42 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                           errorBorder: InputBorder.none,
                           disabledBorder: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14.0,
-                            vertical: 12.0,
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.sm,
                           ),
                         ),
                       ),
                     ),
                   ),
 
-                  // 2. Filter Pills
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: 8.0,
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.xs,
+                      ),
+                      child: Row(
+                        children: [
+                          _buildFilterChip('All', isLight),
+                          AppSpacing.gapW8,
+                          _buildFilterChip('Bug', isLight, label: '🪲 Bugs'),
+                          AppSpacing.gapW8,
+                          _buildFilterChip(
+                            'Feature',
+                            isLight,
+                            label: '💡 Features',
+                          ),
+                          AppSpacing.gapW8,
+                          _buildFilterChip(
+                            'Improvement',
+                            isLight,
+                            label: '✨ Improvements',
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        _buildFilterChip('All', isLight),
-                        const SizedBox(width: 8.0),
-                        _buildFilterChip('Bug', isLight, label: '🪲 Bugs'),
-                        const SizedBox(width: 8.0),
-                        _buildFilterChip(
-                          'Feature',
-                          isLight,
-                          label: '💡 Features',
-                        ),
-                        const SizedBox(width: 8.0),
-                        _buildFilterChip(
-                          'Improvement',
-                          isLight,
-                          label: '✨ Improvements',
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  const SizedBox(height: 4.0),
+                    AppSpacing.gapH4,
 
                   // 3. Feedback Feed List with Pull-to-Refresh
                   Expanded(
@@ -515,26 +513,29 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
         borderRadius: BorderRadius.circular(20.0),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 7.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primary
-                : (isLight ? Colors.white : const Color(0xFF161622)),
+                : (isLight ? AppColors.lightSurface : AppColors.surface),
             borderRadius: BorderRadius.circular(20.0),
             border: Border.all(
               color: isSelected
                   ? AppColors.primary
                   : (isLight
                         ? AppColors.borderLight
-                        : Colors.white.withValues(alpha: 0.06)),
+                        : AppColors.borderDark),
               width: 1.0,
             ),
           ),
           child: Text(
             displayLabel,
-            style: TextStyle(
+            style: AppTextStyles.smMedium.copyWith(
               color: isSelected
-                  ? Colors.white
+                  ? AppColors.textOnPrimary
                   : (isLight
                         ? AppColors.lightTextPrimary
                         : AppColors.textPrimary),

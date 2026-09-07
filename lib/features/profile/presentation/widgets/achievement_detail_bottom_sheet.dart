@@ -123,10 +123,10 @@ class AchievementDetailBottomSheet extends StatelessWidget {
     }
     return switch (tier) {
       AchievementTier.none => [AppColors.primary, AppColors.primaryDark],
-      AchievementTier.bronze => const [Color(0xFFCD7F32), Color(0xFFA0522D)],
-      AchievementTier.silver => const [Color(0xFFC0C0C0), Color(0xFF808080)],
-      AchievementTier.gold => const [Color(0xFFFFD700), Color(0xFFDAA520)],
-      AchievementTier.diamond => const [Color(0xFFB9F2FF), Color(0xFF4FC3F7)],
+      AchievementTier.bronze => const [AppColors.bronze, AppColors.bronzeDark],
+      AchievementTier.silver => const [AppColors.silver, AppColors.silverDark],
+      AchievementTier.gold => const [AppColors.gold, AppColors.goldDark],
+      AchievementTier.diamond => const [AppColors.diamond, AppColors.diamondDark],
     };
   }
 }
@@ -260,10 +260,10 @@ class _AchievementStackBottomSheetState
         : AppColors.surfaceElevated;
     final card1Color = isLight
         ? AppColors.lightSurfaceElevated
-        : const Color(0xFF2E2E2E);
+        : AppColors.surfaceStackedDark;
     final card2Color = isLight
         ? AppColors.borderLight
-        : const Color(0xFF383838);
+        : AppColors.surfaceStackedDarkElevated;
 
     // Interpolated values for Background Card 1 promoting to Top Card
     final card1Top = lerpDouble(lipHeight, lipHeight * 2, t) ?? lipHeight;
@@ -495,8 +495,8 @@ class _AchievementCardContent extends StatelessWidget {
                 if (achievement.tier != AchievementTier.none)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 4,
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xxs,
                     ),
                     decoration: BoxDecoration(
                       color: tierColors.first.withValues(alpha: 0.18),
@@ -651,7 +651,7 @@ class _TierMilestoneStepper extends StatelessWidget {
       nodeContent = Icon(
         Icons.check_rounded,
         size: 13,
-        color: isLight ? tierColor : Colors.white,
+        color: isLight ? tierColor : AppColors.textOnPrimary,
       );
     } else if (isNext) {
       nodeBg = AppColors.primary.withValues(alpha: isLight ? 0.14 : 0.22);
@@ -752,7 +752,7 @@ class _TierNextProgress extends StatelessWidget {
 
     if (achievement.isMaxTier) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xxs),
         decoration: BoxDecoration(
           color: AppColors.success.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
@@ -1128,14 +1128,14 @@ class _BadgeEmblemState extends State<_BadgeEmblem>
                             shape: BoxShape.circle,
                             color: Colors.black.withValues(alpha: 0.65),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: AppColors.borderDark,
                               width: 1.5,
                             ),
                           ),
                           child: const Center(
                             child: Icon(
                               Icons.lock_rounded,
-                              color: Colors.white,
+                              color: AppColors.textOnPrimary,
                               size: 16,
                             ),
                           ),

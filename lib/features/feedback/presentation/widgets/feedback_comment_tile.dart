@@ -139,7 +139,7 @@ class FeedbackCommentTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isLight
                         ? AppColors.borderLight
-                        : Colors.white.withValues(alpha: 0.2),
+                        : AppColors.borderDark,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -301,10 +301,10 @@ class FeedbackCommentTile extends StatelessWidget {
 
                             // OP / Author Badge
                             if (isOp) ...[
-                              const SizedBox(width: 6.0),
+                              AppSpacing.gapW4,
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 6.0,
+                                  horizontal: AppSpacing.xxs,
                                   vertical: 1.5,
                                 ),
                                 decoration: BoxDecoration(
@@ -331,7 +331,7 @@ class FeedbackCommentTile extends StatelessWidget {
                               ),
                             ],
 
-                            const SizedBox(width: 6.0),
+                            AppSpacing.gapW4,
                             Text(
                               '•',
                               style: AppTextStyles.xs.copyWith(
@@ -340,7 +340,7 @@ class FeedbackCommentTile extends StatelessWidget {
                                     : AppColors.textTertiary,
                               ),
                             ),
-                            const SizedBox(width: 6.0),
+                            AppSpacing.gapW4,
 
                             // Timestamp
                             Text(
@@ -361,7 +361,7 @@ class FeedbackCommentTile extends StatelessWidget {
                         onTap: () => _showCommentActionSheet(context),
                         borderRadius: BorderRadius.circular(16.0),
                         child: Padding(
-                          padding: const EdgeInsets.all(2.0),
+                          padding: AppSpacing.allXXS,
                           child: Icon(
                             Icons.more_horiz_rounded,
                             size: 18.0,

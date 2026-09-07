@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -32,6 +33,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.close,
@@ -42,10 +44,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
         title: Text(
           'Edit profile',
-          style: TextStyle(
+          style: AppTextStyles.mdBold.copyWith(
             color: Theme.of(context).textTheme.bodyLarge?.color,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
@@ -56,9 +56,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             },
             child: Text(
               'SAVE',
-              style: TextStyle(
-                color: Colors.blue,
-                fontWeight: FontWeight.bold,
+              style: AppTextStyles.smBold.copyWith(
+                color: AppColors.primary,
                 letterSpacing: 0.5,
               ),
             ),
@@ -80,7 +79,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
-                vertical: 12.0,
+                vertical: AppSpacing.sm,
               ),
               child: Row(
                 children: [
@@ -101,10 +100,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Choose profile photo',
-                      style: TextStyle(color: Colors.blue, fontSize: 16),
+                      style: AppTextStyles.mdMedium.copyWith(
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -120,33 +121,31 @@ class _EditProfilePageState extends State<EditProfilePage> {
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
-                vertical: 12.0,
+                vertical: AppSpacing.sm,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Display name',
-                    style: TextStyle(
+                    style: AppTextStyles.sm.copyWith(
                       color: context.adaptiveColor(
-                        light: Colors.black87,
-                        dark: Colors.white70,
+                        light: AppColors.lightTextSecondary,
+                        dark: AppColors.textSecondary,
                       ),
-                      fontSize: 14,
                     ),
                   ),
                   TextField(
                     controller: _displayNameController,
-                    style: TextStyle(
+                    style: AppTextStyles.md.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
-                      fontSize: 16,
                     ),
-                    cursorColor: Colors.blue,
+                    cursorColor: AppColors.primary,
                     decoration: const InputDecoration(
                       filled: false,
                       fillColor: Colors.transparent,
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
                       border: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -163,18 +162,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
             // Personal Information Section
             Padding(
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                24.0,
+                AppSpacing.xl,
                 AppSpacing.md,
-                16.0,
+                AppSpacing.md,
               ),
               child: Text(
                 'Personal information',
-                style: TextStyle(
+                style: AppTextStyles.lg.copyWith(
                   color: Theme.of(context).textTheme.bodyLarge?.color,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -198,7 +195,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
-        vertical: 12.0,
+        vertical: AppSpacing.sm,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -209,20 +206,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: AppTextStyles.sm.copyWith(
                     color: context.adaptiveColor(
-                      light: Colors.black87,
-                      dark: Colors.white70,
+                      light: AppColors.lightTextSecondary,
+                      dark: AppColors.textSecondary,
                     ),
-                    fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: TextStyle(
+                  style: AppTextStyles.md.copyWith(
                     color: Theme.of(context).textTheme.bodyLarge?.color,
-                    fontSize: 16,
                   ),
                 ),
               ],

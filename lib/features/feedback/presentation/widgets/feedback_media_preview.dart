@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/feedback_item.dart';
 import 'feedback_image_viewer.dart';
 import 'feedback_media_image.dart';
@@ -55,7 +57,7 @@ class FeedbackMediaPreview extends StatelessWidget {
 
           return Padding(
             padding: EdgeInsets.only(
-              right: index < displayCount - 1 ? 8.0 : 0.0,
+              right: index < displayCount - 1 ? AppSpacing.xs : 0.0,
             ),
             child: _buildThumbnail(
               context: context,
@@ -94,12 +96,12 @@ class FeedbackMediaPreview extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   color: isLight
-                      ? Colors.grey[200]
-                      : Colors.white.withValues(alpha: 0.05),
+                      ? AppColors.lightSurfaceElevated
+                      : AppColors.surfaceLight,
                   border: Border.all(
                     color: isLight
                         ? AppColors.borderLight
-                        : Colors.white.withValues(alpha: 0.08),
+                        : AppColors.borderDark,
                   ),
                   borderRadius: BorderRadius.circular(10.0),
                 ),
@@ -134,10 +136,8 @@ class FeedbackMediaPreview extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     overlayBadge,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w700,
+                    style: AppTextStyles.smBold.copyWith(
+                      color: AppColors.textOnPrimary,
                       letterSpacing: 0.3,
                     ),
                   ),

@@ -106,7 +106,7 @@ class _AchievementsViewState extends State<_AchievementsView> {
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xxs + 2,
+                          vertical: AppSpacing.xxs,
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.12),
@@ -120,7 +120,7 @@ class _AchievementsViewState extends State<_AchievementsView> {
                               color: AppColors.primaryLight,
                               size: 16,
                             ),
-                            const SizedBox(width: 6),
+                            AppSpacing.gapW4,
                             Text(
                               '${state.unlockedCount} / ${state.totalCount} Unlocked',
                               style: AppTextStyles.xsMedium.copyWith(
@@ -381,7 +381,7 @@ class _AchievementGridTile extends StatelessWidget {
                 errorBuilder: (context, error, stackTrace) => Container(
                   width: size,
                   height: size,
-                  color: isLight ? Colors.grey[300] : Colors.grey[800],
+                  color: isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
                   child: Icon(
                     achievement.icon,
                     size: size * 0.4,
@@ -410,7 +410,7 @@ class _AchievementGridTile extends StatelessWidget {
               child: Center(
                 child: Icon(
                   Icons.lock_rounded,
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                   size: (size * 0.15).clamp(10.0, 14.0),
                 ),
               ),

@@ -28,12 +28,12 @@ class FeedbackCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
-        color: isLight ? Colors.white : const Color(0xFF161622),
+        color: isLight ? AppColors.lightSurface : AppColors.surface,
         borderRadius: BorderRadius.circular(16.0),
         border: Border.all(
           color: isLight
               ? AppColors.borderLight
-              : Colors.white.withValues(alpha: 0.05),
+              : AppColors.borderDark,
           width: 1.0,
         ),
       ),
@@ -143,7 +143,7 @@ class FeedbackCard extends StatelessWidget {
                   thickness: 0.6,
                   color: isLight
                       ? AppColors.borderLight
-                      : Colors.white.withValues(alpha: 0.06),
+                      : AppColors.borderDark,
                 ),
                 const SizedBox(height: 10.0),
 
@@ -167,10 +167,9 @@ class FeedbackCard extends StatelessWidget {
                           item.userName.isNotEmpty
                               ? item.userName[0].toUpperCase()
                               : 'U',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: AppTextStyles.xsBold.copyWith(
+                            color: AppColors.textOnPrimary,
                             fontSize: 11,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -192,18 +191,18 @@ class FeedbackCard extends StatelessWidget {
                     // App Version Badge
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0,
-                        vertical: 3.0,
+                        horizontal: AppSpacing.xs,
+                        vertical: AppSpacing.xxs,
                       ),
                       decoration: BoxDecoration(
                         color: isLight
-                            ? Colors.grey[100]
-                            : Colors.white.withValues(alpha: 0.06),
+                            ? AppColors.lightSurfaceElevated
+                            : AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(10.0),
                         border: Border.all(
                           color: isLight
                               ? AppColors.borderLight
-                              : Colors.white.withValues(alpha: 0.04),
+                              : AppColors.borderDark,
                         ),
                       ),
                       child: Text(
@@ -248,7 +247,7 @@ class FeedbackCard extends StatelessWidget {
                       style: AppTextStyles.xs.copyWith(
                         color: isLight
                             ? AppColors.lightTextTertiary
-                            : const Color(0xFF8E8E93),
+                            : AppColors.textTertiary,
                         fontSize: 11.5,
                       ),
                     ),
@@ -271,7 +270,7 @@ class FeedbackCard extends StatelessWidget {
         ? AppColors.primary
         : (isLight
             ? AppColors.borderLight
-            : Colors.white.withValues(alpha: 0.12));
+            : AppColors.borderDark);
 
     final numberColor = isUpvoted
         ? AppColors.primary
@@ -279,7 +278,7 @@ class FeedbackCard extends StatelessWidget {
 
     final arrowColor = isUpvoted
         ? AppColors.primary
-        : (isLight ? AppColors.lightTextSecondary : Colors.white60);
+        : (isLight ? AppColors.lightTextSecondary : AppColors.textSecondary);
 
     return Material(
       color: Colors.transparent,
@@ -294,7 +293,10 @@ class FeedbackCard extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           width: 50.0,
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 3.0),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.xs,
+            horizontal: AppSpacing.xxs,
+          ),
           decoration: BoxDecoration(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(12.0),
@@ -329,9 +331,8 @@ class FeedbackCard extends StatelessWidget {
                       child: Text(
                         item.formattedVotes,
                         maxLines: 1,
-                        style: TextStyle(
+                        style: AppTextStyles.mdBold.copyWith(
                           color: numberColor,
-                          fontSize: 16.0,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
                           height: 1.1,

@@ -8,6 +8,8 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -145,7 +147,12 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                     : AppColors.surfaceDarkAlt),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.xxl,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -153,11 +160,11 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: context.isLight ? Colors.black26 : Colors.white24,
+                  color: context.isLight ? AppColors.borderLight : AppColors.borderDark,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 24),
+              AppSpacing.gapH24,
               Container(
                 width: 56,
                 height: 56,
@@ -171,20 +178,20 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   size: 28,
                 ),
               ),
-              const SizedBox(height: 16),
+              AppSpacing.gapH16,
               Text(
                 'Stop Watching?',
-                style: TextStyle(
+                style: AppTextStyles.lg.copyWith(
                   color: context.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
+              AppSpacing.gapH8,
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: TextStyle(
+                  style: AppTextStyles.xs.copyWith(
                     color: context.textSecondary,
                     fontSize: 13,
                     height: 1.5,
@@ -192,7 +199,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   children: [
                     TextSpan(
                       text: showName,
-                      style: TextStyle(
+                      style: AppTextStyles.xsMedium.copyWith(
                         color: context.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -204,7 +211,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+              AppSpacing.gapH24,
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -222,23 +229,21 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.textOnPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
+                  child: Text(
                     'STOP WATCHING',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                    style: AppTextStyles.smBold.copyWith(
                       letterSpacing: 1.0,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              AppSpacing.gapH12,
               SizedBox(
                 width: double.infinity,
                 height: 44,
@@ -246,7 +251,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                   onPressed: () => Navigator.pop(sheetContext),
                   child: Text(
                     'Cancel',
-                    style: TextStyle(
+                    style: AppTextStyles.md.copyWith(
                       color: context.textSecondary,
                       fontSize: 15,
                     ),
@@ -263,21 +268,23 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
   Widget _buildPillBadge(BuildContext context, String label, bool isYellow) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: isYellow
             ? AppColors.primary
-            : (isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.08)),
+            : (isDark ? AppColors.borderDark : AppColors.borderLight),
         borderRadius: BorderRadius.circular(4.0),
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: AppTextStyles.xsBold.copyWith(
           color: isYellow
-              ? Colors.black
-              : (isDark ? Colors.white : Colors.black87),
+              ? AppColors.textOnPrimary
+              : (isDark ? AppColors.textPrimary : AppColors.lightTextPrimary),
           fontSize: 8.0,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -330,23 +337,22 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
         }
       },
       background: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+        margin: AppSpacing.cardMargin,
         decoration: BoxDecoration(
           color: AppColors.error,
           borderRadius: BorderRadius.circular(6.0),
         ),
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 24.0),
+        padding: const EdgeInsets.only(left: AppSpacing.xl),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.stop_circle_outlined, color: Colors.white, size: 28),
-            SizedBox(width: 10),
+          children: [
+            const Icon(Icons.stop_circle_outlined, color: AppColors.textOnPrimary, size: 28),
+            AppSpacing.gapW8,
             Text(
               'STOP WATCHING',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+              style: AppTextStyles.smBold.copyWith(
+                color: AppColors.textOnPrimary,
                 fontSize: 13,
                 letterSpacing: 1.2,
               ),
@@ -355,30 +361,29 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
         ),
       ),
       secondaryBackground: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+        margin: AppSpacing.cardMargin,
         decoration: BoxDecoration(
           color: AppColors.success,
           borderRadius: BorderRadius.circular(6.0),
         ),
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24.0),
+        padding: const EdgeInsets.only(right: AppSpacing.xl),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.end,
-          children: const [
+          children: [
             Text(
               'WATCHED',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+              style: AppTextStyles.smBold.copyWith(
+                color: AppColors.textOnPrimary,
                 fontSize: 13,
                 letterSpacing: 1.2,
               ),
             ),
-            SizedBox(width: 10),
-            Icon(
+            AppSpacing.gapW8,
+            const Icon(
               Icons.check_circle_outline_rounded,
-              color: Colors.white,
+              color: AppColors.textOnPrimary,
               size: 28,
             ),
           ],
@@ -404,7 +409,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
           );
         },
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+          margin: AppSpacing.cardMargin,
           clipBehavior: Clip.antiAlias,
           height: cardHeight,
           decoration: BoxDecoration(
@@ -439,56 +444,51 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                               errorWidget: (context, url, error) => Container(
                                 width: 100,
                                 height: cardHeight,
-                                color:
-                                    Theme.of(context).brightness ==
+                                color: Theme.of(context).brightness ==
                                         Brightness.light
-                                    ? Colors.grey[200]
+                                    ? AppColors.lightSurfaceElevated
                                     : AppColors.surfaceLight,
                                 child: Icon(
                                   Icons.tv,
-                                  color:
-                                      Theme.of(context).brightness ==
+                                  color: Theme.of(context).brightness ==
                                           Brightness.light
-                                      ? Colors.grey[500]
+                                      ? AppColors.lightTextTertiary
                                       : AppColors.textTertiary,
                                 ),
                               ),
                               placeholder: (context, url) => Container(
                                 width: 100,
                                 height: cardHeight,
-                                color:
-                                    Theme.of(context).brightness ==
+                                color: Theme.of(context).brightness ==
                                         Brightness.light
-                                    ? Colors.grey[200]
+                                    ? AppColors.lightSurfaceElevated
                                     : AppColors.surfaceLight,
                               ),
                             )
                           : Container(
                               width: 100,
                               height: cardHeight,
-                              color:
-                                  Theme.of(context).brightness ==
+                              color: Theme.of(context).brightness ==
                                       Brightness.light
-                                  ? Colors.grey[200]
+                                  ? AppColors.lightSurfaceElevated
                                   : AppColors.surfaceLight,
                               child: Icon(
                                 Icons.tv,
-                                color:
-                                    Theme.of(context).brightness ==
+                                color: Theme.of(context).brightness ==
                                         Brightness.light
-                                    ? Colors.grey[500]
+                                    ? AppColors.lightTextTertiary
                                     : AppColors.textTertiary,
                               ),
                             ),
                     ),
-                    const SizedBox(width: 12),
+                    AppSpacing.gapW12,
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(
                           0.0,
-                          16.0,
-                          16.0,
-                          16.0,
+                          AppSpacing.md,
+                          AppSpacing.md,
+                          AppSpacing.md,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,8 +498,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                               padding: isDummy
                                   ? EdgeInsets.zero
                                   : const EdgeInsets.symmetric(
-                                      horizontal: 10.0,
-                                      vertical: 4.0,
+                                      horizontal: AppSpacing.xs,
+                                      vertical: AppSpacing.xxs,
                                     ),
                               decoration: BoxDecoration(
                                 border: isDummy
@@ -508,8 +508,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                         color:
                                             Theme.of(context).brightness ==
                                                 Brightness.dark
-                                            ? Colors.white24
-                                            : Colors.black12,
+                                            ? AppColors.borderDark
+                                            : AppColors.borderLight,
                                         width: 1.0,
                                       ),
                                 borderRadius: BorderRadius.circular(16.0),
@@ -522,43 +522,41 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                       showTitle,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
+                                      style: AppTextStyles.xsBold.copyWith(
                                         color:
                                             Theme.of(context).brightness ==
                                                 Brightness.dark
-                                            ? Colors.white
-                                            : Colors.black87,
+                                            ? AppColors.textPrimary
+                                            : AppColors.lightTextPrimary,
                                         fontSize: 9.0,
-                                        fontWeight: FontWeight.bold,
                                         letterSpacing: 1.0,
                                       ),
                                     ),
                                   ),
-                                  if (!isDummy) const SizedBox(width: 4),
+                                  if (!isDummy) AppSpacing.gapW4,
                                   if (!isDummy)
                                     Icon(
                                       Icons.chevron_right,
                                       color:
                                           Theme.of(context).brightness ==
                                               Brightness.dark
-                                          ? Colors.white70
-                                          : Colors.black54,
+                                          ? AppColors.textSecondary
+                                          : AppColors.lightTextSecondary,
                                       size: 14,
                                     ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            AppSpacing.gapH4,
                             RichText(
                               text: TextSpan(
                                 children: [
                                   TextSpan(
                                     text: show.episodeCode,
-                                    style: TextStyle(
+                                    style: AppTextStyles.sm.copyWith(
                                       color: Theme.of(
                                         context,
                                       ).textTheme.bodyLarge?.color,
-                                      fontSize: 14.0,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.5,
                                     ),
@@ -566,13 +564,12 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                   if (show.extraCount != null && !isWatched)
                                     TextSpan(
                                       text: ' ${show.extraCount}',
-                                      style: TextStyle(
+                                      style: AppTextStyles.xs.copyWith(
                                         color:
                                             Theme.of(context).brightness ==
                                                 Brightness.dark
                                             ? AppColors.textSecondary
-                                            : Colors.black54,
-                                        fontSize: 11.0,
+                                            : AppColors.lightTextSecondary,
                                       ),
                                     ),
                                 ],
@@ -584,24 +581,24 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                   : 'TBA',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: AppTextStyles.xs.copyWith(
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.dark
                                     ? AppColors.textSecondary
-                                    : Colors.black54,
+                                    : AppColors.lightTextSecondary,
                                 fontSize: 11.0,
                               ),
                             ),
                             if (hasChips) ...[
-                              const SizedBox(height: 4),
+                              AppSpacing.gapH4,
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   if (show.isPremiere)
                                     _buildPillBadge(context, 'PREMIERE', false),
                                   if (show.isNew) ...[
-                                    const SizedBox(width: 4),
+                                    AppSpacing.gapW4,
                                     _buildPillBadge(context, 'NEW', true),
                                   ],
                                 ],
@@ -615,7 +612,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                       opacity: isDummy ? 0.0 : 1.0,
                       child: Skeleton.ignore(
                         child: Padding(
-                          padding: const EdgeInsets.only(right: 16.0),
+                          padding: const EdgeInsets.only(right: AppSpacing.md),
                           child: GestureDetector(
                             onTap: () {
                               if (!isWatched &&
@@ -624,45 +621,51 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                 _markAsWatched();
                               }
                             },
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isWatched
-                                    ? AppColors.success
-                                    : (Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Colors.transparent
-                                          : Colors.white),
-                                border: isWatched
-                                    ? null
-                                    : Border.all(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Colors.grey[400]!
-                                            : Colors.transparent,
-                                        width: 1.5,
-                                      ),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                minWidth: 48.0,
+                                minHeight: 48.0,
                               ),
-                              child: _isMarkingAsWatched
-                                  ? const CircularProgressIndicator.adaptive()
-                                  : (isWatched
-                                        ? const Icon(
-                                            Icons.check,
-                                            color: Colors.white,
-                                            size: 24,
-                                          )
-                                        : Icon(
-                                            Icons.check,
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? Colors.grey[500]
-                                                : AppColors.textTertiary,
-                                            size: 24,
-                                          )),
+                              child: Center(
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isWatched
+                                        ? AppColors.success
+                                        : context.adaptiveColor(
+                                            light: Colors.transparent,
+                                            dark: AppColors.surface,
+                                          ),
+                                    border: isWatched
+                                        ? null
+                                        : Border.all(
+                                            color: context.adaptiveColor(
+                                              light: AppColors.lightTextTertiary,
+                                              dark: Colors.transparent,
+                                            ),
+                                            width: 1.5,
+                                          ),
+                                  ),
+                                  child: _isMarkingAsWatched
+                                      ? const CircularProgressIndicator.adaptive()
+                                      : (isWatched
+                                            ? const Icon(
+                                                Icons.check,
+                                                color: AppColors.textOnPrimary,
+                                                size: 24,
+                                              )
+                                            : Icon(
+                                                Icons.check,
+                                                color: context.adaptiveColor(
+                                                  light: AppColors.lightTextTertiary,
+                                                  dark: AppColors.textTertiary,
+                                                ),
+                                                size: 24,
+                                              )),
+                                ),
+                              ),
                             ),
                           ),
                         ),

@@ -22,7 +22,7 @@ service cloud.firestore {
 
     // Users collection and subcollections (watchlist, history)
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow create: if isAuthenticated() && isOwner(userId) && (request.resource.data.get('role', 'user') == 'user' || isAdmin());
       allow update: if isAuthenticated() && isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin());
       allow delete: if isAuthenticated() && (isOwner(userId) || isAdmin());

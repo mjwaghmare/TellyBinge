@@ -260,7 +260,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         final isLight = sheetContext.isLight;
         return Container(
           decoration: BoxDecoration(
-            color: isLight ? Colors.white : AppColors.surfaceElevated,
+            color: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: EdgeInsets.fromLTRB(
@@ -323,7 +323,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(sheetContext, false),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                         side: BorderSide(
                           color: isLight
                               ? AppColors.borderLight
@@ -349,9 +349,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       onPressed: () => Navigator.pop(sheetContext, true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.textOnPrimary,
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -359,7 +359,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       child: Text(
                         'Clear All',
                         style: AppTextStyles.smBold.copyWith(
-                          color: Colors.white,
+                          color: AppColors.textOnPrimary,
                         ),
                       ),
                     ),
@@ -611,7 +611,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                 ),
               ),
             ),
@@ -660,15 +660,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
           children: [
             // Section Header
             Padding(
-              padding: const EdgeInsets.only(left: 4.0, top: 16.0, bottom: 8.0),
+              padding: const EdgeInsets.only(left: AppSpacing.xxs, top: AppSpacing.md, bottom: AppSpacing.xs),
               child: Text(
                 sectionKey,
-                style: TextStyle(
+                style: AppTextStyles.xsMedium.copyWith(
                   color: isLight
                       ? AppColors.lightTextSecondary
-                      : const Color(0xFF8E8E93),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                      : AppColors.textTertiary,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -691,7 +689,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             : null;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 6.0),
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -699,11 +697,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
           borderRadius: BorderRadius.circular(14),
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: 10.0,
-              vertical: 8.0,
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: isLight ? Colors.white : AppColors.surface,
+              color: isLight ? AppColors.lightSurface : AppColors.surface,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: !item.isRead
@@ -801,15 +799,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
       child: Container(
         width: width,
         height: height,
-        color: isLight ? const Color(0xFFE5E7EB) : const Color(0xFF1E1E28),
+        color: isLight ? AppColors.borderLight : AppColors.surfaceElevated,
         child: posterUrl != null
             ? CachedNetworkImage(
                 imageUrl: posterUrl,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: isLight
-                      ? const Color(0xFFE5E7EB)
-                      : const Color(0xFF242432),
+                      ? AppColors.borderLight
+                      : AppColors.surfaceElevated,
                 ),
                 errorWidget: (context, url, error) =>
                     _buildPosterFallback(isMovie, isLight),
@@ -835,7 +833,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       children: [
         SizedBox(height: MediaQuery.of(context).size.height * 0.22),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 36.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -850,7 +848,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 child: Center(
                   child: Text(
                     _emptyState.emoji,
-                    style: const TextStyle(fontSize: 44.0),
+                    style: AppTextStyles.xxl.copyWith(fontSize: 44.0),
                   ),
                 ),
               ),
@@ -926,7 +924,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 label: const Text('Retry'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.textOnPrimary,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.lg,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/feedback_item.dart';
 
 class FeedbackPill extends StatelessWidget {
@@ -18,11 +20,14 @@ class FeedbackPill extends StatelessWidget {
     required this.label,
     required this.backgroundColor,
     required this.textColor,
-    required this.isLight,
     this.leadingEmoji,
-    this.fontWeight = FontWeight.w700,
-    this.fontSize = 11.5,
-    this.padding = const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+    required this.isLight,
+    this.fontWeight = FontWeight.w600,
+    this.fontSize = 12.0,
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: AppSpacing.xs,
+      vertical: AppSpacing.xxs,
+    ),
   });
 
   factory FeedbackPill.milestone({
@@ -40,7 +45,10 @@ class FeedbackPill extends StatelessWidget {
       isLight: isLight,
       fontWeight: FontWeight.w700,
       fontSize: 11.5,
-      padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 3.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
     );
   }
 
@@ -56,9 +64,6 @@ class FeedbackPill extends StatelessWidget {
       backgroundColor: category.backgroundColor(isLight),
       textColor: textColor,
       isLight: isLight,
-      fontWeight: FontWeight.w700,
-      fontSize: 11.5,
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
     );
   }
 
@@ -74,9 +79,29 @@ class FeedbackPill extends StatelessWidget {
       backgroundColor: status.backgroundColor(isLight),
       textColor: textColor,
       isLight: isLight,
+    );
+  }
+
+  factory FeedbackPill.adminBadge({
+    Key? key,
+    required bool isLight,
+  }) {
+    final textColor = isLight ? AppColors.primary : AppColors.primaryLight;
+    final bgColor = isLight
+        ? AppColors.primary.withValues(alpha: 0.1)
+        : AppColors.primary.withValues(alpha: 0.18);
+    return FeedbackPill(
+      key: key,
+      label: 'Admin',
+      backgroundColor: bgColor,
+      textColor: textColor,
+      isLight: isLight,
       fontWeight: FontWeight.w600,
       fontSize: 11.5,
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
     );
   }
 
@@ -85,7 +110,7 @@ class FeedbackPill extends StatelessWidget {
     required String severity,
     required bool isLight,
   }) {
-    final textColor = isLight ? AppColors.error : const Color(0xFFFF6B6B);
+    final textColor = isLight ? AppColors.error : AppColors.errorSoft;
     final bgColor = isLight
         ? AppColors.error.withValues(alpha: 0.1)
         : AppColors.error.withValues(alpha: 0.2);
@@ -96,8 +121,11 @@ class FeedbackPill extends StatelessWidget {
       textColor: textColor,
       isLight: isLight,
       fontWeight: FontWeight.w600,
-      fontSize: 11.0,
-      padding: const EdgeInsets.symmetric(horizontal: 7.0, vertical: 3.0),
+      fontSize: 11.5,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
     );
   }
 
@@ -119,13 +147,13 @@ class FeedbackPill extends StatelessWidget {
           if (leadingEmoji != null) ...[
             Text(
               leadingEmoji!,
-              style: const TextStyle(fontSize: 11.0, height: 1.0),
+              style: AppTextStyles.xs.copyWith(fontSize: 11.0, height: 1.0),
             ),
-            const SizedBox(width: 3.5),
+            AppSpacing.gapW4,
           ],
           Text(
             label,
-            style: TextStyle(
+            style: AppTextStyles.xs.copyWith(
               color: textColor,
               fontSize: fontSize,
               fontWeight: fontWeight,

@@ -160,10 +160,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       children: [
                         Text(
                           themeText,
-                          style: const TextStyle(
+                          style: AppTextStyles.smMedium.copyWith(
                             color: AppColors.primaryLight,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -193,7 +191,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         trailing: Switch.adaptive(
                           value: settingsState.notificationsEnabled,
                           activeTrackColor: AppColors.primary,
-                          activeThumbColor: Colors.white,
+                          activeThumbColor: AppColors.textOnPrimary,
                           onChanged: (value) {
                             HapticFeedback.lightImpact();
                             context.read<SettingsCubit>().toggleNotifications(value);
@@ -209,7 +207,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           trailing: Switch.adaptive(
                             value: settingsState.notify1DayBefore,
                             activeTrackColor: AppColors.primary,
-                            activeThumbColor: Colors.white,
+                            activeThumbColor: AppColors.textOnPrimary,
                             onChanged: (value) {
                               HapticFeedback.lightImpact();
                               context.read<SettingsCubit>().toggleNotify1DayBefore(value);
@@ -240,15 +238,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
                   return _SettingsTile(
                     icon: Icons.emoji_events_rounded,
-                    iconColor: const Color(0xFFFFD700),
-                    iconBgColor: const Color(0xFFFFD700).withValues(alpha: 0.14),
+                    iconColor: AppColors.gold,
+                    iconBgColor: AppColors.gold.withValues(alpha: 0.14),
                     title: 'Achievements',
                     subtitle: 'Track your milestones and badges',
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(12),
@@ -258,12 +256,12 @@ class _SettingsPageState extends State<SettingsPage> {
                             style: AppTextStyles.xsMedium.copyWith(color: AppColors.primaryLight),
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        AppSpacing.gapW4,
                         Icon(
                           Icons.chevron_right_rounded,
                           color: context.isLight
                               ? AppColors.lightTextTertiary
-                              : const Color(0xFF8E8E93).withValues(alpha: 0.7),
+                              : AppColors.textTertiary.withValues(alpha: 0.7),
                           size: 20,
                         ),
                       ],
@@ -284,8 +282,8 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               _SettingsTile(
                 icon: Icons.storage_rounded,
-                iconColor: const Color(0xFF64B5F6),
-                iconBgColor: const Color(0xFF64B5F6).withValues(alpha: 0.14),
+                iconColor: AppColors.skyBlue,
+                iconBgColor: AppColors.skyBlue.withValues(alpha: 0.14),
                 title: 'Clear Cache',
                 subtitle: _isClearingCache
                     ? 'Clearing cache...'
@@ -296,7 +294,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator.adaptive(strokeWidth: 2.0))
                     : _cacheSizeBytes != null && _cacheSizeBytes! > 0
                     ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
@@ -305,7 +303,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       )
                     : Icon(
                         Icons.check_circle_outline_rounded,
-                        color: isLight ? AppColors.lightTextTertiary : const Color(0xFF8E8E93).withValues(alpha: 0.7),
+                        color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary.withValues(alpha: 0.7),
                         size: 20,
                       ),
                 onTap: _cacheSizeBytes != null && _cacheSizeBytes! > 0 && !_isClearingCache
@@ -398,13 +396,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: 'Movie & TV information powered by TMDB',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Text(
                       'View Attribution',
-                      style: TextStyle(color: AppColors.primaryLight, fontSize: 13, fontWeight: FontWeight.w500),
+                      style: AppTextStyles.xsMedium.copyWith(color: AppColors.primaryLight, fontSize: 13),
                     ),
-                    SizedBox(width: 4),
-                    Icon(Icons.chevron_right_rounded, color: AppColors.primaryLight, size: 20),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded, color: AppColors.primaryLight, size: 20),
                   ],
                 ),
                 onTap: () => _showTmdbAttributionSheet(context),
@@ -459,12 +457,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSectionHeader(String title, {Color? color}) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4.0, top: 20.0, bottom: 8.0),
+      padding: const EdgeInsets.only(left: AppSpacing.xxs, top: AppSpacing.lg, bottom: AppSpacing.xs),
       child: Text(
         title,
-        style: TextStyle(
-          color: color ?? (context.isLight ? AppColors.lightTextSecondary : const Color(0xFF8E8E93)),
-          fontSize: 12,
+        style: AppTextStyles.xsMedium.copyWith(
+          color: color ?? (context.isLight ? AppColors.lightTextSecondary : AppColors.textTertiary),
           fontWeight: FontWeight.w600,
           letterSpacing: 0.8,
         ),
@@ -476,9 +473,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final isLight = context.isLight;
     return Container(
       decoration: BoxDecoration(
-        color: isLight ? Colors.white : const Color(0xFF161622),
+        color: isLight ? AppColors.lightSurface : AppColors.surface,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.04), width: 1.0),
+        border: Border.all(color: isLight ? AppColors.borderLight : AppColors.borderDark, width: 1.0),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(mainAxisSize: MainAxisSize.min, children: children),
@@ -492,7 +489,7 @@ class _SettingsPageState extends State<SettingsPage> {
       thickness: 0.6,
       indent: 64,
       endIndent: 16,
-      color: isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.05),
+      color: isLight ? AppColors.borderLight : AppColors.borderDark,
     );
   }
 
@@ -500,13 +497,13 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       width: 38,
       height: 38,
-      decoration: BoxDecoration(color: const Color(0xFF032541), borderRadius: BorderRadius.circular(10.0)),
-      child: const Center(
+      decoration: BoxDecoration(color: AppColors.tmdbDarkBlue, borderRadius: BorderRadius.circular(10.0)),
+      child: Center(
         child: Text(
           'TM\nDB',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Color(0xFF01B4E4),
+          style: AppTextStyles.xsBold.copyWith(
+            color: AppColors.tmdbLightBlue,
             fontSize: 10,
             fontWeight: FontWeight.w900,
             height: 0.95,
@@ -562,7 +559,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
+      backgroundColor: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
       builder: (sheetContext) {
         return SafeArea(
@@ -577,7 +574,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: isLight ? Colors.grey[300] : Colors.white24,
+                      color: isLight ? AppColors.borderLight : AppColors.borderDark,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -653,16 +650,16 @@ class _SettingsPageState extends State<SettingsPage> {
   }) {
     final isLight = context.isLight;
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       decoration: BoxDecoration(
         color: isSelected
             ? AppColors.primary.withValues(alpha: 0.12)
-            : (isLight ? Colors.grey[100] : Colors.white.withValues(alpha: 0.04)),
+            : (isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected
               ? AppColors.primary
-              : (isLight ? AppColors.borderLight : Colors.white.withValues(alpha: 0.06)),
+              : (isLight ? AppColors.borderLight : AppColors.borderDark),
           width: isSelected ? 1.5 : 1.0,
         ),
       ),
@@ -674,18 +671,18 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         title: Text(
           title,
-          style: TextStyle(
+          style: AppTextStyles.smMedium.copyWith(
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             color: isSelected ? AppColors.primary : (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary),
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(fontSize: 12, color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary),
+          style: AppTextStyles.xs.copyWith(color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary),
         ),
         trailing: Icon(
           isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
-          color: isSelected ? AppColors.primary : (isLight ? Colors.grey[400] : Colors.white24),
+          color: isSelected ? AppColors.primary : (isLight ? AppColors.lightTextTertiary : AppColors.textTertiary),
           size: 22,
         ),
         onTap: onTap,
@@ -699,7 +696,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
+      backgroundColor: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
       builder: (sheetContext) {
         return SafeArea(
@@ -736,14 +733,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: isLight ? AppColors.borderLight : Colors.white24),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                          side: BorderSide(color: isLight ? AppColors.borderLight : AppColors.borderDark),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () => Navigator.pop(sheetContext),
                         child: Text(
                           'Cancel',
-                          style: TextStyle(
+                          style: AppTextStyles.smMedium.copyWith(
                             color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
@@ -755,7 +752,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.error,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () {
@@ -765,9 +762,9 @@ class _SettingsPageState extends State<SettingsPage> {
                           }
                           context.read<AuthCubit>().deleteAccount();
                         },
-                        child: const Text(
+                        child: Text(
                           'Delete',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: AppTextStyles.smBold.copyWith(color: AppColors.textOnPrimary),
                         ),
                       ),
                     ),
@@ -788,7 +785,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
+      backgroundColor: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
       builder: (context) {
         return SafeArea(
@@ -823,9 +820,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     icon: const Icon(Icons.open_in_new_rounded, size: 18),
                     label: const Text('Visit TMDb Website'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF01B4E4),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: AppColors.tmdbLightBlue,
+                      foregroundColor: AppColors.textOnPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () async {
@@ -889,7 +886,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isLight ? Colors.white : const Color(0xFF1C1D2C),
+      backgroundColor: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
       ),
@@ -942,7 +939,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   decoration: BoxDecoration(
                     color: isLight
                         ? AppColors.lightSurfaceElevated
-                        : const Color(0xFF242424),
+                        : AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isLight ? AppColors.borderLight : AppColors.borderDark,
@@ -1089,7 +1086,7 @@ class _SettingsTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
           child: Row(
             children: [
               customIcon ??
@@ -1106,7 +1103,7 @@ class _SettingsTile extends StatelessWidget {
                     ),
                     child: Center(child: Icon(icon, color: iconColor ?? AppColors.primaryLight, size: 20)),
                   ),
-              const SizedBox(width: 14.0),
+              AppSpacing.gapW12,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1114,7 +1111,7 @@ class _SettingsTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
+                      style: AppTextStyles.smMedium.copyWith(
                         fontSize: 15.0,
                         fontWeight: FontWeight.w600,
                         color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
@@ -1123,9 +1120,9 @@ class _SettingsTile extends StatelessWidget {
                     const SizedBox(height: 2.0),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: AppTextStyles.xs.copyWith(
                         fontSize: 12.5,
-                        color: isLight ? AppColors.lightTextSecondary : const Color(0xFF8E8E93),
+                        color: isLight ? AppColors.lightTextSecondary : AppColors.textTertiary,
                         height: 1.25,
                       ),
                     ),
@@ -1136,7 +1133,7 @@ class _SettingsTile extends StatelessWidget {
               trailing ??
                   Icon(
                     Icons.chevron_right_rounded,
-                    color: isLight ? AppColors.lightTextTertiary : const Color(0xFF8E8E93).withValues(alpha: 0.7),
+                    color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary.withValues(alpha: 0.7),
                     size: 20,
                   ),
             ],

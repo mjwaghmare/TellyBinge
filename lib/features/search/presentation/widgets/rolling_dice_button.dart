@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class RollingDiceButton extends StatefulWidget {
   final bool isRolling;
@@ -54,7 +55,7 @@ class _RollingDiceButtonState extends State<RollingDiceButton>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0, right: 4),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xl, right: AppSpacing.xxs),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {

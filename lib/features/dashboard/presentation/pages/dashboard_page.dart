@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
@@ -119,7 +120,7 @@ class DashboardPageState extends State<DashboardPage> {
                   return Center(
                     child: Text(
                       'Error: ${watchlistState.message}',
-                      style: TextStyle(color: Colors.red),
+                      style: AppTextStyles.sm.copyWith(color: AppColors.error),
                     ),
                   );
                 } else if (watchlistState is TvShowWatchlistSuccess) {
@@ -204,7 +205,7 @@ class DashboardPageState extends State<DashboardPage> {
               ListView(
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.only(
-                  top: 8.0,
+                  top: AppSpacing.xs,
                   bottom: AppSpacing.bottomTabPadding,
                 ),
                 children: [
@@ -247,7 +248,7 @@ class DashboardPageState extends State<DashboardPage> {
               ListView(
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.only(
-                  top: 8.0,
+                  top: AppSpacing.xs,
                   bottom: AppSpacing.bottomTabPadding,
                 ),
                 children: [
@@ -370,9 +371,9 @@ class DashboardPageState extends State<DashboardPage> {
                         _buildStickyHeader('WATCH NEXT'),
                         SliverPadding(
                           padding: EdgeInsets.only(
-                            bottom: 24.0,
-                            left: _isGridView ? 12.0 : 0,
-                            right: _isGridView ? 12.0 : 0,
+                            bottom: AppSpacing.xl,
+                            left: _isGridView ? AppSpacing.sm : 0,
+                            right: _isGridView ? AppSpacing.sm : 0,
                           ),
                           sliver: _isGridView
                               ? SliverGrid(
@@ -416,9 +417,9 @@ class DashboardPageState extends State<DashboardPage> {
                         _buildStickyHeader('HAVEN\'T STARTED'),
                         SliverPadding(
                           padding: EdgeInsets.only(
-                            bottom: 32.0,
-                            left: _isGridView ? 12.0 : 0,
-                            right: _isGridView ? 12.0 : 0,
+                            bottom: AppSpacing.xxl,
+                            left: _isGridView ? AppSpacing.sm : 0,
+                            right: _isGridView ? AppSpacing.sm : 0,
                           ),
                           sliver: _isGridView
                               ? SliverGrid(
@@ -462,8 +463,8 @@ class DashboardPageState extends State<DashboardPage> {
                         _buildStickyHeader('WATCHED HISTORY'),
                         SliverPadding(
                           padding: const EdgeInsets.only(
-                            bottom: 24.0,
-                            top: 4.0,
+                            bottom: AppSpacing.xl,
+                            top: AppSpacing.xxs,
                           ),
                           sliver: SliverList(
                             delegate: SliverChildBuilderDelegate((
@@ -550,9 +551,9 @@ class DashboardPageState extends State<DashboardPage> {
         groupSlivers.add(
           SliverPadding(
             padding: const EdgeInsets.only(
-              bottom: 24.0,
-              left: 12.0,
-              right: 12.0,
+              bottom: AppSpacing.xl,
+              left: AppSpacing.sm,
+              right: AppSpacing.sm,
             ),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -609,7 +610,7 @@ class DashboardPageState extends State<DashboardPage> {
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.only(
-                top: 8.0,
+                top: AppSpacing.xs,
                 bottom: AppSpacing.bottomTabPadding,
               ),
               sliver: SliverMainAxisGroup(slivers: slivers),
@@ -627,9 +628,9 @@ class DashboardPageState extends State<DashboardPage> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-          32.0,
-          32.0,
-          32.0,
+          AppSpacing.xxl,
+          AppSpacing.xxl,
+          AppSpacing.xxl,
           AppSpacing.bottomTabPadding,
         ),
         child: Column(
@@ -639,7 +640,7 @@ class DashboardPageState extends State<DashboardPage> {
               Icons.tv_outlined,
               size: 64,
               color: context.adaptiveColor(
-                light: Colors.grey[500]!,
+                light: AppColors.lightTextTertiary,
                 dark: AppColors.textTertiary,
               ),
             ),
@@ -647,15 +648,14 @@ class DashboardPageState extends State<DashboardPage> {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: AppTextStyles.sm.copyWith(
                 color:
                     Theme.of(context).textTheme.bodyMedium?.color ??
                     AppColors.textSecondary,
-                fontSize: 14.0,
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: 20),
+            AppSpacing.gapH20,
             SizedBox(
               width: 160,
               height: 40,
@@ -670,7 +670,7 @@ class DashboardPageState extends State<DashboardPage> {
                 ),
                 child: Text(
                   'ADD SHOWS',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.xsBold,
                 ),
               ),
             ),
@@ -696,7 +696,7 @@ class DashboardPageState extends State<DashboardPage> {
           width: 30,
           decoration: BoxDecoration(
             color: context.adaptiveColor(
-              light: Colors.grey[200]!,
+              light: AppColors.lightSurfaceElevated,
               dark: AppColors.surfaceLight,
             ),
             borderRadius: BorderRadius.circular(6.0),
@@ -717,27 +717,25 @@ class DashboardPageState extends State<DashboardPage> {
       delegate: _StickyHeaderDelegate(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: 14.0,
-                vertical: 6.0,
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xxs,
               ),
               decoration: BoxDecoration(
                 color: context.adaptiveColor(
-                  light: Colors.grey[200]!,
+                  light: AppColors.lightSurfaceElevated,
                   dark: AppColors.surfaceLight,
                 ),
                 borderRadius: BorderRadius.circular(20.0),
               ),
               child: Text(
                 title,
-                style: TextStyle(
+                style: AppTextStyles.xsBold.copyWith(
                   color: Theme.of(
                     context,
                   ).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
-                  fontSize: 10.0,
-                  fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
                 ),
               ),
@@ -750,25 +748,26 @@ class DashboardPageState extends State<DashboardPage> {
 
   Widget _buildCenteredHeaderRow(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xxs,
+          ),
           decoration: BoxDecoration(
             color: context.adaptiveColor(
-              light: Colors.grey[200]!,
+              light: AppColors.lightSurfaceElevated,
               dark: AppColors.surfaceLight,
             ),
             borderRadius: BorderRadius.circular(20.0),
           ),
           child: Text(
             title,
-            style: TextStyle(
+            style: AppTextStyles.xsBold.copyWith(
               color: Theme.of(
                 context,
               ).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
-              fontSize: 10.0,
-              fontWeight: FontWeight.bold,
               letterSpacing: 1.0,
             ),
           ),
@@ -813,7 +812,7 @@ class DashboardPageState extends State<DashboardPage> {
         );
       },
       child: Container(
-        margin: const EdgeInsets.all(4.0),
+        margin: AppSpacing.allXXS,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8.0),
@@ -829,7 +828,7 @@ class DashboardPageState extends State<DashboardPage> {
                     memCacheWidth: 360,
                     placeholder: (context, url) => Container(
                       color: context.adaptiveColor(
-                        light: Colors.grey[200]!,
+                        light: AppColors.lightSurfaceElevated,
                         dark: AppColors.surfaceLight,
                       ),
                       child: Center(
@@ -847,13 +846,13 @@ class DashboardPageState extends State<DashboardPage> {
                     ),
                     errorWidget: (context, url, error) => Container(
                       color: context.adaptiveColor(
-                        light: Colors.grey[200]!,
+                        light: AppColors.lightSurfaceElevated,
                         dark: AppColors.surfaceLight,
                       ),
                       child: Icon(
                         Icons.tv_outlined,
                         color: context.adaptiveColor(
-                          light: Colors.grey[500]!,
+                          light: AppColors.lightTextTertiary,
                           dark: AppColors.textTertiary,
                         ),
                       ),
@@ -861,13 +860,13 @@ class DashboardPageState extends State<DashboardPage> {
                   )
                 : Container(
                     color: context.adaptiveColor(
-                      light: Colors.grey[200]!,
+                      light: AppColors.lightSurfaceElevated,
                       dark: AppColors.surfaceLight,
                     ),
                     child: Icon(
                       Icons.tv_outlined,
                       color: context.adaptiveColor(
-                        light: Colors.grey[500]!,
+                        light: AppColors.lightTextTertiary,
                         dark: AppColors.textTertiary,
                       ),
                     ),
@@ -890,7 +889,7 @@ class DashboardPageState extends State<DashboardPage> {
                 right: 4,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
+                    horizontal: AppSpacing.xs,
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
@@ -899,10 +898,8 @@ class DashboardPageState extends State<DashboardPage> {
                   ),
                   child: Text(
                     '$watchedCount/$totalEpisodes',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                    style: AppTextStyles.xsBold.copyWith(
+                      color: AppColors.textOnPrimary,
                     ),
                   ),
                 ),
@@ -950,12 +947,11 @@ class DashboardPageState extends State<DashboardPage> {
                       children: [
                         Text(
                           '$daysLeft',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
+                          style: AppTextStyles.xl.copyWith(
+                            color: AppColors.textOnPrimary,
                             fontWeight: FontWeight.w900,
                             height: 1.0,
-                            shadows: [
+                            shadows: const [
                               Shadow(
                                 offset: Offset(0, 1),
                                 blurRadius: 4.0,
@@ -966,12 +962,10 @@ class DashboardPageState extends State<DashboardPage> {
                         ),
                         Text(
                           daysLeft == 1 ? 'DAY' : 'DAYS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                          style: AppTextStyles.smBold.copyWith(
+                            color: AppColors.textOnPrimary,
                             letterSpacing: 0.5,
-                            shadows: [
+                            shadows: const [
                               Shadow(
                                 offset: Offset(0, 1),
                                 blurRadius: 4.0,

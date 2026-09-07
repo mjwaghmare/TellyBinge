@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import 'profile_expiration_card.dart';
 
 /// A circular progress indicator widget displayed in the app header (before
@@ -190,14 +191,13 @@ class _ProfileExpirationIndicatorState
                 ),
                 // Centered Label Text with FittedBox scaling
                 Padding(
-                  padding: const EdgeInsets.all(3.0),
+                  padding: AppSpacing.allMicro,
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
                       label,
-                      style: TextStyle(
+                      style: AppTextStyles.smBold.copyWith(
                         fontSize: 13,
-                        fontWeight: FontWeight.bold,
                         color: indicatorColor,
                         letterSpacing: -0.3,
                         fontFeatures: const [FontFeature.tabularFigures()],

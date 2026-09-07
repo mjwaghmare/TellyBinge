@@ -27,7 +27,7 @@ class MWStudioFooter extends StatefulWidget {
 
 class _MWStudioFooterState extends State<MWStudioFooter> {
   static const double _iconGlyphSize = 20.0;
-  static const double _touchTargetSize = 40.0;
+  static const double _touchTargetSize = 48.0;
 
   late final ConfettiController _confettiController;
   int _tapCount = 0;
@@ -161,7 +161,7 @@ class _MWStudioFooterState extends State<MWStudioFooter> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text('Crafted with ', style: AppTextStyles.smMedium.copyWith(color: labelColor)),
-                      const Text('💜', style: TextStyle(fontSize: 13)),
+                      Text('💜', style: AppTextStyles.sm.copyWith(fontSize: 13)),
                       Text(
                         ' by ${AppConstants.appCreator}',
                         style: AppTextStyles.smMedium.copyWith(color: labelColor, fontWeight: FontWeight.w600),

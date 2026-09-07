@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
@@ -532,7 +533,7 @@ class _SearchPageState extends State<SearchPage>
                 prefixIcon: Icon(
                   Icons.search,
                   color: context.adaptiveColor(
-                    light: Colors.grey[500]!,
+                    light: AppColors.lightTextTertiary,
                     dark: AppColors.textTertiary,
                   ),
                 ),
@@ -549,7 +550,7 @@ class _SearchPageState extends State<SearchPage>
                               color:
                                   Theme.of(context).brightness ==
                                       Brightness.light
-                                  ? Colors.grey[500]
+                                  ? AppColors.lightTextTertiary
                                   : AppColors.textTertiary,
                             ),
                             onPressed: () {
@@ -573,9 +574,9 @@ class _SearchPageState extends State<SearchPage>
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(4.0),
-                  child: Text('🇮🇳', style: TextStyle(fontSize: 22)),
+                Padding(
+                  padding: AppSpacing.allXXS,
+                  child: Text('🇮🇳', style: AppTextStyles.lg),
                 ),
                 if (isTv ? _tvLanguage != null : _movieLanguage != null)
                   Positioned(
@@ -585,7 +586,7 @@ class _SearchPageState extends State<SearchPage>
                       width: 10,
                       height: 10,
                       decoration: BoxDecoration(
-                        color: Colors.greenAccent,
+                        color: AppColors.success,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: Theme.of(context).scaffoldBackgroundColor,
@@ -609,8 +610,8 @@ class _SearchPageState extends State<SearchPage>
       backgroundColor:
           Theme.of(context).bottomSheetTheme.backgroundColor ??
           (Theme.of(context).brightness == Brightness.light
-              ? Colors.white
-              : AppColors.surfaceDarkAlt),
+              ? AppColors.lightSurfaceElevated
+              : AppColors.surfaceElevated),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -628,10 +629,8 @@ class _SearchPageState extends State<SearchPage>
                   ),
                   child: Text(
                     'Language',
-                    style: TextStyle(
+                    style: AppTextStyles.mdBold.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -662,25 +661,26 @@ class _SearchPageState extends State<SearchPage>
                               color:
                                   Theme.of(context).brightness ==
                                       Brightness.light
-                                  ? Colors.black54
-                                  : Colors.white54,
+                                  ? AppColors.borderLight
+                                  : AppColors.borderDark,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                 AppSpacing.xl,
                               ),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.sm,
+                            ),
                           ),
                           child: Text(
                             'CANCEL',
-                            style: TextStyle(
+                            style: AppTextStyles.smBold.copyWith(
                               color:
                                   Theme.of(context).brightness ==
                                       Brightness.light
-                                  ? Colors.black87
-                                  : Colors.white70,
-                              fontWeight: FontWeight.bold,
+                                  ? AppColors.lightTextPrimary
+                                  : AppColors.textPrimary,
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -700,13 +700,14 @@ class _SearchPageState extends State<SearchPage>
                                 AppSpacing.xl,
                               ),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.sm,
+                            ),
                           ),
                           child: Text(
                             'APPLY',
-                            style: TextStyle(
+                            style: AppTextStyles.smBold.copyWith(
                               color: AppColors.textOnPrimary,
-                              fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -738,10 +739,8 @@ class _SearchPageState extends State<SearchPage>
       ),
       title: Text(
         title,
-        style: TextStyle(
+        style: AppTextStyles.sm.copyWith(
           color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontSize: 15,
-          fontWeight: FontWeight.w400,
         ),
       ),
       trailing: isSelected
@@ -750,8 +749,8 @@ class _SearchPageState extends State<SearchPage>
                 shape: BoxShape.circle,
                 color: AppColors.primary,
               ),
-              padding: const EdgeInsets.all(4),
-              child: const Icon(Icons.check, size: 16, color: Colors.white),
+              padding: AppSpacing.allXXS,
+              child: const Icon(Icons.check, size: 16, color: AppColors.textOnPrimary),
             )
           : Container(
               width: 24,
@@ -760,8 +759,8 @@ class _SearchPageState extends State<SearchPage>
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: Theme.of(context).brightness == Brightness.light
-                      ? Colors.black38
-                      : Colors.white38,
+                      ? AppColors.borderLight
+                      : AppColors.borderDark,
                   width: 1.5,
                 ),
               ),
@@ -852,7 +851,7 @@ class _SearchPageState extends State<SearchPage>
               Text(
                 'Error loading data: ${state.message}',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.error),
+                style: AppTextStyles.sm.copyWith(color: AppColors.error),
               ),
               const SizedBox(height: AppSpacing.md),
               ElevatedButton(
@@ -870,7 +869,7 @@ class _SearchPageState extends State<SearchPage>
                 ),
                 child: Text(
                   'RETRY',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: AppTextStyles.smBold,
                 ),
               ),
             ],
@@ -992,7 +991,7 @@ class _SearchPageState extends State<SearchPage>
               Text(
                 'Error loading data: ${state.message}',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.error),
+                style: AppTextStyles.sm.copyWith(color: AppColors.error),
               ),
               const SizedBox(height: AppSpacing.md),
               ElevatedButton(
@@ -1010,7 +1009,7 @@ class _SearchPageState extends State<SearchPage>
                 ),
                 child: Text(
                   'RETRY',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: AppTextStyles.smBold,
                 ),
               ),
             ],
@@ -1096,10 +1095,10 @@ class _SearchPageState extends State<SearchPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
+                Text(
                   'Failed to load explore content.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.error),
+                  style: AppTextStyles.sm.copyWith(color: AppColors.error),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ElevatedButton(
@@ -1115,9 +1114,9 @@ class _SearchPageState extends State<SearchPage>
                       vertical: AppSpacing.sm,
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'RETRY',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: AppTextStyles.smBold,
                   ),
                 ),
               ],
@@ -1142,11 +1141,10 @@ class _SearchPageState extends State<SearchPage>
                 child: Text(
                   'No results found.\nTry searching for something else.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: AppTextStyles.md.copyWith(
                     color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.grey[500]
+                        ? AppColors.lightTextTertiary
                         : AppColors.textTertiary,
-                    fontSize: 16.0,
                   ),
                 ),
               ),
@@ -1170,16 +1168,16 @@ class _SearchPageState extends State<SearchPage>
       slivers: [
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
-            12.0,
-            12.0,
-            12.0,
-            hasFooter ? 12.0 : AppSpacing.bottomTabPadding,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            hasFooter ? AppSpacing.sm : AppSpacing.bottomTabPadding,
           ),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 12,
+              crossAxisSpacing: AppSpacing.xs,
+              mainAxisSpacing: AppSpacing.sm,
               childAspectRatio: 0.52,
             ),
             delegate: SliverChildBuilderDelegate(
@@ -1216,15 +1214,13 @@ class _SearchPageState extends State<SearchPage>
                               fit: StackFit.expand,
                               children: [
                                 Container(
-                                  color:
-                                      Theme.of(context).brightness ==
+                                  color: Theme.of(context).brightness ==
                                           Brightness.light
-                                      ? Colors.grey[200]
+                                      ? AppColors.lightSurfaceElevated
                                       : AppColors.surfaceLight,
                                   width: double.infinity,
                                   height: double.infinity,
-                                  child:
-                                      posterPath != null &&
+                                  child: posterPath != null &&
                                           posterPath.isNotEmpty
                                       ? CachedNetworkImage(
                                           imageUrl: _getImageUrl(posterPath),
@@ -1237,12 +1233,10 @@ class _SearchPageState extends State<SearchPage>
                                                 child: Icon(
                                                   Icons.movie_creation_outlined,
                                                   size: 32,
-                                                  color:
-                                                      Theme.of(
-                                                            context,
-                                                          ).brightness ==
+                                                  color: Theme.of(context)
+                                                              .brightness ==
                                                           Brightness.light
-                                                      ? Colors.grey[500]
+                                                      ? AppColors.lightTextTertiary
                                                       : AppColors.textTertiary,
                                                 ),
                                               ),
@@ -1251,10 +1245,9 @@ class _SearchPageState extends State<SearchPage>
                                           child: Icon(
                                             Icons.movie_creation_outlined,
                                             size: 32,
-                                            color:
-                                                Theme.of(context).brightness ==
+                                            color: Theme.of(context).brightness ==
                                                     Brightness.light
-                                                ? Colors.grey[500]
+                                                ? AppColors.lightTextTertiary
                                                 : AppColors.textTertiary,
                                           ),
                                         ),
@@ -1267,19 +1260,17 @@ class _SearchPageState extends State<SearchPage>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        AppSpacing.gapH4,
                         // Title
                         Text(
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: AppTextStyles.xsBold.copyWith(
                             color: Theme.of(context).textTheme.bodyLarge?.color,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        AppSpacing.gapH4,
                         // Rating & Release Date row
                         Row(
                           children: [
@@ -1289,11 +1280,10 @@ class _SearchPageState extends State<SearchPage>
                                 color: AppColors.primary,
                                 size: 10.0,
                               ),
-                              const SizedBox(width: 3),
+                              AppSpacing.gapW4,
                               Text(
                                 voteAverage.toStringAsFixed(1),
-                                style: TextStyle(
-                                  fontSize: 10.0,
+                                style: AppTextStyles.xs.copyWith(
                                   color:
                                       Theme.of(
                                         context,
@@ -1302,11 +1292,10 @@ class _SearchPageState extends State<SearchPage>
                                 ),
                               ),
                               if (formattedDate.isNotEmpty) ...[
-                                const SizedBox(width: 4),
+                                AppSpacing.gapW4,
                                 Text(
                                   '•',
-                                  style: TextStyle(
-                                    fontSize: 10.0,
+                                  style: AppTextStyles.xs.copyWith(
                                     color:
                                         Theme.of(
                                           context,
@@ -1314,14 +1303,13 @@ class _SearchPageState extends State<SearchPage>
                                         AppColors.textSecondary,
                                   ),
                                 ),
-                                const SizedBox(width: 4),
+                                AppSpacing.gapW4,
                                 Expanded(
                                   child: Text(
                                     formattedDate,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 10.0,
+                                    style: AppTextStyles.xs.copyWith(
                                       color:
                                           Theme.of(
                                             context,
@@ -1337,8 +1325,7 @@ class _SearchPageState extends State<SearchPage>
                                   formattedDate,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 10.0,
+                                  style: AppTextStyles.xs.copyWith(
                                     color:
                                         Theme.of(
                                           context,
@@ -1374,7 +1361,7 @@ class _SearchPageState extends State<SearchPage>
           const SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.only(
-                top: 16.0,
+                top: AppSpacing.md,
                 bottom: AppSpacing.bottomTabPadding,
               ),
               child: Center(child: CircularProgressIndicator.adaptive()),
@@ -1384,7 +1371,7 @@ class _SearchPageState extends State<SearchPage>
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(
-                top: 16.0,
+                top: AppSpacing.md,
                 bottom: AppSpacing.bottomTabPadding,
               ),
               child: Column(
@@ -1392,29 +1379,25 @@ class _SearchPageState extends State<SearchPage>
                 children: [
                   Text(
                     'Failed to load more data.',
-                    style: TextStyle(
+                    style: AppTextStyles.sm.copyWith(
                       color: Theme.of(context).brightness == Brightness.light
-                          ? Colors.grey[500]
+                          ? AppColors.lightTextTertiary
                           : AppColors.textTertiary,
-                      fontSize: 14.0,
                     ),
                   ),
-                  const SizedBox(height: 8.0),
+                  AppSpacing.gapH8,
                   TextButton(
                     onPressed: onRetry,
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 8.0,
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.xs,
                       ),
                     ),
                     child: Text(
                       'Retry',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14.0,
-                      ),
+                      style: AppTextStyles.smBold,
                     ),
                   ),
                 ],
@@ -1425,7 +1408,7 @@ class _SearchPageState extends State<SearchPage>
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(
-                top: 16.0,
+                top: AppSpacing.md,
                 bottom: AppSpacing.bottomTabPadding,
               ),
               child: Center(
@@ -1433,12 +1416,10 @@ class _SearchPageState extends State<SearchPage>
                   defaultType == 'tv'
                       ? 'No more shows to load'
                       : 'No more movies to load',
-                  style: TextStyle(
+                  style: AppTextStyles.smMedium.copyWith(
                     color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.grey[500]
+                        ? AppColors.lightTextTertiary
                         : AppColors.textTertiary,
-                    fontSize: 14.0,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -1519,17 +1500,18 @@ class _TvStatusPill extends StatelessWidget {
           top: 6,
           right: 6,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.xxs,
+            ),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(4.0),
             ),
             child: Text(
               text,
-              style: TextStyle(
+              style: AppTextStyles.xsBold.copyWith(
                 color: Theme.of(context).textTheme.bodyLarge?.color,
-                fontSize: 9.0,
-                fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
               ),
             ),

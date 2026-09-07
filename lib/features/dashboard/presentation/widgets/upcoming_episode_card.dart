@@ -19,21 +19,23 @@ class UpcomingEpisodeCard extends StatelessWidget {
   Widget _buildPillBadge(BuildContext context, String label, bool isYellow) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: isYellow
             ? AppColors.primary
-            : (isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.08)),
+            : (isDark ? AppColors.borderDark : AppColors.borderLight),
         borderRadius: BorderRadius.circular(4.0),
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: AppTextStyles.xsBold.copyWith(
           color: isYellow
-              ? Colors.black
-              : (isDark ? Colors.white : Colors.black87),
+              ? AppColors.textOnPrimary
+              : (isDark ? AppColors.textPrimary : AppColors.lightTextPrimary),
           fontSize: 8.0,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -49,10 +51,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
         children: [
           Text(
             '$daysLeft',
-            style: TextStyle(
+            style: AppTextStyles.xl.copyWith(
               color: Theme.of(context).textTheme.bodyLarge?.color,
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
               height: 1.0,
             ),
           ),
@@ -61,7 +61,7 @@ class UpcomingEpisodeCard extends StatelessWidget {
             daysLeft == 1 ? 'DAY' : 'DAYS',
             style: AppTextStyles.xs.copyWith(
               color: context.adaptiveColor(
-                light: Colors.grey[500]!,
+                light: AppColors.lightTextTertiary,
                 dark: AppColors.textTertiary,
               ),
               fontSize: 10.0,
@@ -80,7 +80,7 @@ class UpcomingEpisodeCard extends StatelessWidget {
             networkName,
             style: AppTextStyles.xs.copyWith(
               color: context.adaptiveColor(
-                light: Colors.grey[500]!,
+                light: AppColors.lightTextTertiary,
                 dark: AppColors.textTertiary,
               ),
               fontSize: 11.0,
@@ -129,7 +129,7 @@ class UpcomingEpisodeCard extends StatelessWidget {
         );
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+        margin: AppSpacing.cardMargin,
         clipBehavior: Clip.antiAlias,
         height: cardHeight,
         decoration: BoxDecoration(
@@ -151,13 +151,13 @@ class UpcomingEpisodeCard extends StatelessWidget {
                         width: 130,
                         height: cardHeight,
                         color: context.adaptiveColor(
-                          light: Colors.grey[200]!,
+                          light: AppColors.lightSurfaceElevated,
                           dark: AppColors.surfaceLight,
                         ),
                         child: Icon(
                           Icons.tv,
                           color: context.adaptiveColor(
-                            light: Colors.grey[500]!,
+                            light: AppColors.lightTextTertiary,
                             dark: AppColors.textTertiary,
                           ),
                         ),
@@ -166,7 +166,7 @@ class UpcomingEpisodeCard extends StatelessWidget {
                         width: 130,
                         height: cardHeight,
                         color: context.adaptiveColor(
-                          light: Colors.grey[200]!,
+                          light: AppColors.lightSurfaceElevated,
                           dark: AppColors.surfaceLight,
                         ),
                       ),
@@ -175,25 +175,25 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       width: 130,
                       height: cardHeight,
                       color: context.adaptiveColor(
-                        light: Colors.grey[200]!,
+                        light: AppColors.lightSurfaceElevated,
                         dark: AppColors.surfaceLight,
                       ),
                       child: Icon(
                         Icons.tv,
                         color: context.adaptiveColor(
-                          light: Colors.grey[500]!,
+                          light: AppColors.lightTextTertiary,
                           dark: AppColors.textTertiary,
                         ),
                       ),
                     ),
             ),
-            const SizedBox(width: 12),
+            AppSpacing.gapW12,
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(
-                  top: 8.0,
-                  bottom: 8.0,
-                  right: 16.0,
+                  top: AppSpacing.xs,
+                  bottom: AppSpacing.xs,
+                  right: AppSpacing.md,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,8 +203,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       padding: isDummy
                           ? EdgeInsets.zero
                           : const EdgeInsets.symmetric(
-                              horizontal: 10.0,
-                              vertical: 4.0,
+                              horizontal: AppSpacing.xs,
+                              vertical: AppSpacing.xxs,
                             ),
                       decoration: BoxDecoration(
                         border: isDummy
@@ -213,8 +213,8 @@ class UpcomingEpisodeCard extends StatelessWidget {
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.dark
-                                    ? Colors.white24
-                                    : Colors.black12,
+                                    ? AppColors.borderDark
+                                    : AppColors.borderLight,
                                 width: 1.0,
                               ),
                         borderRadius: BorderRadius.circular(16.0),
@@ -227,39 +227,36 @@ class UpcomingEpisodeCard extends StatelessWidget {
                               showTitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: AppTextStyles.xsBold.copyWith(
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black87,
+                                    ? AppColors.textPrimary
+                                    : AppColors.lightTextPrimary,
                                 fontSize: 9.0,
-                                fontWeight: FontWeight.bold,
                                 letterSpacing: 1.0,
                               ),
                             ),
                           ),
-                          if (!isDummy) const SizedBox(width: 4),
+                          if (!isDummy) AppSpacing.gapW4,
                           if (!isDummy)
                             Icon(
                               Icons.chevron_right,
                               color:
                                   Theme.of(context).brightness ==
                                       Brightness.dark
-                                  ? Colors.white70
-                                  : Colors.black54,
+                                  ? AppColors.textSecondary
+                                  : AppColors.lightTextSecondary,
                               size: 14,
                             ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    AppSpacing.gapH4,
                     Text(
                       show.upcomingEpisodeCode,
-                      style: TextStyle(
+                      style: AppTextStyles.smBold.copyWith(
                         color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 14.0,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -267,21 +264,21 @@ class UpcomingEpisodeCard extends StatelessWidget {
                       show.upcomingEpisodeTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: AppTextStyles.xs.copyWith(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? AppColors.textSecondary
-                            : Colors.black54,
+                            : AppColors.lightTextSecondary,
                         fontSize: 11.0,
                       ),
                     ),
                     if (hasChips) ...[
-                      const SizedBox(height: 4),
+                      AppSpacing.gapH4,
                       Row(
                         children: [
                           if (show.upcomingIsPremiere)
                             _buildPillBadge(context, 'PREMIERE', false),
                           if (show.upcomingIsPremiere && show.upcomingIsNew)
-                            const SizedBox(width: 6),
+                            AppSpacing.gapW8,
                           if (show.upcomingIsNew)
                             _buildPillBadge(context, 'LATEST', false),
                         ],
@@ -292,7 +289,7 @@ class UpcomingEpisodeCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(right: 16.0),
+              padding: const EdgeInsets.only(right: AppSpacing.md),
               child: _buildRightSide(context),
             ),
           ],

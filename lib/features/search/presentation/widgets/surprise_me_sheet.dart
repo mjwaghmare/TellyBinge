@@ -10,6 +10,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
@@ -366,8 +367,8 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       backgroundColor:
           Theme.of(context).bottomSheetTheme.backgroundColor ??
           (Theme.of(context).brightness == Brightness.light
-              ? Colors.white
-              : AppColors.surfaceDarkAlt),
+              ? AppColors.lightSurfaceElevated
+              : AppColors.surfaceElevated),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -381,13 +382,13 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 children: [
                   AppSpacing.gapH16,
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
                     child: Text(
                       'Language',
-                      style: TextStyle(
+                      style: AppTextStyles.mdBold.copyWith(
                         color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -404,7 +405,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                   AppSpacing.gapH16,
                   Divider(color: Theme.of(context).dividerColor, height: 1),
                   Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: AppSpacing.allSM,
                     child: Row(
                       children: [
                         Expanded(
@@ -415,34 +416,33 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                             },
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Colors.black54
-                                    : Colors.white54,
+                                color: context.adaptiveColor(
+                                  light: AppColors.borderLight,
+                                  dark: AppColors.borderDark,
+                                ),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
                                   AppSpacing.xl,
                                 ),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.sm,
+                              ),
                             ),
                             child: Text(
                               'CANCEL',
-                              style: TextStyle(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Colors.black87
-                                    : Colors.white70,
-                                fontWeight: FontWeight.bold,
+                              style: AppTextStyles.smBold.copyWith(
+                                color: context.adaptiveColor(
+                                  light: AppColors.lightTextPrimary,
+                                  dark: AppColors.textPrimary,
+                                ),
                                 letterSpacing: 1.2,
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        AppSpacing.gapW12,
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
@@ -456,13 +456,14 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                                   AppSpacing.xl,
                                 ),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.sm,
+                              ),
                             ),
                             child: Text(
                               'APPLY',
-                              style: TextStyle(
+                              style: AppTextStyles.smBold.copyWith(
                                 color: AppColors.textOnPrimary,
-                                fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
                               ),
                             ),
@@ -489,13 +490,14 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     final isSelected = value == groupValue;
     return ListTile(
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 0,
+      ),
       title: Text(
         title,
-        style: TextStyle(
+        style: AppTextStyles.sm.copyWith(
           color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontSize: 15,
-          fontWeight: FontWeight.w400,
         ),
       ),
       trailing: isSelected
@@ -504,8 +506,8 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 shape: BoxShape.circle,
                 color: AppColors.primary,
               ),
-              padding: const EdgeInsets.all(4),
-              child: const Icon(Icons.check, size: 16, color: Colors.white),
+              padding: AppSpacing.allXXS,
+              child: const Icon(Icons.check, size: 16, color: AppColors.textOnPrimary),
             )
           : Container(
               width: 24,
@@ -513,9 +515,10 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Theme.of(context).brightness == Brightness.light
-                      ? Colors.black38
-                      : Colors.white38,
+                  color: context.adaptiveColor(
+                    light: AppColors.lightTextTertiary,
+                    dark: AppColors.textTertiary,
+                  ),
                   width: 1.5,
                 ),
               ),
@@ -530,15 +533,21 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       heightFactor: 0.92,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.light
-              ? Colors.grey.shade100
-              : AppColors.surface,
+          color: context.adaptiveColor(
+            light: AppColors.lightSurface,
+            dark: AppColors.surface,
+          ),
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.xs,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -546,10 +555,8 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                     children: [
                       Text(
                         'Surprise Me 🎲',
-                        style: TextStyle(
+                        style: AppTextStyles.xl.copyWith(
                           color: Theme.of(context).textTheme.bodyLarge?.color,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       AppSpacing.gapW8,
@@ -559,10 +566,10 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                           clipBehavior: Clip.none,
                           children: [
                             Padding(
-                              padding: EdgeInsets.all(4.0),
+                              padding: AppSpacing.allXXS,
                               child: Text(
                                 '🇮🇳',
-                                style: TextStyle(fontSize: 22),
+                                style: AppTextStyles.lg,
                               ),
                             ),
                             if (_language != null)
@@ -573,14 +580,13 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                                   width: 10,
                                   height: 10,
                                   decoration: BoxDecoration(
-                                    color: Colors.greenAccent,
+                                    color: AppColors.primary,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color:
-                                          Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Colors.grey.shade100
-                                          : AppColors.surface,
+                                      color: context.adaptiveColor(
+                                        light: AppColors.lightSurface,
+                                        dark: AppColors.surface,
+                                      ),
                                       width: 2,
                                     ),
                                   ),
@@ -594,9 +600,10 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                   IconButton(
                     icon: Icon(
                       Icons.close,
-                      color: Theme.of(context).brightness == Brightness.light
-                          ? Colors.black87
-                          : Colors.white70,
+                      color: context.adaptiveColor(
+                        light: AppColors.lightTextPrimary,
+                        dark: AppColors.textPrimary,
+                      ),
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -608,10 +615,10 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               controller: _tabController,
               indicatorColor: AppColors.primary,
               labelColor: AppColors.primary,
-              unselectedLabelColor:
-                  Theme.of(context).brightness == Brightness.light
-                  ? Colors.black54
-                  : Colors.white54,
+              unselectedLabelColor: context.adaptiveColor(
+                light: AppColors.lightTextSecondary,
+                dark: AppColors.textSecondary,
+              ),
               tabs: const [
                 Tab(text: 'SHOWS'),
                 Tab(text: 'MOVIES'),
@@ -688,16 +695,17 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           children: [
             Text(
               error,
-              style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.light
-                    ? Colors.black54
-                    : Colors.white54,
+              style: AppTextStyles.sm.copyWith(
+                color: context.adaptiveColor(
+                  light: AppColors.lightTextSecondary,
+                  dark: AppColors.textSecondary,
+                ),
               ),
             ),
             AppSpacing.gapH16,
             ElevatedButton(
               onPressed: _shuffleCurrentTab,
-              child: Text('Try Again'),
+              child: const Text('Try Again'),
             ),
           ],
         ),
@@ -712,10 +720,11 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       return Center(
         child: Text(
           'Nothing found.',
-          style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.light
-                ? Colors.black54
-                : Colors.white54,
+          style: AppTextStyles.sm.copyWith(
+            color: context.adaptiveColor(
+              light: AppColors.lightTextSecondary,
+              dark: AppColors.textSecondary,
+            ),
           ),
         ),
       );
@@ -731,12 +740,17 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
   ) {
     return GridView.builder(
       controller: scrollController,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        100,
+      ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         childAspectRatio: 0.55,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: AppSpacing.sm,
+        mainAxisSpacing: AppSpacing.sm,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -792,7 +806,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.grey.shade200
+                        ? AppColors.lightSurfaceElevated
                         : AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -806,23 +820,23 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                           placeholder: (context, url) => Container(
                             color:
                                 Theme.of(context).brightness == Brightness.light
-                                ? Colors.grey.shade200
+                                ? AppColors.lightSurfaceElevated
                                 : AppColors.surfaceElevated,
                           ),
                           errorWidget: (context, url, error) => Icon(
                             Icons.broken_image,
                             color:
                                 Theme.of(context).brightness == Brightness.light
-                                ? Colors.black26
-                                : Colors.white24,
+                                ? AppColors.lightTextTertiary
+                                : AppColors.textTertiary,
                           ),
                         )
                       : Icon(
                           Icons.movie,
                           color:
                               Theme.of(context).brightness == Brightness.light
-                              ? Colors.black26
-                              : Colors.white24,
+                              ? AppColors.lightTextTertiary
+                              : AppColors.textTertiary,
                           size: 40,
                         ),
                 ),
@@ -832,42 +846,36 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                 title ?? '',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                style: AppTextStyles.xsBold.copyWith(
                   height: 1.2,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              const SizedBox(height: 4),
+              AppSpacing.gapH4,
               Row(
                 children: [
-                  const Icon(Icons.star, color: Colors.amber, size: 14),
-                  const SizedBox(width: 4),
+                  const Icon(Icons.star, color: AppColors.gold, size: 14),
+                  AppSpacing.gapW4,
                   Text(
                     voteAverage.toStringAsFixed(1),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                    style: AppTextStyles.xsBold.copyWith(
                       color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
                   if (year.isNotEmpty) ...[
-                    const SizedBox(width: 6),
+                    AppSpacing.gapW4,
                     Text(
                       '•',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.xs.copyWith(
                         color: Theme.of(
                           context,
                         ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    AppSpacing.gapW4,
                     Text(
                       year,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.xs.copyWith(
                         color: Theme.of(
                           context,
                         ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
@@ -876,7 +884,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                   ],
                 ],
               ),
-              const SizedBox(height: 4),
+              AppSpacing.gapH4,
             ],
           ),
         );
@@ -915,12 +923,17 @@ class _PremiumPulseGridState extends State<_PremiumPulseGrid>
   Widget build(BuildContext context) {
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        100,
+      ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         childAspectRatio: 0.68,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: AppSpacing.sm,
+        mainAxisSpacing: AppSpacing.sm,
       ),
       itemCount: 15,
       itemBuilder: (context, index) {
@@ -949,7 +962,7 @@ class _PremiumPulseGridState extends State<_PremiumPulseGrid>
                 child: Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.grey.shade300
+                        ? AppColors.lightSurfaceElevated
                         : AppColors.surfaceElevated, // Sleek metallic grey
                     borderRadius: BorderRadius.circular(8),
                   ),

@@ -35,8 +35,28 @@ class AppColors {
   // 4. Accent & Divider Tokens
   static const Color brandGreen = Color(0xFF6B8E23); // Green badge accent
   static const Color accentBlue = Color(0xFF1E88E5); // Blue action accent
+  static const Color skyBlue = Color(0xFF64B5F6); // Sky blue accent
   static const Color borderLight = Color(0xFFE5E7EB); // Light divider / border
   static const Color borderDark = Color(0xFF2C2C2E); // Dark divider / border
+  static const Color errorSoft = Color(0xFFFF6B6B); // Soft error/red
+
+  // 4b. Achievement Tier Tokens
+  static const Color bronze = Color(0xFFCD7F32);
+  static const Color bronzeDark = Color(0xFFA0522D);
+  static const Color silver = Color(0xFFC0C0C0);
+  static const Color silverDark = Color(0xFF808080);
+  static const Color gold = Color(0xFFFFD700);
+  static const Color goldDark = Color(0xFFDAA520);
+  static const Color diamond = Color(0xFFB9F2FF);
+  static const Color diamondDark = Color(0xFF4FC3F7);
+
+  // 4c. Partner & Service Tokens
+  static const Color tmdbDarkBlue = Color(0xFF032541);
+  static const Color tmdbLightBlue = Color(0xFF01B4E4);
+
+  // 4d. Stacked Surface Tokens
+  static const Color surfaceStackedDark = Color(0xFF2E2E2E);
+  static const Color surfaceStackedDarkElevated = Color(0xFF383838);
 
   // 5. Text Tokens (Dark Mode)
   static const Color textPrimary = Color(0xFFFFFFFF);

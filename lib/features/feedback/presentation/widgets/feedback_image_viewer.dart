@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/feedback_item.dart';
 import 'feedback_media_image.dart';
 
@@ -122,8 +123,8 @@ class _FeedbackImageViewerState extends State<FeedbackImageViewer> {
                   if (totalCount > 1)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12.0,
-                        vertical: 6.0,
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xxs,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
@@ -134,9 +135,8 @@ class _FeedbackImageViewerState extends State<FeedbackImageViewer> {
                       ),
                       child: Text(
                         '${_currentIndex + 1} / $totalCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13.0,
+                        style: AppTextStyles.sm.copyWith(
+                          color: AppColors.textOnPrimary,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
@@ -148,19 +148,28 @@ class _FeedbackImageViewerState extends State<FeedbackImageViewer> {
                   // Close button
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
-                        ),
+                    behavior: HitTestBehavior.opaque,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: 48.0,
+                        minHeight: 48.0,
                       ),
-                      child: const Icon(
-                        Icons.close_rounded,
-                        color: Colors.white,
-                        size: 22,
+                      child: Center(
+                        child: Container(
+                          padding: AppSpacing.allXS,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.textOnPrimary.withValues(alpha: 0.15),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: AppColors.textOnPrimary,
+                            size: 22,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -185,8 +194,8 @@ class _FeedbackImageViewerState extends State<FeedbackImageViewer> {
                       height: 6.0,
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.3),
+                            ? AppColors.textOnPrimary
+                            : AppColors.textOnPrimary.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(3.0),
                       ),
                     );
@@ -209,9 +218,9 @@ class _FeedbackImageViewerState extends State<FeedbackImageViewer> {
           size: 48,
         ),
         const SizedBox(height: AppSpacing.sm),
-        const Text(
+        Text(
           'Failed to load image',
-          style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
+          style: AppTextStyles.xs.copyWith(color: AppColors.textTertiary),
         ),
       ],
     );

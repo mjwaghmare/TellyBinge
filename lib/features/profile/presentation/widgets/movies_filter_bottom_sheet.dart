@@ -49,7 +49,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
         color:
             Theme.of(context).bottomSheetTheme.backgroundColor ??
             context.adaptiveColor(
-              light: Colors.white,
+              light: AppColors.lightSurface,
               dark: AppColors.surfaceDarkAlt,
             ), // Dark grey background matching the screenshot
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -76,7 +76,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                 children: _sortOptions.map((option) {
                   final isSelected = _selectedSort == option;
                   return Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
@@ -85,14 +85,14 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 10.0,
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.xs,
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
                               : context.adaptiveColor(
-                                  light: Colors.grey.shade200,
+                                  light: AppColors.lightSurfaceElevated,
                                   dark: AppColors.surfaceElevated,
                                 ),
                           borderRadius: BorderRadius.circular(AppSpacing.xl),
@@ -163,7 +163,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                     ),
                     title: Text(
                       option,
-                      style: TextStyle(
+                      style: AppTextStyles.sm.copyWith(
                         color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
@@ -175,11 +175,11 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                               shape: BoxShape.circle,
                               color: AppColors.primary,
                             ),
-                            padding: const EdgeInsets.all(4),
+                            padding: AppSpacing.allXXS,
                             child: Icon(
                               Icons.check,
                               size: 16,
-                              color: Colors.black,
+                              color: AppColors.textOnPrimary,
                             ),
                           )
                         : Container(
@@ -188,11 +188,10 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Colors.black38
-                                    : Colors.white38,
+                                color: context.adaptiveColor(
+                                  light: AppColors.lightTextTertiary,
+                                  dark: AppColors.textTertiary,
+                                ),
                                 width: 1.5,
                               ),
                             ),
@@ -230,23 +229,22 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
                             color: context.adaptiveColor(
-                              light: Colors.grey.shade400,
-                              dark: Colors.white54,
+                              light: AppColors.borderLight,
+                              dark: AppColors.borderDark,
                             ),
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppSpacing.xl),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                         ),
                         child: Text(
                           'RESET',
-                          style: TextStyle(
+                          style: AppTextStyles.smBold.copyWith(
                             color: context.adaptiveColor(
-                              light: Colors.black87,
-                              dark: Colors.white70,
+                              light: AppColors.lightTextPrimary,
+                              dark: AppColors.textSecondary,
                             ),
-                            fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),
                         ),
@@ -266,13 +264,12 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppSpacing.xl),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                         ),
                         child: Text(
                           'APPLY',
-                          style: TextStyle(
+                          style: AppTextStyles.smBold.copyWith(
                             color: AppColors.textOnPrimary,
-                            fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),
                         ),

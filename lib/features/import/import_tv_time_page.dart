@@ -35,7 +35,7 @@ class ImportTvTimePage extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(title: const Text('Import TV Time')),
             body: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: AppSpacing.allLG,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -51,11 +51,11 @@ class ImportTvTimePage extends StatelessWidget {
                     style: AppTextStyles.lg,
                   ),
 
-                  const SizedBox(height: 30),
+                  AppSpacing.gapH32,
 
                   Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: AppSpacing.allMD,
                       child: Column(
                         children: [
                           Text(state.fileName, textAlign: TextAlign.center),

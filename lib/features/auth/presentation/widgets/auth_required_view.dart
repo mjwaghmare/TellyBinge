@@ -386,7 +386,7 @@ class AuthGoogleSignInButton extends StatelessWidget {
                       errorBuilder: (context, error, stackTrace) => const Icon(
                         Icons.login,
                         size: AppSpacing.xl,
-                        color: Colors.white,
+                        color: AppColors.textOnPrimary,
                       ),
                     ),
                     AppSpacing.gapW12,
