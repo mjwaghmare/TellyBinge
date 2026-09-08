@@ -1,18 +1,16 @@
 import 'dart:math';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 
-/// Full-bleed grid of TMDb posters, used as the backdrop on the screens an
+/// Full-bleed grid of poster artwork, used as the backdrop on the screens an
 /// unauthenticated user sees (login, onboarding).
 ///
-/// [posterPaths] are TMDb poster paths (`/abc123.jpg`). They are shuffled once
-/// per mount, so the wall looks different each time the screen is reached
-/// without reshuffling on every rebuild.
+/// [posterPaths] are asset paths (`assets/images/posters/xyz.webp`). They are
+/// shuffled once per mount, so the wall looks different each time the screen
+/// is reached without reshuffling on every rebuild.
 class PosterWall extends StatefulWidget {
   const PosterWall({super.key, required this.posterPaths});
 
@@ -104,13 +102,12 @@ class _PosterTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: CachedNetworkImage(
-        imageUrl: AppConstants.tmdbImageUrl(posterPath, size: 'w342'),
+      child: Image.asset(
+        posterPath,
         fit: BoxFit.cover,
-        memCacheWidth: 342,
-        fadeInDuration: const Duration(milliseconds: 350),
-        placeholder: (context, url) => const _PosterPlaceholder(),
-        errorWidget: (context, url, error) => const _PosterPlaceholder(),
+        cacheWidth: 342,
+        errorBuilder: (context, error, stackTrace) =>
+            const _PosterPlaceholder(),
       ),
     );
   }
