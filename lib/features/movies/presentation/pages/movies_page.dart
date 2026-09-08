@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -735,10 +736,12 @@ class MoviesPageState extends State<MoviesPage> {
                   setState(() => isMarkingAsWatched = true);
                   await Future.delayed(const Duration(milliseconds: 500));
                   if (context.mounted) {
-                    context.read<MovieWatchlistCubit>().toggleWatched(
-                      uid: uid,
-                      movieId: movieId,
-                      isWatched: true,
+                    unawaited(
+                      context.read<MovieWatchlistCubit>().toggleWatched(
+                        uid: uid,
+                        movieId: movieId,
+                        isWatched: true,
+                      ),
                     );
                   }
                 }
@@ -746,9 +749,11 @@ class MoviesPageState extends State<MoviesPage> {
                 setState(() => isRemoving = true);
                 await Future.delayed(const Duration(milliseconds: 500));
                 if (context.mounted) {
-                  context.read<MovieWatchlistCubit>().removeMovie(
-                    uid: uid,
-                    movieId: movieId,
+                  unawaited(
+                    context.read<MovieWatchlistCubit>().removeMovie(
+                      uid: uid,
+                      movieId: movieId,
+                    ),
                   );
                 }
               }
@@ -1035,13 +1040,15 @@ class MoviesPageState extends State<MoviesPage> {
                                   const Duration(milliseconds: 600),
                                 );
                                 if (context.mounted) {
-                                  context
-                                      .read<MovieWatchlistCubit>()
-                                      .toggleWatched(
-                                        uid: uid,
-                                        movieId: movieId,
-                                        isWatched: !isWatched,
-                                      );
+                                  unawaited(
+                                    context
+                                        .read<MovieWatchlistCubit>()
+                                        .toggleWatched(
+                                          uid: uid,
+                                          movieId: movieId,
+                                          isWatched: !isWatched,
+                                        ),
+                                  );
                                 }
                               }
                             },

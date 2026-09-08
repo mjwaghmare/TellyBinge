@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
 import 'movie_details_state.dart';
@@ -103,70 +104,76 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
       }
 
       // 1. Fetch Cast
-      tmdbClient
-          .getMovieCredits(movieId)
-          .then((credits) {
-            final s = getSuccessState();
-            if (s != null) {
-              emit(s.copyWith(movieCredits: credits, isCastLoading: false));
-            }
-          })
-          .catchError((_) {
-            final s = getSuccessState();
-            if (s != null) {
-              emit(
-                s.copyWith(
-                  movieCredits: const {'cast': [], 'crew': []},
-                  isCastLoading: false,
-                ),
-              );
-            }
-          });
+      unawaited(
+        tmdbClient
+            .getMovieCredits(movieId)
+            .then((credits) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(s.copyWith(movieCredits: credits, isCastLoading: false));
+              }
+            })
+            .catchError((_) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(
+                  s.copyWith(
+                    movieCredits: const {'cast': [], 'crew': []},
+                    isCastLoading: false,
+                  ),
+                );
+              }
+            }),
+      );
 
       // 2. Fetch Collection
-      fetchCollection()
-          .then((collectionResult) {
-            final s = getSuccessState();
-            if (s != null) {
-              final collectionParts =
-                  collectionResult['parts'] as List<dynamic>? ?? [];
-              final collectionSectionTitle =
-                  collectionResult['title'] as String? ?? 'Franchise';
-              emit(
-                s.copyWith(
-                  collectionParts: collectionParts,
-                  collectionSectionTitle: collectionSectionTitle,
-                  isCollectionLoading: false,
-                ),
-              );
-            }
-          })
-          .catchError((_) {
-            final s = getSuccessState();
-            if (s != null) {
-              emit(s.copyWith(isCollectionLoading: false));
-            }
-          });
+      unawaited(
+        fetchCollection()
+            .then((collectionResult) {
+              final s = getSuccessState();
+              if (s != null) {
+                final collectionParts =
+                    collectionResult['parts'] as List<dynamic>? ?? [];
+                final collectionSectionTitle =
+                    collectionResult['title'] as String? ?? 'Franchise';
+                emit(
+                  s.copyWith(
+                    collectionParts: collectionParts,
+                    collectionSectionTitle: collectionSectionTitle,
+                    isCollectionLoading: false,
+                  ),
+                );
+              }
+            })
+            .catchError((_) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(s.copyWith(isCollectionLoading: false));
+              }
+            }),
+      );
 
       // 3. Fetch Similar Movies
-      fetchSimilar()
-          .then((similarMovies) {
-            final s = getSuccessState();
-            if (s != null) {
-              emit(
-                s.copyWith(
-                  similarMovies: similarMovies,
-                  isSimilarLoading: false,
-                ),
-              );
-            }
-          })
-          .catchError((_) {
-            final s = getSuccessState();
-            if (s != null) {
-              emit(s.copyWith(isSimilarLoading: false));
-            }
-          });
+      unawaited(
+        fetchSimilar()
+            .then((similarMovies) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(
+                  s.copyWith(
+                    similarMovies: similarMovies,
+                    isSimilarLoading: false,
+                  ),
+                );
+              }
+            })
+            .catchError((_) {
+              final s = getSuccessState();
+              if (s != null) {
+                emit(s.copyWith(isSimilarLoading: false));
+              }
+            }),
+      );
     } catch (e) {
       if (!isClosed && _loadGeneration == capturedGeneration) {
         emit(MovieDetailsError(e.toString()));

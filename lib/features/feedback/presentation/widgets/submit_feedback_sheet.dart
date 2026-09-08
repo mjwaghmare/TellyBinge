@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -90,7 +91,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
       AppSnackbar.showInfo(context, 'You can attach up to 5 images.');
       return;
     }
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final remainingSlots = 5 - _attachedMedia.length;
     try {
       final images = await _picker.pickMultiImage(
@@ -154,7 +155,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
       return;
     }
 
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _isSubmitting = true;
     });

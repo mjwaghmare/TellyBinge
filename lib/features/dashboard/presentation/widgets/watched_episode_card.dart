@@ -71,11 +71,13 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
 
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
-      context.read<TvShowWatchlistCubit>().toggleEpisodeWatched(
-        uid: authState.user.uid,
-        showId: widget.item.showId,
-        episodeKey: widget.item.episodeKey,
-        isWatched: false,
+      unawaited(
+        context.read<TvShowWatchlistCubit>().toggleEpisodeWatched(
+          uid: authState.user.uid,
+          showId: widget.item.showId,
+          episodeKey: widget.item.episodeKey,
+          isWatched: false,
+        ),
       );
     }
   }

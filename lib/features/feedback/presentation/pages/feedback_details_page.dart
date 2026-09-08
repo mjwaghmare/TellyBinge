@@ -148,7 +148,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     }
 
     if (_item.userId == currentUserId && _item.isUpvoted) {
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       AppSnackbar.showInfo(
         context,
         'You created this feedback — your upvote is permanent.',
@@ -157,7 +157,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     }
 
     final previousItem = _item;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _isVotePending = true;
       _item = _item.upvoted(currentUserId);
@@ -183,7 +183,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
   Future<void> _pickCommentImage() async {
     if (_isCommentSubmitting) return;
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     try {
       final image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
@@ -240,7 +240,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     final userId = user.uid;
     _currentUserId = userId;
 
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     FocusScope.of(context).unfocus();
     final commentId = '${userId}_${DateTime.now().microsecondsSinceEpoch}';
     final timeStr = DateTime.now().toIso8601String();
@@ -446,7 +446,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         if (targetIndex == -1) return;
 
         final previousComments = List<Map<String, dynamic>>.from(_comments);
-        HapticFeedback.lightImpact();
+        unawaited(HapticFeedback.lightImpact());
         setState(() {
           _isCommentMutationPending = true;
           _comments[targetIndex] = {
@@ -569,7 +569,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       if (targetIndex == -1) return;
 
       final previousComments = List<Map<String, dynamic>>.from(_comments);
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       setState(() {
         _isCommentMutationPending = true;
         _comments.removeAt(targetIndex);
@@ -680,7 +680,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     ? null
                     : () async {
                         setDialogState(() => isDeleting = true);
-                        HapticFeedback.mediumImpact();
+                        unawaited(HapticFeedback.mediumImpact());
                         try {
                           await _repository.deleteFeedback(_item.id);
                           if (dialogCtx.mounted) {
@@ -869,7 +869,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                         : () async {
                             Navigator.pop(sheetCtx);
                             if (isCurrent) return;
-                            HapticFeedback.mediumImpact();
+                            unawaited(HapticFeedback.mediumImpact());
                             await _updateStatus(status);
                           },
                     borderRadius: BorderRadius.circular(14.0),

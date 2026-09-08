@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -518,7 +519,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _clearCache(BuildContext context) async {
     if (_isClearingCache) return;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _isClearingCache = true;
     });
@@ -850,7 +851,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _launchSupportEmail(BuildContext context) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: AppConstants.supportEmail,
@@ -973,7 +974,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      HapticFeedback.lightImpact();
+                      unawaited(HapticFeedback.lightImpact());
                       await Clipboard.setData(
                         const ClipboardData(text: AppConstants.supportEmail),
                       );
@@ -1024,7 +1025,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _launchAppRating(BuildContext context) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     // Set with Apple App ID from App Store Connect once live (e.g. '6740000000')
     const String appleAppId = AppConstants.appleAppId;

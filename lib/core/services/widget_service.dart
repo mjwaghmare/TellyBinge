@@ -445,7 +445,7 @@ Future<void> interactiveWidgetCallback(Uri? uri) async {
   } catch (e) {
     debugPrint('Error in background interactive widget callback: $e');
   } finally {
-    enrichmentCubit?.close();
+    await enrichmentCubit?.close();
   }
 }
 

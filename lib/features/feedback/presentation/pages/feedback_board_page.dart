@@ -150,7 +150,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
     }
 
     if (item.userId == _currentUserId && item.isUpvoted) {
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       AppSnackbar.showInfo(
         context,
         'You created this feedback — your upvote is permanent.',
@@ -161,7 +161,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
     final index = _items.indexWhere((i) => i.id == item.id);
     if (index == -1 || _pendingVoteIds.contains(item.id)) return;
 
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _pendingVoteIds.add(item.id);
       _items[index] = _items[index].upvoted(_currentUserId);
@@ -213,7 +213,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
   }
 
   Future<void> _handleRefresh() async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final completer = Completer<void>();
     _subscribeToFeedbacks(completer);
 
@@ -462,7 +462,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                                   isVotePending: _pendingVoteIds.contains(item.id),
                                   onUpvote: () => _handleUpvote(item),
                                   onTap: () async {
-                                    HapticFeedback.lightImpact();
+                                    unawaited(HapticFeedback.lightImpact());
                                     final updated =
                                         await Navigator.push<FeedbackItem>(
                                           context,

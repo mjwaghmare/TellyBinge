@@ -345,30 +345,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.10.0"
-  firebase_storage:
-    dependency: "direct main"
-    description:
-      name: firebase_storage
-      sha256: "6089b73ab5d4da77099eda5b8462a449f2915ecebbcc9ddd523039231ad17634"
-      url: "https://pub.dev"
-    source: hosted
-    version: "13.4.6"
-  firebase_storage_platform_interface:
-    dependency: transitive
-    description:
-      name: firebase_storage_platform_interface
-      sha256: fadbd48f9ff7bde8040ad898f68113f37873310eed68c84ff179821e618b8579
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.0.6"
-  firebase_storage_web:
-    dependency: transitive
-    description:
-      name: firebase_storage_web
-      sha256: "869c00fd45fad6da5dcfc0d24ce83d245884fb427088af48111cfa62e278e7e1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.11.12"
   fixnum:
     dependency: transitive
     description:
@@ -504,22 +480,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  glass_liquid_navbar:
-    dependency: "direct main"
-    description:
-      name: glass_liquid_navbar
-      sha256: "782fa0d0c112ad6c1341b286cd59b802d86b6f4b5383aaafe3b0cd7180d266dd"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.0"
-  go_router:
-    dependency: "direct main"
-    description:
-      name: go_router
-      sha256: d7a3576cb312649eaa51f2356450aed686085fb58fcdebda5b359aa951eef7ea
-      url: "https://pub.dev"
-    source: hosted
-    version: "17.5.0"
   google_fonts:
     dependency: "direct main"
     description:
@@ -976,14 +936,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
-  salomon_bottom_bar:
-    dependency: "direct main"
-    description:
-      name: salomon_bottom_bar
-      sha256: e20abf2e449749432223a8b4e6647c212eef6c2b638e0ed8cc92eff9529c2b48
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.3.2"
   sensors_plus:
     dependency: transitive
     description:

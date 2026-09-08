@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
 import 'show_details_state.dart';
@@ -49,42 +50,46 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
         }
 
         // 1. Fetch Cast independently
-        tmdbClient
-            .getTvCredits(id)
-            .then((credits) {
-              final s = getSuccessState();
-              if (s != null) {
-                final updatedDetails = Map<String, dynamic>.from(s.details);
-                updatedDetails['credits'] = credits;
-                emit(s.copyWith(details: updatedDetails, isCastLoading: false));
-              }
-            })
-            .catchError((_) {
-              final s = getSuccessState();
-              if (s != null) {
-                emit(s.copyWith(isCastLoading: false));
-              }
-            });
+        unawaited(
+          tmdbClient
+              .getTvCredits(id)
+              .then((credits) {
+                final s = getSuccessState();
+                if (s != null) {
+                  final updatedDetails = Map<String, dynamic>.from(s.details);
+                  updatedDetails['credits'] = credits;
+                  emit(s.copyWith(details: updatedDetails, isCastLoading: false));
+                }
+              })
+              .catchError((_) {
+                final s = getSuccessState();
+                if (s != null) {
+                  emit(s.copyWith(isCastLoading: false));
+                }
+              }),
+        );
 
         // 2. Fetch Similar independently
-        tmdbClient
-            .getSimilarTvShows(id)
-            .then((similarShows) {
-              final s = getSuccessState();
-              if (s != null) {
-                final updatedDetails = Map<String, dynamic>.from(s.details);
-                updatedDetails['similar'] = {'results': similarShows};
-                emit(
-                  s.copyWith(details: updatedDetails, isSimilarLoading: false),
-                );
-              }
-            })
-            .catchError((_) {
-              final s = getSuccessState();
-              if (s != null) {
-                emit(s.copyWith(isSimilarLoading: false));
-              }
-            });
+        unawaited(
+          tmdbClient
+              .getSimilarTvShows(id)
+              .then((similarShows) {
+                final s = getSuccessState();
+                if (s != null) {
+                  final updatedDetails = Map<String, dynamic>.from(s.details);
+                  updatedDetails['similar'] = {'results': similarShows};
+                  emit(
+                    s.copyWith(details: updatedDetails, isSimilarLoading: false),
+                  );
+                }
+              })
+              .catchError((_) {
+                final s = getSuccessState();
+                if (s != null) {
+                  emit(s.copyWith(isSimilarLoading: false));
+                }
+              }),
+        );
 
         // Prefetch Season 1 episodes for immediate display (non-blocking for main UI)
         final seasonsList = details['seasons'] as List<dynamic>? ?? [];

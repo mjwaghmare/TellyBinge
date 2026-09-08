@@ -114,14 +114,16 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       final showId = show.rawShowData['id'];
       final episodeKey = '${show.targetSeason}-${show.targetEpisode}';
 
-      context.read<TvShowWatchlistCubit>().toggleEpisodeWatched(
-        uid: uid,
-        showId: showId,
-        episodeKey: episodeKey,
-        isWatched: true,
-        showName: show.rawShowData['name']?.toString(),
-        showPoster: show.rawShowData['posterPath']?.toString(),
-        episodeTitle: show.episodeTitle,
+      unawaited(
+        context.read<TvShowWatchlistCubit>().toggleEpisodeWatched(
+          uid: uid,
+          showId: showId,
+          episodeKey: episodeKey,
+          isWatched: true,
+          showName: show.rawShowData['name']?.toString(),
+          showPoster: show.rawShowData['posterPath']?.toString(),
+          episodeTitle: show.episodeTitle,
+        ),
       );
     }
   }

@@ -42,7 +42,7 @@ void main() {
         expect(saved, isNotNull);
         expect(saved!.contains('first_step_none'), true);
 
-        cubit.close();
+        await cubit.close();
       },
     );
 
@@ -87,7 +87,7 @@ void main() {
           true,
         );
 
-        cubit.close();
+        await cubit.close();
       },
     );
   });

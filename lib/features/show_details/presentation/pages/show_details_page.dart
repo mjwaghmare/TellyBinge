@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -1969,14 +1970,16 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           return GestureDetector(
                             onTap: () async {
                               if (isLoadingThisEp) return;
-                              HapticFeedback.lightImpact();
+                              unawaited(HapticFeedback.lightImpact());
                               if (authState is! Authenticated) {
-                                AuthRequiredBottomSheet.show(
-                                  context,
-                                  title: 'Sign in to Track Episodes',
-                                  subtitle:
-                                      'Keep track of episodes you have watched and see your progress.',
-                                  icon: Icons.check_circle_outline_rounded,
+                                unawaited(
+                                  AuthRequiredBottomSheet.show(
+                                    context,
+                                    title: 'Sign in to Track Episodes',
+                                    subtitle:
+                                        'Keep track of episodes you have watched and see your progress.',
+                                    icon: Icons.check_circle_outline_rounded,
+                                  ),
                                 );
                                 return;
                               }
@@ -2007,9 +2010,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                         watchedEpisodes,
                                       );
                                   if (unwatchedPrev.isNotEmpty) {
-                                    showDialog(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
+                                    unawaited(
+                                      showDialog(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
                                         backgroundColor:
                                             Theme.of(
                                               context,
@@ -2116,9 +2120,10 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                           ),
                                         ],
                                       ),
-                                    );
-                                    return;
-                                  }
+                                    ),
+                                  );
+                                  return;
+                                }
                                 }
                               }
 

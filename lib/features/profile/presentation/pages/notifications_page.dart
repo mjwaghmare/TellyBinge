@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -373,7 +374,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
 
     if (confirmed == true) {
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
       final previousNotifications = List<CleanNotificationItem>.from(
         _notifications,
       );

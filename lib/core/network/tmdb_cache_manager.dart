@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -126,7 +127,7 @@ class TmdbCacheManager {
         return data;
       } else {
         // Cache expired, delete in background
-        file.delete().catchError((_) => file);
+        unawaited(file.delete().catchError((_) => file));
       }
     } catch (e) {
       try {

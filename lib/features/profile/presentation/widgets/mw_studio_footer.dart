@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -81,7 +82,7 @@ class _MWStudioFooterState extends State<MWStudioFooter> {
     String? androidAppUrl,
     String? iosAppUrl,
   }) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final bool isIos = Theme.of(context).platform == TargetPlatform.iOS;
     final String? appUrl = isIos ? iosAppUrl : androidAppUrl;
 
