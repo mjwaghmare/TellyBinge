@@ -21,6 +21,27 @@ import '../features/profile/presentation/cubit/profile_heatmap_cubit.dart';
 import '../features/auth/presentation/widgets/auth_required_view.dart';
 import 'package:lottie/lottie.dart';
 
+import '../core/services/quick_actions_service.dart';
+
+/// Global controller to allow deep links and quick actions to switch tabs
+/// or display the Surprise Me modal sheet from outside the shell widget tree.
+class ShellNavigationController {
+  ShellNavigationController._();
+
+  static void Function(int tab, {int? subTab})? onSwitchTab;
+  static void Function()? onShowSurpriseMe;
+
+  static bool get isReady => onSwitchTab != null;
+
+  static void switchToTab(int tab, {int? subTab}) {
+    onSwitchTab?.call(tab, subTab: subTab);
+  }
+
+  static void showSurpriseMe() {
+    onShowSurpriseMe?.call();
+  }
+}
+
 class ShellNavigationPage extends StatefulWidget {
   final int initialIndex;
 
@@ -43,6 +64,23 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
     super.initState();
     _tabNotifier = ValueNotifier<int>(widget.initialIndex);
 
+    ShellNavigationController.onSwitchTab = (int tab, {int? subTab}) {
+      if (mounted) {
+        setState(() {
+          _tabNotifier.value = tab;
+          if (subTab != null) {
+            _exploreSubTabNotifier.value = subTab;
+          }
+        });
+      }
+    };
+
+    ShellNavigationController.onShowSurpriseMe = () {
+      if (mounted) {
+        _showSurpriseMeSheet();
+      }
+    };
+
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
       _startWatchers(authState.user.uid);
@@ -50,6 +88,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
+        QuickActionsService.instance.consumePendingAction();
         AppUpdateService.instance.checkAndShowUpdate(context);
       }
     });
@@ -68,6 +107,8 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
 
   @override
   void dispose() {
+    ShellNavigationController.onSwitchTab = null;
+    ShellNavigationController.onShowSurpriseMe = null;
     _tabNotifier.dispose();
     _exploreSubTabNotifier.dispose();
     super.dispose();

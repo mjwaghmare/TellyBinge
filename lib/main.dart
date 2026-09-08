@@ -17,6 +17,7 @@ import 'core/services/app_update_service.dart';
 import 'core/services/widget_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/background_sync_service.dart';
+import 'core/services/quick_actions_service.dart';
 import 'features/show_details/presentation/cubit/show_details_cubit.dart';
 import 'features/show_details/presentation/pages/show_details_page.dart';
 import 'features/explore/presentation/pages/movie_details_page.dart';
@@ -150,6 +151,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _tmdbClient = TmdbClient();
     HomeWidget.setAppGroupId(WidgetService.iOSGroupId);
+    QuickActionsService.instance.initialize(navigatorKey);
 
     // Handle cold launch: app was opened by tapping a widget Link while terminated.
     HomeWidget.initiallyLaunchedFromHomeWidget().then((uri) {
@@ -445,6 +447,10 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
+    final hasUser = FirebaseAuth.instance.currentUser != null;
+    unawaited(QuickActionsService.instance.syncShortcuts(
+      isAuthenticated: hasUser,
+    ));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         AppUpdateService.instance.checkAndShowUpdate(context);
@@ -486,6 +492,10 @@ class _AuthGateState extends State<AuthGate> {
     return BlocConsumer<AuthCubit, AuthState>(
       listenWhen: (previous, current) => true,
       listener: (context, state) {
+        final isAuthenticated = state is Authenticated;
+        unawaited(QuickActionsService.instance.syncShortcuts(
+          isAuthenticated: isAuthenticated,
+        ));
         if (state is Authenticated) {
           syncWidget(state.user.uid);
         } else if (state is Unauthenticated || state is AuthGuest) {
