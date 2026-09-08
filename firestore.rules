@@ -16,8 +16,14 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && (
         request.auth.token.admin == true ||
-        (request.auth.token.email == 'mjwaghmare.mtw@gmail.com' && request.auth.token.email_verified == true)
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
+    }
+
+    // Dedicated restricted admins collection (manageable only via Admin SDK / Console)
+    match /admins/{adminId} {
+      allow read: if isAuthenticated() && (request.auth.uid == adminId || isAdmin());
+      allow write: if false;
     }
 
     // Users collection and subcollections (watchlist, history)
