@@ -352,13 +352,18 @@ class MoviesPageState extends State<MoviesPage> {
       enabled: isLoading,
       child: RefreshIndicator.adaptive(
         onRefresh: () async {
-          // Movies use a Firestore stream that auto-updates.
-          // This provides a visual confirmation gesture.
-          await Future.delayed(const Duration(milliseconds: 500));
+          if (uid != null) {
+            await context.read<MovieWatchlistCubit>().syncUpcomingMovies(
+              uid,
+              force: true,
+            );
+          }
         },
         child: CustomScrollView(
           controller: watchlistScrollController,
-          physics: isLoading ? const NeverScrollableScrollPhysics() : null,
+          physics: isLoading
+              ? const NeverScrollableScrollPhysics()
+              : const AlwaysScrollableScrollPhysics(),
           slivers: [
             if (displayWatchNext.isNotEmpty) ...[
               SliverMainAxisGroup(
@@ -513,9 +518,20 @@ class MoviesPageState extends State<MoviesPage> {
 
     return Skeletonizer(
       enabled: isLoading,
-      child: CustomScrollView(
+      child: RefreshIndicator.adaptive(
+        onRefresh: () async {
+          if (uid != null) {
+            await context.read<MovieWatchlistCubit>().syncUpcomingMovies(
+              uid,
+              force: true,
+            );
+          }
+        },
+        child: CustomScrollView(
         controller: upcomingScrollController,
-        physics: isLoading ? const NeverScrollableScrollPhysics() : null,
+        physics: isLoading
+            ? const NeverScrollableScrollPhysics()
+            : const AlwaysScrollableScrollPhysics(),
         slivers: [
           const SliverPadding(padding: EdgeInsets.only(top: AppSpacing.xs)),
           ...groups.expand((group) {
@@ -582,8 +598,9 @@ class MoviesPageState extends State<MoviesPage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildEmptyState(String message) {
     return Center(

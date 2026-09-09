@@ -96,4 +96,30 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
         .doc(movieId.toString())
         .update({'genres': genres});
   }
+
+  @override
+  Future<void> updateMovieDetails({
+    required String uid,
+    required int movieId,
+    String? releaseDate,
+    int? runtime,
+    String? posterPath,
+    String? backdropPath,
+    double? voteAverage,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (releaseDate != null) updates['releaseDate'] = releaseDate;
+    if (runtime != null) updates['runtime'] = runtime;
+    if (posterPath != null && posterPath.isNotEmpty) {
+      updates['posterPath'] = posterPath;
+    }
+    if (backdropPath != null && backdropPath.isNotEmpty) {
+      updates['backdropPath'] = backdropPath;
+    }
+    if (voteAverage != null) updates['voteAverage'] = voteAverage;
+
+    if (updates.isNotEmpty) {
+      await _moviesCollection(uid).doc(movieId.toString()).update(updates);
+    }
+  }
 }

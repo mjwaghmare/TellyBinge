@@ -74,6 +74,8 @@ class MovieDetailsView extends StatefulWidget {
 }
 
 class _MovieDetailsViewState extends State<MovieDetailsView> {
+  bool _hasAutoSyncedMetadata = false;
+
   Map<String, dynamic> _dummyMovieData() {
     return {
       'title': widget.title ?? 'Loading Movie Details',
@@ -433,6 +435,39 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 watchedAtStr =
                     matched.first['watchedAt'] as String? ??
                     matched.first['addedAt'] as String?;
+
+                // Auto-sync release date and metadata if TMDb has updated info
+                if (!_hasAutoSyncedMetadata &&
+                    !isLoading &&
+                    releaseDate != null &&
+                    releaseDate.isNotEmpty) {
+                  final storedDate =
+                      (matched.first['releaseDate'] ??
+                              matched.first['release_date'])
+                          as String? ??
+                      '';
+                  final storedRuntime =
+                      (matched.first['runtime'] as num?)?.toInt() ?? 0;
+
+                  if (storedDate != releaseDate ||
+                      (runtimeMinutes > 0 && storedRuntime == 0)) {
+                    _hasAutoSyncedMetadata = true;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        context
+                            .read<MovieWatchlistCubit>()
+                            .updateMovieReleaseDate(
+                              uid: uid,
+                              movieId: widget.movieId,
+                              releaseDate: releaseDate,
+                              runtime:
+                                  runtimeMinutes > 0 ? runtimeMinutes : null,
+                              voteAverage: voteAverage > 0 ? voteAverage : null,
+                            );
+                      }
+                    });
+                  }
+                }
               }
             }
 

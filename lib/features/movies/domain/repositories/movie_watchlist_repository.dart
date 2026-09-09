@@ -29,4 +29,13 @@ abstract class MovieWatchlistRepository {
     required int movieId,
     required String genres,
   });
+  Future<void> updateMovieDetails({
+    required String uid,
+    required int movieId,
+    String? releaseDate,
+    int? runtime,
+    String? posterPath,
+    String? backdropPath,
+    double? voteAverage,
+  });
 }

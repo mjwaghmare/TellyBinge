@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../domain/repositories/movie_watchlist_repository.dart';
@@ -14,6 +15,8 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   // Sets to manage concurrent requests and failure retry loops
   final Set<int> _backfillingMovieIds = {};
   final Set<int> _failedMovieIds = {};
+  bool _isSyncing = false;
+  Future<void>? _activeSyncFuture;
 
   MovieWatchlistCubit({required this.movieWatchlistRepository, this.tmdbClient})
     : super(MovieWatchlistInitial());
@@ -56,6 +59,9 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
 
             // Start backfilling in the background sequentially to avoid socket rate limiting
             _backfillMissingGenres(uid, movies);
+
+            // Check if upcoming/recent movie release dates need their once-a-day sync
+            syncUpcomingMovies(uid, movies: movies);
           },
           onError: (error) {
             emit(MovieWatchlistError(error.toString()));
@@ -112,6 +118,194 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     } catch (e) {
       debugPrint('Error filling missing genres for movie $movieId: $e');
       rethrow;
+    }
+  }
+
+  /// Daily background sync of release dates, posters, and runtimes for
+  /// unreleased, missing-date, and recently scheduled movies (<= 14 days ago).
+  ///
+  /// Runs once per calendar day when the user opens the app or views the Movies tab.
+  /// Bypassed when [force] is true (e.g. on manual pull-to-refresh).
+  Future<void> syncUpcomingMovies(
+    String uid, {
+    List<Map<String, dynamic>>? movies,
+    bool force = false,
+  }) async {
+    if (tmdbClient == null || isClosed) return;
+    if (_isSyncing) {
+      if (force && _activeSyncFuture != null) {
+        await _activeSyncFuture;
+      }
+      return;
+    }
+
+    final targetMovies = movies ??
+        (state is MovieWatchlistSuccess
+            ? (state as MovieWatchlistSuccess).movies
+            : null);
+    if (targetMovies == null || targetMovies.isEmpty) return;
+
+    _isSyncing = true;
+    final syncFuture = _executeSyncUpcomingMovies(
+      uid,
+      targetMovies,
+      force: force,
+    );
+    _activeSyncFuture = syncFuture;
+    try {
+      await syncFuture;
+    } finally {
+      _isSyncing = false;
+      _activeSyncFuture = null;
+    }
+  }
+
+  Future<void> _executeSyncUpcomingMovies(
+    String uid,
+    List<Map<String, dynamic>> targetMovies, {
+    required bool force,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now();
+      final todayStr =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final syncKey = 'movie_sync_last_date_$uid';
+
+      if (!force) {
+        final lastSyncDate = prefs.getString(syncKey);
+        if (lastSyncDate == todayStr) {
+          return; // Already synced today on this device
+        }
+      }
+
+      // Filter: unreleased, missing release date, or scheduled within last 14 days
+      final eligible = targetMovies.where((movie) {
+        if (movie['isWatched'] == true) return false;
+        final rawId = movie['id'];
+        if (rawId == null) return false;
+
+        final relStr =
+            (movie['releaseDate'] ?? movie['release_date']) as String? ?? '';
+        if (relStr.isEmpty || relStr.toUpperCase() == 'TBA') return true;
+
+        final relDate = DateTime.tryParse(relStr);
+        if (relDate == null) return true;
+
+        final today = DateTime.utc(now.year, now.month, now.day);
+        final relDay = DateTime.utc(relDate.year, relDate.month, relDate.day);
+        final diffDays = relDay.difference(today).inDays;
+
+        // Keep unreleased movies (diffDays >= 0) and recently released movies (diffDays >= -14)
+        return diffDays >= -14;
+      }).toList();
+
+      if (eligible.isEmpty) {
+        await prefs.setString(syncKey, todayStr);
+        return;
+      }
+
+      bool atLeastOneSuccess = false;
+      bool hadNetworkFailure = false;
+
+      for (final movie in eligible) {
+        if (isClosed || state is! MovieWatchlistSuccess) break;
+        final movieId = (movie['id'] as num?)?.toInt();
+        if (movieId == null) continue;
+
+        // Skip if movie was deleted from watchlist or marked as watched mid-sync
+        if (state is MovieWatchlistSuccess) {
+          final currentMovies = (state as MovieWatchlistSuccess).movies;
+          final stillEligible = currentMovies.any(
+            (m) => m['id'] == movieId && m['isWatched'] != true,
+          );
+          if (!stillEligible) continue;
+        }
+
+        try {
+          final details = await tmdbClient!.getMovieDetails(
+            movieId,
+            forceRefresh: true,
+          );
+          atLeastOneSuccess = true;
+
+          final tmdbReleaseDate = details['release_date'] as String? ?? '';
+          final currentReleaseDate =
+              (movie['releaseDate'] ?? movie['release_date']) as String? ?? '';
+          final tmdbRuntime = (details['runtime'] as num?)?.toInt() ?? 0;
+          final currentRuntime = (movie['runtime'] as num?)?.toInt() ?? 0;
+          final tmdbPoster = details['poster_path'] as String?;
+          final currentPoster =
+              (movie['posterPath'] ?? movie['poster_path']) as String?;
+          final tmdbBackdrop = details['backdrop_path'] as String?;
+          final currentBackdrop =
+              (movie['backdropPath'] ?? movie['backdrop_path']) as String?;
+          final tmdbVote = (details['vote_average'] as num?)?.toDouble();
+
+          final bool dateChanged = tmdbReleaseDate != currentReleaseDate;
+          final bool runtimeChanged =
+              tmdbRuntime > 0 && tmdbRuntime != currentRuntime;
+          final bool posterChanged =
+              tmdbPoster != null &&
+              tmdbPoster.isNotEmpty &&
+              (currentPoster == null || currentPoster.isEmpty);
+          final bool backdropChanged =
+              tmdbBackdrop != null &&
+              tmdbBackdrop.isNotEmpty &&
+              (currentBackdrop == null || currentBackdrop.isEmpty);
+
+          if (dateChanged ||
+              runtimeChanged ||
+              posterChanged ||
+              backdropChanged) {
+            await movieWatchlistRepository.updateMovieDetails(
+              uid: uid,
+              movieId: movieId,
+              releaseDate: dateChanged ? tmdbReleaseDate : null,
+              runtime: runtimeChanged ? tmdbRuntime : null,
+              posterPath: posterChanged ? tmdbPoster : null,
+              backdropPath: backdropChanged ? tmdbBackdrop : null,
+              voteAverage: tmdbVote,
+            );
+          }
+
+          // Throttle requests (250ms delay) to prevent TMDb API/Cloudflare connection resets
+          await Future.delayed(const Duration(milliseconds: 250));
+        } catch (e) {
+          hadNetworkFailure = true;
+          debugPrint('Error syncing movie $movieId: $e');
+        }
+      }
+
+      if (atLeastOneSuccess && !hadNetworkFailure && state is MovieWatchlistSuccess) {
+        await prefs.setString(syncKey, todayStr);
+      }
+    } catch (e) {
+      debugPrint('Error in syncUpcomingMovies: $e');
+    }
+  }
+
+  Future<void> updateMovieReleaseDate({
+    required String uid,
+    required int movieId,
+    required String releaseDate,
+    int? runtime,
+    String? posterPath,
+    String? backdropPath,
+    double? voteAverage,
+  }) async {
+    try {
+      await movieWatchlistRepository.updateMovieDetails(
+        uid: uid,
+        movieId: movieId,
+        releaseDate: releaseDate,
+        runtime: runtime,
+        posterPath: posterPath,
+        backdropPath: backdropPath,
+        voteAverage: voteAverage,
+      );
+    } catch (e) {
+      debugPrint('Error in MovieWatchlistCubit.updateMovieReleaseDate: $e');
     }
   }
 
@@ -201,6 +395,8 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     _watchlistSubscription = null;
     _backfillingMovieIds.clear();
     _failedMovieIds.clear();
+    _isSyncing = false;
+    _activeSyncFuture = null;
     emit(MovieWatchlistInitial());
   }
 

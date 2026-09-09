@@ -316,10 +316,15 @@ class TmdbClient {
   }
 
   /// Fetch detailed information about a Movie
-  Future<Map<String, dynamic>> getMovieDetails(int movieId) async {
+  Future<Map<String, dynamic>> getMovieDetails(
+    int movieId, {
+    bool forceRefresh = false,
+  }) async {
     final cacheKey = 'movie_details_v2_$movieId';
-    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
-    if (cachedData != null) return cachedData;
+    if (!forceRefresh) {
+      final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+      if (cachedData != null) return cachedData;
+    }
 
     try {
       final response = await _getWithRetry(
