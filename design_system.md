@@ -16,35 +16,38 @@ widgets are strictly prohibited.
 ### Brand Colors
 | Token Name | Hex Value | Preview | Usage |
 | :--- | :--- | :--- | :--- |
-| `AppColors.primary` | `#8B5CF6` | 🟣 Electric Violet | Primary buttons, active tab indicators, key accents |
+| `AppColors.primary` | `#8B5CF6` | 🟣 Electric Violet | Primary brand accent (Dark Mode buttons, tabs, highlights) |
+| `AppColors.lightPrimary` | `#7C3AED` | 🪻 Vivid Deep Violet | Primary brand accent in Light Mode (WCAG AA 5.8:1 contrast on white) |
 | `AppColors.primaryDark` | `#6D28D9` | 🪻 Dark Violet | Pressed states, secondary brand accents |
-| `AppColors.primaryLight` | `#A78BFA` | 💜 Light Violet | Highlights, badge background accents |
+| `AppColors.primaryLight` | `#A78BFA` | 💜 Light Violet | Dark mode highlights, badge background accents |
+| `AppColors.lightPrimaryContainer` | `#F3E8FF` | 🪻 Soft Pastel Violet | Light mode active chip, tab, and progress track fills |
+| `AppColors.lightOnPrimaryContainer` | `#6D28D9` | 🪻 Deep Violet | Text/icons on `lightPrimaryContainer` |
 
 ### Accent & Status Tokens
-| Token Name | Hex Value | Usage |
-| :--- | :--- | :--- |
-| `AppColors.brandGreen` | `#6B8E23` | TV Time green watch progress badges & checkmarks |
-| `AppColors.accentBlue` | `#1E88E5` | Placeholder media icons & secondary action accents |
-| `AppColors.watched` | `#8B5CF6` | Watch progress bar fill |
-| `AppColors.airing` | `#2196F3` | Airing status tags for TV shows |
-| `AppColors.ended` | `#757575` | Muted neutral grey status tag for ended shows |
-| `AppColors.error` | `#E53935` | Destructive buttons, error alerts, removing items |
-| `AppColors.success` | `#4CAF50` | Positive confirmations & watched badges |
+| Token Name | Dark / Default Hex | Light Tonal Container / Text | Usage |
+| :--- | :--- | :--- | :--- |
+| `AppColors.brandGreen` | `#6B8E23` | `#DCFCE7` / `#15803D` | TV Time green watch progress badges & checkmarks |
+| `AppColors.accentBlue` | `#1E88E5` | `#DBEAFE` / `#1D4ED8` | Placeholder media icons & secondary action accents |
+| `AppColors.watched` | `#8B5CF6` | `#F3E8FF` / `#7C3AED` | Watch progress bar fill & completed watch pills |
+| `AppColors.airing` | `#2196F3` | `#DBEAFE` / `#1D4ED8` | Airing status tags for TV shows |
+| `AppColors.ended` | `#757575` | `#F3F4F6` / `#4B5563` | Neutral status tag for ended shows |
+| `AppColors.error` | `#E53935` | `#FEE2E2` / `#B91C1C` | Destructive buttons, error alerts, removing items |
+| `AppColors.success` | `#4CAF50` | `#DCFCE7` / `#15803D` | Positive confirmations & watched badges |
 
 ### 3-Tier Surface Hierarchy (Dark & Light)
 | Token Name | Dark Hex | Light Hex | Tier / Usage |
 | :--- | :--- | :--- | :--- |
 | `AppColors.background` / `darkBackground` | `#0D0D0D` | `#F9F9FB` | **Level 0 (Canvas):** Scaffold screen background |
-| `AppColors.surface` | `#161616` | `#FFFFFF` | **Level 1 (Cards):** Standard content cards & tiles |
+| `AppColors.surface` | `#161616` | `#FFFFFF` | **Level 1 (Cards):** Content cards (elevation 0, 1px border: `#2C2C2E` / `#E5E7EB`) |
 | `AppColors.surfaceElevated` | `#242424` | `#F3F4F6` | **Level 2 (Modals):** Bottom sheets, dialogs, inputs |
 | `AppColors.borderDark` / `borderLight` | `#2C2C2E` | `#E5E7EB` | Dividers, chip outlines, input borders |
 
 ### Text Color Tokens
 | Token Name | Dark Hex | Light Hex | Usage |
 | :--- | :--- | :--- | :--- |
-| `AppColors.textPrimary` | `#FFFFFF` | `#1F2937` | Primary body text and headers |
-| `AppColors.textSecondary` | `#B0B0B0` | `#6B7280` | Subtitles, metadata, secondary text |
-| `AppColors.textTertiary` | `#757575` | `#9CA3AF` | Inactive icons, subtle text, placeholder hints |
+| `AppColors.textPrimary` | `#F4F4F5` | `#1F2937` | Primary body text and headers (92% off-white anti-halation in Dark) |
+| `AppColors.textSecondary` | `#A1A1AA` | `#6B7280` | Subtitles, metadata, secondary text (balanced zinc neutral in Dark) |
+| `AppColors.textTertiary` | `#71717A` | `#64748B` | Inactive icons, subtle text, placeholder hints |
 | `AppColors.textOnPrimary` | `#FFFFFF` | `#FFFFFF` | Text rendered on top of `AppColors.primary` |
 
 ---

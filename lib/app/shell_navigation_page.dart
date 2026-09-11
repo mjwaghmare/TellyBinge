@@ -289,8 +289,16 @@ class _CustomGlowBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = context.isLight;
+    final selectedColor = isLight ? AppColors.lightPrimary : AppColors.primary;
+    final unselectedColor = isLight
+        ? AppColors.lightTextTertiary
+        : context.textTertiary;
+
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: isLight
+          ? AppColors.lightSurface
+          : Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         child: SizedBox(
           height: 65,
@@ -302,7 +310,7 @@ class _CustomGlowBottomBar extends StatelessWidget {
                 right: 0,
                 child: Container(
                   height: 1,
-                  color: context.isLight
+                  color: isLight
                       ? AppColors.borderLight
                       : Colors.white.withValues(alpha: 0.05),
                 ),
@@ -316,6 +324,9 @@ class _CustomGlowBottomBar extends StatelessWidget {
                     'Shows',
                     Icons.tv_outlined,
                     Icons.tv,
+                    selectedColor: selectedColor,
+                    unselectedColor: unselectedColor,
+                    isLight: isLight,
                   ),
                   _buildNavItem(
                     context,
@@ -323,6 +334,9 @@ class _CustomGlowBottomBar extends StatelessWidget {
                     'Movies',
                     Icons.movie_filter_outlined,
                     Icons.movie_filter,
+                    selectedColor: selectedColor,
+                    unselectedColor: unselectedColor,
+                    isLight: isLight,
                   ),
                   const SizedBox(width: 60), // Space for central FAB
                   _buildNavItem(
@@ -331,6 +345,9 @@ class _CustomGlowBottomBar extends StatelessWidget {
                     'Explore',
                     Icons.search_outlined,
                     Icons.search,
+                    selectedColor: selectedColor,
+                    unselectedColor: unselectedColor,
+                    isLight: isLight,
                   ),
                   _buildNavItem(
                     context,
@@ -338,6 +355,9 @@ class _CustomGlowBottomBar extends StatelessWidget {
                     'Profile',
                     Icons.person_outline_rounded,
                     Icons.person,
+                    selectedColor: selectedColor,
+                    unselectedColor: unselectedColor,
+                    isLight: isLight,
                   ),
                 ],
               ),
@@ -354,6 +374,9 @@ class _CustomGlowBottomBar extends StatelessWidget {
     String label,
     IconData icon,
     IconData activeIcon, {
+    required Color selectedColor,
+    required Color unselectedColor,
+    required bool isLight,
     VoidCallback? onLongPress,
   }) {
     final isSelected = currentIndex == index;
@@ -364,51 +387,50 @@ class _CustomGlowBottomBar extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Align(
-              alignment: Alignment.topCenter,
-              child: AnimatedScale(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeOutBack,
-                scale: isSelected ? 1.0 : 0.0,
+            if (!isLight)
+              Align(
                 alignment: Alignment.topCenter,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 300),
-                  opacity: isSelected ? 1.0 : 0.0,
-                  child: Container(
-                    width: 150,
-                    height: 75,
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment.topCenter,
-                        radius: 1,
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.15),
-                          Colors.transparent,
-                        ],
+                child: AnimatedScale(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeOutBack,
+                  scale: isSelected ? 1.0 : 0.0,
+                  alignment: Alignment.topCenter,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    opacity: isSelected ? 1.0 : 0.0,
+                    child: Container(
+                      width: 150,
+                      height: 75,
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment.topCenter,
+                          radius: 1,
+                          colors: [
+                            AppColors.primary.withValues(alpha: 0.15),
+                            Colors.transparent,
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   isSelected ? activeIcon : icon,
-                  color: isSelected ? AppColors.primary : context.textTertiary,
+                  color: isSelected ? selectedColor : unselectedColor,
                   size: 24,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   label,
                   style: TextStyle(
-                    color: isSelected
-                        ? AppColors.primary
-                        : context.textTertiary,
+                    color: isSelected ? selectedColor : unselectedColor,
                     fontSize: 11,
                     fontWeight: isSelected
-                        ? FontWeight.w500
+                        ? FontWeight.w600
                         : FontWeight.normal,
                   ),
                 ),

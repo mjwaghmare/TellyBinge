@@ -1443,8 +1443,8 @@ class MoviesPageState extends State<MoviesPage> {
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
                       colors: [
-                        Colors.black.withValues(alpha: 0.95),
-                        Colors.black.withValues(alpha: 0.4),
+                        AppColors.darkBackground.withValues(alpha: 0.95),
+                        AppColors.darkBackground.withValues(alpha: 0.4),
                         Colors.transparent,
                       ],
                       stops: const [0.0, 0.5, 1.0],

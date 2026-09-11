@@ -56,7 +56,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w800,
     height: 1.05,
     letterSpacing: -0.5,
-    color: AppColors.textPrimary,
   );
 
   // ---------------------------------------------------------------------------
@@ -67,14 +66,12 @@ class AppTextStyles {
   static TextStyle get posterTitle => GoogleFonts.bebasNeue(
     fontSize: 32.0,
     letterSpacing: 1.2,
-    color: AppColors.textPrimary,
   );
 
   /// Section headers for movie & show pages (e.g., 'MOVIE INFO', 'CAST & CREW').
   static TextStyle get posterHeader => GoogleFonts.bebasNeue(
     fontSize: 22.0,
     letterSpacing: 1.0,
-    color: AppColors.textPrimary,
   );
 
   /// Display numbers for countdown timers, watch hours, and profile metrics.
@@ -100,7 +97,6 @@ class AppTextStyles {
     fontSize: 17.0,
     fontStyle: FontStyle.italic,
     height: 1.4,
-    color: AppColors.textPrimary,
   );
 
   /// Elegant serif titles for prestige features or awards.
@@ -108,8 +104,12 @@ class AppTextStyles {
     fontSize: 24.0,
     fontWeight: FontWeight.w600,
     height: 1.2,
-    color: AppColors.textPrimary,
   );
+}
+
+extension TextStyleContextX on TextStyle {
+  TextStyle adaptive(BuildContext context) =>
+      copyWith(color: context.textPrimary);
 }
 
 extension TextStyleColorX on TextStyle {

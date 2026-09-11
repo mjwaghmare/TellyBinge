@@ -83,13 +83,14 @@ class AppTheme {
         ),
         unselectedLabelStyle: TextStyle(fontSize: 12.0),
         type: BottomNavigationBarType.fixed,
-        elevation: 8.0,
+        elevation: 0.0,
       ),
       cardTheme: CardThemeData(
         color: cardBg,
-        elevation: 2.0,
+        elevation: 0.0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
+          side: const BorderSide(color: AppColors.borderDark, width: 1.0),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -114,7 +115,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceElevated,
+        fillColor: cardBg,
         hintStyle: const TextStyle(color: AppColors.textTertiary),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 16.0,
@@ -122,11 +123,11 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: AppColors.borderDark, width: 1.0),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: AppColors.borderDark, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
@@ -150,7 +151,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      primaryColor: AppColors.primary,
+      primaryColor: AppColors.lightPrimary,
       scaffoldBackgroundColor: scaffoldBg,
       cardColor: cardBg,
       dividerColor: dividerBg,
@@ -162,7 +163,9 @@ class AppTheme {
             displayColor: AppColors.lightTextPrimary,
           ),
       colorScheme: const ColorScheme.light(
-        primary: AppColors.primary,
+        primary: AppColors.lightPrimary,
+        primaryContainer: AppColors.lightPrimaryContainer,
+        onPrimaryContainer: AppColors.lightOnPrimaryContainer,
         secondary: AppColors.primaryDark,
         surface: cardBg,
         error: AppColors.error,
@@ -196,20 +199,20 @@ class AppTheme {
       ),
       tabBarTheme: const TabBarThemeData(
         indicator: UnderlineTabIndicator(
-          borderSide: BorderSide(color: AppColors.primary, width: 4.0),
+          borderSide: BorderSide(color: AppColors.lightPrimary, width: 3.0),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: AppColors.lightTextPrimary,
-        unselectedLabelColor: AppColors.lightTextTertiary,
+        labelColor: AppColors.lightPrimary,
+        unselectedLabelColor: AppColors.lightTextSecondary,
         labelStyle: TextStyle(
           fontSize: 14.0,
           fontWeight: FontWeight.bold,
-          letterSpacing: 1.0,
+          letterSpacing: 0.5,
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: bottomNavBg,
-        selectedItemColor: AppColors.primary,
+        selectedItemColor: AppColors.lightPrimary,
         unselectedItemColor: AppColors.lightTextTertiary,
         selectedLabelStyle: TextStyle(
           fontSize: 12.0,
@@ -217,18 +220,19 @@ class AppTheme {
         ),
         unselectedLabelStyle: TextStyle(fontSize: 12.0),
         type: BottomNavigationBarType.fixed,
-        elevation: 8.0,
+        elevation: 0.0,
       ),
       cardTheme: CardThemeData(
         color: cardBg,
-        elevation: 2.0,
+        elevation: 0.0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
+          side: const BorderSide(color: AppColors.borderLight, width: 1.0),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.lightPrimary,
           foregroundColor: AppColors.textOnPrimary,
           textStyle: const TextStyle(
             fontWeight: FontWeight.bold,
@@ -242,7 +246,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: AppColors.lightPrimary,
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
@@ -264,7 +268,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.lightPrimary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),

@@ -4,9 +4,12 @@ class AppColors {
   AppColors._();
 
   // 1. Primary Brand Accent Tokens
-  static const Color primary = Color(0xFF8B5CF6); // Electric Violet
+  static const Color primary = Color(0xFF8B5CF6); // Electric Violet (Dark Mode)
   static const Color primaryDark = Color(0xFF6D28D9); // Dark Violet accent
   static const Color primaryLight = Color(0xFFA78BFA); // Light Violet accent
+  static const Color lightPrimary = Color(0xFF7C3AED); // Vivid Deep Violet (Light Mode, WCAG AA 5.8:1)
+  static const Color lightPrimaryContainer = Color(0xFFF3E8FF); // Soft pastel violet container
+  static const Color lightOnPrimaryContainer = Color(0xFF6D28D9); // Deep violet on pastel container
 
   // 2. 3-Tier Surface Hierarchy (Dark Mode)
   static const Color darkBackground = Color(0xFF0D0D0D); // Level 0: Canvas
@@ -25,12 +28,31 @@ class AppColors {
     0xFFF3F4F6,
   ); // Level 2: Modals
 
+  // Ambient Card Shadow (Light Mode)
+  static const List<BoxShadow> lightCardShadow = [
+    BoxShadow(
+      color: Color(0x0A000000), // 4% black
+      blurRadius: 12,
+      offset: Offset(0, 2),
+    ),
+  ];
+
   // 3. Status & Functional Tokens
   static const Color watched = primary; // Violet watch indicator
   static const Color airing = Color(0xFF2196F3); // Blue for airing shows
   static const Color ended = Color(0xFF757575); // Neutral Grey for ended shows
   static const Color error = Color(0xFFE53935); // Red for error/destructive
   static const Color success = Color(0xFF4CAF50); // Green for positive states
+
+  // Light Mode Status Tonal Containers
+  static const Color lightSuccessContainer = Color(0xFFDCFCE7);
+  static const Color lightOnSuccessContainer = Color(0xFF15803D);
+  static const Color lightAiringContainer = Color(0xFFDBEAFE);
+  static const Color lightOnAiringContainer = Color(0xFF1D4ED8);
+  static const Color lightErrorContainer = Color(0xFFFEE2E2);
+  static const Color lightOnErrorContainer = Color(0xFFB91C1C);
+  static const Color lightEndedContainer = Color(0xFFF3F4F6);
+  static const Color lightOnEndedContainer = Color(0xFF4B5563);
 
   // 4. Accent & Divider Tokens
   static const Color brandGreen = Color(0xFF6B8E23); // Green badge accent
@@ -59,9 +81,9 @@ class AppColors {
   static const Color surfaceStackedDarkElevated = Color(0xFF383838);
 
   // 5. Text Tokens (Dark Mode)
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB0B0B0);
-  static const Color textTertiary = Color(0xFF8E8E93);
+  static const Color textPrimary = Color(0xFFF4F4F5); // 92% off-white (anti-halation, reduced eye fatigue)
+  static const Color textSecondary = Color(0xFFA1A1AA); // Balanced zinc secondary
+  static const Color textTertiary = Color(0xFF71717A); // Balanced zinc tertiary
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
   // Text Tokens (Light Mode)
@@ -114,6 +136,14 @@ class AppColors {
   static bool isLight(BuildContext context) =>
       Theme.of(context).brightness == Brightness.light;
 
+  static Color primaryColor(BuildContext context) =>
+      isLight(context) ? lightPrimary : primary;
+
+  static Color primaryContainerColor(BuildContext context) =>
+      isLight(context)
+          ? lightPrimaryContainer
+          : primary.withValues(alpha: 0.15);
+
   static Color chipBorder(BuildContext context) =>
       isLight(context) ? borderLight : borderDark;
 
@@ -142,6 +172,15 @@ extension BuildContextColorX on BuildContext {
 
   Color adaptiveColor({required Color light, required Color dark}) =>
       isLight ? light : dark;
+
+  Color get primary =>
+      isLight ? AppColors.lightPrimary : AppColors.primary;
+  Color get primaryContainer =>
+      isLight
+          ? AppColors.lightPrimaryContainer
+          : AppColors.primary.withValues(alpha: 0.15);
+  Color get onPrimaryContainer =>
+      isLight ? AppColors.lightOnPrimaryContainer : AppColors.primaryLight;
 
   Color get textPrimary =>
       isLight ? AppColors.lightTextPrimary : AppColors.textPrimary;
