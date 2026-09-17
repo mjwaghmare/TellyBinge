@@ -17,6 +17,8 @@ import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
+import '../../../../core/widgets/watch_providers_section.dart';
+import '../../../../core/widgets/polaroid_share_modal.dart';
 import '../cubit/movie_details_cubit.dart';
 import '../cubit/movie_details_state.dart';
 
@@ -192,12 +194,32 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     required String uid,
     required bool isWatched,
     required bool released,
+    required String title,
+    required String? imageUrl,
+    required double? rating,
+    required DateTime? watchedDate,
+    bool canShare = true,
   }) {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) => CupertinoActionSheet(
         title: const Text('Movie Actions'),
         actions: <CupertinoActionSheetAction>[
+          if (canShare)
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                PolaroidShareModal.show(
+                  context,
+                  title: title,
+                  imageUrl: imageUrl,
+                  rating: rating,
+                  watchedDate: watchedDate,
+                  mediaType: 'movie',
+                );
+              },
+              child: const Text('Share Polaroid 📸'),
+            ),
           if (released)
             CupertinoActionSheetAction(
               onPressed: () {
@@ -574,6 +596,45 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                           expandedHeight: 300.0,
                           pinned: true,
                           actions: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface.withValues(alpha: 0.6),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(
+                                    Icons.ios_share_rounded,
+                                    size: 19,
+                                    color: AppColors.textOnPrimary,
+                                  ),
+                                  onPressed: (isLoading || state is! MovieDetailsSuccess)
+                                      ? null
+                                      : () {
+                                          final shareImageUrl = _getImageUrl(
+                                            movie['backdrop_path'] ?? movie['poster_path'],
+                                            size: 'w780',
+                                          );
+                                          final watchedDate =
+                                              (isWatched && watchedAtStr != null)
+                                              ? DateTime.tryParse(watchedAtStr)
+                                              : null;
+                                          PolaroidShareModal.show(
+                                            context,
+                                            title: title,
+                                            imageUrl: shareImageUrl,
+                                            rating: voteAverage,
+                                            watchedDate: watchedDate,
+                                            mediaType: 'movie',
+                                          );
+                                        },
+                                ),
+                              ),
+                            ),
                             if (isAdded && uid != null)
                               Padding(
                                 padding: const EdgeInsets.only(right: 8.0),
@@ -591,12 +652,27 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       size: 24,
                                       color: AppColors.textOnPrimary,
                                     ),
-                                    onPressed: () => _showMoreActions(
-                                      context: context,
-                                      uid: uid,
-                                      isWatched: isWatched,
-                                      released: released,
-                                    ),
+                                    onPressed: () {
+                                      final shareImageUrl = _getImageUrl(
+                                        movie['backdrop_path'] ?? movie['poster_path'],
+                                        size: 'w780',
+                                      );
+                                      final watchedDate =
+                                          (isWatched && watchedAtStr != null)
+                                          ? DateTime.tryParse(watchedAtStr)
+                                          : null;
+                                      _showMoreActions(
+                                        context: context,
+                                        uid: uid,
+                                        isWatched: isWatched,
+                                        released: released,
+                                        title: title,
+                                        imageUrl: shareImageUrl,
+                                        rating: voteAverage,
+                                        watchedDate: watchedDate,
+                                        canShare: !isLoading && state is MovieDetailsSuccess,
+                                      );
+                                    },
                                   ),
                                 ),
                               ),
@@ -994,6 +1070,24 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   thickness: 0.5,
                                 ),
                                 const SizedBox(height: AppSpacing.lg),
+
+                                // Where to Watch Section
+                                if (WatchProvidersSection.hasProviders(
+                                  movie['watch/providers'],
+                                )) ...[
+                                  WatchProvidersSection(
+                                    watchProvidersData:
+                                        movie['watch/providers']
+                                            as Map<String, dynamic>?,
+                                  ),
+                                  const SizedBox(height: AppSpacing.lg),
+                                  Divider(
+                                    color: Theme.of(context).dividerColor,
+                                    height: 1,
+                                    thickness: 0.5,
+                                  ),
+                                  const SizedBox(height: AppSpacing.lg),
+                                ],
 
                                 // Cast Section
                                 if (cast.isNotEmpty) ...[

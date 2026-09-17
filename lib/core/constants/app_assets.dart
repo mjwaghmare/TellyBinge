@@ -2,6 +2,7 @@
 class AppAssets {
   AppAssets._();
 
+  static const String logo = 'assets/images/logo.png';
   static const String splashLogo = 'assets/images/splash_logo.png';
   static const String googleLogo = 'assets/images/google.png';
   static const String errorDevices = 'assets/images/error_devices.png';

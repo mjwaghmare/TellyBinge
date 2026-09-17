@@ -29,6 +29,7 @@ import 'terms_and_conditions_page.dart';
 import 'privacy_policy_page.dart';
 import '../../../feedback/presentation/pages/feedback_board_page.dart';
 import '../widgets/mw_studio_footer.dart';
+import '../widgets/theme_selection_bottom_sheet.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -169,7 +170,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         const Icon(Icons.chevron_right_rounded, color: AppColors.primaryLight, size: 20),
                       ],
                     ),
-                    onTap: () => _showThemeSelectionSheet(context, themeState.themeMode),
+                    onTap: () => ThemeSelectionBottomSheet.show(context),
                   );
                 },
               ),
@@ -552,143 +553,6 @@ class _SettingsPageState extends State<SettingsPage> {
         });
       }
     }
-  }
-
-  void _showThemeSelectionSheet(BuildContext context, ThemeMode currentMode) {
-    HapticFeedback.lightImpact();
-    final isLight = context.isLight;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isLight ? AppColors.borderLight : AppColors.borderDark,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Appearance',
-                  style: AppTextStyles.lg.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Choose how Popverse looks on your device',
-                  style: AppTextStyles.sm.copyWith(
-                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _buildThemeOption(
-                  context: context,
-                  title: 'System',
-                  subtitle: 'Match your device light / dark setting',
-                  icon: Icons.brightness_auto_outlined,
-                  isSelected: currentMode == ThemeMode.system,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    context.read<ThemeCubit>().setThemeMode(ThemeMode.system);
-                    Navigator.pop(sheetContext);
-                  },
-                ),
-                _buildThemeOption(
-                  context: context,
-                  title: 'Dark Theme',
-                  subtitle: 'Always use dark interface',
-                  icon: Icons.dark_mode_outlined,
-                  isSelected: currentMode == ThemeMode.dark,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    context.read<ThemeCubit>().setThemeMode(ThemeMode.dark);
-                    Navigator.pop(sheetContext);
-                  },
-                ),
-                _buildThemeOption(
-                  context: context,
-                  title: 'Light Theme',
-                  subtitle: 'Always use light interface',
-                  icon: Icons.light_mode_outlined,
-                  isSelected: currentMode == ThemeMode.light,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    context.read<ThemeCubit>().setThemeMode(ThemeMode.light);
-                    Navigator.pop(sheetContext);
-                  },
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildThemeOption({
-    required BuildContext context,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final isLight = context.isLight;
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? AppColors.primary.withValues(alpha: 0.12)
-            : (isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected
-              ? AppColors.primary
-              : (isLight ? AppColors.borderLight : AppColors.borderDark),
-          width: isSelected ? 1.5 : 1.0,
-        ),
-      ),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        leading: Icon(
-          icon,
-          color: isSelected ? AppColors.primary : (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary),
-        ),
-        title: Text(
-          title,
-          style: AppTextStyles.smMedium.copyWith(
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? AppColors.primary : (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary),
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: AppTextStyles.xs.copyWith(color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary),
-        ),
-        trailing: Icon(
-          isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
-          color: isSelected ? AppColors.primary : (isLight ? AppColors.lightTextTertiary : AppColors.textTertiary),
-          size: 22,
-        ),
-        onTap: onTap,
-      ),
-    );
   }
 
   void _showDeleteAccountSheet(BuildContext context) {

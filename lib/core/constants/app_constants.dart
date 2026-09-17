@@ -52,6 +52,10 @@ class AppConstants {
   static const String playStoreMarketScheme = 'market://details?id=';
   static const String appStoreReviewScheme =
       'itms-apps://itunes.apple.com/app/id';
+  static const String playStoreUrl =
+      '$playStoreBaseUrl$defaultPackageName';
+  static const String appStoreUrl =
+      '$appStoreBaseUrl$appleAppId';
 
   // --- External Services & Media ---
   static const String tmdbWebsiteUrl = 'https://www.themoviedb.org';

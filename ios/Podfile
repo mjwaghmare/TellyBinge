@@ -47,8 +47,6 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       # Skip indexing 3rd party pods to cut build time by ~30%
       config.build_settings['COMPILER_INDEX_STORE_ENABLE'] = 'NO'
-      # Only compile for the active connected device architecture (arm64)
-      config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
     end
   end
 end

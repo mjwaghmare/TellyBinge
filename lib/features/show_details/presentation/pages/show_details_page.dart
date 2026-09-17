@@ -16,6 +16,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/action_circle_button.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
+import '../../../../core/widgets/watch_providers_section.dart';
+import '../../../../core/widgets/polaroid_share_modal.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
@@ -129,12 +131,30 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     required BuildContext context,
     required String uid,
     required bool isStopped,
+    required String title,
+    required String? imageUrl,
+    required double? rating,
+    bool canShare = true,
   }) {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) => CupertinoActionSheet(
         title: const Text('Show Actions'),
         actions: <CupertinoActionSheetAction>[
+          if (canShare)
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                PolaroidShareModal.show(
+                  context,
+                  title: title,
+                  imageUrl: imageUrl,
+                  rating: rating,
+                  mediaType: widget.mediaType,
+                );
+              },
+              child: const Text('Share Polaroid 📸'),
+            ),
           CupertinoActionSheetAction(
             onPressed: () {
               HapticFeedback.mediumImpact();
@@ -386,6 +406,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
     final String title = details['name'] ?? details['title'] ?? widget.title;
     final String? backdropPath = details['backdrop_path'];
+    final String? posterPath = details['poster_path'];
     final String tagline = (details['tagline'] as String? ?? '').trim();
     final String overview = details['overview'] ?? '';
     final double voteAverage =
@@ -434,6 +455,40 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         ),
         centerTitle: true,
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.xs),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: const Icon(
+                  Icons.ios_share_rounded,
+                  size: 20,
+                  color: AppColors.textOnPrimary,
+                ),
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        final shareImageUrl = _getImageUrl(
+                          backdropPath ?? posterPath,
+                          size: 'w780',
+                        );
+                        PolaroidShareModal.show(
+                          context,
+                          title: title,
+                          imageUrl: shareImageUrl,
+                          rating: voteAverage,
+                          mediaType: widget.mediaType,
+                        );
+                      },
+              ),
+            ),
+          ),
           BlocBuilder<AuthCubit, AuthState>(
             builder: (context, authState) {
               final uid = authState is Authenticated
@@ -469,11 +524,21 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             size: 24,
                             color: AppColors.textOnPrimary,
                           ),
-                          onPressed: () => _showMoreActions(
-                            context: context,
-                            uid: uid,
-                            isStopped: isStopped,
-                          ),
+                          onPressed: () {
+                            final shareImageUrl = _getImageUrl(
+                              backdropPath ?? posterPath,
+                              size: 'w780',
+                            );
+                            _showMoreActions(
+                              context: context,
+                              uid: uid,
+                              isStopped: isStopped,
+                              title: title,
+                              imageUrl: shareImageUrl,
+                              rating: voteAverage,
+                              canShare: !isLoading,
+                            );
+                          },
                         ),
                       ),
                     );
@@ -694,6 +759,18 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               WatchTrailerButton(
                 trailer: trailer,
                 allTrailers: youtubeTrailers,
+              ),
+              AppSpacing.gapH24,
+            ],
+
+            if (WatchProvidersSection.hasProviders(
+              details['watch/providers'],
+            )) ...[
+              const Divider(height: 1, thickness: 0.5),
+              AppSpacing.gapH24,
+              WatchProvidersSection(
+                watchProvidersData:
+                    details['watch/providers'] as Map<String, dynamic>?,
               ),
               AppSpacing.gapH24,
             ],

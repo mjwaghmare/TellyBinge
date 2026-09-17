@@ -269,14 +269,14 @@ class TmdbClient {
 
   /// Fetch detailed information about a TV Show (does not include full season episode details)
   Future<Map<String, dynamic>> getTvShowDetails(int tvId) async {
-    final cacheKey = 'tv_details_v3_$tvId';
+    final cacheKey = 'tv_details_v4_$tvId';
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null) return cachedData;
 
     try {
       final response = await _getWithRetry(
         '/tv/$tvId',
-        queryParameters: {'append_to_response': 'videos'},
+        queryParameters: {'append_to_response': 'videos,watch/providers'},
       );
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
@@ -320,7 +320,7 @@ class TmdbClient {
     int movieId, {
     bool forceRefresh = false,
   }) async {
-    final cacheKey = 'movie_details_v2_$movieId';
+    final cacheKey = 'movie_details_v3_$movieId';
     if (!forceRefresh) {
       final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
       if (cachedData != null) return cachedData;
@@ -329,7 +329,7 @@ class TmdbClient {
     try {
       final response = await _getWithRetry(
         '/movie/$movieId',
-        queryParameters: {'append_to_response': 'videos'},
+        queryParameters: {'append_to_response': 'videos,watch/providers'},
       );
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
