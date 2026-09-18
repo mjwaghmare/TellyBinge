@@ -77,6 +77,29 @@ class MovieDetailsView extends StatefulWidget {
 
 class _MovieDetailsViewState extends State<MovieDetailsView> {
   bool _hasAutoSyncedMetadata = false;
+  late final ScrollController _scrollController;
+  final ValueNotifier<bool> _isCollapsed = ValueNotifier<bool>(false);
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()
+      ..addListener(() {
+        if (_scrollController.hasClients) {
+          final isCurrentlyCollapsed = _scrollController.offset > 240;
+          if (isCurrentlyCollapsed != _isCollapsed.value) {
+            _isCollapsed.value = isCurrentlyCollapsed;
+          }
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _isCollapsed.dispose();
+    super.dispose();
+  }
 
   Map<String, dynamic> _dummyMovieData() {
     return {
@@ -586,6 +609,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   Skeletonizer(
                     enabled: isLoading,
                     child: CustomScrollView(
+                      controller: _scrollController,
                       slivers: [
                         SliverAppBar(
                           automaticallyImplyLeading: false,
@@ -595,21 +619,37 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                           ).scaffoldBackgroundColor,
                           expandedHeight: 300.0,
                           pinned: true,
+                          title: ValueListenableBuilder<bool>(
+                            valueListenable: _isCollapsed,
+                            builder: (context, isCollapsed, child) {
+                              return AnimatedOpacity(
+                                duration: const Duration(milliseconds: 250),
+                                opacity: isCollapsed ? 1.0 : 0.0,
+                                child: Text(
+                                  title,
+                                  style: AppTextStyles.mdBold,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            },
+                          ),
+                          centerTitle: true,
                           actions: [
                             Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
+                              padding: const EdgeInsets.only(right: AppSpacing.xs),
                               child: Container(
-                                width: 36,
-                                height: 36,
+                                width: 44,
+                                height: 44,
                                 decoration: BoxDecoration(
-                                  color: AppColors.surface.withValues(alpha: 0.6),
+                                  color: Colors.black.withValues(alpha: 0.6),
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
                                   padding: EdgeInsets.zero,
                                   icon: const Icon(
                                     Icons.ios_share_rounded,
-                                    size: 19,
+                                    size: 20,
                                     color: AppColors.textOnPrimary,
                                   ),
                                   onPressed: (isLoading || state is! MovieDetailsSuccess)
@@ -637,12 +677,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                             ),
                             if (isAdded && uid != null)
                               Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
+                                padding: const EdgeInsets.only(right: AppSpacing.xs),
                                 child: Container(
-                                  width: 36,
-                                  height: 36,
+                                  width: 44,
+                                  height: 44,
                                   decoration: BoxDecoration(
-                                    color: AppColors.surface.withValues(alpha: 0.6),
+                                    color: Colors.black.withValues(alpha: 0.6),
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -677,97 +717,72 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 ),
                               ),
                           ],
-                          flexibleSpace: LayoutBuilder(
-                            builder:
-                                (
-                                  BuildContext context,
-                                  BoxConstraints constraints,
-                                ) {
-                                  final top = constraints.biggest.height;
-                                  final isCollapsed =
-                                      top <=
-                                      MediaQuery.paddingOf(context).top +
-                                          kToolbarHeight +
-                                          30;
-                                  final titleColor = isCollapsed
-                                      ? context.textPrimary
-                                      : AppColors.textOnPrimary;
-                                  final genresColor = isCollapsed
-                                      ? context.textSecondary
-                                      : AppColors.textOnPrimary
-                                          .withValues(alpha: 0.8);
-
-                                  return FlexibleSpaceBar(
-                                    centerTitle: false,
-                                    titlePadding: EdgeInsets.only(
-                                      left: isCollapsed ? 60 : AppSpacing.md,
-                                      bottom: isCollapsed
-                                          ? AppSpacing.sm
-                                          : AppSpacing.md,
-                                      right: AppSpacing.xxxl,
+                          flexibleSpace: FlexibleSpaceBar(
+                            background: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                if (backdropPath != null &&
+                                    backdropPath.isNotEmpty)
+                                  CachedNetworkImage(
+                                    imageUrl: _getImageUrl(
+                                      backdropPath,
                                     ),
-                                    title: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
+                                    fit: BoxFit.cover,
+                                    errorWidget:
+                                        (context, url, error) =>
+                                            Container(
+                                              color: AppColors.surface,
+                                            ),
+                                  )
+                                else
+                                  Container(color: AppColors.surface),
+                                const DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.black45,
+                                        Colors.transparent,
+                                        Colors.black,
+                                      ],
+                                      stops: [0.0, 0.4, 1.0],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  left: 16.0,
+                                  right: 16.0,
+                                  bottom: 16.0,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        title,
+                                        style: AppTextStyles.xxl.copyWith(
+                                          color: AppColors.textPrimary,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (genres.isNotEmpty) ...[
+                                        const SizedBox(height: 6),
                                         Text(
-                                          title,
-                                          style: AppTextStyles.mdBold.copyWith(
-                                            color: titleColor,
+                                          genres,
+                                          style: AppTextStyles.sm.copyWith(
+                                            color: AppColors.textSecondary,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        if (genres.isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            genres,
-                                            style: AppTextStyles.xs.copyWith(
-                                              color: genresColor,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
                                       ],
-                                    ),
-                                    background: Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        if (backdropPath != null &&
-                                            backdropPath.isNotEmpty)
-                                          CachedNetworkImage(
-                                            imageUrl: _getImageUrl(
-                                              backdropPath,
-                                            ),
-                                            fit: BoxFit.cover,
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    Container(
-                                                      color: AppColors.surface,
-                                                    ),
-                                          )
-                                        else
-                                          Container(color: AppColors.surface),
-                                        const DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.black45,
-                                                Colors.transparent,
-                                                Colors.black,
-                                              ],
-                                              stops: [0.0, 0.4, 1.0],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         SliverToBoxAdapter(

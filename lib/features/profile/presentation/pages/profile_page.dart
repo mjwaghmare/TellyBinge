@@ -901,6 +901,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       count: '${stats.totalEpisodesCount}',
                                       label: 'Episodes watched',
                                       timeSpent: _formatTime(totalShowMinutes),
+                                      isSelected: _isHeatmapExpanded && _heatmapPageIndex == 0,
                                       onTap: () {
                                         _toggleHeatmap(0);
                                       },
@@ -928,6 +929,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       count: '${watchedMovies.length}',
                                       label: 'Movies watched',
                                       timeSpent: _formatTime(totalMinutes),
+                                      isSelected: _isHeatmapExpanded && _heatmapPageIndex == 1,
                                       onTap: () {
                                         _toggleHeatmap(1);
                                       },
@@ -1460,6 +1462,7 @@ class _ProfilePageState extends State<ProfilePage>
     required String label,
     required String timeSpent,
     required VoidCallback onTap,
+    bool isSelected = false,
   }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return InkWell(
@@ -1472,14 +1475,26 @@ class _ProfilePageState extends State<ProfilePage>
         ),
         child: Row(
           children: [
-            Container(
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isLight
-                    ? AppColors.primaryLight.withValues(alpha: 0.2)
-                    : AppColors.primary.withValues(alpha: 0.15),
+                color: isSelected
+                    ? (isLight
+                        ? AppColors.primaryLight.withValues(alpha: 0.3)
+                        : AppColors.primary.withValues(alpha: 0.25))
+                    : (isLight
+                        ? AppColors.primaryLight.withValues(alpha: 0.2)
+                        : AppColors.primary.withValues(alpha: 0.15)),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? (isLight ? AppColors.lightPrimary : AppColors.primary)
+                      : Colors.transparent,
+                  width: 2.0,
+                ),
               ),
               alignment: Alignment.center,
               child: icon,
