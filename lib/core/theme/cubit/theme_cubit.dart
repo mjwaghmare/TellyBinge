@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -27,6 +29,16 @@ class ThemeCubit extends Cubit<ThemeState> {
        );
 
   Future<void> setThemeMode(ThemeMode mode) async {
+    if (state.themeMode == mode) return;
+
+    // Optimistic UI update: emit immediately for instant theme switch.
+    emit(ThemeState(themeMode: mode, isOledDarkMode: state.isOledDarkMode));
+
+    // Persist in background without blocking the UI.
+    unawaited(_persistThemeMode(mode));
+  }
+
+  Future<void> _persistThemeMode(ThemeMode mode) async {
     final modeString = switch (mode) {
       ThemeMode.system => 'system',
       ThemeMode.dark => 'dark',
@@ -34,7 +46,6 @@ class ThemeCubit extends Cubit<ThemeState> {
     };
     await storage.writeSetting('theme_mode', modeString);
     await storage.writeSetting('dark_mode', mode == ThemeMode.dark);
-    emit(ThemeState(themeMode: mode, isOledDarkMode: state.isOledDarkMode));
   }
 
   Future<void> toggleDarkMode(bool value) async {

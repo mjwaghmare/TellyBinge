@@ -14,7 +14,7 @@ class ThemeSelectionBottomSheet extends StatelessWidget {
 
   /// Displays the theme selection bottom sheet.
   static Future<void> show(BuildContext context) {
-    HapticFeedback.lightImpact();
+    HapticFeedback.selectionClick();
 
     return showModalBottomSheet<void>(
       context: context,
@@ -41,7 +41,9 @@ class ThemeSelectionBottomSheet extends StatelessWidget {
             MediaQuery.platformBrightnessOf(context) == Brightness.dark,
         };
 
-        return Container(
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
           decoration: BoxDecoration(
             color: isDark ? AppColors.surfaceElevated : AppColors.lightSurface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
@@ -134,7 +136,7 @@ class ThemeSelectionBottomSheet extends StatelessWidget {
   }
 
   void _handleSelect(BuildContext context, ThemeMode mode) {
-    HapticFeedback.lightImpact();
+    HapticFeedback.selectionClick();
     context.read<ThemeCubit>().setThemeMode(mode);
   }
 }
@@ -314,7 +316,7 @@ class _PhoneDeviceFrame extends StatelessWidget {
   }
 }
 
-/// Reusable mini screen representing Popverse's 3-column poster grid UI.
+/// Reusable mini screen representing Popverse's Movies grid view UI.
 /// Custom created once and reused across Light, Dark, and System modes.
 class _MiniPopverseScreen extends StatelessWidget {
   final bool isDark;
@@ -323,199 +325,253 @@ class _MiniPopverseScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF0D0D0D) : const Color(0xFFF9F9FB);
-    final surface = isDark ? const Color(0xFF161616) : const Color(0xFFFFFFFF);
-    final cardBg = isDark ? const Color(0xFF222228) : const Color(0xFFE2E8F0);
-    final cardAccent = isDark ? const Color(0xFF2D2D36) : const Color(0xFFCBD5E1);
-    final textMuted = isDark ? const Color(0xFF52525C) : const Color(0xFF94A3B8);
+    final bg = isDark ? AppColors.darkBackground : AppColors.lightBackground;
+    final surface = isDark ? AppColors.surface : AppColors.lightSurface;
+    final cardBg = isDark ? const Color(0xFF1E1E24) : const Color(0xFFE2E8F0);
+    final cardAccent = isDark ? const Color(0xFF2A2A32) : const Color(0xFFCBD5E1);
+    final textMuted = isDark ? AppColors.textTertiary : AppColors.lightTextTertiary;
     final primary = isDark ? AppColors.primary : AppColors.lightPrimary;
+    final chipBg = isDark ? AppColors.surfaceElevated : AppColors.lightSurfaceElevated;
+    final borderColor = isDark ? const Color(0xFF222228) : AppColors.borderLight;
 
     return Container(
       color: bg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Top app bar / header strip (clearing the Dynamic Island)
+          // ── Top area: Dynamic Island clearance + TabBar ──
           Container(
-            padding: const EdgeInsets.only(top: 13, left: 6, right: 6, bottom: 4),
             color: surface,
-            child: Row(
+            padding: const EdgeInsets.only(top: 13),
+            child: Column(
               children: [
-                // Popverse brand logo bar
-                Container(
-                  width: 18,
-                  height: 3.5,
-                  decoration: BoxDecoration(
-                    color: primary,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const Spacer(),
-                // Search dot
-                Container(
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: textMuted,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 2.5),
-                // Filter dot
-                Container(
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: textMuted,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Section header pill row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3.5),
-            child: Row(
-              children: [
-                Container(
-                  width: 16,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: primary.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(1.5),
-                  ),
-                ),
-                const SizedBox(width: 3),
-                Container(
-                  width: 10,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: textMuted.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(1.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Popverse 3-Column Poster Grid
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.5),
-              child: GridView.count(
-                crossAxisCount: 3,
-                crossAxisSpacing: 3,
-                mainAxisSpacing: 3,
-                childAspectRatio: 2 / 3,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                children: List.generate(6, (index) {
-                  final hasBadge = index == 0 || index == 3;
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(2.5),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          cardAccent,
-                          cardBg,
-                        ],
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Watched / tracking badge on posters
-                        if (hasBadge)
-                          Positioned(
-                            top: 2,
-                            right: 2,
-                            child: Container(
-                              width: 4,
-                              height: 4,
+                // TabBar: 2 tab pills ("WATCH LIST" active, "UPCOMING" muted)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: Row(
+                    children: [
+                      // Active tab
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 3,
+                              margin: const EdgeInsets.only(bottom: 2),
                               decoration: BoxDecoration(
-                                color: primary,
-                                shape: BoxShape.circle,
+                                color: textMuted.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(1),
                               ),
                             ),
-                          ),
-                        // Mini title strip at bottom of poster
-                        Positioned(
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          child: Container(
-                            height: 1.5,
-                            decoration: BoxDecoration(
-                              color: textMuted.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(1),
+                            Container(
+                              height: 1,
+                              color: primary,
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                }),
+                      ),
+                      const SizedBox(width: 4),
+                      // Inactive tab
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 3,
+                              margin: const EdgeInsets.only(bottom: 2),
+                              decoration: BoxDecoration(
+                                color: textMuted.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                            Container(
+                              height: 1,
+                              color: Colors.transparent,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 2),
+
+          // ── Sticky section chip ("WATCH NEXT") ──
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+              decoration: BoxDecoration(
+                color: chipBg,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Container(
+                width: 14,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: textMuted.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(1),
+                ),
               ),
             ),
           ),
 
-          // Mini bottom navigation dock
+          const SizedBox(height: 2),
+
+          // ── 3-Column Poster Grid with gradient overlays ──
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3.5),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const crossAxisCount = 3;
+                  const spacing = 2.5;
+                  final cellWidth =
+                      (constraints.maxWidth - spacing * (crossAxisCount - 1)) /
+                          crossAxisCount;
+                  final cellHeight = cellWidth * 1.5; // 2:3 aspect ratio
+
+                  return Wrap(
+                    spacing: spacing,
+                    runSpacing: spacing,
+                    children: List.generate(6, (index) {
+                      final hasDate = index == 0 || index == 2 || index == 4;
+                      return SizedBox(
+                        width: cellWidth,
+                        height: cellHeight,
+                        child: Container(
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(2),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [cardAccent, cardBg],
+                            ),
+                          ),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // Bottom gradient overlay (matches real movie card)
+                              if (hasDate)
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    height: cellHeight * 0.5,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          const Color(0xFF0D0D0D)
+                                              .withValues(alpha: 0.9),
+                                          const Color(0xFF0D0D0D)
+                                              .withValues(alpha: 0.3),
+                                          Colors.transparent,
+                                        ],
+                                        stops: const [0.0, 0.5, 1.0],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              // Date text at bottom-left
+                              if (hasDate)
+                                Positioned(
+                                  bottom: 2,
+                                  left: 2,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 5,
+                                        height: 3.5,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.9),
+                                          borderRadius:
+                                              BorderRadius.circular(0.5),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 0.5),
+                                      Container(
+                                        width: 7,
+                                        height: 2,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.7),
+                                          borderRadius:
+                                              BorderRadius.circular(0.5),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // ── 5-Slot Bottom Navigation with center FAB ──
           Container(
-            height: 11,
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+            height: 13,
             decoration: BoxDecoration(
               color: surface,
               border: Border(
-                top: BorderSide(
-                  color: isDark ? const Color(0xFF222228) : const Color(0xFFE5E7EB),
-                  width: 0.5,
-                ),
+                top: BorderSide(color: borderColor, width: 0.5),
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Active tab (primary violet dot)
-                Container(
-                  width: 3.5,
-                  height: 3.5,
-                  decoration: BoxDecoration(
-                    color: primary,
-                    shape: BoxShape.circle,
+                // Shows tab (muted)
+                _buildNavDot(textMuted),
+                // Movies tab (active)
+                _buildNavDot(primary),
+                // Center FAB circle
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
                 ),
-                Container(
-                  width: 3.5,
-                  height: 3.5,
-                  decoration: BoxDecoration(
-                    color: textMuted,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Container(
-                  width: 3.5,
-                  height: 3.5,
-                  decoration: BoxDecoration(
-                    color: textMuted,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Container(
-                  width: 3.5,
-                  height: 3.5,
-                  decoration: BoxDecoration(
-                    color: textMuted,
-                    shape: BoxShape.circle,
-                  ),
-                ),
+                // Explore tab (muted)
+                _buildNavDot(textMuted),
+                // Profile tab (muted)
+                _buildNavDot(textMuted),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNavDot(Color color) {
+    return Expanded(
+      child: Center(
+        child: Container(
+          width: 3.5,
+          height: 3.5,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
       ),
     );
   }
