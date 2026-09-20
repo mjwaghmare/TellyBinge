@@ -9,7 +9,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/models/app_icon_option.dart';
 import '../../../../core/network/tmdb_cache_manager.dart';
+import '../../../../core/services/app_icon_service.dart';
 import '../../../../core/services/app_update_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -28,6 +30,7 @@ import 'achievements_page.dart';
 import 'terms_and_conditions_page.dart';
 import 'privacy_policy_page.dart';
 import '../../../feedback/presentation/pages/feedback_board_page.dart';
+import '../widgets/app_icon_selection_bottom_sheet.dart';
 import '../widgets/mw_studio_footer.dart';
 import '../widgets/theme_selection_bottom_sheet.dart';
 
@@ -42,6 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
   PackageInfo? _packageInfo;
   int? _cacheSizeBytes;
   bool _isClearingCache = false;
+  AppIconOption _selectedAppIcon = AppIconOption.defaultIcon;
 
   /// Set to true once the app is published and store IDs are configured.
   bool get _isAppRatingEnabled => false;
@@ -51,6 +55,16 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _loadPackageInfo();
     _loadCacheSize();
+    _loadAppIcon();
+  }
+
+  Future<void> _loadAppIcon() async {
+    final icon = await AppIconService().getCurrentIcon();
+    if (mounted) {
+      setState(() {
+        _selectedAppIcon = icon;
+      });
+    }
   }
 
   Future<void> _loadPackageInfo() async {
@@ -172,6 +186,53 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     onTap: () => ThemeSelectionBottomSheet.show(context),
                   );
+                },
+              ),
+              _buildDivider(),
+              _SettingsTile(
+                icon: Icons.app_shortcut_rounded,
+                title: 'App Icon',
+                subtitle: 'Personalize your home screen icon',
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(7),
+                        border: Border.all(
+                          color: isLight ? AppColors.borderLight : AppColors.borderDark,
+                          width: 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.asset(
+                          _selectedAppIcon.previewAsset,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.crop_square_rounded,
+                            size: 16,
+                            color: AppColors.primaryLight,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      _selectedAppIcon.title,
+                      style: AppTextStyles.smMedium.copyWith(
+                        color: AppColors.primaryLight,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded, color: AppColors.primaryLight, size: 20),
+                  ],
+                ),
+                onTap: () async {
+                  await AppIconSelectionBottomSheet.show(context);
+                  await _loadAppIcon();
                 },
               ),
             ],

@@ -32,6 +32,12 @@ class UserModel extends Equatable {
     return fallback.isNotEmpty && normalized == fallback;
   }
 
+  bool get isPro {
+    if (isAdmin) return true;
+    final r = role.trim().toLowerCase();
+    return r == 'pro' || r == 'premium' || r == 'subscriber' || r == 'vip';
+  }
+
   UserModel copyWith({
     String? uid,
     String? email,

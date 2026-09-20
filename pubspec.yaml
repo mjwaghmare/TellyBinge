@@ -55,6 +55,7 @@ dependencies:
   quick_actions: ^1.0.8
   share_plus: ^12.0.2
   sensors_plus: ^6.1.2
+  flutter_dynamic_icon_plus: ^1.4.1
 
 dev_dependencies:
   flutter_test:
@@ -90,6 +91,7 @@ flutter:
     - assets/lottie/
     - assets/awards/
     - assets/images/posters/
+    - assets/images/app_icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
