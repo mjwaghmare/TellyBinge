@@ -353,11 +353,14 @@ class MoviesPageState extends State<MoviesPage> {
       child: RefreshIndicator.adaptive(
         onRefresh: () async {
           if (uid != null) {
-            await context.read<MovieWatchlistCubit>().syncUpcomingMovies(
-              uid,
-              force: true,
+            unawaited(
+              context.read<MovieWatchlistCubit>().syncUpcomingMovies(
+                uid,
+                force: true,
+              ),
             );
           }
+          await Future.delayed(const Duration(milliseconds: 600));
         },
         child: CustomScrollView(
           controller: watchlistScrollController,
@@ -521,11 +524,14 @@ class MoviesPageState extends State<MoviesPage> {
       child: RefreshIndicator.adaptive(
         onRefresh: () async {
           if (uid != null) {
-            await context.read<MovieWatchlistCubit>().syncUpcomingMovies(
-              uid,
-              force: true,
+            unawaited(
+              context.read<MovieWatchlistCubit>().syncUpcomingMovies(
+                uid,
+                force: true,
+              ),
             );
           }
+          await Future.delayed(const Duration(milliseconds: 600));
         },
         child: CustomScrollView(
         controller: upcomingScrollController,

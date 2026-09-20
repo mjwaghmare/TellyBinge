@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -153,7 +154,11 @@ class DashboardPageState extends State<DashboardPage> {
                           watchlistState.shows,
                           uid,
                         ),
-                        _buildUpcomingView(enrichedShows),
+                        _buildUpcomingView(
+                          enrichedShows,
+                          watchlistState.shows,
+                          uid,
+                        ),
                       ],
                     ),
                   );
@@ -360,10 +365,15 @@ class DashboardPageState extends State<DashboardPage> {
             }
 
             return RefreshIndicator.adaptive(
-              onRefresh: () =>
+              onRefresh: () async {
+                unawaited(
                   _enrichmentCubit.enrichShows(rawShows, uid, force: true),
+                );
+                await Future.delayed(const Duration(milliseconds: 600));
+              },
               child: CustomScrollView(
                 controller: watchlistScrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   if (watchNext.isNotEmpty)
                     SliverMainAxisGroup(
@@ -495,7 +505,11 @@ class DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildUpcomingView(List<EnrichedShow> shows) {
+  Widget _buildUpcomingView(
+    List<EnrichedShow> shows, [
+    List<Map<String, dynamic>>? rawShows,
+    String? uid,
+  ]) {
     final Map<String, List<EnrichedShow>> groupedShows = {'TOMORROW': []};
     final Map<String, List<EnrichedShow>> weekdayGroups = {};
     final List<EnrichedShow> laterShows = [];
@@ -605,17 +619,28 @@ class DashboardPageState extends State<DashboardPage> {
 
     return Stack(
       children: [
-        CustomScrollView(
-          controller: upcomingScrollController,
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.only(
-                top: AppSpacing.xs,
-                bottom: AppSpacing.bottomTabPadding,
+        RefreshIndicator.adaptive(
+          onRefresh: () async {
+            if (rawShows != null && uid != null) {
+              unawaited(
+                _enrichmentCubit.enrichShows(rawShows, uid, force: true),
+              );
+            }
+            await Future.delayed(const Duration(milliseconds: 600));
+          },
+          child: CustomScrollView(
+            controller: upcomingScrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.only(
+                  top: AppSpacing.xs,
+                  bottom: AppSpacing.bottomTabPadding,
+                ),
+                sliver: SliverMainAxisGroup(slivers: slivers),
               ),
-              sliver: SliverMainAxisGroup(slivers: slivers),
-            ),
-          ],
+            ],
+          ),
         ),
         _buildGridToggle(),
       ],
