@@ -48,12 +48,27 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
     final isDark = !context.isLight;
 
     return BlocConsumer<AppIconCubit, AppIconState>(
+      listenWhen: (previous, current) {
+        if (current.errorMessage != null &&
+            current.errorMessage != previous.errorMessage) {
+          return true;
+        }
+        if (previous.isApplying &&
+            !current.isApplying &&
+            current.errorMessage == null &&
+            current.currentIcon != previous.currentIcon) {
+          return true;
+        }
+        return false;
+      },
       listener: (context, state) {
         if (state.errorMessage != null) {
           AppSnackbar.showError(
             context,
             state.errorMessage!,
           );
+        } else if (context.mounted) {
+          Navigator.of(context).pop();
         }
       },
       builder: (context, state) {
@@ -196,6 +211,7 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
   }
 
   void _handleSelectIcon(BuildContext context, AppIconOption option, AppIconState state) {
+    if (state.isApplying || option == state.currentIcon) return;
     HapticFeedback.selectionClick();
     context.read<AppIconCubit>().selectIcon(option);
   }
