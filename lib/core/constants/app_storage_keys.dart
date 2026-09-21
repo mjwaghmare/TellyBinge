@@ -11,6 +11,7 @@ class AppStorageKeys {
   static const String notify1HourBefore = 'notify_1_hour_before';
   static const String notify1DayBefore = 'notify_1_day_before';
   static const String selectedAppIcon = 'selected_app_icon';
+  static const String hapticsEnabled = 'haptics_enabled';
 
   // Notification Service State
   static const String hasUnreadNotifications = 'has_unread_notifications';

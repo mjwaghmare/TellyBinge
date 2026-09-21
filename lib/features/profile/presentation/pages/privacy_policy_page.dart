@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/services/app_haptics.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -36,7 +36,7 @@ class PrivacyPolicyPage extends StatelessWidget {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: primaryTextColor, size: 20),
           onPressed: () {
-            HapticFeedback.lightImpact();
+            AppHaptics.lightImpact();
             Navigator.pop(context);
           },
         ),

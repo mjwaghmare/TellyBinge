@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -222,7 +222,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                     Navigator.pop(sheetContext);
                     final authState = context.read<AuthCubit>().state;
                     if (authState is Authenticated) {
-                      HapticFeedback.mediumImpact();
+                      AppHaptics.mediumImpact();
                       context.read<TvShowWatchlistCubit>().stopWatchingShow(
                         uid: authState.user.uid,
                         showId: showId,

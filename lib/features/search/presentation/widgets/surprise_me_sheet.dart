@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shake/shake.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -74,7 +74,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
           return;
         }
         _isShakeProcessing = true;
-        HapticFeedback.heavyImpact();
+        AppHaptics.heavyImpact();
         _shuffleCurrentTab();
         Timer(const Duration(milliseconds: 1500), () {
           if (mounted) {

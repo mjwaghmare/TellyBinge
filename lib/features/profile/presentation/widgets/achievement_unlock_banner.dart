@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../domain/models/achievement.dart';
 import 'achievement_detail_bottom_sheet.dart';
 
@@ -36,7 +36,7 @@ class AchievementUnlockBanner {
     _queue.clear();
     _isShowing = true;
 
-    HapticFeedback.heavyImpact();
+    AppHaptics.heavyImpact();
 
     AchievementDetailBottomSheet.showStack(
       navContext,

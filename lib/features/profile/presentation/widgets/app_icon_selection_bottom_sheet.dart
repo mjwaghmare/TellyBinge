@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/models/app_icon_option.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -20,7 +20,7 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
 
   /// Displays the app icon selection bottom sheet.
   static Future<void> show(BuildContext context) {
-    HapticFeedback.selectionClick();
+    AppHaptics.selectionClick();
 
     bool isPro = false;
     try {
@@ -212,7 +212,7 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
 
   void _handleSelectIcon(BuildContext context, AppIconOption option, AppIconState state) {
     if (state.isApplying || option == state.currentIcon) return;
-    HapticFeedback.selectionClick();
+    AppHaptics.selectionClick();
     context.read<AppIconCubit>().selectIcon(option);
   }
 }

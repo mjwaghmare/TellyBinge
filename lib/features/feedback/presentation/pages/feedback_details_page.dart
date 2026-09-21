@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/services/app_haptics.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -148,7 +148,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     }
 
     if (_item.userId == currentUserId && _item.isUpvoted) {
-      unawaited(HapticFeedback.lightImpact());
+      unawaited(AppHaptics.lightImpact());
       AppSnackbar.showInfo(
         context,
         'You created this feedback — your upvote is permanent.',
@@ -157,7 +157,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     }
 
     final previousItem = _item;
-    unawaited(HapticFeedback.mediumImpact());
+    unawaited(AppHaptics.mediumImpact());
     setState(() {
       _isVotePending = true;
       _item = _item.upvoted(currentUserId);
@@ -183,7 +183,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
   Future<void> _pickCommentImage() async {
     if (_isCommentSubmitting) return;
-    unawaited(HapticFeedback.lightImpact());
+    unawaited(AppHaptics.lightImpact());
     try {
       final image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
@@ -207,7 +207,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   }
 
   void _removeCommentImage() {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     setState(() {
       _attachedCommentImage = null;
     });
@@ -240,7 +240,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     final userId = user.uid;
     _currentUserId = userId;
 
-    unawaited(HapticFeedback.lightImpact());
+    unawaited(AppHaptics.lightImpact());
     FocusScope.of(context).unfocus();
     final commentId = '${userId}_${DateTime.now().microsecondsSinceEpoch}';
     final timeStr = DateTime.now().toIso8601String();
@@ -446,7 +446,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         if (targetIndex == -1) return;
 
         final previousComments = List<Map<String, dynamic>>.from(_comments);
-        unawaited(HapticFeedback.lightImpact());
+        unawaited(AppHaptics.lightImpact());
         setState(() {
           _isCommentMutationPending = true;
           _comments[targetIndex] = {
@@ -569,7 +569,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
       if (targetIndex == -1) return;
 
       final previousComments = List<Map<String, dynamic>>.from(_comments);
-      unawaited(HapticFeedback.lightImpact());
+      unawaited(AppHaptics.lightImpact());
       setState(() {
         _isCommentMutationPending = true;
         _comments.removeAt(targetIndex);
@@ -680,7 +680,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     ? null
                     : () async {
                         setDialogState(() => isDeleting = true);
-                        unawaited(HapticFeedback.mediumImpact());
+                        unawaited(AppHaptics.mediumImpact());
                         try {
                           await _repository.deleteFeedback(_item.id);
                           if (dialogCtx.mounted) {
@@ -869,7 +869,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                         : () async {
                             Navigator.pop(sheetCtx);
                             if (isCurrent) return;
-                            unawaited(HapticFeedback.mediumImpact());
+                            unawaited(AppHaptics.mediumImpact());
                             await _updateStatus(status);
                           },
                     borderRadius: BorderRadius.circular(14.0),
@@ -1640,7 +1640,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                                     bottom: 3.0,
                                     child: GestureDetector(
                                       onTap: () {
-                                        HapticFeedback.lightImpact();
+                                        AppHaptics.lightImpact();
                                         _commentController.clear();
                                       },
                                       child: Padding(
@@ -1666,7 +1666,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                     // 2. Image Gallery Button (To the right of field, to the left of send button - NO CIRCLE BG)
                     IconButton(
                       onPressed: () {
-                        HapticFeedback.lightImpact();
+                        AppHaptics.lightImpact();
                         if (!_isCommentSubmitting) _pickCommentImage();
                       },
                       splashRadius: 20,
@@ -1719,7 +1719,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                               ? IconButton(
                                   key: const ValueKey('send_comment_button'),
                                   onPressed: () {
-                                    HapticFeedback.lightImpact();
+                                    AppHaptics.lightImpact();
                                     _addComment();
                                   },
                                   splashRadius: 20,

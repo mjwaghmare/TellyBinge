@@ -4,11 +4,11 @@ import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -374,7 +374,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
 
     if (confirmed == true) {
-      unawaited(HapticFeedback.mediumImpact());
+      unawaited(AppHaptics.mediumImpact());
       final previousNotifications = List<CleanNotificationItem>.from(
         _notifications,
       );
@@ -396,7 +396,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   void _onNotificationTap(CleanNotificationItem item) {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
 
     // Mark as read locally
     setState(() {

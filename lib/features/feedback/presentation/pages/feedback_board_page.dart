@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -150,7 +150,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
     }
 
     if (item.userId == _currentUserId && item.isUpvoted) {
-      unawaited(HapticFeedback.lightImpact());
+      unawaited(AppHaptics.lightImpact());
       AppSnackbar.showInfo(
         context,
         'You created this feedback — your upvote is permanent.',
@@ -161,7 +161,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
     final index = _items.indexWhere((i) => i.id == item.id);
     if (index == -1 || _pendingVoteIds.contains(item.id)) return;
 
-    unawaited(HapticFeedback.mediumImpact());
+    unawaited(AppHaptics.mediumImpact());
     setState(() {
       _pendingVoteIds.add(item.id);
       _items[index] = _items[index].upvoted(_currentUserId);
@@ -188,7 +188,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
   }
 
   void _openSubmitSheet() {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     if (FirebaseAuth.instance.currentUser == null) {
       AuthRequiredBottomSheet.show(
         context,
@@ -213,7 +213,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
   }
 
   Future<void> _handleRefresh() async {
-    unawaited(HapticFeedback.lightImpact());
+    unawaited(AppHaptics.lightImpact());
     final completer = Completer<void>();
     _subscribeToFeedbacks(completer);
 
@@ -462,7 +462,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                                   isVotePending: _pendingVoteIds.contains(item.id),
                                   onUpvote: () => _handleUpvote(item),
                                   onTap: () async {
-                                    unawaited(HapticFeedback.lightImpact());
+                                    unawaited(AppHaptics.lightImpact());
                                     final updated =
                                         await Navigator.push<FeedbackItem>(
                                           context,
@@ -505,7 +505,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          HapticFeedback.lightImpact();
+          AppHaptics.lightImpact();
           setState(() {
             _selectedFilter = filterKey;
           });

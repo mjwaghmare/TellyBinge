@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
+import '../../../../core/services/app_haptics.dart';
 
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -60,7 +60,7 @@ class _RollingDiceButtonState extends State<RollingDiceButton>
         behavior: HitTestBehavior.opaque,
         onTap: () {
           if (!widget.isRolling) {
-            HapticFeedback.heavyImpact();
+            AppHaptics.heavyImpact();
             widget.onPressed();
           }
         },

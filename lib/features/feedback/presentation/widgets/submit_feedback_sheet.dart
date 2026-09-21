@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/services/app_haptics.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -91,7 +91,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
       AppSnackbar.showInfo(context, 'You can attach up to 5 images.');
       return;
     }
-    unawaited(HapticFeedback.lightImpact());
+    unawaited(AppHaptics.lightImpact());
     final remainingSlots = 5 - _attachedMedia.length;
     try {
       final images = await _picker.pickMultiImage(
@@ -133,7 +133,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
 
   void _removeMedia(int index) {
     if (_isSubmitting) return;
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     setState(() {
       _attachedMedia.removeAt(index);
     });
@@ -155,7 +155,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
       return;
     }
 
-    unawaited(HapticFeedback.mediumImpact());
+    unawaited(AppHaptics.mediumImpact());
     setState(() {
       _isSubmitting = true;
     });
@@ -683,7 +683,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
+          AppHaptics.lightImpact();
           setState(() {
             _selectedCategory = category;
           });
@@ -718,7 +718,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
   ) {
     return GestureDetector(
       onTap: () {
-        HapticFeedback.lightImpact();
+        AppHaptics.lightImpact();
         onTap();
       },
       child: AnimatedContainer(

@@ -12,7 +12,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'app/shell_navigation_page.dart';
 import 'core/constants/app_assets.dart';
 import 'core/constants/app_constants.dart';
+import 'core/constants/app_storage_keys.dart';
 import 'core/network/tmdb_client.dart';
+import 'core/services/app_haptics.dart';
 import 'core/services/app_update_service.dart';
 import 'core/services/widget_service.dart';
 import 'core/services/notification_service.dart';
@@ -109,6 +111,7 @@ void main() async {
   final isOledInitial = settings['oled_dark_mode'] as bool? ?? false;
 
   final prefs = await SharedPreferences.getInstance();
+  AppHaptics.isEnabled = prefs.getBool(AppStorageKeys.hapticsEnabled) ?? true;
 
   runApp(
     MyApp(

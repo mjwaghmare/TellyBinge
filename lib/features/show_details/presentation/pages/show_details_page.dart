@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -10,6 +9,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -157,7 +157,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             ),
           CupertinoActionSheetAction(
             onPressed: () {
-              HapticFeedback.mediumImpact();
+              AppHaptics.mediumImpact();
               Navigator.pop(context);
               if (isStopped) {
                 context.read<TvShowWatchlistCubit>().continueWatchingShow(
@@ -176,7 +176,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
           CupertinoActionSheetAction(
             isDestructiveAction: true,
             onPressed: () {
-              HapticFeedback.mediumImpact();
+              AppHaptics.mediumImpact();
               Navigator.pop(context);
               context.read<TvShowWatchlistCubit>().removeShow(
                 uid: uid,
@@ -634,7 +634,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         return ActionCircleButton(
                           isActive: isFavorite,
                           onTap: () {
-                            HapticFeedback.mediumImpact();
+                            AppHaptics.mediumImpact();
                             if (isAdded) {
                               context
                                   .read<TvShowWatchlistCubit>()
@@ -874,7 +874,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
 
                           return GestureDetector(
                             onTap: () {
-                              HapticFeedback.lightImpact();
+                              AppHaptics.lightImpact();
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -1480,7 +1480,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                 AppSpacing.gapW12,
                                 GestureDetector(
                                   onTap: () {
-                                    HapticFeedback.lightImpact();
+                                    AppHaptics.lightImpact();
                                     if (authState is! Authenticated) {
                                       AuthRequiredBottomSheet.show(
                                         context,
@@ -2047,7 +2047,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           return GestureDetector(
                             onTap: () async {
                               if (isLoadingThisEp) return;
-                              unawaited(HapticFeedback.lightImpact());
+                              unawaited(AppHaptics.lightImpact());
                               if (authState is! Authenticated) {
                                 unawaited(
                                   AuthRequiredBottomSheet.show(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../core/services/app_haptics.dart';
 import '../core/constants/app_assets.dart';
 import '../core/theme/app_colors.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
@@ -122,7 +122,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
         _moviesKey.currentState?.scrollToTop();
       }
     } else {
-      HapticFeedback.lightImpact();
+      AppHaptics.lightImpact();
       setState(() {
         _tabNotifier.value = index;
       });
@@ -142,7 +142,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
       return;
     }
 
-    HapticFeedback.heavyImpact();
+    AppHaptics.heavyImpact();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -476,15 +476,15 @@ class _LongPressHapticButtonState extends State<_LongPressHapticButton>
     _controller.addListener(() {
       if (_controller.value >= 0.33 && !_passed33) {
         _passed33 = true;
-        HapticFeedback.lightImpact();
+        AppHaptics.lightImpact();
       }
       if (_controller.value >= 0.66 && !_passed66) {
         _passed66 = true;
-        HapticFeedback.lightImpact();
+        AppHaptics.lightImpact();
       }
       if (_controller.value >= 1.0 && !_hasTriggered) {
         _hasTriggered = true;
-        HapticFeedback.heavyImpact();
+        AppHaptics.heavyImpact();
         if (widget.onLongPress != null) {
           widget.onLongPress!();
         }

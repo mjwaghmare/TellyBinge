@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/services/app_haptics.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -57,11 +57,11 @@ class _MWStudioFooterState extends State<MWStudioFooter> {
 
     if (_tapCount < 5) {
       // Crisp tactile feedback on every tap of "Crafted with 💜 by MWStudio"
-      HapticFeedback.lightImpact();
+      AppHaptics.lightImpact();
     } else {
       // Celebratory climax on 5th tap: heavy haptic punch, confetti blast & message
       _tapCount = 0;
-      HapticFeedback.heavyImpact();
+      AppHaptics.heavyImpact();
       _confettiController.stop();
       _confettiController.play();
 
@@ -82,7 +82,7 @@ class _MWStudioFooterState extends State<MWStudioFooter> {
     String? androidAppUrl,
     String? iosAppUrl,
   }) async {
-    unawaited(HapticFeedback.lightImpact());
+    unawaited(AppHaptics.lightImpact());
     final bool isIos = Theme.of(context).platform == TargetPlatform.iOS;
     final String? appUrl = isIos ? iosAppUrl : androidAppUrl;
 

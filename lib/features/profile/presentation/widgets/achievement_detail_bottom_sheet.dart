@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' show FontFeature, lerpDouble;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -201,7 +201,7 @@ class _AchievementStackBottomSheetState
 
   void _dismissCurrentCard() {
     _isDismissing = true;
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
     final currentAchievement = widget.achievements[_currentIndex];
     final sheetHeight = AchievementDetailBottomSheet.calculateSheetHeight(
       context,
@@ -976,7 +976,7 @@ class _BadgeEmblemState extends State<_BadgeEmblem>
 
   void _onTapSpin() {
     if (_controller.isAnimating) return;
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     _controller.forward(from: 0.0);
   }
 

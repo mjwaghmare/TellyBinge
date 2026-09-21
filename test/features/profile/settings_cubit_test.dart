@@ -1,0 +1,62 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:popverse/core/constants/app_storage_keys.dart';
+import 'package:popverse/core/network/tmdb_client.dart';
+import 'package:popverse/core/services/app_haptics.dart';
+import 'package:popverse/features/profile/presentation/cubit/settings_cubit.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late SharedPreferences prefs;
+  late TmdbClient tmdbClient;
+
+  setUp(() async {
+    await dotenv.load(mergeWith: {});
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+    tmdbClient = TmdbClient();
+    AppHaptics.isEnabled = true;
+  });
+
+  group('SettingsCubit - Haptic Feedback', () {
+    test('defaults to hapticsEnabled = true when no value in prefs', () {
+      final cubit = SettingsCubit(prefs: prefs, tmdbClient: tmdbClient);
+
+      expect(cubit.state.hapticsEnabled, isTrue);
+      expect(AppHaptics.isEnabled, isTrue);
+    });
+
+    test('loads existing hapticsEnabled = false from prefs', () async {
+      await prefs.setBool(AppStorageKeys.hapticsEnabled, false);
+      final cubit = SettingsCubit(prefs: prefs, tmdbClient: tmdbClient);
+
+      expect(cubit.state.hapticsEnabled, isFalse);
+      expect(AppHaptics.isEnabled, isFalse);
+    });
+
+    test('toggleHaptics(false) persists setting and updates AppHaptics', () async {
+      final cubit = SettingsCubit(prefs: prefs, tmdbClient: tmdbClient);
+      expect(cubit.state.hapticsEnabled, isTrue);
+
+      await cubit.toggleHaptics(false);
+
+      expect(cubit.state.hapticsEnabled, isFalse);
+      expect(prefs.getBool(AppStorageKeys.hapticsEnabled), isFalse);
+      expect(AppHaptics.isEnabled, isFalse);
+    });
+
+    test('toggleHaptics(true) re-enables setting and AppHaptics', () async {
+      await prefs.setBool(AppStorageKeys.hapticsEnabled, false);
+      final cubit = SettingsCubit(prefs: prefs, tmdbClient: tmdbClient);
+      expect(cubit.state.hapticsEnabled, isFalse);
+
+      await cubit.toggleHaptics(true);
+
+      expect(cubit.state.hapticsEnabled, isTrue);
+      expect(prefs.getBool(AppStorageKeys.hapticsEnabled), isTrue);
+      expect(AppHaptics.isEnabled, isTrue);
+    });
+  });
+}

@@ -28,7 +28,7 @@ import '../widgets/shows_filter_bottom_sheet.dart';
 import '../widgets/movies_filter_bottom_sheet.dart';
 import '../widgets/profile_expiration_indicator.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../cubit/profile_heatmap_cubit.dart';
 import '../cubit/profile_heatmap_state.dart';
 import 'notifications_page.dart';
@@ -346,7 +346,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   void _showSignOutSheet(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
     final isLight = context.isLight;
 
     showModalBottomSheet(
@@ -1863,7 +1863,7 @@ class _ProfilePageState extends State<ProfilePage>
       actions: <Widget>[
         CupertinoContextMenuAction(
           onPressed: () {
-            HapticFeedback.mediumImpact();
+            AppHaptics.mediumImpact();
             Navigator.pop(context);
             final authState = context.read<AuthCubit>().state;
             final uid = authState is Authenticated ? authState.user.uid : null;
@@ -1890,7 +1890,7 @@ class _ProfilePageState extends State<ProfilePage>
         CupertinoContextMenuAction(
           isDestructiveAction: true,
           onPressed: () {
-            HapticFeedback.mediumImpact();
+            AppHaptics.mediumImpact();
             Navigator.pop(context);
             final authState = context.read<AuthCubit>().state;
             final uid = authState is Authenticated ? authState.user.uid : null;
@@ -2177,7 +2177,7 @@ class _ProfilePageState extends State<ProfilePage>
                               onPressed: isLoading
                                   ? null
                                   : () {
-                                      HapticFeedback.lightImpact();
+                                      AppHaptics.lightImpact();
                                       final prevMonth = currentMonth.month == 1
                                           ? DateTime(
                                               currentMonth.year - 1,
@@ -2221,7 +2221,7 @@ class _ProfilePageState extends State<ProfilePage>
                               onPressed: isLoading
                                   ? null
                                   : () {
-                                      HapticFeedback.lightImpact();
+                                      AppHaptics.lightImpact();
                                       final nextMonth = currentMonth.month == 12
                                           ? DateTime(
                                               currentMonth.year + 1,
@@ -2256,7 +2256,7 @@ class _ProfilePageState extends State<ProfilePage>
                       child: PageView(
                         controller: _heatmapPageController,
                         onPageChanged: (index) {
-                          HapticFeedback.selectionClick();
+                          AppHaptics.selectionClick();
                           setState(() {
                             _heatmapPageIndex = index;
                             _isLocalLoading = true;
@@ -2484,7 +2484,7 @@ class _ProfilePageState extends State<ProfilePage>
                           triggerMode: TooltipTriggerMode.tap,
                           child: Listener(
                             onPointerDown: (_) {
-                              HapticFeedback.lightImpact();
+                              AppHaptics.lightImpact();
                             },
                             child: Container(
                               decoration: BoxDecoration(
@@ -2577,7 +2577,7 @@ class _ProfilePageState extends State<ProfilePage>
         curve: Curves.easeInOut,
       );
     }
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
   }
 }
 

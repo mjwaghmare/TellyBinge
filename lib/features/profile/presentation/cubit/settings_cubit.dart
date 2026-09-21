@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/constants/app_storage_keys.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../onboarding/data/onboarding_storage.dart';
 
@@ -12,6 +13,7 @@ class SettingsState extends Equatable {
   final bool notify1HourBefore;
   final bool notify1DayBefore;
   final bool resetOnboarding;
+  final bool hapticsEnabled;
 
   const SettingsState({
     this.allowAdultContent = false,
@@ -19,6 +21,7 @@ class SettingsState extends Equatable {
     this.notify1HourBefore = false,
     this.notify1DayBefore = true,
     this.resetOnboarding = false,
+    this.hapticsEnabled = true,
   });
 
   SettingsState copyWith({
@@ -27,6 +30,7 @@ class SettingsState extends Equatable {
     bool? notify1HourBefore,
     bool? notify1DayBefore,
     bool? resetOnboarding,
+    bool? hapticsEnabled,
   }) {
     return SettingsState(
       allowAdultContent: allowAdultContent ?? this.allowAdultContent,
@@ -34,6 +38,7 @@ class SettingsState extends Equatable {
       notify1HourBefore: notify1HourBefore ?? this.notify1HourBefore,
       notify1DayBefore: notify1DayBefore ?? this.notify1DayBefore,
       resetOnboarding: resetOnboarding ?? this.resetOnboarding,
+      hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
     );
   }
 
@@ -44,6 +49,7 @@ class SettingsState extends Equatable {
     notify1HourBefore,
     notify1DayBefore,
     resetOnboarding,
+    hapticsEnabled,
   ];
 }
 
@@ -57,6 +63,8 @@ class SettingsCubit extends Cubit<SettingsState> {
       AppStorageKeys.notify1HourBefore;
   static const String _notify1DayBeforeKey =
       AppStorageKeys.notify1DayBefore;
+  static const String _hapticsEnabledKey =
+      AppStorageKeys.hapticsEnabled;
 
   SettingsCubit({required this.prefs, required this.tmdbClient})
     : super(const SettingsState()) {
@@ -70,8 +78,10 @@ class SettingsCubit extends Cubit<SettingsState> {
     final notify1HourBefore = prefs.getBool(_notify1HourBeforeKey) ?? false;
     final notify1DayBefore = prefs.getBool(_notify1DayBeforeKey) ?? true;
     final hasSeenOnboarding = prefs.getBool(OnboardingStorage.seenKey) ?? false;
+    final hapticsEnabled = prefs.getBool(_hapticsEnabledKey) ?? true;
 
     tmdbClient.allowAdultContent = allowAdult;
+    AppHaptics.isEnabled = hapticsEnabled;
     emit(
       SettingsState(
         allowAdultContent: allowAdult,
@@ -79,8 +89,15 @@ class SettingsCubit extends Cubit<SettingsState> {
         notify1HourBefore: notify1HourBefore,
         notify1DayBefore: notify1DayBefore,
         resetOnboarding: !hasSeenOnboarding,
+        hapticsEnabled: hapticsEnabled,
       ),
     );
+  }
+
+  Future<void> toggleHaptics(bool value) async {
+    await prefs.setBool(_hapticsEnabledKey, value);
+    AppHaptics.isEnabled = value;
+    emit(state.copyWith(hapticsEnabled: value));
   }
 
   Future<void> toggleAdultContent(bool value) async {

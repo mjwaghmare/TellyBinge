@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/models/app_icon_option.dart';
 import '../../../../core/network/tmdb_cache_manager.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/services/app_icon_service.dart';
 import '../../../../core/services/app_update_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -156,7 +157,7 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
         children: [
           // 1. APPEARANCE SECTION
-          _buildSectionHeader('APPEARANCE'),
+          _buildSectionHeader('APPEARANCE & INTERACTION'),
           _buildSectionCard(
             children: [
               BlocBuilder<ThemeCubit, ThemeState>(
@@ -235,6 +236,27 @@ class _SettingsPageState extends State<SettingsPage> {
                   await _loadAppIcon();
                 },
               ),
+              _buildDivider(),
+              BlocBuilder<SettingsCubit, SettingsState>(
+                buildWhen: (previous, current) =>
+                    previous.hapticsEnabled != current.hapticsEnabled,
+                builder: (context, settingsState) {
+                  return _SettingsTile(
+                    icon: Icons.vibration_rounded,
+                    title: 'Haptic Feedback',
+                    subtitle: 'Vibrate on taps and gestures',
+                    trailing: Switch.adaptive(
+                      value: settingsState.hapticsEnabled,
+                      activeTrackColor: AppColors.primary,
+                      activeThumbColor: AppColors.textOnPrimary,
+                      onChanged: (value) {
+                        AppHaptics.lightImpact();
+                        context.read<SettingsCubit>().toggleHaptics(value);
+                      },
+                    ),
+                  );
+                },
+              ),
             ],
           ),
 
@@ -256,7 +278,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           activeTrackColor: AppColors.primary,
                           activeThumbColor: AppColors.textOnPrimary,
                           onChanged: (value) {
-                            HapticFeedback.lightImpact();
+                            AppHaptics.lightImpact();
                             context.read<SettingsCubit>().toggleNotifications(value);
                           },
                         ),
@@ -272,7 +294,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             activeTrackColor: AppColors.primary,
                             activeThumbColor: AppColors.textOnPrimary,
                             onChanged: (value) {
-                              HapticFeedback.lightImpact();
+                              AppHaptics.lightImpact();
                               context.read<SettingsCubit>().toggleNotify1DayBefore(value);
                             },
                           ),
@@ -330,7 +352,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ],
                     ),
                     onTap: () {
-                      HapticFeedback.lightImpact();
+                      AppHaptics.lightImpact();
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const AchievementsPage()));
                     },
                   );
@@ -385,7 +407,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: 'Feedback & Requests',
                 subtitle: 'Report bugs, suggest features & upvote ideas',
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  AppHaptics.lightImpact();
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const FeedbackBoardPage()));
                 },
               ),
@@ -428,7 +450,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: 'Terms & Conditions',
                 subtitle: 'Read our terms and conditions',
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  AppHaptics.lightImpact();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -443,7 +465,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: 'Privacy Policy',
                 subtitle: 'Read our privacy policy',
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  AppHaptics.lightImpact();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -476,7 +498,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: 'Open Source Licenses',
                 subtitle: 'Third-party licenses and attributions',
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  AppHaptics.lightImpact();
                   showLicensePage(
                     context: context,
                     applicationName: AppConstants.appName,
@@ -581,7 +603,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _clearCache(BuildContext context) async {
     if (_isClearingCache) return;
-    unawaited(HapticFeedback.mediumImpact());
+    unawaited(AppHaptics.mediumImpact());
     setState(() {
       _isClearingCache = true;
     });
@@ -617,7 +639,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showDeleteAccountSheet(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
     final isLight = context.isLight;
 
     showModalBottomSheet(
@@ -706,7 +728,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
 
   void _showTmdbAttributionSheet(BuildContext context) {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     final isLight = context.isLight;
 
     showModalBottomSheet(
@@ -776,7 +798,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _launchSupportEmail(BuildContext context) async {
-    unawaited(HapticFeedback.lightImpact());
+    unawaited(AppHaptics.lightImpact());
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: AppConstants.supportEmail,
@@ -807,7 +829,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showNoMailAppSheet(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    AppHaptics.mediumImpact();
     final isLight = context.isLight;
 
     showModalBottomSheet(
@@ -899,7 +921,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      unawaited(HapticFeedback.lightImpact());
+                      unawaited(AppHaptics.lightImpact());
                       await Clipboard.setData(
                         const ClipboardData(text: AppConstants.supportEmail),
                       );
@@ -950,7 +972,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _launchAppRating(BuildContext context) async {
-    unawaited(HapticFeedback.lightImpact());
+    unawaited(AppHaptics.lightImpact());
 
     // Set with Apple App ID from App Store Connect once live (e.g. '6740000000')
     const String appleAppId = AppConstants.appleAppId;

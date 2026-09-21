@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import '../services/app_haptics.dart';
 import '../services/share_card_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -40,7 +40,7 @@ class PolaroidShareModal extends StatefulWidget {
     DateTime? watchedDate,
     String? mediaType,
   }) async {
-    await HapticFeedback.mediumImpact();
+    await AppHaptics.mediumImpact();
     if (!context.mounted) return;
     return Navigator.of(context).push<void>(
       PageRouteBuilder<void>(
@@ -251,7 +251,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
     if (x < -threshold) {
       if (_hapticLeftArmed) {
         _hapticLeftArmed = false;
-        unawaited(HapticFeedback.lightImpact());
+        unawaited(AppHaptics.lightImpact());
       }
     } else if (x > -resetMargin) {
       _hapticLeftArmed = true;
@@ -261,7 +261,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
     if (x > threshold) {
       if (_hapticRightArmed) {
         _hapticRightArmed = false;
-        unawaited(HapticFeedback.lightImpact());
+        unawaited(AppHaptics.lightImpact());
       }
     } else if (x < resetMargin) {
       _hapticRightArmed = true;
@@ -271,7 +271,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
     if (y < -threshold) {
       if (_hapticTopArmed) {
         _hapticTopArmed = false;
-        unawaited(HapticFeedback.lightImpact());
+        unawaited(AppHaptics.lightImpact());
       }
     } else if (y > -resetMargin) {
       _hapticTopArmed = true;
@@ -281,7 +281,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
     if (y > threshold) {
       if (_hapticBottomArmed) {
         _hapticBottomArmed = false;
-        unawaited(HapticFeedback.lightImpact());
+        unawaited(AppHaptics.lightImpact());
       }
     } else if (y < resetMargin) {
       _hapticBottomArmed = true;
@@ -299,7 +299,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
   Future<void> _handleShare() async {
     if (_isSharing || !_isImagePrecached) return;
 
-    await HapticFeedback.mediumImpact();
+    await AppHaptics.mediumImpact();
     setState(() {
       _isSharing = true;
       _isExporting = true; // Reset tilt to zero for export capture

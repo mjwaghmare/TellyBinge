@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../services/app_haptics.dart';
 import '../constants/app_constants.dart';
 import '../models/app_version_info.dart';
 import '../theme/app_colors.dart';
@@ -39,11 +39,11 @@ class AppUpdateDialog extends StatelessWidget {
           installedVersion: installedVersion,
           isForceUpdate: isForceUpdate,
           onUpdate: () {
-            HapticFeedback.mediumImpact();
+            AppHaptics.mediumImpact();
             onUpdate();
           },
           onLater: () {
-            HapticFeedback.lightImpact();
+            AppHaptics.lightImpact();
             Navigator.of(dialogContext, rootNavigator: true).pop();
             onLater?.call();
           },

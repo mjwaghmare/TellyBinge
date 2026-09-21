@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../services/app_haptics.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
@@ -279,7 +279,7 @@ class _WatchProvidersSectionState extends State<WatchProvidersSection> {
                     borderRadius: BorderRadius.circular(8),
                     onTap: () {
                       if (_selectedCategory != cat) {
-                        HapticFeedback.selectionClick();
+                        AppHaptics.selectionClick();
                         setState(() {
                           _selectedCategory = cat;
                         });

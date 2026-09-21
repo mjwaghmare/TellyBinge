@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/app_haptics.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -182,7 +182,7 @@ class _AchievementsViewState extends State<_AchievementsView> {
                       return _AchievementGridTile(
                         achievement: achievement,
                         onTap: () {
-                          HapticFeedback.lightImpact();
+                          AppHaptics.lightImpact();
                           AchievementDetailBottomSheet.show(
                             context,
                             achievement,
@@ -232,7 +232,7 @@ class _FilterChip extends StatelessWidget {
       padding: const EdgeInsets.only(right: AppSpacing.xs),
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.selectionClick();
+          AppHaptics.selectionClick();
           onTap();
         },
         child: AnimatedContainer(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -14,7 +14,7 @@ class ThemeSelectionBottomSheet extends StatelessWidget {
 
   /// Displays the theme selection bottom sheet.
   static Future<void> show(BuildContext context) {
-    HapticFeedback.selectionClick();
+    AppHaptics.selectionClick();
 
     return showModalBottomSheet<void>(
       context: context,
@@ -136,7 +136,7 @@ class ThemeSelectionBottomSheet extends StatelessWidget {
   }
 
   void _handleSelect(BuildContext context, ThemeMode mode) {
-    HapticFeedback.selectionClick();
+    AppHaptics.selectionClick();
     context.read<ThemeCubit>().setThemeMode(mode);
   }
 }

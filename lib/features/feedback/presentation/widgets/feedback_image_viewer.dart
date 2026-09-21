@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/services/app_haptics.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -24,7 +24,7 @@ class FeedbackImageViewer extends StatefulWidget {
     String? imagePath,
     bool isLocal = false,
   }) {
-    HapticFeedback.lightImpact();
+    AppHaptics.lightImpact();
     final items = mediaItems ??
         (imagePath != null && imagePath.isNotEmpty
             ? [FeedbackMedia(path: imagePath, isLocal: isLocal)]
@@ -81,7 +81,7 @@ class _FeedbackImageViewerState extends State<FeedbackImageViewer> {
               controller: _pageController,
               itemCount: totalCount,
               onPageChanged: (index) {
-                HapticFeedback.selectionClick();
+                AppHaptics.selectionClick();
                 setState(() {
                   _currentIndex = index;
                 });

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -246,7 +246,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
           if (released)
             CupertinoActionSheetAction(
               onPressed: () {
-                HapticFeedback.mediumImpact();
+                AppHaptics.mediumImpact();
                 Navigator.pop(context);
                 context.read<MovieWatchlistCubit>().toggleWatched(
                   uid: uid,
@@ -259,7 +259,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
           CupertinoActionSheetAction(
             isDestructiveAction: true,
             onPressed: () {
-              HapticFeedback.mediumImpact();
+              AppHaptics.mediumImpact();
               Navigator.pop(context);
               context.read<MovieWatchlistCubit>().removeMovie(
                 uid: uid,
@@ -560,7 +560,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (uid != null) {
-                          HapticFeedback.mediumImpact();
+                          AppHaptics.mediumImpact();
                           context.read<MovieWatchlistCubit>().addMovie(
                             uid: uid,
                             movieId: widget.movieId,
@@ -834,7 +834,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                           child: ActionCircleButton(
                                             isActive: isFavorite,
                                             onTap: () {
-                                              HapticFeedback.mediumImpact();
+                                              AppHaptics.mediumImpact();
                                               if (uid == null) {
                                                 AuthRequiredBottomSheet.show(
                                                   context,
@@ -898,7 +898,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             child: ActionCircleButton(
                                               isActive: isWatched,
                                               onTap: () {
-                                                HapticFeedback.mediumImpact();
+                                                AppHaptics.mediumImpact();
                                                 if (uid == null) {
                                                   AuthRequiredBottomSheet.show(
                                                     context,

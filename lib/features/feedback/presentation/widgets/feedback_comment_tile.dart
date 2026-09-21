@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -108,7 +109,7 @@ class FeedbackCommentTile extends StatelessWidget {
   }
 
   void _showCommentActionSheet(BuildContext context) {
-    HapticFeedback.selectionClick();
+    AppHaptics.selectionClick();
     final isLight = context.isLight;
     final commentText = comment['text'] as String? ?? '';
 
