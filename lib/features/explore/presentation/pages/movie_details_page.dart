@@ -22,6 +22,8 @@ import '../../../../core/widgets/polaroid_share_modal.dart';
 import '../cubit/movie_details_cubit.dart';
 import '../cubit/movie_details_state.dart';
 import '../../../person/presentation/widgets/person_details_bottom_sheet.dart';
+import '../../../custom_lists/domain/models/custom_list_item_model.dart';
+import '../../../custom_lists/presentation/widgets/add_to_list_bottom_sheet.dart';
 
 class MovieDetailsPage extends StatelessWidget {
   final int movieId;
@@ -216,13 +218,18 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
   void _showMoreActions({
     required BuildContext context,
     required String uid,
+    required bool isAdded,
     required bool isWatched,
     required bool released,
     required String title,
     required String? imageUrl,
+    required String? posterPath,
+    required String? backdropPath,
+    required String? releaseDate,
     required double? rating,
     required DateTime? watchedDate,
     bool canShare = true,
+    bool hasLoadedDetails = true,
   }) {
     showCupertinoModalPopup(
       context: context,
@@ -244,7 +251,27 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               },
               child: const Text('Share Polaroid 📸'),
             ),
-          if (released)
+          if (hasLoadedDetails)
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                AddToListBottomSheet.show(
+                  context,
+                  item: CustomListItemModel(
+                    id: widget.movieId,
+                    mediaType: 'movie',
+                    title: title,
+                    posterPath: posterPath,
+                    backdropPath: backdropPath,
+                    voteAverage: rating ?? 0.0,
+                    releaseDate: releaseDate,
+                    addedAt: DateTime.now(),
+                  ),
+                );
+              },
+              child: const Text('Add to list 📑'),
+            ),
+          if (isAdded && released)
             CupertinoActionSheetAction(
               onPressed: () {
                 AppHaptics.mediumImpact();
@@ -257,18 +284,19 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               },
               child: Text(isWatched ? 'Mark as unwatched' : 'Mark as watched'),
             ),
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () {
-              AppHaptics.mediumImpact();
-              Navigator.pop(context);
-              context.read<MovieWatchlistCubit>().removeMovie(
-                uid: uid,
-                movieId: widget.movieId,
-              );
-            },
-            child: const Text('Remove from watchlist'),
-          ),
+          if (isAdded)
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                AppHaptics.mediumImpact();
+                Navigator.pop(context);
+                context.read<MovieWatchlistCubit>().removeMovie(
+                  uid: uid,
+                  movieId: widget.movieId,
+                );
+              },
+              child: const Text('Remove from watchlist'),
+            ),
         ],
         cancelButton: CupertinoActionSheetAction(
           isDefaultAction: true,
@@ -707,7 +735,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                 ),
                               ),
                             ),
-                            if (isAdded && uid != null)
+                            if (uid != null)
                               Padding(
                                 padding: const EdgeInsets.only(right: AppSpacing.xs),
                                 child: Container(
@@ -736,13 +764,18 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       _showMoreActions(
                                         context: context,
                                         uid: uid,
+                                        isAdded: isAdded,
                                         isWatched: isWatched,
                                         released: released,
                                         title: title,
                                         imageUrl: shareImageUrl,
+                                        posterPath: movie['poster_path'] as String? ?? widget.posterPath,
+                                        backdropPath: movie['backdrop_path'] as String? ?? widget.backdropPath,
+                                        releaseDate: movie['release_date'] as String?,
                                         rating: voteAverage,
                                         watchedDate: watchedDate,
                                         canShare: !isLoading && state is MovieDetailsSuccess,
+                                        hasLoadedDetails: !isLoading && state is MovieDetailsSuccess,
                                       );
                                     },
                                   ),

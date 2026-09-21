@@ -48,6 +48,10 @@ service cloud.firestore {
       match /history/{historyId} {
         allow read, write: if isAuthenticated() && isOwner(userId);
       }
+
+      match /custom_lists/{listId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
     }
 
     // Comments collection

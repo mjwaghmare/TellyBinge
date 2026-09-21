@@ -29,6 +29,8 @@ import '../cubit/show_details_cubit.dart';
 import '../cubit/show_details_state.dart';
 import '../widgets/tv_status_badge.dart';
 import '../../../person/presentation/widgets/person_details_bottom_sheet.dart';
+import '../../../custom_lists/domain/models/custom_list_item_model.dart';
+import '../../../custom_lists/presentation/widgets/add_to_list_bottom_sheet.dart';
 
 class ShowDetailsPage extends StatefulWidget {
   final int mediaId;
@@ -132,9 +134,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
   void _showMoreActions({
     required BuildContext context,
     required String uid,
+    required bool isTracked,
     required bool isStopped,
     required String title,
     required String? imageUrl,
+    required String? posterPath,
+    required String? backdropPath,
+    required String? firstAirDate,
     required double? rating,
     bool canShare = true,
   }) {
@@ -157,40 +163,62 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               },
               child: const Text('Share Polaroid 📸'),
             ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              AppHaptics.mediumImpact();
-              Navigator.pop(context);
-              if (isStopped) {
-                context.read<TvShowWatchlistCubit>().continueWatchingShow(
-                  uid: uid,
-                  showId: widget.mediaId,
+          if (canShare)
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                AddToListBottomSheet.show(
+                  context,
+                  item: CustomListItemModel(
+                    id: widget.mediaId,
+                    mediaType: widget.mediaType,
+                    title: title,
+                    posterPath: posterPath,
+                    backdropPath: backdropPath,
+                    voteAverage: rating ?? 0.0,
+                    releaseDate: firstAirDate,
+                    addedAt: DateTime.now(),
+                  ),
                 );
-              } else {
-                context.read<TvShowWatchlistCubit>().stopWatchingShow(
-                  uid: uid,
-                  showId: widget.mediaId,
-                );
-              }
-            },
-            child: Text(isStopped ? 'Continue watching' : 'Stop watching'),
-          ),
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () {
-              AppHaptics.mediumImpact();
-              Navigator.pop(context);
-              context.read<TvShowWatchlistCubit>().removeShow(
-                uid: uid,
-                showId: widget.mediaId,
-              );
-            },
-            child: Text(
-              widget.mediaType == 'movie'
-                  ? 'Remove from watchlist'
-                  : 'Stop tracking show',
+              },
+              child: const Text('Add to list 📑'),
             ),
-          ),
+          if (isTracked)
+            CupertinoActionSheetAction(
+              onPressed: () {
+                AppHaptics.mediumImpact();
+                Navigator.pop(context);
+                if (isStopped) {
+                  context.read<TvShowWatchlistCubit>().continueWatchingShow(
+                    uid: uid,
+                    showId: widget.mediaId,
+                  );
+                } else {
+                  context.read<TvShowWatchlistCubit>().stopWatchingShow(
+                    uid: uid,
+                    showId: widget.mediaId,
+                  );
+                }
+              },
+              child: Text(isStopped ? 'Continue watching' : 'Stop watching'),
+            ),
+          if (isTracked)
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                AppHaptics.mediumImpact();
+                Navigator.pop(context);
+                context.read<TvShowWatchlistCubit>().removeShow(
+                  uid: uid,
+                  showId: widget.mediaId,
+                );
+              },
+              child: Text(
+                widget.mediaType == 'movie'
+                    ? 'Remove from watchlist'
+                    : 'Stop tracking show',
+              ),
+            ),
         ],
         cancelButton: CupertinoActionSheetAction(
           isDefaultAction: true,
@@ -416,6 +444,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     final String title = details['name'] ?? details['title'] ?? widget.title;
     final String? backdropPath = details['backdrop_path'];
     final String? posterPath = details['poster_path'];
+    final String? firstAirDate =
+        details['first_air_date'] ?? details['release_date'];
     final String tagline = (details['tagline'] as String? ?? '').trim();
     final String overview = details['overview'] ?? '';
     final double voteAverage =
@@ -581,7 +611,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                       }
                     }
                   }
-                  if (isTracked && uid != null) {
+                  if (uid != null) {
                     return Padding(
                       padding: const EdgeInsets.only(right: AppSpacing.xs),
                       child: Container(
@@ -606,9 +636,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             _showMoreActions(
                               context: context,
                               uid: uid,
+                              isTracked: isTracked,
                               isStopped: isStopped,
                               title: title,
                               imageUrl: shareImageUrl,
+                              posterPath: posterPath,
+                              backdropPath: backdropPath,
+                              firstAirDate: firstAirDate,
                               rating: voteAverage,
                               canShare: !isLoading,
                             );

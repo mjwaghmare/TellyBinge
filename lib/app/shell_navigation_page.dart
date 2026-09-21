@@ -15,6 +15,7 @@ import '../features/search/presentation/pages/search_page.dart';
 import '../features/search/presentation/widgets/surprise_me_sheet.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/profile/presentation/cubit/achievements_cubit.dart';
+import '../features/custom_lists/presentation/cubit/custom_lists_cubit.dart';
 
 import '../core/services/app_update_service.dart';
 import '../features/profile/presentation/cubit/profile_heatmap_cubit.dart';
@@ -99,6 +100,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
     _hasStartedWatchers = true;
     context.read<MovieWatchlistCubit>().watchWatchlist(uid);
     context.read<TvShowWatchlistCubit>().watchWatchlist(uid);
+    context.read<CustomListsCubit>().watchCustomLists(uid);
   }
 
   void _evaluateAchievements() {
@@ -163,6 +165,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
               _hasStartedWatchers = false;
               context.read<MovieWatchlistCubit>().clearWatchlist();
               context.read<TvShowWatchlistCubit>().clearWatchlist();
+              context.read<CustomListsCubit>().clearLists();
             }
           },
         ),

@@ -23,6 +23,11 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
+import '../../../custom_lists/domain/models/custom_list_model.dart';
+import '../../../custom_lists/presentation/cubit/custom_lists_cubit.dart';
+import '../../../custom_lists/presentation/cubit/custom_lists_state.dart';
+import '../../../custom_lists/presentation/widgets/create_list_bottom_sheet.dart';
+import '../../../custom_lists/presentation/pages/custom_list_details_page.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../widgets/shows_filter_bottom_sheet.dart';
 import '../widgets/movies_filter_bottom_sheet.dart';
@@ -35,9 +40,6 @@ import 'notifications_page.dart';
 import 'settings_page.dart';
 import '../../../../core/services/widget_service.dart';
 import '../../../../core/widgets/rolling_digit_text.dart';
-import '../../domain/models/genre_stat.dart';
-import '../../domain/services/achievements_service.dart';
-import '../widgets/genre_breakdown_card.dart';
 
 class HorizontalItem {
   final int movieId;
@@ -100,10 +102,8 @@ class _ProfilePageState extends State<ProfilePage>
     1,
   );
   late PageController _heatmapPageController;
-  late PageController _genrePageController;
   int _heatmapPageIndex = 0;
   bool _isHeatmapExpanded = false;
-  int _activitySegmentIndex = 0; // 0: Heatmap Calendar, 1: Genre DNA
   bool _isLocalLoading = false;
   Timer? _shimmerTimer;
 
@@ -219,7 +219,7 @@ class _ProfilePageState extends State<ProfilePage>
     if (isCurrentTab) {
       _profileVisitCount = 1;
     }
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (_tabController.index != _previousTabIndex) {
         setState(() {
@@ -233,7 +233,6 @@ class _ProfilePageState extends State<ProfilePage>
     });
     widget.tabNotifier?.addListener(_onAppTabChanged);
     _heatmapPageController = PageController();
-    _genrePageController = PageController();
 
     // Fetch heatmap watch history for current month
     final authState = context.read<AuthCubit>().state;
@@ -302,7 +301,6 @@ class _ProfilePageState extends State<ProfilePage>
     widget.tabNotifier?.removeListener(_onAppTabChanged);
     _tabController.dispose();
     _heatmapPageController.dispose();
-    _genrePageController.dispose();
     super.dispose();
   }
 
@@ -483,22 +481,6 @@ class _ProfilePageState extends State<ProfilePage>
     final rawShows = showWatchlistState is TvShowWatchlistSuccess
         ? showWatchlistState.shows
         : const <Map<String, dynamic>>[];
-    final watchedMoviesForGenres = rawMovies
-        .where((m) => m['isWatched'] as bool? ?? false)
-        .toList();
-    final watchedShowsForGenres = rawShows.where((s) {
-      final eps = s['watchedEpisodes'];
-      final isCompleted = s['category'] == 'COMPLETED';
-      return (eps is Iterable && eps.isNotEmpty) || isCompleted;
-    }).toList();
-    final tvGenreStats = AchievementsService.getGenreDistribution(
-      [],
-      watchedShowsForGenres,
-    );
-    final movieGenreStats = AchievementsService.getGenreDistribution(
-      watchedMoviesForGenres,
-      [],
-    );
     final profileTag = _calculateProfileTag(
       watchedMoviesCount: profileStats.watchedMoviesCount,
       watchedShowsCount: profileStats.watchedShowsCount,
@@ -1002,8 +984,6 @@ class _ProfilePageState extends State<ProfilePage>
                                   ? _buildHeatmapSection(
                                       context,
                                       user?.uid ?? '',
-                                      tvGenreStats: tvGenreStats,
-                                      movieGenreStats: movieGenreStats,
                                     )
                                   : const SizedBox(
                                       width: double.infinity,
@@ -1044,6 +1024,7 @@ class _ProfilePageState extends State<ProfilePage>
                             tabs: const [
                               Tab(text: 'SHOWS'),
                               Tab(text: 'MOVIES'),
+                              Tab(text: 'LISTS'),
                             ],
                           ),
                         ),
@@ -1326,6 +1307,7 @@ class _ProfilePageState extends State<ProfilePage>
                           floatingActionButtonLocation:
                               FloatingActionButtonLocation.centerFloat,
                         ),
+                        _buildCustomListsTab(),
                       ],
                     ),
                   ),
@@ -2124,12 +2106,7 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  Widget _buildHeatmapSection(
-    BuildContext context,
-    String uid, {
-    required List<GenreStat> tvGenreStats,
-    required List<GenreStat> movieGenreStats,
-  }) {
+  Widget _buildHeatmapSection(BuildContext context, String uid) {
     return BlocBuilder<ProfileHeatmapCubit, ProfileHeatmapState>(
       builder: (context, state) {
         DateTime currentMonth = _heatmapMonth;
@@ -2180,443 +2157,224 @@ class _ProfilePageState extends State<ProfilePage>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Text(
+                    'WATCH ACTIVITY',
+                    style: AppTextStyles.xsBold.copyWith(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? AppColors.lightTextPrimary
+                          : AppColors.textPrimary.withValues(alpha: 0.7),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildActivitySegmentButton(
-                        label: 'CALENDAR',
-                        icon: Icons.calendar_month_rounded,
-                        isSelected: _activitySegmentIndex == 0,
-                        onTap: () {
-                          if (_activitySegmentIndex != 0) {
-                            AppHaptics.selectionClick();
-                            setState(() => _activitySegmentIndex = 0);
-                          }
-                        },
+                      _isSignUpMonthOrPast(currentMonth)
+                          ? AppSpacing.gapW24
+                          : IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                Icons.chevron_left,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyLarge?.color,
+                                size: 20,
+                              ),
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      AppHaptics.lightImpact();
+                                      final prevMonth = currentMonth.month == 1
+                                          ? DateTime(
+                                              currentMonth.year - 1,
+                                              12,
+                                              1,
+                                            )
+                                          : DateTime(
+                                              currentMonth.year,
+                                              currentMonth.month - 1,
+                                              1,
+                                            );
+                                      setState(() {
+                                        _heatmapMonth = prevMonth;
+                                      });
+                                      context
+                                          .read<ProfileHeatmapCubit>()
+                                          .loadMonthActivity(uid, prevMonth);
+                                    },
+                            ),
+                      AppSpacing.gapW8,
+                      Text(
+                        DateFormat('MMMM yyyy').format(currentMonth),
+                        style: AppTextStyles.xsBold.copyWith(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       AppSpacing.gapW8,
-                      _buildActivitySegmentButton(
-                        label: 'GENRES',
-                        icon: Icons.donut_large_rounded,
-                        isSelected: _activitySegmentIndex == 1,
-                        onTap: () {
-                          if (_activitySegmentIndex != 1) {
-                            AppHaptics.selectionClick();
-                            setState(() => _activitySegmentIndex = 1);
-                          }
-                        },
-                      ),
+                      _isCurrentMonthOrFuture(currentMonth)
+                          ? AppSpacing.gapW24
+                          : IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                Icons.chevron_right,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyLarge?.color,
+                                size: 20,
+                              ),
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      AppHaptics.lightImpact();
+                                      final nextMonth = currentMonth.month == 12
+                                          ? DateTime(
+                                              currentMonth.year + 1,
+                                              1,
+                                              1,
+                                            )
+                                          : DateTime(
+                                              currentMonth.year,
+                                              currentMonth.month + 1,
+                                              1,
+                                            );
+                                      setState(() {
+                                        _heatmapMonth = nextMonth;
+                                      });
+                                      context
+                                          .read<ProfileHeatmapCubit>()
+                                          .loadMonthActivity(uid, nextMonth);
+                                    },
+                            ),
                     ],
                   ),
-                  if (_activitySegmentIndex == 0)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _isSignUpMonthOrPast(currentMonth)
-                            ? AppSpacing.gapW24
-                            : IconButton(
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                icon: Icon(
-                                  Icons.chevron_left,
-                                  color: Theme.of(
-                                    context,
-                                  ).textTheme.bodyLarge?.color,
-                                  size: 20,
-                                ),
-                                onPressed: isLoading
-                                    ? null
-                                    : () {
-                                        AppHaptics.lightImpact();
-                                        final prevMonth = currentMonth.month == 1
-                                            ? DateTime(
-                                                currentMonth.year - 1,
-                                                12,
-                                                1,
-                                              )
-                                            : DateTime(
-                                                currentMonth.year,
-                                                currentMonth.month - 1,
-                                                1,
-                                              );
-                                        setState(() {
-                                          _heatmapMonth = prevMonth;
-                                        });
-                                        context
-                                            .read<ProfileHeatmapCubit>()
-                                            .loadMonthActivity(uid, prevMonth);
-                                      },
-                              ),
-                        AppSpacing.gapW8,
-                        Text(
-                          DateFormat('MMMM yyyy').format(currentMonth),
-                          style: AppTextStyles.xsBold.copyWith(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        AppSpacing.gapW8,
-                        _isCurrentMonthOrFuture(currentMonth)
-                            ? AppSpacing.gapW24
-                            : IconButton(
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                icon: Icon(
-                                  Icons.chevron_right,
-                                  color: Theme.of(
-                                    context,
-                                  ).textTheme.bodyLarge?.color,
-                                  size: 20,
-                                ),
-                                onPressed: isLoading
-                                    ? null
-                                    : () {
-                                        AppHaptics.lightImpact();
-                                        final nextMonth = currentMonth.month == 12
-                                            ? DateTime(
-                                                currentMonth.year + 1,
-                                                1,
-                                                1,
-                                              )
-                                            : DateTime(
-                                                currentMonth.year,
-                                                currentMonth.month + 1,
-                                                1,
-                                              );
-                                        setState(() {
-                                          _heatmapMonth = nextMonth;
-                                        });
-                                        context
-                                            .read<ProfileHeatmapCubit>()
-                                            .loadMonthActivity(uid, nextMonth);
-                                      },
-                              ),
-                      ],
-                    )
-                  else
-                    Builder(
-                      builder: (context) {
-                        final currentGenreStats = _heatmapPageIndex == 0
-                            ? tvGenreStats
-                            : movieGenreStats;
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: AppSpacing.xxs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: (Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? AppColors.lightPrimary
-                                    : AppColors.primary)
-                                .withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${currentGenreStats.length} ${currentGenreStats.length == 1 ? 'TOP SLICE' : 'TOP SLICES'}',
-                            style: AppTextStyles.xsBold.copyWith(
-                              color: Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? AppColors.lightPrimary
-                                  : AppColors.primaryLight,
-                              fontSize: 10,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
                 ],
               ),
               const SizedBox(height: 12),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: _activitySegmentIndex == 0
-                    ? SizedBox(
-                        key: const ValueKey('activity_heatmap_view'),
-                        height: 245,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              height: 220,
-                              child: PageView(
-                                controller: _heatmapPageController,
-                                onPageChanged: (index) {
-                                  AppHaptics.selectionClick();
-                                  setState(() {
-                                    _heatmapPageIndex = index;
-                                    _isLocalLoading = true;
-                                  });
-                                  if (_genrePageController.hasClients &&
-                                      _genrePageController.page?.round() !=
-                                          index) {
-                                    _genrePageController.jumpToPage(index);
-                                  }
-                                  _shimmerTimer?.cancel();
-                                  _shimmerTimer = Timer(
-                                    const Duration(milliseconds: 500),
-                                    () {
-                                      if (mounted) {
-                                        setState(() {
-                                          _isLocalLoading = false;
-                                        });
-                                      }
-                                    },
-                                  );
-                                },
-                                children: [
-                                  _buildHeatmapPage(
-                                    offset: offset,
-                                    totalSlots: totalSlots,
-                                    counts: tvCounts,
-                                    currentMonth: currentMonth,
-                                    isMovies: false,
-                                    showShimmer: showShimmer,
-                                  ),
-                                  _buildHeatmapPage(
-                                    offset: offset,
-                                    totalSlots: totalSlots,
-                                    counts: movieCounts,
-                                    currentMonth: currentMonth,
-                                    isMovies: true,
-                                    showShimmer: showShimmer,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: List.generate(2, (index) {
-                                    final isActive = index == _heatmapPageIndex;
-                                    return AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 4.0,
-                                      ),
-                                      width: isActive ? 8.0 : 6.0,
-                                      height: isActive ? 8.0 : 6.0,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isActive
-                                            ? (Theme.of(
-                                                    context,
-                                                  ).textTheme.bodyLarge?.color ??
-                                                  AppColors.textPrimary)
-                                            : (Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? AppColors.borderLight
-                                                  : AppColors.borderDark),
-                                      ),
-                                    );
-                                  }),
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Less',
-                                      style: AppTextStyles.xsBold.copyWith(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? AppColors.lightTextSecondary
-                                            : AppColors.textTertiary,
-                                      ),
-                                    ),
-                                    AppSpacing.gapW4,
-                                    _buildLegendSquare(activeLegendColors[0]),
-                                    const SizedBox(width: 3),
-                                    _buildLegendSquare(activeLegendColors[1]),
-                                    const SizedBox(width: 3),
-                                    _buildLegendSquare(activeLegendColors[2]),
-                                    const SizedBox(width: 3),
-                                    _buildLegendSquare(activeLegendColors[3]),
-                                    const SizedBox(width: 3),
-                                    _buildLegendSquare(activeLegendColors[4]),
-                                    AppSpacing.gapW4,
-                                    Text(
-                                      'More',
-                                      style: AppTextStyles.xsBold.copyWith(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? AppColors.lightTextSecondary
-                                            : AppColors.textTertiary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      )
-                    : SizedBox(
-                        key: const ValueKey('activity_genre_breakdown_view'),
-                        height: 182,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              height: 155,
-                              child: PageView(
-                                controller: _genrePageController,
-                                onPageChanged: (index) {
-                                  AppHaptics.selectionClick();
-                                  setState(() {
-                                    _heatmapPageIndex = index;
-                                  });
-                                  if (_heatmapPageController.hasClients &&
-                                      _heatmapPageController.page?.round() !=
-                                          index) {
-                                    _heatmapPageController.jumpToPage(index);
-                                  }
-                                },
-                                children: [
-                                  GenreBreakdownCard(
-                                    stats: tvGenreStats,
-                                    isMovie: false,
-                                  ),
-                                  GenreBreakdownCard(
-                                    stats: movieGenreStats,
-                                    isMovie: true,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _buildGenrePageDot(0, 'SHOWS'),
-                                const SizedBox(width: 16),
-                                _buildGenrePageDot(1, 'MOVIES'),
-                              ],
-                            ),
-                          ],
-                        ),
+              SizedBox(
+                height: 245,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 220,
+                      child: PageView(
+                        controller: _heatmapPageController,
+                        onPageChanged: (index) {
+                          AppHaptics.selectionClick();
+                          setState(() {
+                            _heatmapPageIndex = index;
+                            _isLocalLoading = true;
+                          });
+                          _shimmerTimer?.cancel();
+                          _shimmerTimer = Timer(
+                            const Duration(milliseconds: 500),
+                            () {
+                              if (mounted) {
+                                setState(() {
+                                  _isLocalLoading = false;
+                                });
+                              }
+                            },
+                          );
+                        },
+                        children: [
+                          _buildHeatmapPage(
+                            offset: offset,
+                            totalSlots: totalSlots,
+                            counts: tvCounts,
+                            currentMonth: currentMonth,
+                            isMovies: false,
+                            showShimmer: showShimmer,
+                          ),
+                          _buildHeatmapPage(
+                            offset: offset,
+                            totalSlots: totalSlots,
+                            counts: movieCounts,
+                            currentMonth: currentMonth,
+                            isMovies: true,
+                            showShimmer: showShimmer,
+                          ),
+                        ],
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(2, (index) {
+                            final isActive = index == _heatmapPageIndex;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 4.0,
+                              ),
+                              width: isActive ? 8.0 : 6.0,
+                              height: isActive ? 8.0 : 6.0,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isActive
+                                    ? (Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.color ??
+                                          AppColors.textPrimary)
+                                    : (Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? AppColors.borderLight
+                                          : AppColors.borderDark),
+                              ),
+                            );
+                          }),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Less',
+                              style: AppTextStyles.xsBold.copyWith(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? AppColors.lightTextSecondary
+                                    : AppColors.textTertiary,
+                              ),
+                            ),
+                            AppSpacing.gapW4,
+                            _buildLegendSquare(activeLegendColors[0]),
+                            const SizedBox(width: 3),
+                            _buildLegendSquare(activeLegendColors[1]),
+                            const SizedBox(width: 3),
+                            _buildLegendSquare(activeLegendColors[2]),
+                            const SizedBox(width: 3),
+                            _buildLegendSquare(activeLegendColors[3]),
+                            const SizedBox(width: 3),
+                            _buildLegendSquare(activeLegendColors[4]),
+                            AppSpacing.gapW4,
+                            Text(
+                              'More',
+                              style: AppTextStyles.xsBold.copyWith(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? AppColors.lightTextSecondary
+                                    : AppColors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _buildActivitySegmentButton({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xxs,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isLight ? AppColors.lightPrimary : AppColors.primary)
-              : (isLight
-                  ? AppColors.lightSurfaceElevated
-                  : AppColors.surfaceElevated),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? Colors.transparent
-                : (isLight ? AppColors.borderLight : AppColors.borderDark),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 13,
-              color: isSelected
-                  ? AppColors.textOnPrimary
-                  : (isLight
-                      ? AppColors.lightTextSecondary
-                      : AppColors.textSecondary),
-            ),
-            AppSpacing.gapW4,
-            Text(
-              label,
-              style: AppTextStyles.xsBold.copyWith(
-                fontSize: 10,
-                letterSpacing: 0.5,
-                color: isSelected
-                    ? AppColors.textOnPrimary
-                    : (isLight
-                        ? AppColors.lightTextSecondary
-                        : AppColors.textSecondary),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGenrePageDot(int index, String label) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final isActive = _heatmapPageIndex == index;
-    return GestureDetector(
-      onTap: () {
-        if (_heatmapPageIndex != index) {
-          AppHaptics.selectionClick();
-          setState(() => _heatmapPageIndex = index);
-          if (_genrePageController.hasClients) {
-            _genrePageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-          }
-          if (_heatmapPageController.hasClients) {
-            _heatmapPageController.jumpToPage(index);
-          }
-        }
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: isActive ? 8.0 : 6.0,
-            height: isActive ? 8.0 : 6.0,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive
-                  ? (isLight ? AppColors.lightPrimary : AppColors.primaryLight)
-                  : (isLight ? AppColors.borderLight : AppColors.borderDark),
-            ),
-          ),
-          AppSpacing.gapW4,
-          Text(
-            label,
-            style: AppTextStyles.xsBold.copyWith(
-              fontSize: 10,
-              letterSpacing: 0.5,
-              color: isActive
-                  ? (isLight ? AppColors.lightPrimary : AppColors.primaryLight)
-                  : (isLight
-                      ? AppColors.lightTextTertiary
-                      : AppColors.textTertiary),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -2791,10 +2549,9 @@ class _ProfilePageState extends State<ProfilePage>
 
   void _toggleHeatmap(int targetPage) {
     final wasExpanded = _isHeatmapExpanded;
-    final isSamePage = _heatmapPageIndex == targetPage && _activitySegmentIndex == 0;
+    final isSamePage = _heatmapPageIndex == targetPage;
 
     setState(() {
-      _activitySegmentIndex = 0;
       if (wasExpanded && isSamePage) {
         _isHeatmapExpanded = false;
         _isLocalLoading = false;
@@ -2804,7 +2561,6 @@ class _ProfilePageState extends State<ProfilePage>
         _isLocalLoading = true; // Trigger local shimmer
         if (!wasExpanded) {
           _heatmapPageController = PageController(initialPage: targetPage);
-          _genrePageController = PageController(initialPage: targetPage);
         }
         _heatmapPageIndex = targetPage;
       }
@@ -2822,22 +2578,437 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     if (wasExpanded && !isSamePage) {
-      if (_heatmapPageController.hasClients) {
-        _heatmapPageController.animateToPage(
-          targetPage,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
-      if (_genrePageController.hasClients) {
-        _genrePageController.animateToPage(
-          targetPage,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
+      _heatmapPageController.animateToPage(
+        targetPage,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
     AppHaptics.mediumImpact();
+  }
+
+  Widget _buildCustomListsTab() {
+    final isLight = context.isLight;
+    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
+    final primaryColor = context.primary;
+    final authState = context.watch<AuthCubit>().state;
+    final uid = authState is Authenticated ? authState.user.uid : null;
+
+    return BlocBuilder<CustomListsCubit, CustomListsState>(
+      builder: (context, state) {
+        if (state is CustomListsLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final lists =
+            state is CustomListsSuccess ? state.lists : <CustomListModel>[];
+
+        if (lists.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: context.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.playlist_add_rounded,
+                      size: 36,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'No Custom Lists Yet',
+                    style: AppTextStyles.lg.copyWith(
+                      color: context.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Create themed lists to organize your favorite movies and TV shows together.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.sm.copyWith(
+                      color: context.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      AppHaptics.lightImpact();
+                      CreateListBottomSheet.show(context);
+                    },
+                    icon: const Icon(Icons.add_rounded, size: 20),
+                    label: const Text('Create First List'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: AppColors.textOnPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xl,
+                        vertical: AppSpacing.sm,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.bottomTabPadding,
+          ),
+          children: [
+            // Top "+ Create New List" banner card
+            InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                AppHaptics.lightImpact();
+                CreateListBottomSheet.show(context);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: isLight ? AppColors.lightSurface : AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: borderColor),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: context.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.add_rounded,
+                        color: primaryColor,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Create New List',
+                            style: AppTextStyles.smBold.copyWith(
+                              color: context.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Start a new collection for movies & shows',
+                            style: AppTextStyles.xs.copyWith(
+                              color: context.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: context.textTertiary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // User lists
+            for (final list in lists) ...[
+              _buildCustomListSection(context, list, uid),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCustomListSection(
+    BuildContext context,
+    CustomListModel list,
+    String? uid,
+  ) {
+    final isLight = context.isLight;
+    final primaryColor = context.primary;
+    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      list.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.mdBold.copyWith(
+                        color: context.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.primaryContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${list.itemCount}',
+                      style: AppTextStyles.xs.copyWith(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                AppHaptics.lightImpact();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        CustomListDetailsPage(listId: list.id),
+                  ),
+                );
+              },
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'View All',
+                    style: AppTextStyles.xsMedium.copyWith(
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 10,
+                    color: primaryColor,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (list.description.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            list.description,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.xs.copyWith(
+              color: context.textSecondary,
+            ),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.xs),
+
+        // Horizontal items
+        if (list.items.isEmpty)
+          Container(
+            height: 80,
+            decoration: BoxDecoration(
+              color: isLight ? AppColors.lightSurface : AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderColor),
+            ),
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_to_photos_outlined,
+                    size: 22,
+                    color: context.textTertiary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '0 items added yet',
+                        style: AppTextStyles.smMedium.copyWith(
+                          color: context.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        'Open any movie or show to add it here',
+                        style: AppTextStyles.xs.copyWith(
+                          color: context.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 175,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: list.items.length,
+              separatorBuilder: (context, index) =>
+                  const SizedBox(width: AppSpacing.xs),
+              itemBuilder: (context, index) {
+                final item = list.items[index];
+                final posterUrl = _getImageUrl(item.posterPath, size: 'w342');
+
+                return GestureDetector(
+                  onTap: () {
+                    AppHaptics.lightImpact();
+                    if (item.isMovie) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              MovieDetailsPage(movieId: item.id),
+                        ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ShowDetailsPage(
+                            mediaId: item.id,
+                            mediaType: item.mediaType,
+                            title: item.title,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: SizedBox(
+                    width: 100,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                posterUrl.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: posterUrl,
+                                        fit: BoxFit.cover,
+                                        errorWidget: (c, u, e) => Container(
+                                          color: isLight
+                                              ? AppColors.lightSurfaceElevated
+                                              : AppColors.surfaceElevated,
+                                          child: Icon(
+                                            item.isMovie
+                                                ? Icons.movie_outlined
+                                                : Icons.tv_outlined,
+                                            color: context.textTertiary,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: isLight
+                                            ? AppColors.lightSurfaceElevated
+                                            : AppColors.surfaceElevated,
+                                        child: Icon(
+                                          item.isMovie
+                                              ? Icons.movie_outlined
+                                              : Icons.tv_outlined,
+                                          color: context.textTertiary,
+                                        ),
+                                      ),
+                                Positioned(
+                                  top: 3,
+                                  left: 3,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 1.5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.75),
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                    child: Text(
+                                      item.isMovie ? 'MOVIE' : 'TV',
+                                      style: AppTextStyles.xs.copyWith(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textOnPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.xsMedium.copyWith(
+                            color: context.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
   }
 }
 

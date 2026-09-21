@@ -107,39 +107,5 @@ void main() {
       expect(marathon.isUnlocked, true);
       expect(marathon.currentValue, 5);
     });
-
-    test('getGenreDistribution returns empty list when no genres exist', () {
-      final stats = AchievementsService.getGenreDistribution([], []);
-      expect(stats, isEmpty);
-    });
-
-    test('getGenreDistribution groups into top 5 plus Other and calculates percentages', () {
-      final movies = [
-        {'genres': 'Action, Sci-Fi', 'isWatched': true},
-        {'genres': 'Action, Drama', 'isWatched': true},
-        {'genres': 'Comedy, Action', 'isWatched': true},
-        {'genres': 'Horror', 'isWatched': true},
-        {'genres': 'Animation', 'isWatched': true},
-        {'genres': 'Thriller', 'isWatched': true},
-        {'genres': 'Adventure', 'isWatched': true},
-      ];
-
-      final stats = AchievementsService.getGenreDistribution(movies, [], maxTopSlices: 5);
-
-      // Total genre tags = 2 (Action, Sci-Fi) + 2 (Action, Drama) + 2 (Comedy, Action) + 1 (Horror) + 1 (Animation) + 1 (Thriller) + 1 (Adventure) = 10
-      // Action: 3 (30%)
-      // Sci-Fi, Drama, Comedy, Horror, Animation, Thriller, Adventure: 1 each
-      // Top 5 + Other: exactly 6 slices
-      expect(stats.length, 6);
-      expect(stats[0].genre, 'Action');
-      expect(stats[0].count, 3);
-      expect(stats[0].percentage, 30.0);
-      expect(stats.last.genre, 'Other');
-      expect(stats.last.count, 3); // 8 unique genres - 5 top = 3 remaining = 3
-      expect(stats.last.percentage, 30.0);
-
-      final totalPercentage = stats.fold<double>(0, (sum, s) => sum + s.percentage);
-      expect(totalPercentage, closeTo(100.0, 0.001));
-    });
   });
 }

@@ -45,6 +45,9 @@ import 'features/movies/data/repositories/movie_watchlist_repository_impl.dart';
 import 'features/dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import 'features/dashboard/domain/repositories/tv_watchlist_repository.dart';
 import 'features/dashboard/data/repositories/tv_watchlist_repository_impl.dart';
+import 'features/custom_lists/domain/repositories/custom_lists_repository.dart';
+import 'features/custom_lists/data/repositories/custom_lists_repository_impl.dart';
+import 'features/custom_lists/presentation/cubit/custom_lists_cubit.dart';
 import 'features/profile/presentation/cubit/achievements_cubit.dart';
 import 'firebase_options.dart';
 
@@ -342,6 +345,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         RepositoryProvider<TvWatchlistRepository>(
           create: (context) => TvWatchlistRepositoryImpl(),
         ),
+        RepositoryProvider<CustomListsRepository>(
+          create: (context) => CustomListsRepositoryImpl(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -386,6 +392,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             create: (context) => AchievementsCubit(
               prefs: context.read<SharedPreferences>(),
               navigatorKey: navigatorKey,
+            ),
+          ),
+          BlocProvider<CustomListsCubit>(
+            create: (context) => CustomListsCubit(
+              customListsRepository: context.read<CustomListsRepository>(),
             ),
           ),
         ],
@@ -509,6 +520,7 @@ class _AuthGateState extends State<AuthGate> {
         } else if (state is Unauthenticated || state is AuthGuest) {
           context.read<MovieWatchlistCubit>().clearWatchlist();
           context.read<TvShowWatchlistCubit>().clearWatchlist();
+          context.read<CustomListsCubit>().clearLists();
         }
       },
       builder: (context, state) {
