@@ -27,6 +27,7 @@ import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../cubit/show_details_cubit.dart';
 import '../cubit/show_details_state.dart';
+import '../widgets/tv_status_badge.dart';
 import '../../../person/presentation/widgets/person_details_bottom_sheet.dart';
 
 class ShowDetailsPage extends StatefulWidget {
@@ -219,6 +220,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
       ],
       'seasons': [
         {'season_number': 1, 'name': 'Season 1', 'episode_count': 10},
+      ],
+      'created_by': [
+        {
+          'id': 10001,
+          'name': 'Creator Name',
+          'profile_path': null,
+        },
       ],
       'credits': {
         'cast': List.generate(
@@ -434,6 +442,71 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         ? youtubeTrailers.first
         : (otherTrailers.isNotEmpty ? otherTrailers.first : null);
 
+    // Creators / Directors extraction
+    final bool isMovie = widget.mediaType == 'movie';
+    final List<Map<String, dynamic>> creatorsOrDirectors = [];
+    final Set<int> seenCreatorIds = {};
+
+    if (!isMovie) {
+      final createdByList = details['created_by'] as List<dynamic>? ?? [];
+      for (final item in createdByList) {
+        if (item is Map<String, dynamic>) {
+          final id = (item['id'] as num?)?.toInt();
+          if (id != null && seenCreatorIds.add(id)) {
+            creatorsOrDirectors.add({
+              'id': id,
+              'name': item['name'] as String? ?? '',
+              'profile_path': item['profile_path'] as String?,
+              'role': 'CREATOR',
+            });
+          }
+        }
+      }
+    }
+
+    if (creatorsOrDirectors.isEmpty && details['credits'] != null) {
+      final crew = details['credits']['crew'] as List<dynamic>? ?? [];
+      for (final item in crew) {
+        if (item is Map<String, dynamic>) {
+          final job = item['job'] as String? ?? '';
+          final isTarget = isMovie
+              ? (job == 'Director')
+              : (job == 'Creator' || job == 'Director');
+          if (isTarget) {
+            final id = (item['id'] as num?)?.toInt();
+            if (id != null && seenCreatorIds.add(id)) {
+              creatorsOrDirectors.add({
+                'id': id,
+                'name': item['name'] as String? ?? '',
+                'profile_path': item['profile_path'] as String?,
+                'role': isMovie
+                    ? 'DIRECTOR'
+                    : (job == 'Creator' ? 'CREATOR' : 'DIRECTOR'),
+              });
+            }
+          }
+        }
+      }
+    }
+
+    final rawCastList =
+        (details['credits'] != null && details['credits']['cast'] is List)
+            ? (details['credits']['cast'] as List).take(10).toList()
+            : <dynamic>[];
+
+    final creatorCards = creatorsOrDirectors.map((c) => {
+      'id': c['id'],
+      'name': c['name'],
+      'character': c['role'] ?? (isMovie ? 'DIRECTOR' : 'CREATOR'),
+      'profile_path': c['profile_path'],
+      'is_crew': true,
+    }).toList();
+
+    final combinedCredits = [
+      ...creatorCards,
+      ...rawCastList,
+    ];
+
     Widget buildSliverAppBar() {
       return SliverAppBar(
         automaticallyImplyLeading: false,
@@ -599,7 +672,20 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           const SizedBox(height: 6.0),
                           Text(
                             widget.mediaType == 'tv'
-                                ? '$numberOfSeasons season${numberOfSeasons == 1 ? '' : 's'} • $status • $networkName'
+                                ? () {
+                                    final parts = <String>[
+                                      if (numberOfSeasons > 0)
+                                        '$numberOfSeasons season${numberOfSeasons == 1 ? '' : 's'}',
+                                      if (networkName.isNotEmpty) networkName,
+                                    ];
+                                    if (parts.isEmpty) {
+                                      final year = _getYear(
+                                        details['first_air_date'],
+                                      );
+                                      if (year.isNotEmpty) parts.add(year);
+                                    }
+                                    return parts.join(' • ');
+                                  }()
                                 : _getYear(details['release_date']),
                             style: AppTextStyles.sm.copyWith(
                               color: AppColors.textSecondary,
@@ -607,6 +693,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          if (widget.mediaType == 'tv' &&
+                              status.trim().isNotEmpty) ...[
+                            const SizedBox(height: 8.0),
+                            TvStatusBadge(status: status, isHero: true),
+                          ],
                         ],
                       ),
                     ),
@@ -678,6 +769,24 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     Widget buildAboutSection() {
       final String language = (details['original_language'] as String? ?? '')
           .toUpperCase();
+      final bool hasCreators = creatorsOrDirectors.any(
+        (c) => c['role'] == 'CREATOR',
+      );
+      final bool hasDirectors = creatorsOrDirectors.any(
+        (c) => c['role'] == 'DIRECTOR',
+      );
+      final String creatorsOrDirectorsLabel;
+      if (hasCreators && hasDirectors) {
+        creatorsOrDirectorsLabel = 'Creators / Directors';
+      } else if (hasDirectors) {
+        final directorCount = creatorsOrDirectors
+            .where((c) => c['role'] == 'DIRECTOR')
+            .length;
+        creatorsOrDirectorsLabel = directorCount > 1 ? 'Directors' : 'Director';
+      } else {
+        creatorsOrDirectorsLabel = 'Created by';
+      }
+
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         child: Column(
@@ -714,6 +823,77 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     'Language: $language',
                     style: AppTextStyles.sm.copyWith(
                       color: context.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (creatorsOrDirectors.isNotEmpty) ...[
+              AppSpacing.gapH4,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    isMovie
+                        ? Icons.movie_creation_outlined
+                        : Icons.tv_outlined,
+                    color: Theme.of(context).disabledColor,
+                    size: 14,
+                  ),
+                  AppSpacing.gapW8,
+                  Text(
+                    '$creatorsOrDirectorsLabel: ',
+                    style: AppTextStyles.sm.copyWith(
+                      color: context.textSecondary,
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (int i = 0;
+                              i < creatorsOrDirectors.length;
+                              i++) ...[
+                            if (i > 0)
+                              Text(
+                                ', ',
+                                style: AppTextStyles.sm.copyWith(
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                            GestureDetector(
+                              onTap: () {
+                                final id =
+                                    (creatorsOrDirectors[i]['id'] as num?)
+                                        ?.toInt() ??
+                                    0;
+                                if (id > 0) {
+                                  PersonDetailsBottomSheet.show(
+                                    context,
+                                    personId: id,
+                                    initialName:
+                                        creatorsOrDirectors[i]['name']
+                                            as String?,
+                                    initialProfilePath:
+                                        creatorsOrDirectors[i]['profile_path']
+                                            as String?,
+                                  );
+                                }
+                              },
+                              child: Text(
+                                creatorsOrDirectors[i]['name'] as String? ?? '',
+                                style: AppTextStyles.smMedium.copyWith(
+                                  color: AppColors.primary,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: AppColors.primary
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -776,9 +956,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               AppSpacing.gapH24,
             ],
 
-            if (details['credits'] != null &&
-                details['credits']['cast'] != null &&
-                (details['credits']['cast'] as List).isNotEmpty) ...[
+            if (combinedCredits.isNotEmpty) ...[
               const Divider(height: 1, thickness: 0.5),
               AppSpacing.gapH24,
               Text(
@@ -794,24 +972,22 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   height: 180,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: (details['credits']['cast'] as List)
-                        .take(10)
-                        .length,
+                    itemCount: combinedCredits.length,
                     separatorBuilder: (context, index) => AppSpacing.gapW12,
                     itemBuilder: (context, index) {
-                      final cast = (details['credits']['cast'] as List)
-                          .take(10)
-                          .toList();
-                      final actor = cast[index] as Map<String, dynamic>;
-                      final actorName = actor['name'] as String? ?? 'Unknown';
-                      final character = actor['character'] as String? ?? '';
-                      final profilePath = actor['profile_path'] as String?;
+                      final member =
+                          combinedCredits[index] as Map<String, dynamic>;
+                      final memberName = member['name'] as String? ?? 'Unknown';
+                      final character = member['character'] as String? ?? '';
+                      final profilePath = member['profile_path'] as String?;
+                      final isCrew = member['is_crew'] as bool? ?? false;
                       return _buildCastCard(
-                        personId: (actor['id'] as num?)?.toInt() ?? 0,
+                        personId: (member['id'] as num?)?.toInt() ?? 0,
                         imageUrl: _getImageUrl(profilePath, size: 'w185'),
-                        realName: actorName,
+                        realName: memberName,
                         characterName: character.toUpperCase(),
                         profilePath: profilePath,
+                        isCrew: isCrew,
                       );
                     },
                   ),
@@ -2311,6 +2487,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     required String realName,
     required String characterName,
     String? profilePath,
+    bool isCrew = false,
   }) {
     return GestureDetector(
       onTap: personId > 0
@@ -2401,7 +2578,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   Text(
                     characterName,
                     style: AppTextStyles.xs.copyWith(
-                      color: AppColors.textSecondary,
+                      color: isCrew ? AppColors.primary : AppColors.textSecondary,
+                      fontWeight: isCrew ? FontWeight.w600 : FontWeight.normal,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

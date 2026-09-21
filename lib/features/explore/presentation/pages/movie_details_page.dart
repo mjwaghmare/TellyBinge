@@ -386,6 +386,20 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         final movieData = state is MovieDetailsSuccess
             ? state.movieDetails
             : null;
+        final crewData = state is MovieDetailsSuccess
+            ? (state.movieCredits['crew'] as List<dynamic>? ?? [])
+            : [];
+        final List<Map<String, dynamic>> directors = [];
+        final Set<int> seenDirectorIds = {};
+        for (final member in crewData) {
+          if (member is Map<String, dynamic> && member['job'] == 'Director') {
+            final id = (member['id'] as num?)?.toInt();
+            if (id != null && seenDirectorIds.add(id)) {
+              directors.add(member);
+            }
+          }
+        }
+
         final castData = state is MovieDetailsSuccess
             ? (state.movieCredits['cast'] as List<dynamic>? ?? [])
                   .take(10)
@@ -401,7 +415,24 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
             ? state.similarMovies
             : [];
 
-        final cast = isLoading || isCastLoading ? _dummyCastList() : castData;
+        final List<Map<String, dynamic>> directorCards = directors.map((d) {
+          return {
+            'id': d['id'],
+            'name': d['name'],
+            'character': 'DIRECTOR',
+            'profile_path': d['profile_path'],
+            'is_crew': true,
+          };
+        }).toList();
+
+        final combinedCredits = [
+          ...directorCards,
+          ...castData,
+        ];
+
+        final cast = isLoading || isCastLoading
+            ? _dummyCastList()
+            : combinedCredits;
         final visibleCollectionParts = isCollectionLoading
             ? _dummyCollectionParts()
             : collectionParts.take(5).toList();
@@ -1057,6 +1088,89 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     ],
                                   ),
                                 ],
+                                if (directors.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.movie_creation_outlined,
+                                        color: context.textTertiary,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Director${directors.length > 1 ? 's' : ''}: ',
+                                        style: AppTextStyles.xs.copyWith(
+                                          color: context.textSecondary,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(
+                                            children: [
+                                              for (int i = 0;
+                                                  i < directors.length;
+                                                  i++) ...[
+                                                if (i > 0)
+                                                  Text(
+                                                    ', ',
+                                                    style: AppTextStyles.xs
+                                                        .copyWith(
+                                                      color:
+                                                          context.textSecondary,
+                                                    ),
+                                                  ),
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    final id =
+                                                        (directors[i]['id']
+                                                                as num?)
+                                                            ?.toInt() ??
+                                                        0;
+                                                    if (id > 0) {
+                                                      PersonDetailsBottomSheet
+                                                          .show(
+                                                        context,
+                                                        personId: id,
+                                                        initialName:
+                                                            directors[i]['name']
+                                                                as String?,
+                                                        initialProfilePath:
+                                                            directors[i][
+                                                                    'profile_path']
+                                                                as String?,
+                                                      );
+                                                    }
+                                                  },
+                                                  child: Text(
+                                                    directors[i]['name']
+                                                            as String? ??
+                                                        '',
+                                                    style: AppTextStyles
+                                                        .xsMedium
+                                                        .copyWith(
+                                                      color: AppColors.primary,
+                                                      decoration:
+                                                          TextDecoration
+                                                              .underline,
+                                                      decorationColor: AppColors
+                                                          .primary
+                                                          .withValues(
+                                                              alpha: 0.5),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                                 const SizedBox(height: AppSpacing.md),
                                 if (overview.isNotEmpty)
                                   Text(
@@ -1114,36 +1228,42 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.md),
-                                  SizedBox(
-                                    height: 180,
-                                    child: ListView.separated(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: cast.length,
-                                      separatorBuilder: (context, index) =>
-                                          AppSpacing.gapW12,
-                                      itemBuilder: (context, index) {
-                                        final actor =
-                                            cast[index] as Map<String, dynamic>;
-                                        final actorName =
-                                            actor['name'] as String? ?? '';
-                                        final character =
-                                            actor['character'] as String? ?? '';
-                                        final profilePath =
-                                            actor['profile_path'] as String?;
-                                        final personId =
-                                            (actor['id'] as num?)?.toInt() ?? 0;
-                                        return _buildCastCard(
-                                          personId: personId,
-                                          imageUrl: _getImageUrl(
-                                            profilePath,
-                                            size: 'w185',
-                                          ),
-                                          realName: actorName,
-                                          characterName: character
-                                              .toUpperCase(),
-                                          profilePath: profilePath,
-                                        );
-                                      },
+                                  Skeletonizer(
+                                    enabled: isCastLoading,
+                                    child: SizedBox(
+                                      height: 180,
+                                      child: ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: cast.length,
+                                        separatorBuilder: (context, index) =>
+                                            AppSpacing.gapW12,
+                                        itemBuilder: (context, index) {
+                                          final actor =
+                                              cast[index] as Map<String, dynamic>;
+                                          final actorName =
+                                              actor['name'] as String? ?? '';
+                                          final character =
+                                              actor['character'] as String? ?? '';
+                                          final profilePath =
+                                              actor['profile_path'] as String?;
+                                          final personId =
+                                              (actor['id'] as num?)?.toInt() ?? 0;
+                                          final isCrew =
+                                              actor['is_crew'] as bool? ?? false;
+                                          return _buildCastCard(
+                                            personId: personId,
+                                            imageUrl: _getImageUrl(
+                                              profilePath,
+                                              size: 'w185',
+                                            ),
+                                            realName: actorName,
+                                            characterName: character
+                                                .toUpperCase(),
+                                            profilePath: profilePath,
+                                            isCrew: isCrew,
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.lg),
@@ -1322,6 +1442,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     required String realName,
     required String characterName,
     String? profilePath,
+    bool isCrew = false,
   }) {
     return GestureDetector(
       onTap: personId > 0
@@ -1425,7 +1546,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 const SizedBox(height: 2),
                 Text(
                   characterName,
-                  style: AppTextStyles.xs.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.xs.copyWith(
+                    color: isCrew ? AppColors.primary : AppColors.textSecondary,
+                    fontWeight: isCrew ? FontWeight.w600 : FontWeight.normal,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
