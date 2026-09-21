@@ -292,6 +292,22 @@
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
 			<string>mailto</string>
+			<string>nflx</string>
+			<string>primevideo</string>
+			<string>aiv</string>
+			<string>hotstar</string>
+			<string>jiocinema</string>
+			<string>appletv</string>
+			<string>disneyplus</string>
+			<string>sonyliv</string>
+			<string>zee5</string>
+			<string>max</string>
+			<string>hulu</string>
+			<string>paramountplus</string>
+			<string>crunchyroll</string>
+			<string>peacock</string>
+			<string>youtube</string>
+			<string>vnd.youtube</string>
 		</array>
 	</dict>
 </plist>

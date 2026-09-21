@@ -952,6 +952,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               WatchProvidersSection(
                 watchProvidersData:
                     details['watch/providers'] as Map<String, dynamic>?,
+                mediaTitle: title,
               ),
               AppSpacing.gapH24,
             ],

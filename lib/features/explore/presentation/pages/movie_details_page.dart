@@ -1209,6 +1209,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                     watchProvidersData:
                                         movie['watch/providers']
                                             as Map<String, dynamic>?,
+                                    mediaTitle: title,
                                   ),
                                   const SizedBox(height: AppSpacing.lg),
                                   Divider(

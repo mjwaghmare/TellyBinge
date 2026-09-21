@@ -1,11 +1,13 @@
 import 'dart:ui';
-import 'package:flutter/material.dart';
-import '../services/app_haptics.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
+import '../services/app_haptics.dart';
+import '../services/deep_link_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import 'app_snackbar.dart';
 
 enum WatchProviderCategory {
   stream('Stream'),
@@ -21,10 +23,12 @@ enum WatchProviderCategory {
 /// (Stream, Free, Rent, Buy), powered by TMDB's watch provider data.
 class WatchProvidersSection extends StatefulWidget {
   final Map<String, dynamic>? watchProvidersData;
+  final String? mediaTitle;
 
   const WatchProvidersSection({
     super.key,
     required this.watchProvidersData,
+    this.mediaTitle,
   });
 
   /// Returns true if the TMDB watch/providers map contains at least one provider
@@ -89,6 +93,7 @@ class _WatchProvidersSectionState extends State<WatchProvidersSection> {
   }
 
   /// Deduplicates providers in a list by `provider_id` or `provider_name`,
+  /// normalizes brand names (e.g. JioCinema & Hotstar -> JioHotstar),
   /// and sorts them by `display_priority` ascending so major services appear first.
   static List<Map<String, dynamic>> _deduplicateAndSortProviders(
     List<dynamic>? list,
@@ -98,9 +103,24 @@ class _WatchProvidersSectionState extends State<WatchProvidersSection> {
     final result = <Map<String, dynamic>>[];
     for (final item in list) {
       if (item is Map<String, dynamic>) {
-        final key = item['provider_id'] ?? item['provider_name'];
-        if (key != null && seenKeys.add(key)) {
-          result.add(item);
+        final rawId = (item['provider_id'] as num?)?.toInt();
+        final rawName = item['provider_name'] as String? ?? '';
+        final normalizedName = DeepLinkService.normalizeProviderName(
+          rawId,
+          rawName,
+        );
+
+        // Canonicalize key so JioCinema (220) and Hotstar (122) merge to single key
+        final canonicalKey =
+            (rawId == DeepLinkService.hotstarId ||
+                    rawId == DeepLinkService.jioCinemaId)
+                ? DeepLinkService.hotstarId
+                : (rawId ?? normalizedName);
+
+        if (seenKeys.add(canonicalKey)) {
+          final mappedItem = Map<String, dynamic>.from(item);
+          mappedItem['provider_name'] = normalizedName;
+          result.add(mappedItem);
         }
       }
     }
@@ -343,10 +363,15 @@ class _WatchProvidersSectionState extends State<WatchProvidersSection> {
               final providerName =
                   provider['provider_name'] as String? ?? 'Provider';
               final logoPath = provider['logo_path'] as String?;
+              final providerId =
+                  (provider['provider_id'] as num?)?.toInt() ?? 0;
+              final fallbackWebUrl = countryData['link'] as String?;
 
               return _buildProviderTile(
+                providerId: providerId,
                 name: providerName,
                 logoPath: logoPath,
+                fallbackWebUrl: fallbackWebUrl,
                 isLight: isLight,
                 cardBorderColor: cardBorderColor,
                 cardBgColor: cardBgColor,
@@ -361,8 +386,10 @@ class _WatchProvidersSectionState extends State<WatchProvidersSection> {
   }
 
   Widget _buildProviderTile({
+    required int providerId,
     required String name,
     required String? logoPath,
+    required String? fallbackWebUrl,
     required bool isLight,
     required Color cardBorderColor,
     required Color cardBgColor,
@@ -378,84 +405,128 @@ class _WatchProvidersSectionState extends State<WatchProvidersSection> {
     }
 
     return Semantics(
-      label: name,
+      label: 'Watch on $name',
+      button: true,
       child: Tooltip(
-        message: name,
+        message: 'Watch on $name',
         child: SizedBox(
           width: 78,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 56x56 Rounded Logo Card (Display only)
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: cardBgColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: cardBorderColor,
-                    width: 1,
-                  ),
-                  boxShadow: isLight ? AppColors.lightCardShadow : null,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(11),
-                  child: logoUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: logoUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: isLight
-                                ? AppColors.lightSurfaceElevated
-                                : AppColors.surfaceElevated,
-                            child: const Center(
-                              child: SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.5,
-                                  color: AppColors.primary,
+          child: GestureDetector(
+            onTap: () async {
+              await AppHaptics.lightImpact();
+              final success = await DeepLinkService.launchProvider(
+                providerId: providerId,
+                providerName: name,
+                title: widget.mediaTitle ?? '',
+                fallbackWebUrl: fallbackWebUrl,
+              );
+              if (!success && mounted) {
+                AppSnackbar.showInfo(
+                  context,
+                  'Could not open $name directly',
+                );
+              }
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: cardBgColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: cardBorderColor,
+                          width: 1,
+                        ),
+                        boxShadow: isLight ? AppColors.lightCardShadow : null,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(11),
+                        child: logoUrl != null
+                            ? CachedNetworkImage(
+                                imageUrl: logoUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  color: isLight
+                                      ? AppColors.lightSurfaceElevated
+                                      : AppColors.surfaceElevated,
+                                  child: const Center(
+                                    child: SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 1.5,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: isLight
+                                      ? AppColors.lightSurfaceElevated
+                                      : AppColors.surfaceElevated,
+                                  child: Icon(
+                                    Icons.live_tv,
+                                    size: 24,
+                                    color: textTertiary,
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                color: isLight
+                                    ? AppColors.lightSurfaceElevated
+                                    : AppColors.surfaceElevated,
+                                child: Icon(
+                                  Icons.live_tv,
+                                  size: 24,
+                                  color: textTertiary,
                                 ),
                               ),
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            color: isLight
-                                ? AppColors.lightSurfaceElevated
-                                : AppColors.surfaceElevated,
-                            child: Icon(
-                              Icons.live_tv,
-                              size: 24,
-                              color: textTertiary,
-                            ),
-                          ),
-                        )
-                      : Container(
+                      ),
+                    ),
+                    Positioned(
+                      bottom: -2,
+                      right: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: BoxDecoration(
                           color: isLight
                               ? AppColors.lightSurfaceElevated
                               : AppColors.surfaceElevated,
-                          child: Icon(
-                            Icons.live_tv,
-                            size: 24,
-                            color: textTertiary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: cardBorderColor,
+                            width: 1.0,
                           ),
                         ),
+                        child: Icon(
+                          Icons.arrow_outward_rounded,
+                          size: 10,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              AppSpacing.gapH4,
-              // Provider name label (supports two lines)
-              Text(
-                name,
-                style: AppTextStyles.xsMedium.copyWith(
-                  color: textSecondary,
-                  height: 1.2,
+                AppSpacing.gapH4,
+                Text(
+                  name,
+                  style: AppTextStyles.xsMedium.copyWith(
+                    color: textSecondary,
+                    height: 1.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
