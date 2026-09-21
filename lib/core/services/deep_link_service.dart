@@ -295,7 +295,7 @@ class DeepLinkService {
         nameLower.contains('jiohotstar')) {
       return Uri.parse(
         title.isNotEmpty
-            ? 'https://www.hotstar.com/in/explore?search_query=$query'
+            ? 'https://www.hotstar.com/in/search?q=$query'
             : 'https://www.hotstar.com',
       );
     }
@@ -320,7 +320,7 @@ class DeepLinkService {
     if (providerId == sonyLivId || nameLower.contains('sonyliv')) {
       return Uri.parse(
         title.isNotEmpty
-            ? 'https://www.sonyliv.com/search'
+            ? 'https://www.sonyliv.com/search?searchQuery=$query'
             : 'https://www.sonyliv.com',
       );
     }
@@ -329,7 +329,7 @@ class DeepLinkService {
     if (providerId == zee5Id || nameLower.contains('zee5')) {
       return Uri.parse(
         title.isNotEmpty
-            ? 'https://www.zee5.com/search?q=$query'
+            ? 'https://www.zee5.com/search?query=$query'
             : 'https://www.zee5.com',
       );
     }
