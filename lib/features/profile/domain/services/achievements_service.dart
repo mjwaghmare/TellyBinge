@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/achievement.dart';
+import '../models/genre_stat.dart';
 
 /// Evaluates all achievements from the user's movie and TV show data.
 ///
@@ -387,6 +388,84 @@ class AchievementsService {
   }
 
   // ── GENRE EXTRACTION ──
+
+  /// Extracts aggregated genre counts across watched movies and shows.
+  static Map<String, int> extractAllGenreCounts(
+    List<Map<String, dynamic>> watchedMovies,
+    List<Map<String, dynamic>> shows,
+  ) {
+    return _extractAllGenreCounts(watchedMovies, shows);
+  }
+
+  /// Computes top genre distribution with percentages for visualization.
+  ///
+  /// Takes the top [maxTopSlices] genres and groups remaining long-tail genres into "Other".
+  static List<GenreStat> getGenreDistribution(
+    List<Map<String, dynamic>> watchedMovies,
+    List<Map<String, dynamic>> shows, {
+    int maxTopSlices = 5,
+  }) {
+    final counts = _extractAllGenreCounts(watchedMovies, shows);
+    if (counts.isEmpty) return const [];
+
+    int totalCount = 0;
+    for (final count in counts.values) {
+      totalCount += count;
+    }
+    if (totalCount == 0) return const [];
+
+    final sorted = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final List<GenreStat> stats = [];
+
+    if (sorted.length <= maxTopSlices) {
+      for (final entry in sorted) {
+        stats.add(GenreStat(
+          genre: formatGenreName(entry.key),
+          count: entry.value,
+          percentage: (entry.value / totalCount) * 100,
+        ));
+      }
+    } else {
+      final topEntries = sorted.take(maxTopSlices);
+      for (final entry in topEntries) {
+        stats.add(GenreStat(
+          genre: formatGenreName(entry.key),
+          count: entry.value,
+          percentage: (entry.value / totalCount) * 100,
+        ));
+      }
+
+      final remaining = sorted.skip(maxTopSlices);
+      final otherCount = remaining.fold<int>(0, (sum, e) => sum + e.value);
+      if (otherCount > 0) {
+        stats.add(GenreStat(
+          genre: 'Other',
+          count: otherCount,
+          percentage: (otherCount / totalCount) * 100,
+        ));
+      }
+    }
+
+    return stats;
+  }
+
+  /// Capitalizes and formats raw TMDB genre strings cleanly.
+  static String formatGenreName(String genre) {
+    if (genre.isEmpty) return genre;
+    final trimmed = genre.trim();
+    final lower = trimmed.toLowerCase();
+    if (lower == 'sci-fi & fantasy') return 'Sci-Fi & Fantasy';
+    if (lower == 'action & adventure') return 'Action & Adventure';
+    if (lower == 'war & politics') return 'War & Politics';
+
+    return trimmed.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      if (word == '&') return '&';
+      return word[0].toUpperCase() + word.substring(1);
+    }).join(' ');
+  }
 
   static Map<String, int> _extractAllGenreCounts(
     List<Map<String, dynamic>> watchedMovies,

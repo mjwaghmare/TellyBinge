@@ -35,6 +35,9 @@ import 'notifications_page.dart';
 import 'settings_page.dart';
 import '../../../../core/services/widget_service.dart';
 import '../../../../core/widgets/rolling_digit_text.dart';
+import '../../domain/models/genre_stat.dart';
+import '../../domain/services/achievements_service.dart';
+import '../widgets/genre_breakdown_card.dart';
 
 class HorizontalItem {
   final int movieId;
@@ -97,8 +100,10 @@ class _ProfilePageState extends State<ProfilePage>
     1,
   );
   late PageController _heatmapPageController;
+  late PageController _genrePageController;
   int _heatmapPageIndex = 0;
   bool _isHeatmapExpanded = false;
+  int _activitySegmentIndex = 0; // 0: Heatmap Calendar, 1: Genre DNA
   bool _isLocalLoading = false;
   Timer? _shimmerTimer;
 
@@ -228,6 +233,7 @@ class _ProfilePageState extends State<ProfilePage>
     });
     widget.tabNotifier?.addListener(_onAppTabChanged);
     _heatmapPageController = PageController();
+    _genrePageController = PageController();
 
     // Fetch heatmap watch history for current month
     final authState = context.read<AuthCubit>().state;
@@ -296,6 +302,7 @@ class _ProfilePageState extends State<ProfilePage>
     widget.tabNotifier?.removeListener(_onAppTabChanged);
     _tabController.dispose();
     _heatmapPageController.dispose();
+    _genrePageController.dispose();
     super.dispose();
   }
 
@@ -476,6 +483,22 @@ class _ProfilePageState extends State<ProfilePage>
     final rawShows = showWatchlistState is TvShowWatchlistSuccess
         ? showWatchlistState.shows
         : const <Map<String, dynamic>>[];
+    final watchedMoviesForGenres = rawMovies
+        .where((m) => m['isWatched'] as bool? ?? false)
+        .toList();
+    final watchedShowsForGenres = rawShows.where((s) {
+      final eps = s['watchedEpisodes'];
+      final isCompleted = s['category'] == 'COMPLETED';
+      return (eps is Iterable && eps.isNotEmpty) || isCompleted;
+    }).toList();
+    final tvGenreStats = AchievementsService.getGenreDistribution(
+      [],
+      watchedShowsForGenres,
+    );
+    final movieGenreStats = AchievementsService.getGenreDistribution(
+      watchedMoviesForGenres,
+      [],
+    );
     final profileTag = _calculateProfileTag(
       watchedMoviesCount: profileStats.watchedMoviesCount,
       watchedShowsCount: profileStats.watchedShowsCount,
@@ -979,6 +1002,8 @@ class _ProfilePageState extends State<ProfilePage>
                                   ? _buildHeatmapSection(
                                       context,
                                       user?.uid ?? '',
+                                      tvGenreStats: tvGenreStats,
+                                      movieGenreStats: movieGenreStats,
                                     )
                                   : const SizedBox(
                                       width: double.infinity,
@@ -2099,7 +2124,12 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  Widget _buildHeatmapSection(BuildContext context, String uid) {
+  Widget _buildHeatmapSection(
+    BuildContext context,
+    String uid, {
+    required List<GenreStat> tvGenreStats,
+    required List<GenreStat> movieGenreStats,
+  }) {
     return BlocBuilder<ProfileHeatmapCubit, ProfileHeatmapState>(
       builder: (context, state) {
         DateTime currentMonth = _heatmapMonth;
@@ -2150,224 +2180,443 @@ class _ProfilePageState extends State<ProfilePage>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'WATCH ACTIVITY',
-                    style: AppTextStyles.xsBold.copyWith(
-                      color: Theme.of(context).brightness == Brightness.light
-                          ? AppColors.lightTextPrimary
-                          : AppColors.textPrimary.withValues(alpha: 0.7),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _isSignUpMonthOrPast(currentMonth)
-                          ? AppSpacing.gapW24
-                          : IconButton(
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              icon: Icon(
-                                Icons.chevron_left,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.color,
-                                size: 20,
-                              ),
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      AppHaptics.lightImpact();
-                                      final prevMonth = currentMonth.month == 1
-                                          ? DateTime(
-                                              currentMonth.year - 1,
-                                              12,
-                                              1,
-                                            )
-                                          : DateTime(
-                                              currentMonth.year,
-                                              currentMonth.month - 1,
-                                              1,
-                                            );
-                                      setState(() {
-                                        _heatmapMonth = prevMonth;
-                                      });
-                                      context
-                                          .read<ProfileHeatmapCubit>()
-                                          .loadMonthActivity(uid, prevMonth);
-                                    },
-                            ),
-                      AppSpacing.gapW8,
-                      Text(
-                        DateFormat('MMMM yyyy').format(currentMonth),
-                        style: AppTextStyles.xsBold.copyWith(
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                          letterSpacing: 0.5,
-                        ),
+                      _buildActivitySegmentButton(
+                        label: 'CALENDAR',
+                        icon: Icons.calendar_month_rounded,
+                        isSelected: _activitySegmentIndex == 0,
+                        onTap: () {
+                          if (_activitySegmentIndex != 0) {
+                            AppHaptics.selectionClick();
+                            setState(() => _activitySegmentIndex = 0);
+                          }
+                        },
                       ),
                       AppSpacing.gapW8,
-                      _isCurrentMonthOrFuture(currentMonth)
-                          ? AppSpacing.gapW24
-                          : IconButton(
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              icon: Icon(
-                                Icons.chevron_right,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.color,
-                                size: 20,
-                              ),
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      AppHaptics.lightImpact();
-                                      final nextMonth = currentMonth.month == 12
-                                          ? DateTime(
-                                              currentMonth.year + 1,
-                                              1,
-                                              1,
-                                            )
-                                          : DateTime(
-                                              currentMonth.year,
-                                              currentMonth.month + 1,
-                                              1,
-                                            );
-                                      setState(() {
-                                        _heatmapMonth = nextMonth;
-                                      });
-                                      context
-                                          .read<ProfileHeatmapCubit>()
-                                          .loadMonthActivity(uid, nextMonth);
-                                    },
-                            ),
+                      _buildActivitySegmentButton(
+                        label: 'GENRES',
+                        icon: Icons.donut_large_rounded,
+                        isSelected: _activitySegmentIndex == 1,
+                        onTap: () {
+                          if (_activitySegmentIndex != 1) {
+                            AppHaptics.selectionClick();
+                            setState(() => _activitySegmentIndex = 1);
+                          }
+                        },
+                      ),
                     ],
                   ),
+                  if (_activitySegmentIndex == 0)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _isSignUpMonthOrPast(currentMonth)
+                            ? AppSpacing.gapW24
+                            : IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                icon: Icon(
+                                  Icons.chevron_left,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color,
+                                  size: 20,
+                                ),
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        AppHaptics.lightImpact();
+                                        final prevMonth = currentMonth.month == 1
+                                            ? DateTime(
+                                                currentMonth.year - 1,
+                                                12,
+                                                1,
+                                              )
+                                            : DateTime(
+                                                currentMonth.year,
+                                                currentMonth.month - 1,
+                                                1,
+                                              );
+                                        setState(() {
+                                          _heatmapMonth = prevMonth;
+                                        });
+                                        context
+                                            .read<ProfileHeatmapCubit>()
+                                            .loadMonthActivity(uid, prevMonth);
+                                      },
+                              ),
+                        AppSpacing.gapW8,
+                        Text(
+                          DateFormat('MMMM yyyy').format(currentMonth),
+                          style: AppTextStyles.xsBold.copyWith(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        AppSpacing.gapW8,
+                        _isCurrentMonthOrFuture(currentMonth)
+                            ? AppSpacing.gapW24
+                            : IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                icon: Icon(
+                                  Icons.chevron_right,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color,
+                                  size: 20,
+                                ),
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        AppHaptics.lightImpact();
+                                        final nextMonth = currentMonth.month == 12
+                                            ? DateTime(
+                                                currentMonth.year + 1,
+                                                1,
+                                                1,
+                                              )
+                                            : DateTime(
+                                                currentMonth.year,
+                                                currentMonth.month + 1,
+                                                1,
+                                              );
+                                        setState(() {
+                                          _heatmapMonth = nextMonth;
+                                        });
+                                        context
+                                            .read<ProfileHeatmapCubit>()
+                                            .loadMonthActivity(uid, nextMonth);
+                                      },
+                              ),
+                      ],
+                    )
+                  else
+                    Builder(
+                      builder: (context) {
+                        final currentGenreStats = _heatmapPageIndex == 0
+                            ? tvGenreStats
+                            : movieGenreStats;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.xxs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: (Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? AppColors.lightPrimary
+                                    : AppColors.primary)
+                                .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${currentGenreStats.length} ${currentGenreStats.length == 1 ? 'TOP SLICE' : 'TOP SLICES'}',
+                            style: AppTextStyles.xsBold.copyWith(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? AppColors.lightPrimary
+                                  : AppColors.primaryLight,
+                              fontSize: 10,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                height: 245,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      height: 220,
-                      child: PageView(
-                        controller: _heatmapPageController,
-                        onPageChanged: (index) {
-                          AppHaptics.selectionClick();
-                          setState(() {
-                            _heatmapPageIndex = index;
-                            _isLocalLoading = true;
-                          });
-                          _shimmerTimer?.cancel();
-                          _shimmerTimer = Timer(
-                            const Duration(milliseconds: 500),
-                            () {
-                              if (mounted) {
-                                setState(() {
-                                  _isLocalLoading = false;
-                                });
-                              }
-                            },
-                          );
-                        },
-                        children: [
-                          _buildHeatmapPage(
-                            offset: offset,
-                            totalSlots: totalSlots,
-                            counts: tvCounts,
-                            currentMonth: currentMonth,
-                            isMovies: false,
-                            showShimmer: showShimmer,
-                          ),
-                          _buildHeatmapPage(
-                            offset: offset,
-                            totalSlots: totalSlots,
-                            counts: movieCounts,
-                            currentMonth: currentMonth,
-                            isMovies: true,
-                            showShimmer: showShimmer,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(2, (index) {
-                            final isActive = index == _heatmapPageIndex;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 4.0,
-                              ),
-                              width: isActive ? 8.0 : 6.0,
-                              height: isActive ? 8.0 : 6.0,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isActive
-                                    ? (Theme.of(
-                                            context,
-                                          ).textTheme.bodyLarge?.color ??
-                                          AppColors.textPrimary)
-                                    : (Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? AppColors.borderLight
-                                          : AppColors.borderDark),
-                              ),
-                            );
-                          }),
-                        ),
-                        Row(
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: _activitySegmentIndex == 0
+                    ? SizedBox(
+                        key: const ValueKey('activity_heatmap_view'),
+                        height: 245,
+                        child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Less',
-                              style: AppTextStyles.xsBold.copyWith(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? AppColors.lightTextSecondary
-                                    : AppColors.textTertiary,
+                            SizedBox(
+                              height: 220,
+                              child: PageView(
+                                controller: _heatmapPageController,
+                                onPageChanged: (index) {
+                                  AppHaptics.selectionClick();
+                                  setState(() {
+                                    _heatmapPageIndex = index;
+                                    _isLocalLoading = true;
+                                  });
+                                  if (_genrePageController.hasClients &&
+                                      _genrePageController.page?.round() !=
+                                          index) {
+                                    _genrePageController.jumpToPage(index);
+                                  }
+                                  _shimmerTimer?.cancel();
+                                  _shimmerTimer = Timer(
+                                    const Duration(milliseconds: 500),
+                                    () {
+                                      if (mounted) {
+                                        setState(() {
+                                          _isLocalLoading = false;
+                                        });
+                                      }
+                                    },
+                                  );
+                                },
+                                children: [
+                                  _buildHeatmapPage(
+                                    offset: offset,
+                                    totalSlots: totalSlots,
+                                    counts: tvCounts,
+                                    currentMonth: currentMonth,
+                                    isMovies: false,
+                                    showShimmer: showShimmer,
+                                  ),
+                                  _buildHeatmapPage(
+                                    offset: offset,
+                                    totalSlots: totalSlots,
+                                    counts: movieCounts,
+                                    currentMonth: currentMonth,
+                                    isMovies: true,
+                                    showShimmer: showShimmer,
+                                  ),
+                                ],
                               ),
                             ),
-                            AppSpacing.gapW4,
-                            _buildLegendSquare(activeLegendColors[0]),
-                            const SizedBox(width: 3),
-                            _buildLegendSquare(activeLegendColors[1]),
-                            const SizedBox(width: 3),
-                            _buildLegendSquare(activeLegendColors[2]),
-                            const SizedBox(width: 3),
-                            _buildLegendSquare(activeLegendColors[3]),
-                            const SizedBox(width: 3),
-                            _buildLegendSquare(activeLegendColors[4]),
-                            AppSpacing.gapW4,
-                            Text(
-                              'More',
-                              style: AppTextStyles.xsBold.copyWith(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? AppColors.lightTextSecondary
-                                    : AppColors.textTertiary,
-                              ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: List.generate(2, (index) {
+                                    final isActive = index == _heatmapPageIndex;
+                                    return AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 4.0,
+                                      ),
+                                      width: isActive ? 8.0 : 6.0,
+                                      height: isActive ? 8.0 : 6.0,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isActive
+                                            ? (Theme.of(
+                                                    context,
+                                                  ).textTheme.bodyLarge?.color ??
+                                                  AppColors.textPrimary)
+                                            : (Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                  ? AppColors.borderLight
+                                                  : AppColors.borderDark),
+                                      ),
+                                    );
+                                  }),
+                                ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Less',
+                                      style: AppTextStyles.xsBold.copyWith(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? AppColors.lightTextSecondary
+                                            : AppColors.textTertiary,
+                                      ),
+                                    ),
+                                    AppSpacing.gapW4,
+                                    _buildLegendSquare(activeLegendColors[0]),
+                                    const SizedBox(width: 3),
+                                    _buildLegendSquare(activeLegendColors[1]),
+                                    const SizedBox(width: 3),
+                                    _buildLegendSquare(activeLegendColors[2]),
+                                    const SizedBox(width: 3),
+                                    _buildLegendSquare(activeLegendColors[3]),
+                                    const SizedBox(width: 3),
+                                    _buildLegendSquare(activeLegendColors[4]),
+                                    AppSpacing.gapW4,
+                                    Text(
+                                      'More',
+                                      style: AppTextStyles.xsBold.copyWith(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? AppColors.lightTextSecondary
+                                            : AppColors.textTertiary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      )
+                    : SizedBox(
+                        key: const ValueKey('activity_genre_breakdown_view'),
+                        height: 182,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              height: 155,
+                              child: PageView(
+                                controller: _genrePageController,
+                                onPageChanged: (index) {
+                                  AppHaptics.selectionClick();
+                                  setState(() {
+                                    _heatmapPageIndex = index;
+                                  });
+                                  if (_heatmapPageController.hasClients &&
+                                      _heatmapPageController.page?.round() !=
+                                          index) {
+                                    _heatmapPageController.jumpToPage(index);
+                                  }
+                                },
+                                children: [
+                                  GenreBreakdownCard(
+                                    stats: tvGenreStats,
+                                    isMovie: false,
+                                  ),
+                                  GenreBreakdownCard(
+                                    stats: movieGenreStats,
+                                    isMovie: true,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildGenrePageDot(0, 'SHOWS'),
+                                const SizedBox(width: 16),
+                                _buildGenrePageDot(1, 'MOVIES'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildActivitySegmentButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xxs,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isLight ? AppColors.lightPrimary : AppColors.primary)
+              : (isLight
+                  ? AppColors.lightSurfaceElevated
+                  : AppColors.surfaceElevated),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? Colors.transparent
+                : (isLight ? AppColors.borderLight : AppColors.borderDark),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: isSelected
+                  ? AppColors.textOnPrimary
+                  : (isLight
+                      ? AppColors.lightTextSecondary
+                      : AppColors.textSecondary),
+            ),
+            AppSpacing.gapW4,
+            Text(
+              label,
+              style: AppTextStyles.xsBold.copyWith(
+                fontSize: 10,
+                letterSpacing: 0.5,
+                color: isSelected
+                    ? AppColors.textOnPrimary
+                    : (isLight
+                        ? AppColors.lightTextSecondary
+                        : AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenrePageDot(int index, String label) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final isActive = _heatmapPageIndex == index;
+    return GestureDetector(
+      onTap: () {
+        if (_heatmapPageIndex != index) {
+          AppHaptics.selectionClick();
+          setState(() => _heatmapPageIndex = index);
+          if (_genrePageController.hasClients) {
+            _genrePageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+          if (_heatmapPageController.hasClients) {
+            _heatmapPageController.jumpToPage(index);
+          }
+        }
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: isActive ? 8.0 : 6.0,
+            height: isActive ? 8.0 : 6.0,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive
+                  ? (isLight ? AppColors.lightPrimary : AppColors.primaryLight)
+                  : (isLight ? AppColors.borderLight : AppColors.borderDark),
+            ),
+          ),
+          AppSpacing.gapW4,
+          Text(
+            label,
+            style: AppTextStyles.xsBold.copyWith(
+              fontSize: 10,
+              letterSpacing: 0.5,
+              color: isActive
+                  ? (isLight ? AppColors.lightPrimary : AppColors.primaryLight)
+                  : (isLight
+                      ? AppColors.lightTextTertiary
+                      : AppColors.textTertiary),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2542,9 +2791,10 @@ class _ProfilePageState extends State<ProfilePage>
 
   void _toggleHeatmap(int targetPage) {
     final wasExpanded = _isHeatmapExpanded;
-    final isSamePage = _heatmapPageIndex == targetPage;
+    final isSamePage = _heatmapPageIndex == targetPage && _activitySegmentIndex == 0;
 
     setState(() {
+      _activitySegmentIndex = 0;
       if (wasExpanded && isSamePage) {
         _isHeatmapExpanded = false;
         _isLocalLoading = false;
@@ -2554,6 +2804,7 @@ class _ProfilePageState extends State<ProfilePage>
         _isLocalLoading = true; // Trigger local shimmer
         if (!wasExpanded) {
           _heatmapPageController = PageController(initialPage: targetPage);
+          _genrePageController = PageController(initialPage: targetPage);
         }
         _heatmapPageIndex = targetPage;
       }
@@ -2571,11 +2822,20 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     if (wasExpanded && !isSamePage) {
-      _heatmapPageController.animateToPage(
-        targetPage,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      if (_heatmapPageController.hasClients) {
+        _heatmapPageController.animateToPage(
+          targetPage,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+      if (_genrePageController.hasClients) {
+        _genrePageController.animateToPage(
+          targetPage,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
     }
     AppHaptics.mediumImpact();
   }
