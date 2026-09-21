@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
+import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../cubit/person_details_cubit.dart';
 import '../cubit/person_details_state.dart';
@@ -583,10 +584,15 @@ class _PersonDetailsBottomSheetState extends State<PersonDetailsBottomSheet> {
               } else {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => ShowDetailsPage(
-                      mediaId: id,
-                      mediaType: 'tv',
-                      title: title,
+                    builder: (routeContext) => BlocProvider<ShowDetailsCubit>(
+                      create: (_) => ShowDetailsCubit(
+                        tmdbClient: routeContext.read<TmdbClient>(),
+                      ),
+                      child: ShowDetailsPage(
+                        mediaId: id,
+                        mediaType: 'tv',
+                        title: title,
+                      ),
                     ),
                   ),
                 );
