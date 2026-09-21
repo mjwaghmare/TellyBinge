@@ -27,6 +27,7 @@ import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../cubit/show_details_cubit.dart';
 import '../cubit/show_details_state.dart';
+import '../../../person/presentation/widgets/person_details_bottom_sheet.dart';
 
 class ShowDetailsPage extends StatefulWidget {
   final int mediaId;
@@ -810,6 +811,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                         imageUrl: _getImageUrl(profilePath, size: 'w185'),
                         realName: actorName,
                         characterName: character.toUpperCase(),
+                        profilePath: profilePath,
                       );
                     },
                   ),
@@ -2308,8 +2310,17 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     required String imageUrl,
     required String realName,
     required String characterName,
+    String? profilePath,
   }) {
     return GestureDetector(
+      onTap: personId > 0
+          ? () => PersonDetailsBottomSheet.show(
+                context,
+                personId: personId,
+                initialName: realName,
+                initialProfilePath: profilePath,
+              )
+          : null,
       child: Container(
         width: 120,
         decoration: BoxDecoration(

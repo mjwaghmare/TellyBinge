@@ -21,6 +21,7 @@ import '../../../../core/widgets/watch_providers_section.dart';
 import '../../../../core/widgets/polaroid_share_modal.dart';
 import '../cubit/movie_details_cubit.dart';
 import '../cubit/movie_details_state.dart';
+import '../../../person/presentation/widgets/person_details_bottom_sheet.dart';
 
 class MovieDetailsPage extends StatelessWidget {
   final int movieId;
@@ -1129,7 +1130,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             actor['character'] as String? ?? '';
                                         final profilePath =
                                             actor['profile_path'] as String?;
+                                        final personId =
+                                            (actor['id'] as num?)?.toInt() ?? 0;
                                         return _buildCastCard(
+                                          personId: personId,
                                           imageUrl: _getImageUrl(
                                             profilePath,
                                             size: 'w185',
@@ -1137,6 +1141,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                           realName: actorName,
                                           characterName: character
                                               .toUpperCase(),
+                                          profilePath: profilePath,
                                         );
                                       },
                                     ),
@@ -1312,19 +1317,30 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
   }
 
   Widget _buildCastCard({
+    required int personId,
     required String imageUrl,
     required String realName,
     required String characterName,
+    String? profilePath,
   }) {
-    return Container(
-      width: 120,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: context.adaptiveColor(
-          light: AppColors.lightSurfaceElevated,
-          dark: AppColors.surface,
+    return GestureDetector(
+      onTap: personId > 0
+          ? () => PersonDetailsBottomSheet.show(
+                context,
+                personId: personId,
+                initialName: realName,
+                initialProfilePath: profilePath,
+              )
+          : null,
+      child: Container(
+        width: 120,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: context.adaptiveColor(
+            light: AppColors.lightSurfaceElevated,
+            dark: AppColors.surface,
+          ),
         ),
-      ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
@@ -1418,8 +1434,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   _RecommendationData? _parseRecommendationData(dynamic item) {
     if (item is! Map<String, dynamic>) return null;

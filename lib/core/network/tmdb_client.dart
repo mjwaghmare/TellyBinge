@@ -388,6 +388,31 @@ class TmdbClient {
     }
   }
 
+  /// Fetch details of a person (actor/crew), including biography, profile, and combined credits.
+  Future<Map<String, dynamic>> getPersonDetails(int personId) async {
+    final cacheKey = 'person_details_v1_$personId';
+    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null) return cachedData;
+
+    try {
+      final response = await _getWithRetry(
+        '/person/$personId',
+        queryParameters: {'append_to_response': 'combined_credits'},
+      );
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      return data;
+    } catch (e) {
+      final expiredData = await TmdbCacheManager.instance.readCache(
+        cacheKey,
+        maxAge: const Duration(days: 30),
+      );
+      if (expiredData != null) return expiredData;
+      debugPrint('Error fetching person details for $personId: $e');
+      return {};
+    }
+  }
+
   /// Fetch similar movies for a movie
   Future<List<dynamic>> getSimilarMovies(int movieId) async {
     final cacheKey = 'similar_movies_$movieId';
