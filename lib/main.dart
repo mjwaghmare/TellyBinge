@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -13,6 +14,7 @@ import 'app/shell_navigation_page.dart';
 import 'core/constants/app_assets.dart';
 import 'core/constants/app_constants.dart';
 import 'core/constants/app_storage_keys.dart';
+import 'core/network/app_http_overrides.dart';
 import 'core/network/tmdb_client.dart';
 import 'core/services/app_haptics.dart';
 import 'core/services/app_update_service.dart';
@@ -52,6 +54,9 @@ final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Install in-app DoH HTTP overrides to bypass ISP-level DNS blocking
+  HttpOverrides.global = AppHttpOverrides();
 
   // Global uncaught error handling for production stability
   FlutterError.onError = (details) {

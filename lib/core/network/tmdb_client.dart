@@ -25,8 +25,8 @@ class TmdbClient {
     }
 
     _dio.options.baseUrl = _baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 30);
-    _dio.options.receiveTimeout = const Duration(seconds: 30);
+    _dio.options.connectTimeout = const Duration(seconds: 10);
+    _dio.options.receiveTimeout = const Duration(seconds: 15);
 
     // Add interceptor to automatically append api_key and handle logging
     _dio.interceptors.add(
