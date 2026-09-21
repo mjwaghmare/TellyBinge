@@ -59,7 +59,24 @@ class DeepLinkService {
       fallbackWebUrl: fallbackWebUrl,
     );
 
-    // 1. Attempt to launch native app intents
+    // 1. Attempt provider HTTPS web URL first — this triggers
+    //    Universal Links (iOS) / App Links (Android) and opens the
+    //    native app directly to the search/content page when installed,
+    //    or falls back gracefully to the browser when not.
+    if (webUri != null) {
+      try {
+        final launched = await launchUrl(
+          webUri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (launched) return true;
+      } catch (e) {
+        debugPrint('DeepLinkService web URL failed for $webUri: $e');
+      }
+    }
+
+    // 2. Fallback: attempt native custom URI scheme intents
+    //    (e.g. nflx://, hotstar://) for older devices/apps.
     for (final intentUri in intentUris) {
       try {
         if (await canLaunchUrl(intentUri)) {
@@ -74,20 +91,7 @@ class DeepLinkService {
       }
     }
 
-    // 2. Attempt provider-specific web search URL
-    if (webUri != null) {
-      try {
-        final launched = await launchUrl(
-          webUri,
-          mode: LaunchMode.externalApplication,
-        );
-        if (launched) return true;
-      } catch (e) {
-        debugPrint('DeepLinkService web search failed for $webUri: $e');
-      }
-    }
-
-    // 3. Fallback to TMDB JustWatch direct link
+    // 3. Fallback to TMDB-provided link (typically a TMDB watch page)
     if (fallbackWebUrl != null && fallbackWebUrl.trim().isNotEmpty) {
       try {
         final fallbackUri = Uri.tryParse(fallbackWebUrl.trim());
@@ -99,7 +103,7 @@ class DeepLinkService {
           if (launched) return true;
         }
       } catch (e) {
-        debugPrint('DeepLinkService fallback JustWatch link failed: $e');
+        debugPrint('DeepLinkService fallback link failed: $e');
       }
     }
 
