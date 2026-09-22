@@ -161,7 +161,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   mediaType: widget.mediaType,
                 );
               },
-              child: const Text('Share Polaroid 📸'),
+              child: const Text('Share Polaroid'),
             ),
           if (canShare)
             CupertinoActionSheetAction(
@@ -181,7 +181,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   ),
                 );
               },
-              child: const Text('Add to list 📑'),
+              child: const Text('Add to List'),
             ),
           if (isTracked)
             CupertinoActionSheetAction(
@@ -200,7 +200,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   );
                 }
               },
-              child: Text(isStopped ? 'Continue watching' : 'Stop watching'),
+              child: Text(isStopped ? 'Resume Watching' : 'Pause Watching'),
             ),
           if (isTracked)
             CupertinoActionSheetAction(
@@ -213,11 +213,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   showId: widget.mediaId,
                 );
               },
-              child: Text(
-                widget.mediaType == 'movie'
-                    ? 'Remove from watchlist'
-                    : 'Stop tracking show',
-              ),
+              child: const Text('Remove from Watchlist'),
             ),
         ],
         cancelButton: CupertinoActionSheetAction(

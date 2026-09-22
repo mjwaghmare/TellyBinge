@@ -249,7 +249,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   mediaType: 'movie',
                 );
               },
-              child: const Text('Share Polaroid 📸'),
+              child: const Text('Share Polaroid'),
             ),
           if (hasLoadedDetails)
             CupertinoActionSheetAction(
@@ -269,7 +269,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   ),
                 );
               },
-              child: const Text('Add to list 📑'),
+              child: const Text('Add to List'),
             ),
           if (isAdded && released)
             CupertinoActionSheetAction(
@@ -282,7 +282,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   isWatched: !isWatched,
                 );
               },
-              child: Text(isWatched ? 'Mark as unwatched' : 'Mark as watched'),
+              child: Text(isWatched ? 'Mark as Unwatched' : 'Mark as Watched'),
             ),
           if (isAdded)
             CupertinoActionSheetAction(
@@ -295,7 +295,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                   movieId: widget.movieId,
                 );
               },
-              child: const Text('Remove from watchlist'),
+              child: const Text('Remove from Watchlist'),
             ),
         ],
         cancelButton: CupertinoActionSheetAction(
