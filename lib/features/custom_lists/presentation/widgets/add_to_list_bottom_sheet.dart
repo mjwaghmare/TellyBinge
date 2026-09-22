@@ -352,7 +352,9 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
                         child: SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                          child: CircularProgressIndicator.adaptive(
+                            strokeWidth: 2.2,
+                          ),
                         ),
                       ),
                     );
@@ -525,7 +527,8 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
                                           child: SizedBox(
                                             width: 18,
                                             height: 18,
-                                            child: CircularProgressIndicator(
+                                            child:
+                                                CircularProgressIndicator.adaptive(
                                               strokeWidth: 2.2,
                                               valueColor:
                                                   AlwaysStoppedAnimation<Color>(
