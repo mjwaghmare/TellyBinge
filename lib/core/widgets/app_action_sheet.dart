@@ -9,12 +9,20 @@ class AppActionSheetAction {
   final IconData icon;
   final VoidCallback onTap;
   final bool isDestructive;
+  final String? subtitle;
+  final Color? iconColor;
+  final Color? iconBackgroundColor;
+  final Widget? trailing;
 
   const AppActionSheetAction({
     required this.label,
     required this.icon,
     required this.onTap,
     this.isDestructive = false,
+    this.subtitle,
+    this.iconColor,
+    this.iconBackgroundColor,
+    this.trailing,
   });
 }
 
@@ -46,6 +54,8 @@ class AppActionSheet extends StatelessWidget {
     final isLight = context.isLight;
     return showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor:
           isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
@@ -59,6 +69,7 @@ class AppActionSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
+    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
     return SafeArea(
       top: false,
@@ -67,24 +78,27 @@ class AppActionSheet extends StatelessWidget {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Top drag handle
-            Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: AppSpacing.md),
-              decoration: BoxDecoration(
-                color: isLight ? AppColors.borderLight : AppColors.borderDark,
-                borderRadius: BorderRadius.circular(2),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top drag handle
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-            ),
-            if (title != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                child: Align(
-                  alignment: Alignment.centerLeft,
+              if (title != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                   child: Text(
                     title!,
                     maxLines: 1,
@@ -95,16 +109,14 @@ class AppActionSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-              ),
-            if (subtitle != null)
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: AppSpacing.sm,
-                  right: AppSpacing.sm,
-                  top: 2,
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
+              if (subtitle != null)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: AppSpacing.xs,
+                    right: AppSpacing.xs,
+                    top: 2,
+                    bottom: AppSpacing.xs,
+                  ),
                   child: Text(
                     subtitle!,
                     style: AppTextStyles.sm.copyWith(
@@ -112,34 +124,114 @@ class AppActionSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-              ),
-            if (title != null || subtitle != null)
-              const SizedBox(height: AppSpacing.sm),
-            for (final action in actions) _buildTile(context, action),
-          ],
+              if (title != null || subtitle != null)
+                const SizedBox(height: AppSpacing.sm),
+              for (var i = 0; i < actions.length; i++) ...[
+                if (i > 0)
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: borderColor,
+                  ),
+                _buildTile(context, actions[i]),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildTile(BuildContext context, AppActionSheetAction action) {
-    final color =
-        action.isDestructive ? AppColors.error : context.textPrimary;
+    final isLight = context.isLight;
 
-    return ListTile(
-      dense: true,
-      shape: RoundedRectangleBorder(
+    final Color fgColor;
+    final Color bgColor;
+
+    if (action.isDestructive) {
+      fgColor = action.iconColor ?? AppColors.error;
+      bgColor = action.iconBackgroundColor ??
+          (isLight
+              ? AppColors.lightErrorContainer
+              : AppColors.error.withValues(alpha: 0.15));
+    } else if (action.iconColor != null) {
+      fgColor = action.iconColor!;
+      bgColor = action.iconBackgroundColor ??
+          (isLight
+              ? fgColor.withValues(alpha: 0.12)
+              : fgColor.withValues(alpha: 0.18));
+    } else {
+      // Default smart brand container
+      fgColor = isLight ? AppColors.lightPrimary : AppColors.primaryLight;
+      bgColor = action.iconBackgroundColor ??
+          (isLight
+              ? AppColors.lightPrimaryContainer
+              : AppColors.primary.withValues(alpha: 0.15));
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(10.0),
+        onTap: () {
+          Navigator.pop(context);
+          action.onTap();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Icon(action.icon, size: 20, color: fgColor),
+                ),
+              ),
+              AppSpacing.gapW12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      action.label,
+                      style: AppTextStyles.smBold.copyWith(
+                        color: action.isDestructive
+                            ? AppColors.error
+                            : context.textPrimary,
+                      ),
+                    ),
+                    if (action.subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        action.subtitle!,
+                        style: AppTextStyles.xs.copyWith(
+                          color: context.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              AppSpacing.gapW8,
+              action.trailing ??
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: context.textTertiary,
+                  ),
+            ],
+          ),
+        ),
       ),
-      leading: Icon(action.icon, size: 20, color: color),
-      title: Text(
-        action.label,
-        style: AppTextStyles.smMedium.copyWith(color: color),
-      ),
-      onTap: () {
-        Navigator.pop(context);
-        action.onTap();
-      },
     );
   }
 }

@@ -150,7 +150,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         if (hasLoadedDetails)
           AppActionSheetAction(
             label: 'Add to List',
+            subtitle: 'Save to your custom collections',
             icon: Icons.playlist_add_rounded,
+            iconColor: context.primary,
             onTap: () {
               AddToListBottomSheet.show(
                 context,
@@ -170,9 +172,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         if (isTracked)
           AppActionSheetAction(
             label: isStopped ? 'Resume Watching' : 'Pause Watching',
+            subtitle: isStopped
+                ? 'Continue tracking new episodes'
+                : 'Put tracking on hold',
             icon: isStopped
                 ? Icons.play_circle_outline_rounded
                 : Icons.pause_circle_outline_rounded,
+            iconColor: isStopped ? AppColors.brandGreen : AppColors.accentBlue,
             onTap: () {
               AppHaptics.mediumImpact();
               if (isStopped) {
@@ -191,6 +197,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
         if (isTracked)
           AppActionSheetAction(
             label: 'Remove from Watchlist',
+            subtitle: 'Remove from your tracked shows',
             icon: Icons.delete_outline_rounded,
             isDestructive: true,
             onTap: () {

@@ -159,6 +159,7 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
       actions: [
         AppActionSheetAction(
           label: 'Remove from this list',
+          subtitle: 'Remove item from this collection',
           icon: Icons.delete_outline_rounded,
           isDestructive: true,
           onTap: () {
@@ -186,7 +187,9 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
       actions: [
         AppActionSheetAction(
           label: 'Edit list',
+          subtitle: 'Update list name and description',
           icon: Icons.edit_rounded,
+          iconColor: context.primary,
           onTap: () => CreateListBottomSheet.show(
             context,
             listId: list.id,
@@ -196,6 +199,7 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
         ),
         AppActionSheetAction(
           label: 'Delete list',
+          subtitle: 'Permanently delete this list',
           icon: Icons.delete_outline_rounded,
           isDestructive: true,
           onTap: () => _confirmDeleteList(list, uid),

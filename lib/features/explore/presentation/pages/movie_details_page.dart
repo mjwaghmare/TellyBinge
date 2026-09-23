@@ -235,7 +235,9 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         if (hasLoadedDetails)
           AppActionSheetAction(
             label: 'Add to List',
+            subtitle: 'Save to your custom collections',
             icon: Icons.playlist_add_rounded,
+            iconColor: context.primary,
             onTap: () {
               AddToListBottomSheet.show(
                 context,
@@ -255,9 +257,13 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         if (isAdded && released)
           AppActionSheetAction(
             label: isWatched ? 'Mark as Unwatched' : 'Mark as Watched',
+            subtitle: isWatched
+                ? 'Reset your watch progress'
+                : 'Add to your watched history',
             icon: isWatched
                 ? Icons.visibility_off_outlined
                 : Icons.check_circle_outline_rounded,
+            iconColor: isWatched ? AppColors.ended : AppColors.brandGreen,
             onTap: () {
               AppHaptics.mediumImpact();
               context.read<MovieWatchlistCubit>().toggleWatched(
@@ -270,6 +276,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         if (isAdded)
           AppActionSheetAction(
             label: 'Remove from Watchlist',
+            subtitle: 'Remove from your tracked movies',
             icon: Icons.delete_outline_rounded,
             isDestructive: true,
             onTap: () {
