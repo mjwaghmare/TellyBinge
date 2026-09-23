@@ -269,14 +269,17 @@ class TmdbClient {
 
   /// Fetch detailed information about a TV Show (does not include full season episode details)
   Future<Map<String, dynamic>> getTvShowDetails(int tvId) async {
-    final cacheKey = 'tv_details_v4_$tvId';
+    final cacheKey = 'tv_details_v5_$tvId';
     final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null) return cachedData;
 
     try {
       final response = await _getWithRetry(
         '/tv/$tvId',
-        queryParameters: {'append_to_response': 'videos,watch/providers'},
+        queryParameters: {
+          'append_to_response': 'videos,watch/providers,images',
+          'include_image_language': 'en,null',
+        },
       );
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
@@ -320,7 +323,7 @@ class TmdbClient {
     int movieId, {
     bool forceRefresh = false,
   }) async {
-    final cacheKey = 'movie_details_v3_$movieId';
+    final cacheKey = 'movie_details_v4_$movieId';
     if (!forceRefresh) {
       final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
       if (cachedData != null) return cachedData;
@@ -329,7 +332,10 @@ class TmdbClient {
     try {
       final response = await _getWithRetry(
         '/movie/$movieId',
-        queryParameters: {'append_to_response': 'videos,watch/providers'},
+        queryParameters: {
+          'append_to_response': 'videos,watch/providers,images',
+          'include_image_language': 'en,null',
+        },
       );
       final data = response.data as Map<String, dynamic>;
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
@@ -436,6 +442,39 @@ class TmdbClient {
       }
       debugPrint('Error fetching similar movies: $e');
       return [];
+    }
+  }
+
+  /// Fetch the posters and backdrops for a movie or TV show.
+  ///
+  /// Limited to English and text-free (`null`) images; without the filter a
+  /// popular title returns dozens of foreign-language posters. Returns an
+  /// empty map on failure — callers treat alternate artwork as optional.
+  Future<Map<String, dynamic>> getMediaImages(
+    String mediaType,
+    int id,
+  ) async {
+    final type = mediaType == 'movie' ? 'movie' : 'tv';
+    final cacheKey = '${type}_images_$id';
+    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null) return cachedData;
+
+    try {
+      final response = await _getWithRetry(
+        '/$type/$id/images',
+        queryParameters: {'include_image_language': 'en,null'},
+      );
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      return data;
+    } catch (e) {
+      final expiredData = await TmdbCacheManager.instance.readCache(
+        cacheKey,
+        maxAge: const Duration(days: 30),
+      );
+      if (expiredData != null) return expiredData;
+      debugPrint('Error fetching $type images: $e');
+      return {};
     }
   }
 

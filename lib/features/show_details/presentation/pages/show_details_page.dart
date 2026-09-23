@@ -16,8 +16,11 @@ import '../../../../core/widgets/action_circle_button.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/widgets/collapsing_header_snap.dart';
+import '../../../../core/widgets/media_hero_image.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
 import '../../../../core/widgets/watch_providers_section.dart';
+import '../../../../core/utils/tmdb_artwork.dart';
 import '../../../../core/widgets/polaroid_share_modal.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -53,6 +56,8 @@ class ShowDetailsPage extends StatefulWidget {
 }
 
 class _ShowDetailsPageState extends State<ShowDetailsPage> {
+  static const double _heroExpandedHeight = 300.0;
+
   late final ScrollController _scrollController;
   final ValueNotifier<bool> _isCollapsed = ValueNotifier<bool>(false);
   final Map<int, bool> _expandedSeasons = {};
@@ -65,7 +70,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     _scrollController = ScrollController()
       ..addListener(() {
         if (_scrollController.hasClients) {
-          final isCurrentlyCollapsed = _scrollController.offset > 240;
+          // Title shows as the header finishes collapsing, on every device.
+          final isCurrentlyCollapsed = _scrollController.offset >=
+              CollapsingHeaderSnap.collapseExtentOf(
+                    context,
+                    _heroExpandedHeight,
+                  ) -
+                  8;
           if (isCurrentlyCollapsed != _isCollapsed.value) {
             _isCollapsed.value = isCurrentlyCollapsed;
           }
@@ -526,7 +537,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
       return SliverAppBar(
         automaticallyImplyLeading: false,
         leading: const SizedBox.shrink(),
-        expandedHeight: 300.0,
+        expandedHeight: _heroExpandedHeight,
         pinned: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: ValueListenableBuilder<bool>(
@@ -563,8 +574,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 onPressed: isLoading
                     ? null
                     : () {
+                        final images =
+                            details['images'] as Map<String, dynamic>?;
                         final shareImageUrl = _getImageUrl(
-                          backdropPath ?? posterPath,
+                          TmdbArtwork.bestSharePath(images) ??
+                              backdropPath ??
+                              posterPath,
                           size: 'w780',
                         );
                         PolaroidShareModal.show(
@@ -573,6 +588,8 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                           imageUrl: shareImageUrl,
                           rating: voteAverage,
                           mediaType: widget.mediaType,
+                          tmdbId: widget.mediaId,
+                          images: images,
                         );
                       },
               ),
@@ -641,14 +658,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
           background: Stack(
             fit: StackFit.expand,
             children: [
-              backdropPath != null && backdropPath.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: _getImageUrl(backdropPath, size: 'w780'),
-                      fit: BoxFit.cover,
-                      errorWidget: (context, url, error) =>
-                          Container(color: AppColors.surface),
-                    )
-                  : Container(color: AppColors.surface),
+              MediaHeroImage(
+                backdropPath: TmdbArtwork.bestBannerPath(
+                      details['images'] as Map<String, dynamic>?,
+                    ) ??
+                    backdropPath,
+                posterPath: posterPath,
+              ),
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -1287,18 +1303,28 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     }
 
     if (widget.mediaType == 'movie') {
-      return CustomScrollView(
+      return CollapsingHeaderSnap(
         controller: _scrollController,
-        slivers: [
-          buildSliverAppBar(),
-          SliverToBoxAdapter(child: buildAboutSection()),
-        ],
+        expandedHeight: _heroExpandedHeight,
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            buildSliverAppBar(),
+            SliverToBoxAdapter(child: buildAboutSection()),
+            CollapsingHeaderSnap.fullCollapseFiller(
+              expandedHeight: _heroExpandedHeight,
+            ),
+          ],
+        ),
       );
     } else {
       return DefaultTabController(
         length: 2,
         initialIndex: widget.initialTabIndex,
-        child: NestedScrollView(
+        child: CollapsingHeaderSnap(
+         controller: _scrollController,
+         expandedHeight: _heroExpandedHeight,
+         child: NestedScrollView(
           controller: _scrollController,
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
@@ -1328,6 +1354,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
               ),
             ],
           ),
+         ),
         ),
       );
     }

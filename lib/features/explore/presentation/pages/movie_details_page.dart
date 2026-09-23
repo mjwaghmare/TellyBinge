@@ -18,6 +18,9 @@ import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
 import '../../../../core/widgets/watch_providers_section.dart';
+import '../../../../core/utils/tmdb_artwork.dart';
+import '../../../../core/widgets/collapsing_header_snap.dart';
+import '../../../../core/widgets/media_hero_image.dart';
 import '../../../../core/widgets/polaroid_share_modal.dart';
 import '../cubit/movie_details_cubit.dart';
 import '../cubit/movie_details_state.dart';
@@ -80,6 +83,8 @@ class MovieDetailsView extends StatefulWidget {
 
 class _MovieDetailsViewState extends State<MovieDetailsView> {
   bool _hasAutoSyncedMetadata = false;
+  static const double _heroExpandedHeight = 300.0;
+
   late final ScrollController _scrollController;
   final ValueNotifier<bool> _isCollapsed = ValueNotifier<bool>(false);
 
@@ -89,7 +94,13 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     _scrollController = ScrollController()
       ..addListener(() {
         if (_scrollController.hasClients) {
-          final isCurrentlyCollapsed = _scrollController.offset > 240;
+          // Title shows as the header finishes collapsing, on every device.
+          final isCurrentlyCollapsed = _scrollController.offset >=
+              CollapsingHeaderSnap.collapseExtentOf(
+                    context,
+                    _heroExpandedHeight,
+                  ) -
+                  8;
           if (isCurrentlyCollapsed != _isCollapsed.value) {
             _isCollapsed.value = isCurrentlyCollapsed;
           }
@@ -652,7 +663,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 children: [
                   Skeletonizer(
                     enabled: isLoading,
-                    child: CustomScrollView(
+                    child: CollapsingHeaderSnap(
+                     controller: _scrollController,
+                     expandedHeight: _heroExpandedHeight,
+                     child: CustomScrollView(
                       controller: _scrollController,
                       slivers: [
                         SliverAppBar(
@@ -661,7 +675,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                           backgroundColor: Theme.of(
                             context,
                           ).scaffoldBackgroundColor,
-                          expandedHeight: 300.0,
+                          expandedHeight: _heroExpandedHeight,
                           pinned: true,
                           title: ValueListenableBuilder<bool>(
                             valueListenable: _isCollapsed,
@@ -699,8 +713,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                   onPressed: (isLoading || state is! MovieDetailsSuccess)
                                       ? null
                                       : () {
+                                          final images = movie['images']
+                                              as Map<String, dynamic>?;
                                           final shareImageUrl = _getImageUrl(
-                                            movie['backdrop_path'] ?? movie['poster_path'],
+                                            TmdbArtwork.bestSharePath(images) ??
+                                                movie['backdrop_path'] ??
+                                                movie['poster_path'],
                                             size: 'w780',
                                           );
                                           final watchedDate =
@@ -714,6 +732,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                             rating: voteAverage,
                                             watchedDate: watchedDate,
                                             mediaType: 'movie',
+                                            tmdbId: widget.movieId,
+                                            images: images,
                                           );
                                         },
                                 ),
@@ -759,21 +779,15 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                             background: Stack(
                               fit: StackFit.expand,
                               children: [
-                                if (backdropPath != null &&
-                                    backdropPath.isNotEmpty)
-                                  CachedNetworkImage(
-                                    imageUrl: _getImageUrl(
+                                MediaHeroImage(
+                                  backdropPath: TmdbArtwork.bestBannerPath(
+                                        movie['images']
+                                            as Map<String, dynamic>?,
+                                      ) ??
                                       backdropPath,
-                                    ),
-                                    fit: BoxFit.cover,
-                                    errorWidget:
-                                        (context, url, error) =>
-                                            Container(
-                                              color: AppColors.surface,
-                                            ),
-                                  )
-                                else
-                                  Container(color: AppColors.surface),
+                                  posterPath: movie['poster_path'] as String?,
+                                  backdropSize: 'w500',
+                                ),
                                 const DecoratedBox(
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
@@ -1403,7 +1417,11 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                             ),
                           ),
                         ),
+                        CollapsingHeaderSnap.fullCollapseFiller(
+                          expandedHeight: _heroExpandedHeight,
+                        ),
                       ],
+                     ),
                     ),
                   ),
                   Positioned(

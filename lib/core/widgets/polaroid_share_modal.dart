@@ -3,13 +3,17 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import '../constants/app_constants.dart';
+import '../network/tmdb_client.dart';
 import '../services/app_haptics.dart';
 import '../services/share_card_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/tmdb_artwork.dart';
 import 'polaroid_share_card.dart';
 
 /// Full-screen modal presentation of the [PolaroidShareCard]
@@ -22,6 +26,14 @@ class PolaroidShareModal extends StatefulWidget {
   final DateTime? watchedDate;
   final String? mediaType;
 
+  /// TMDB id of the title. When given together with [mediaType], alternate
+  /// posters and backdrops are fetched and offered in a picker strip.
+  final int? tmdbId;
+
+  /// The `images` block of the title's details response. When given, the
+  /// picker is built from it instantly instead of fetching by [tmdbId].
+  final Map<String, dynamic>? images;
+
   const PolaroidShareModal({
     super.key,
     required this.title,
@@ -29,6 +41,8 @@ class PolaroidShareModal extends StatefulWidget {
     this.rating,
     this.watchedDate,
     this.mediaType,
+    this.tmdbId,
+    this.images,
   });
 
   /// Convenient helper to display the modal screen sliding up from the bottom.
@@ -39,6 +53,8 @@ class PolaroidShareModal extends StatefulWidget {
     double? rating,
     DateTime? watchedDate,
     String? mediaType,
+    int? tmdbId,
+    Map<String, dynamic>? images,
   }) async {
     await AppHaptics.mediumImpact();
     if (!context.mounted) return;
@@ -52,6 +68,8 @@ class PolaroidShareModal extends StatefulWidget {
           rating: rating,
           watchedDate: watchedDate,
           mediaType: mediaType,
+          tmdbId: tmdbId,
+          images: images,
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(0.0, 1.0);
@@ -104,6 +122,16 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
   Future<void>? _precacheFuture;
   bool _isImagePrecached = false;
 
+  // Artwork picker. [_selectedImageUrl] follows the user's tap immediately;
+  // [_displayedImageUrl] (what the card renders and exports) only catches up
+  // once that image has decoded, so Share never captures a blank frame.
+  List<_ArtworkOption> _artworkOptions = const [];
+  String? _selectedImageUrl;
+  String? _displayedImageUrl;
+
+  bool get _isImageReady =>
+      _isImagePrecached && _selectedImageUrl == _displayedImageUrl;
+
   // Choreographed Entrance Animations
   late final AnimationController _entranceController;
   late final Animation<Offset> _cardSlideAnimation;
@@ -120,6 +148,8 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
 
     final hasImage = widget.imageUrl != null && widget.imageUrl!.isNotEmpty;
     _isImagePrecached = !hasImage;
+    _selectedImageUrl = widget.imageUrl;
+    _displayedImageUrl = widget.imageUrl;
 
     // 1. Setup Staggered Entrance Animation
     _entranceController = AnimationController(
@@ -192,6 +222,14 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
           });
         }
       });
+    }
+
+    // Alternate artwork is optional: the strip only appears if there's any.
+    final images = widget.images;
+    if (images != null) {
+      _artworkOptions = _artworkOptionsFrom(images);
+    } else {
+      unawaited(_fetchArtworkOptions());
     }
 
     // 3. Smooth Display-Synchronized Ticker (interpolates device tilt at 60/120Hz)
@@ -296,8 +334,82 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
     super.dispose();
   }
 
+  /// Fetches TMDB posters/backdrops for the picker strip.
+  ///
+  /// Only called when the caller didn't pass [PolaroidShareModal.images]
+  /// (e.g. details served from an older cache entry without them).
+  Future<void> _fetchArtworkOptions() async {
+    final id = widget.tmdbId;
+    final mediaType = widget.mediaType;
+    if (id == null || mediaType == null) return;
+
+    final data = await context.read<TmdbClient>().getMediaImages(mediaType, id);
+    if (!mounted) return;
+
+    final options = _artworkOptionsFrom(data);
+    if (options.isEmpty) return;
+    setState(() => _artworkOptions = options);
+  }
+
+  /// Opening image first, then the best posters (which fit the card's frame)
+  /// and backdrops. Empty when there'd be nothing to choose between.
+  List<_ArtworkOption> _artworkOptionsFrom(Map<String, dynamic> images) {
+    final options = <_ArtworkOption>[];
+    final seen = <String>{};
+    void add(_ArtworkOption option) {
+      if (seen.add(option.fullUrl)) options.add(option);
+    }
+
+    final initial = widget.imageUrl;
+    if (initial != null && initial.isNotEmpty) {
+      add(_ArtworkOption(thumbUrl: initial, fullUrl: initial));
+    }
+    for (final path in [
+      // ~10 total: enough that the strip visibly scrolls, few enough that
+      // it stays a quick choice. Backdrops crop to half their width in the
+      // card's frame, so they get fewer slots.
+      ...TmdbArtwork.topPaths(images, 'posters', limit: 6),
+      ...TmdbArtwork.topPaths(images, 'backdrops', limit: 4),
+    ]) {
+      add(_ArtworkOption(
+        thumbUrl: AppConstants.tmdbImageUrl(path, size: 'w185'),
+        fullUrl: AppConstants.tmdbImageUrl(path, size: 'w780'),
+      ));
+    }
+
+    return options.length < 2 ? const [] : options;
+  }
+
+  /// Selects [url] right away, but only swaps the card image once it has
+  /// decoded. A later tap supersedes an in-flight load; a failed load reverts
+  /// the selection to what the card is still showing.
+  void _selectArtwork(String url) {
+    if (_isSharing || url == _selectedImageUrl) return;
+    unawaited(AppHaptics.selectionClick());
+    setState(() => _selectedImageUrl = url);
+
+    var failed = false;
+    final future = precacheImage(
+      CachedNetworkImageProvider(url),
+      context,
+      onError: (_, _) => failed = true,
+    );
+    _precacheFuture = future;
+    future.whenComplete(() {
+      if (!mounted || _selectedImageUrl != url) return;
+      setState(() {
+        if (failed) {
+          _selectedImageUrl = _displayedImageUrl;
+        } else {
+          _displayedImageUrl = url;
+          _isImagePrecached = true;
+        }
+      });
+    });
+  }
+
   Future<void> _handleShare() async {
-    if (_isSharing || !_isImagePrecached) return;
+    if (_isSharing || !_isImageReady) return;
 
     await AppHaptics.mediumImpact();
     setState(() {
@@ -364,6 +476,74 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
     );
   }
 
+  /// Horizontal strip of artwork thumbnails, cropped to the card's photo
+  /// aspect ratio so each one previews exactly what the Polaroid will show.
+  Widget _buildArtworkStrip() {
+    const thumbWidth = 54.0;
+    const thumbHeight = thumbWidth / 0.84;
+
+    return SizedBox(
+      height: thumbHeight,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: _artworkOptions.length,
+        separatorBuilder: (_, _) => AppSpacing.gapW8,
+        itemBuilder: (context, index) {
+          final option = _artworkOptions[index];
+          final isSelected = option.fullUrl == _selectedImageUrl;
+          final isLoading = isSelected && option.fullUrl != _displayedImageUrl;
+
+          return GestureDetector(
+            onTap: () => _selectArtwork(option.fullUrl),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: thumbWidth,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary
+                      : Colors.white.withValues(alpha: 0.22),
+                  width: isSelected ? 2 : 1,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: option.thumbUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) =>
+                          Container(color: Colors.white.withValues(alpha: 0.08)),
+                      errorWidget: (context, url, error) =>
+                          Container(color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    if (isLoading)
+                      Container(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        alignment: Alignment.center,
+                        child: const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildVignetteOverlay() {
     return Container(
       decoration: BoxDecoration(
@@ -402,7 +582,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
                   padding: const EdgeInsets.all(28), // Padding for the soft shadow
                   child: PolaroidShareCard(
                     title: widget.title,
-                    imageUrl: widget.imageUrl,
+                    imageUrl: _displayedImageUrl,
                     rating: _currentRating,
                     watchedDate: widget.watchedDate,
                     showRating: true,
@@ -417,9 +597,33 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
             ),
           ),
 
+          // Opaque cover over the export boundary. The blurred background is
+          // transparent while its image loads or cross-fades, which would let
+          // the offscreen export copy show through. Capture is unaffected:
+          // RepaintBoundary.toImage renders its own layer regardless.
+          const Positioned.fill(
+            child: ColoredBox(color: Colors.black),
+          ),
+
           // 1. Full-Screen Edge-to-Edge Colored Blurred Background
           Positioned.fill(
-            child: _buildScreenBlurredBackground(widget.imageUrl),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 450),
+              // Fade the incoming image in over the outgoing one at full
+              // opacity, rather than dipping both to half-transparent.
+              transitionBuilder: (child, animation) =>
+                  child.key == ValueKey(_displayedImageUrl)
+                      ? FadeTransition(opacity: animation, child: child)
+                      : child,
+              layoutBuilder: (current, previous) => Stack(
+                fit: StackFit.expand,
+                children: [...previous, ?current],
+              ),
+              child: KeyedSubtree(
+                key: ValueKey(_displayedImageUrl),
+                child: _buildScreenBlurredBackground(_displayedImageUrl),
+              ),
+            ),
           ),
 
           // 2. Cinematic Dark Vignette Overlay
@@ -487,7 +691,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
                                 scale: _cardScaleAnimation,
                                 child: PolaroidShareCard(
                                   title: widget.title,
-                                  imageUrl: widget.imageUrl,
+                                  imageUrl: _displayedImageUrl,
                                   rating: _currentRating,
                                   watchedDate: widget.watchedDate,
                                   showRating: _showRating,
@@ -535,15 +739,29 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
 
                           AppSpacing.gapH12,
 
+                          // Alternate artwork picker (grows in once fetched)
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 280),
+                            curve: Curves.easeOutCubic,
+                            child: _artworkOptions.isEmpty
+                                ? const SizedBox(width: double.infinity)
+                                : Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: AppSpacing.sm,
+                                    ),
+                                    child: _buildArtworkStrip(),
+                                  ),
+                          ),
+
                           SizedBox(
                             key: _shareButtonKey,
                             width: double.infinity,
                             height: 52,
                             child: ElevatedButton.icon(
-                              onPressed: (_isSharing || !_isImagePrecached)
+                              onPressed: (_isSharing || !_isImageReady)
                                   ? null
                                   : _handleShare,
-                              icon: (_isSharing || !_isImagePrecached)
+                              icon: (_isSharing || !_isImageReady)
                                   ? const SizedBox(
                                       width: 20,
                                       height: 20,
@@ -556,7 +774,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
                               label: Text(
                                 _isSharing
                                     ? 'Generating Polaroid...'
-                                    : (!_isImagePrecached
+                                    : (!_isImageReady
                                         ? 'Loading Image...'
                                         : 'Share to Stories & Friends'),
                                 style: AppTextStyles.mdBold.copyWith(
@@ -587,4 +805,13 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
       ),
     );
   }
+}
+
+/// One choice in the artwork picker: a small image for the strip and the
+/// full-size image the Polaroid renders and exports.
+class _ArtworkOption {
+  final String thumbUrl;
+  final String fullUrl;
+
+  const _ArtworkOption({required this.thumbUrl, required this.fullUrl});
 }
