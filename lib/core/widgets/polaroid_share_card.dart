@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../services/app_haptics.dart';
@@ -48,7 +49,7 @@ class PolaroidShareCard extends StatelessWidget {
     final polaroidContent = Transform(
       alignment: FractionalOffset.center,
       transform: Matrix4.identity()
-        ..setEntry(3, 2, 0.0010) // Subtle, playful 3D perspective depth
+        ..setEntry(3, 2, 0.0014) // Playful 3D perspective depth
         ..rotateY(tiltX) // Gyro roll
         ..rotateX(-tiltY), // Gyro pitch
       child: Container(
@@ -64,13 +65,13 @@ class PolaroidShareCard extends StatelessWidget {
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.60),
               blurRadius: 36,
-              offset: Offset(-tiltX * 24, 18 - tiltY * 24),
+              offset: Offset(-tiltX * 90, 18 - tiltY * 90),
               spreadRadius: 2,
             ),
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.28),
               blurRadius: 12,
-              offset: Offset(-tiltX * 12, 5 - tiltY * 12),
+              offset: Offset(-tiltX * 45, 5 - tiltY * 45),
             ),
           ],
         ),
@@ -85,7 +86,13 @@ class PolaroidShareCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
               child: AspectRatio(
                 aspectRatio: 0.84, // Taller photo area
-                child: _buildPhotoImage(),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildPhotoImage(),
+                    _buildTiltSheen(),
+                  ],
+                ),
               ),
             ),
 
@@ -156,6 +163,33 @@ class PolaroidShareCard extends StatelessWidget {
           fit: BoxFit.cover,
           errorWidget: (context, url, error) => Container(
             color: AppColors.background,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Soft diagonal glare that slides against the tilt direction.
+  /// Fades out completely at zero tilt, so exported images stay clean.
+  Widget _buildTiltSheen() {
+    const fullTilt = 0.09; // Matches the modal's max gyro tilt
+    final magnitude = math.sqrt(tiltX * tiltX + tiltY * tiltY);
+    final intensity = (magnitude / fullTilt).clamp(0.0, 1.0);
+    if (intensity == 0) return const SizedBox.shrink();
+
+    final shift = -((tiltX + tiltY) / fullTilt) * 0.6;
+    return IgnorePointer(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment(-1 + shift, -1 + shift),
+            end: Alignment(1 + shift, 1 + shift),
+            stops: const [0.35, 0.5, 0.65],
+            colors: [
+              Colors.white.withValues(alpha: 0),
+              Colors.white.withValues(alpha: 0.14 * intensity),
+              Colors.white.withValues(alpha: 0),
+            ],
           ),
         ),
       ),

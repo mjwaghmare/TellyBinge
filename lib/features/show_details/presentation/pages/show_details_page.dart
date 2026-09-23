@@ -137,32 +137,17 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     required bool isTracked,
     required bool isStopped,
     required String title,
-    required String? imageUrl,
     required String? posterPath,
     required String? backdropPath,
     required String? firstAirDate,
     required double? rating,
-    bool canShare = true,
+    bool hasLoadedDetails = true,
   }) {
     AppActionSheet.show(
       context,
       title: 'Show Actions',
       actions: [
-        if (canShare)
-          AppActionSheetAction(
-            label: 'Share Polaroid',
-            icon: Icons.ios_share_rounded,
-            onTap: () {
-              PolaroidShareModal.show(
-                context,
-                title: title,
-                imageUrl: imageUrl,
-                rating: rating,
-                mediaType: widget.mediaType,
-              );
-            },
-          ),
-        if (canShare)
+        if (hasLoadedDetails)
           AppActionSheetAction(
             label: 'Add to List',
             icon: Icons.playlist_add_rounded,
@@ -620,22 +605,17 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             color: AppColors.textOnPrimary,
                           ),
                           onPressed: () {
-                            final shareImageUrl = _getImageUrl(
-                              backdropPath ?? posterPath,
-                              size: 'w780',
-                            );
                             _showMoreActions(
                               context: context,
                               uid: uid,
                               isTracked: isTracked,
                               isStopped: isStopped,
                               title: title,
-                              imageUrl: shareImageUrl,
                               posterPath: posterPath,
                               backdropPath: backdropPath,
                               firstAirDate: firstAirDate,
                               rating: voteAverage,
-                              canShare: !isLoading,
+                              hasLoadedDetails: !isLoading,
                             );
                           },
                         ),

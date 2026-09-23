@@ -198,8 +198,8 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
     _tiltTicker = createTicker((_) {
       if (!mounted || _isExporting) return;
 
-      final targetX = _targetTiltX.clamp(-0.06, 0.06);
-      final targetY = _targetTiltY.clamp(-0.06, 0.06);
+      final targetX = _targetTiltX.clamp(-0.10, 0.10);
+      final targetY = _targetTiltY.clamp(-0.10, 0.10);
 
       final newX = ui.lerpDouble(_tiltX, targetX, 0.14) ?? targetX;
       final newY = ui.lerpDouble(_tiltY, targetY, 0.14) ?? targetY;
@@ -230,12 +230,12 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
         }
 
         // Relative delta from natural resting holding angle (subtle playful response)
-        final dx = ((event.x - _baseX!) / 3.2).clamp(-1.0, 1.0);
-        final dy = ((event.y - _baseY!) / 3.2).clamp(-1.0, 1.0);
+        final dx = ((event.x - _baseX!) / 2.6).clamp(-1.0, 1.0);
+        final dy = ((event.y - _baseY!) / 2.6).clamp(-1.0, 1.0);
 
-        // Store targets for the smooth ticker loop (gentle, subtle gyro depth)
-        _targetTiltX = dx * 0.05;
-        _targetTiltY = dy * 0.05;
+        // Store targets for the smooth ticker loop (~5° max, noticeable gyro depth)
+        _targetTiltX = dx * 0.09;
+        _targetTiltY = dy * 0.09;
       }, onError: (_) {
         // Sensors unavailable (e.g. desktop/simulator) - ignore gracefully
       });
@@ -244,8 +244,8 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
 
   /// Evaluates tilt position against the 4 directional edges and triggers crisp haptics upon entry
   void _checkEdgeHaptics(double x, double y) {
-    const double threshold = 0.038; // Subtle angle limit to trigger side haptic
-    const double resetMargin = 0.020; // Return toward center to re-arm
+    const double threshold = 0.068; // Subtle angle limit to trigger side haptic
+    const double resetMargin = 0.036; // Return toward center to re-arm
 
     // 1. Left side
     if (x < -threshold) {

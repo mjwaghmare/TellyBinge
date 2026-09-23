@@ -222,34 +222,16 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     required bool isWatched,
     required bool released,
     required String title,
-    required String? imageUrl,
     required String? posterPath,
     required String? backdropPath,
     required String? releaseDate,
     required double? rating,
-    required DateTime? watchedDate,
-    bool canShare = true,
     bool hasLoadedDetails = true,
   }) {
     AppActionSheet.show(
       context,
       title: 'Movie Actions',
       actions: [
-        if (canShare)
-          AppActionSheetAction(
-            label: 'Share Polaroid',
-            icon: Icons.ios_share_rounded,
-            onTap: () {
-              PolaroidShareModal.show(
-                context,
-                title: title,
-                imageUrl: imageUrl,
-                rating: rating,
-                watchedDate: watchedDate,
-                mediaType: 'movie',
-              );
-            },
-          ),
         if (hasLoadedDetails)
           AppActionSheetAction(
             label: 'Add to List',
@@ -748,14 +730,6 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                       color: AppColors.textOnPrimary,
                                     ),
                                     onPressed: () {
-                                      final shareImageUrl = _getImageUrl(
-                                        movie['backdrop_path'] ?? movie['poster_path'],
-                                        size: 'w780',
-                                      );
-                                      final watchedDate =
-                                          (isWatched && watchedAtStr != null)
-                                          ? DateTime.tryParse(watchedAtStr)
-                                          : null;
                                       _showMoreActions(
                                         context: context,
                                         uid: uid,
@@ -763,13 +737,10 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                         isWatched: isWatched,
                                         released: released,
                                         title: title,
-                                        imageUrl: shareImageUrl,
                                         posterPath: movie['poster_path'] as String? ?? widget.posterPath,
                                         backdropPath: movie['backdrop_path'] as String? ?? widget.backdropPath,
                                         releaseDate: movie['release_date'] as String?,
                                         rating: voteAverage,
-                                        watchedDate: watchedDate,
-                                        canShare: !isLoading && state is MovieDetailsSuccess,
                                         hasLoadedDetails: !isLoading && state is MovieDetailsSuccess,
                                       );
                                     },

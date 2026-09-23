@@ -40,6 +40,9 @@ class AppActionSheet extends StatelessWidget {
     String? subtitle,
     required List<AppActionSheetAction> actions,
   }) {
+    // Nothing to offer (e.g. details still loading) - don't open an empty sheet
+    if (actions.isEmpty) return Future.value();
+
     final isLight = context.isLight;
     return showModalBottomSheet<void>(
       context: context,
