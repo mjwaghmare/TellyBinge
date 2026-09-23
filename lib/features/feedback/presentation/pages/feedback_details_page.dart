@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_confirm_dialog.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
@@ -491,67 +492,11 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     _commentFocusNode.unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
 
-    final isLight = context.isLight;
     final commentId = comment['id']?.toString() ?? '';
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: isLight
-            ? AppColors.lightSurface
-            : AppColors.surfaceElevated,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.0),
-        ),
-        title: Text(
-          'Delete Comment',
-          style: AppTextStyles.mdBold.copyWith(
-            color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to delete this comment?',
-          style: AppTextStyles.sm.copyWith(
-            color: isLight
-                ? AppColors.lightTextSecondary
-                : AppColors.textSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              FocusScope.of(context).unfocus();
-              Navigator.pop(dialogCtx, false);
-            },
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: isLight
-                    ? AppColors.lightTextSecondary
-                    : AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.textOnPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              elevation: 0,
-            ),
-            onPressed: () {
-              FocusScope.of(context).unfocus();
-              Navigator.pop(dialogCtx, true);
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: 'Delete Comment',
+      message: 'Are you sure you want to delete this comment?',
     );
 
     if (!mounted) return;
@@ -559,7 +504,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     _commentFocusNode.unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
 
-    if (confirmed == true) {
+    if (confirmed) {
       if (_isCommentMutationPending) return;
       final targetIndex = _comments.indexWhere(
         (c) => commentId.isNotEmpty
@@ -621,112 +566,31 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
   }
 
   Future<void> _showDeleteConfirmationDialog() async {
-    final isLight = context.isLight;
-    bool isDeleting = false;
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (_, setDialogState) {
-          return AlertDialog(
-            backgroundColor:
-                isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            title: Text(
-              'Delete Feedback',
-              style: AppTextStyles.mdBold.copyWith(
-                color: isLight
-                    ? AppColors.lightTextPrimary
-                    : AppColors.textPrimary,
-              ),
-            ),
-            content: Text(
-              'Are you sure you want to delete this feedback? All media and comments will also be permanently removed.',
-              style: AppTextStyles.sm.copyWith(
-                color: isLight
-                    ? AppColors.lightTextSecondary
-                    : AppColors.textSecondary,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: isDeleting ? null : () => Navigator.pop(dialogCtx),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(
-                    color: isLight
-                        ? AppColors.lightTextSecondary
-                        : AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error,
-                  foregroundColor: AppColors.textOnPrimary,
-                  disabledBackgroundColor: AppColors.error.withValues(
-                    alpha: 0.6,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  elevation: 0,
-                ),
-                onPressed: isDeleting
-                    ? null
-                    : () async {
-                        setDialogState(() => isDeleting = true);
-                        unawaited(AppHaptics.mediumImpact());
-                        try {
-                          await _repository.deleteFeedback(_item.id);
-                          if (dialogCtx.mounted) {
-                            Navigator.pop(dialogCtx);
-                          }
-                          if (mounted) {
-                            AppSnackbar.showSuccess(
-                              context,
-                              'Feedback deleted successfully',
-                              duration: const Duration(seconds: 2),
-                            );
-                            Navigator.pop(context);
-                          }
-                        } catch (e) {
-                          if (dialogCtx.mounted) {
-                            setDialogState(() => isDeleting = false);
-                          }
-                          if (mounted) {
-                            AppSnackbar.showError(
-                              context,
-                              'Failed to delete feedback: $e',
-                            );
-                          }
-                        }
-                      },
-                child: isDeleting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator.adaptive(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.textOnPrimary,
-                          ),
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Delete',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-              ),
-            ],
-          );
-        },
-      ),
+    final deleted = await AppConfirmDialog.show(
+      context,
+      title: 'Delete Feedback',
+      message:
+          'Are you sure you want to delete this feedback? All media and comments will also be permanently removed.',
+      onConfirm: () async {
+        unawaited(AppHaptics.mediumImpact());
+        try {
+          await _repository.deleteFeedback(_item.id);
+          return true;
+        } catch (e) {
+          if (mounted) {
+            AppSnackbar.showError(context, 'Failed to delete feedback: $e');
+          }
+          return false;
+        }
+      },
     );
+    if (!deleted || !mounted) return;
+    AppSnackbar.showSuccess(
+      context,
+      'Feedback deleted successfully',
+      duration: const Duration(seconds: 2),
+    );
+    Navigator.pop(context);
   }
 
   Future<void> _updateStatus(FeedbackStatus newStatus) async {

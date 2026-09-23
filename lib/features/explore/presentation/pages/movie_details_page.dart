@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -11,6 +10,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/action_circle_button.dart';
+import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
@@ -231,79 +231,74 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
     bool canShare = true,
     bool hasLoadedDetails = true,
   }) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) => CupertinoActionSheet(
-        title: const Text('Movie Actions'),
-        actions: <CupertinoActionSheetAction>[
-          if (canShare)
-            CupertinoActionSheetAction(
-              onPressed: () {
-                Navigator.pop(context);
-                PolaroidShareModal.show(
-                  context,
-                  title: title,
-                  imageUrl: imageUrl,
-                  rating: rating,
-                  watchedDate: watchedDate,
+    AppActionSheet.show(
+      context,
+      title: 'Movie Actions',
+      actions: [
+        if (canShare)
+          AppActionSheetAction(
+            label: 'Share Polaroid',
+            icon: Icons.ios_share_rounded,
+            onTap: () {
+              PolaroidShareModal.show(
+                context,
+                title: title,
+                imageUrl: imageUrl,
+                rating: rating,
+                watchedDate: watchedDate,
+                mediaType: 'movie',
+              );
+            },
+          ),
+        if (hasLoadedDetails)
+          AppActionSheetAction(
+            label: 'Add to List',
+            icon: Icons.playlist_add_rounded,
+            onTap: () {
+              AddToListBottomSheet.show(
+                context,
+                item: CustomListItemModel(
+                  id: widget.movieId,
                   mediaType: 'movie',
-                );
-              },
-              child: const Text('Share Polaroid'),
-            ),
-          if (hasLoadedDetails)
-            CupertinoActionSheetAction(
-              onPressed: () {
-                Navigator.pop(context);
-                AddToListBottomSheet.show(
-                  context,
-                  item: CustomListItemModel(
-                    id: widget.movieId,
-                    mediaType: 'movie',
-                    title: title,
-                    posterPath: posterPath,
-                    backdropPath: backdropPath,
-                    voteAverage: rating ?? 0.0,
-                    releaseDate: releaseDate,
-                    addedAt: DateTime.now(),
-                  ),
-                );
-              },
-              child: const Text('Add to List'),
-            ),
-          if (isAdded && released)
-            CupertinoActionSheetAction(
-              onPressed: () {
-                AppHaptics.mediumImpact();
-                Navigator.pop(context);
-                context.read<MovieWatchlistCubit>().toggleWatched(
-                  uid: uid,
-                  movieId: widget.movieId,
-                  isWatched: !isWatched,
-                );
-              },
-              child: Text(isWatched ? 'Mark as Unwatched' : 'Mark as Watched'),
-            ),
-          if (isAdded)
-            CupertinoActionSheetAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                AppHaptics.mediumImpact();
-                Navigator.pop(context);
-                context.read<MovieWatchlistCubit>().removeMovie(
-                  uid: uid,
-                  movieId: widget.movieId,
-                );
-              },
-              child: const Text('Remove from Watchlist'),
-            ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-      ),
+                  title: title,
+                  posterPath: posterPath,
+                  backdropPath: backdropPath,
+                  voteAverage: rating ?? 0.0,
+                  releaseDate: releaseDate,
+                  addedAt: DateTime.now(),
+                ),
+              );
+            },
+          ),
+        if (isAdded && released)
+          AppActionSheetAction(
+            label: isWatched ? 'Mark as Unwatched' : 'Mark as Watched',
+            icon: isWatched
+                ? Icons.visibility_off_outlined
+                : Icons.check_circle_outline_rounded,
+            onTap: () {
+              AppHaptics.mediumImpact();
+              context.read<MovieWatchlistCubit>().toggleWatched(
+                uid: uid,
+                movieId: widget.movieId,
+                isWatched: !isWatched,
+              );
+            },
+          ),
+        if (isAdded)
+          AppActionSheetAction(
+            label: 'Remove from Watchlist',
+            icon: Icons.delete_outline_rounded,
+            isDestructive: true,
+            onTap: () {
+              AppHaptics.mediumImpact();
+              context.read<MovieWatchlistCubit>().removeMovie(
+                uid: uid,
+                movieId: widget.movieId,
+              );
+            },
+          ),
+      ],
     );
   }
 

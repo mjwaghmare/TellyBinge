@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +13,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/action_circle_button.dart';
+import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
 import '../../../../core/widgets/watch_providers_section.dart';
@@ -144,84 +144,79 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     required double? rating,
     bool canShare = true,
   }) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) => CupertinoActionSheet(
-        title: const Text('Show Actions'),
-        actions: <CupertinoActionSheetAction>[
-          if (canShare)
-            CupertinoActionSheetAction(
-              onPressed: () {
-                Navigator.pop(context);
-                PolaroidShareModal.show(
-                  context,
-                  title: title,
-                  imageUrl: imageUrl,
-                  rating: rating,
+    AppActionSheet.show(
+      context,
+      title: 'Show Actions',
+      actions: [
+        if (canShare)
+          AppActionSheetAction(
+            label: 'Share Polaroid',
+            icon: Icons.ios_share_rounded,
+            onTap: () {
+              PolaroidShareModal.show(
+                context,
+                title: title,
+                imageUrl: imageUrl,
+                rating: rating,
+                mediaType: widget.mediaType,
+              );
+            },
+          ),
+        if (canShare)
+          AppActionSheetAction(
+            label: 'Add to List',
+            icon: Icons.playlist_add_rounded,
+            onTap: () {
+              AddToListBottomSheet.show(
+                context,
+                item: CustomListItemModel(
+                  id: widget.mediaId,
                   mediaType: widget.mediaType,
-                );
-              },
-              child: const Text('Share Polaroid'),
-            ),
-          if (canShare)
-            CupertinoActionSheetAction(
-              onPressed: () {
-                Navigator.pop(context);
-                AddToListBottomSheet.show(
-                  context,
-                  item: CustomListItemModel(
-                    id: widget.mediaId,
-                    mediaType: widget.mediaType,
-                    title: title,
-                    posterPath: posterPath,
-                    backdropPath: backdropPath,
-                    voteAverage: rating ?? 0.0,
-                    releaseDate: firstAirDate,
-                    addedAt: DateTime.now(),
-                  ),
-                );
-              },
-              child: const Text('Add to List'),
-            ),
-          if (isTracked)
-            CupertinoActionSheetAction(
-              onPressed: () {
-                AppHaptics.mediumImpact();
-                Navigator.pop(context);
-                if (isStopped) {
-                  context.read<TvShowWatchlistCubit>().continueWatchingShow(
-                    uid: uid,
-                    showId: widget.mediaId,
-                  );
-                } else {
-                  context.read<TvShowWatchlistCubit>().stopWatchingShow(
-                    uid: uid,
-                    showId: widget.mediaId,
-                  );
-                }
-              },
-              child: Text(isStopped ? 'Resume Watching' : 'Pause Watching'),
-            ),
-          if (isTracked)
-            CupertinoActionSheetAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                AppHaptics.mediumImpact();
-                Navigator.pop(context);
-                context.read<TvShowWatchlistCubit>().removeShow(
+                  title: title,
+                  posterPath: posterPath,
+                  backdropPath: backdropPath,
+                  voteAverage: rating ?? 0.0,
+                  releaseDate: firstAirDate,
+                  addedAt: DateTime.now(),
+                ),
+              );
+            },
+          ),
+        if (isTracked)
+          AppActionSheetAction(
+            label: isStopped ? 'Resume Watching' : 'Pause Watching',
+            icon: isStopped
+                ? Icons.play_circle_outline_rounded
+                : Icons.pause_circle_outline_rounded,
+            onTap: () {
+              AppHaptics.mediumImpact();
+              if (isStopped) {
+                context.read<TvShowWatchlistCubit>().continueWatchingShow(
                   uid: uid,
                   showId: widget.mediaId,
                 );
-              },
-              child: const Text('Remove from Watchlist'),
-            ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-      ),
+              } else {
+                context.read<TvShowWatchlistCubit>().stopWatchingShow(
+                  uid: uid,
+                  showId: widget.mediaId,
+                );
+              }
+            },
+          ),
+        if (isTracked)
+          AppActionSheetAction(
+            label: 'Remove from Watchlist',
+            icon: Icons.delete_outline_rounded,
+            isDestructive: true,
+            onTap: () {
+              AppHaptics.mediumImpact();
+              context.read<TvShowWatchlistCubit>().removeShow(
+                uid: uid,
+                showId: widget.mediaId,
+              );
+            },
+          ),
+      ],
     );
   }
 

@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_action_sheet.dart';
+import '../../../../core/widgets/app_confirm_dialog.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -70,32 +73,34 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor:
+          isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
       builder: (ctx) {
-        return Container(
-          decoration: BoxDecoration(
-            color: isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: SafeArea(
-            top: false,
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: AppSpacing.sm),
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isLight ? AppColors.borderLight : AppColors.borderDark,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                // Top drag handle
+                Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isLight ? AppColors.borderLight : AppColors.borderDark,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -107,12 +112,11 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.sm),
                 _buildSortTile(ctx, 'Date Added (Newest)', CustomListSortOption.dateAddedDesc),
                 _buildSortTile(ctx, 'Date Added (Oldest)', CustomListSortOption.dateAddedAsc),
                 _buildSortTile(ctx, 'Title (A-Z)', CustomListSortOption.titleAsc),
                 _buildSortTile(ctx, 'Rating (Highest)', CustomListSortOption.ratingDesc),
-                const SizedBox(height: AppSpacing.sm),
               ],
             ),
           ),
@@ -124,12 +128,16 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
   Widget _buildSortTile(BuildContext context, String title, CustomListSortOption option) {
     final isSelected = _sortOption == option;
     return ListTile(
+      dense: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
       title: Text(
         title,
-        style: AppTextStyles.mdMedium.copyWith(
-          color: isSelected ? context.primary : context.textPrimary,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
+        style: (isSelected ? AppTextStyles.smBold : AppTextStyles.smMedium)
+            .copyWith(
+              color: isSelected ? context.primary : context.textPrimary,
+            ),
       ),
       trailing: isSelected
           ? Icon(Icons.check_rounded, color: context.primary, size: 20)
@@ -144,90 +152,77 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
 
   void _showItemOptions(BuildContext context, CustomListItemModel item, String uid) {
     AppHaptics.lightImpact();
-    showCupertinoModalPopup(
-      context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: Text(item.title),
-        message: Text(item.isMovie ? 'Movie' : 'TV Show'),
-        actions: [
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () {
-              Navigator.pop(ctx);
-              AppHaptics.mediumImpact();
-              context.read<CustomListsCubit>().removeItemFromList(
-                    uid: uid,
-                    listId: widget.listId,
-                    mediaId: item.id,
-                    mediaType: item.mediaType,
-                  );
-              AppSnackbar.showInfo(context, 'Removed "${item.title}" from list');
-            },
-            child: const Text('Remove from this list'),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
+    AppActionSheet.show(
+      context,
+      title: item.title,
+      subtitle: item.isMovie ? 'Movie' : 'TV Show',
+      actions: [
+        AppActionSheetAction(
+          label: 'Remove from this list',
+          icon: Icons.delete_outline_rounded,
+          isDestructive: true,
+          onTap: () {
+            AppHaptics.mediumImpact();
+            context.read<CustomListsCubit>().removeItemFromList(
+                  uid: uid,
+                  listId: widget.listId,
+                  mediaId: item.id,
+                  mediaType: item.mediaType,
+                );
+            AppSnackbar.showInfo(context, 'Removed "${item.title}" from list');
+          },
         ),
-      ),
+      ],
     );
   }
 
-  void _confirmDeleteList(CustomListModel list, String uid) {
-    AppHaptics.heavyImpact();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.isLight
-            ? AppColors.lightSurfaceElevated
-            : AppColors.surfaceElevated,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Delete List?',
-          style: AppTextStyles.lg.copyWith(
-            color: context.textPrimary,
-            fontWeight: FontWeight.bold,
+  void _showListOptions(BuildContext context, CustomListModel list, String uid) {
+    AppHaptics.lightImpact();
+    final itemCount = list.items.length;
+    AppActionSheet.show(
+      context,
+      title: list.name,
+      subtitle: '$itemCount ${itemCount == 1 ? 'title' : 'titles'}',
+      actions: [
+        AppActionSheetAction(
+          label: 'Edit list',
+          icon: Icons.edit_rounded,
+          onTap: () => CreateListBottomSheet.show(
+            context,
+            listId: list.id,
+            initialName: list.name,
+            initialDescription: list.description,
           ),
         ),
-        content: Text(
-          'Are you sure you want to delete "${list.name}"? This action cannot be undone.',
-          style: AppTextStyles.sm.copyWith(color: context.textSecondary),
+        AppActionSheetAction(
+          label: 'Delete list',
+          icon: Icons.delete_outline_rounded,
+          isDestructive: true,
+          onTap: () => _confirmDeleteList(list, uid),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancel',
-              style: AppTextStyles.smMedium.copyWith(color: context.textSecondary),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final cubit = context.read<CustomListsCubit>();
-              final success = await cubit.deleteList(uid: uid, listId: list.id);
-              if (!mounted) return;
-              if (success) {
-                AppSnackbar.showSuccess(context, 'List deleted');
-                Navigator.of(context).pop();
-              } else {
-                AppSnackbar.showError(context, 'Failed to delete list');
-              }
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      ],
     );
+  }
+
+  Future<void> _confirmDeleteList(CustomListModel list, String uid) async {
+    unawaited(AppHaptics.heavyImpact());
+    final cubit = context.read<CustomListsCubit>();
+    final deleted = await AppConfirmDialog.show(
+      context,
+      title: 'Delete List',
+      message:
+          'Are you sure you want to delete "${list.name}"? This action cannot be undone.',
+      onConfirm: () async {
+        final success = await cubit.deleteList(uid: uid, listId: list.id);
+        if (!success && mounted) {
+          AppSnackbar.showError(context, 'Failed to delete list');
+        }
+        return success;
+      },
+    );
+    if (!deleted || !mounted) return;
+    AppSnackbar.showSuccess(context, 'List deleted');
+    Navigator.of(context).pop();
   }
 
   @override
@@ -361,70 +356,14 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
                   onPressed: () => _showSortSheet(context),
                 ),
               if (uid != null)
-                PopupMenuButton<String>(
+                IconButton(
+                  tooltip: 'More options',
                   icon: Icon(
-                    Icons.more_vert,
+                    Icons.more_horiz,
                     color: context.textPrimary,
                     size: 22,
                   ),
-                  color: isLight
-                      ? AppColors.lightSurfaceElevated
-                      : AppColors.surfaceElevated,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  onSelected: (val) {
-                    if (val == 'edit') {
-                      CreateListBottomSheet.show(
-                        context,
-                        listId: currentList.id,
-                        initialName: currentList.name,
-                        initialDescription: currentList.description,
-                      );
-                    } else if (val == 'delete') {
-                      _confirmDeleteList(currentList, uid);
-                    }
-                  },
-                  itemBuilder: (ctx) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            size: 18,
-                            color: context.textPrimary,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'Edit List',
-                            style: AppTextStyles.smMedium.copyWith(
-                              color: context.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.delete_outline_rounded,
-                            size: 18,
-                            color: AppColors.error,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'Delete List',
-                            style: AppTextStyles.smMedium.copyWith(
-                              color: AppColors.error,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  onPressed: () => _showListOptions(context, currentList, uid),
                 ),
             ],
           ),

@@ -2597,7 +2597,7 @@ class _ProfilePageState extends State<ProfilePage>
     return BlocBuilder<CustomListsCubit, CustomListsState>(
       builder: (context, state) {
         if (state is CustomListsLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator.adaptive());
         }
 
         final lists =
@@ -2606,7 +2606,12 @@ class _ProfilePageState extends State<ProfilePage>
         if (lists.isEmpty) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                0,
+                AppSpacing.xl,
+                AppSpacing.bottomTabPadding,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -2653,10 +2658,10 @@ class _ProfilePageState extends State<ProfilePage>
                       foregroundColor: AppColors.textOnPrimary,
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.xl,
-                        vertical: AppSpacing.sm,
+                        vertical: 14,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       elevation: 0,
                     ),
@@ -2677,7 +2682,7 @@ class _ProfilePageState extends State<ProfilePage>
           children: [
             // Top "+ Create New List" banner card
             InkWell(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
               onTap: () {
                 AppHaptics.lightImpact();
                 CreateListBottomSheet.show(context);
@@ -2689,7 +2694,7 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
                 decoration: BoxDecoration(
                   color: isLight ? AppColors.lightSurface : AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: borderColor),
                 ),
                 child: Row(
