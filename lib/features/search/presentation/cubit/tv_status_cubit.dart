@@ -19,10 +19,10 @@ enum TvStatusLabel { ended, cancelled, upcoming }
 /// the cache layer) on the scroll path, once per tile, with no concurrency
 /// limit and no dedup for a tile scrolled away and back.
 ///
-/// Here the cubit owns the work instead: ids are queued when a page of results
-/// arrives, resolved a few at a time off the scroll path, and published as a
-/// plain map. Results are cached to disk by [TmdbClient], so a given show is
-/// fetched once ever. Tiles become a pure map lookup with no I/O of their own.
+/// Here the cubit owns the work instead: each tile queues its id once when it
+/// is first built, and ids are resolved a few at a time off the scroll path and
+/// published as a plain map. Results are cached to disk by [TmdbClient], so a
+/// given show is fetched once ever. Tiles do no I/O of their own.
 class TvStatusCubit extends Cubit<Map<int, TvStatusLabel?>> {
   TvStatusCubit({required this.tmdbClient}) : super(const {});
 

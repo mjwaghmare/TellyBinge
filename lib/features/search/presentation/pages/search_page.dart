@@ -1,25 +1,21 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:skeletonizer/skeletonizer.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
-import '../../../show_details/presentation/cubit/show_details_cubit.dart';
-import '../../../show_details/presentation/pages/show_details_page.dart';
-import '../../../explore/presentation/pages/movie_details_page.dart';
+import '../../data/explore_sources.dart';
+import '../cubit/explore_feed_cubit.dart';
+import '../cubit/explore_feed_state.dart';
 import '../cubit/search_cubit.dart';
 import '../cubit/search_state.dart';
-import '../cubit/tv_status_cubit.dart';
-import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
-import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
-import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
-import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
+import '../widgets/explore_poster_grid.dart';
+import '../widgets/explore_section_row.dart';
+import '../widgets/watchlisted_ids_builder.dart';
+import 'explore_see_all_page.dart';
 
 class SearchPage extends StatefulWidget {
   final ValueNotifier<int>? subTabNotifier;
@@ -32,72 +28,44 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage>
     with SingleTickerProviderStateMixin {
+  /// A row with fewer than this left after watchlist filtering fetches one
+  /// more page: enough to fill its 5 slots and still know whether See All has
+  /// anything more to show.
+  static const int _minRowItems = 6;
+
   final TextEditingController _showsSearchController = TextEditingController();
   final TextEditingController _moviesSearchController = TextEditingController();
-  final ScrollController _showsScrollController = ScrollController();
-  final ScrollController _moviesScrollController = ScrollController();
+  final ScrollController _showsFeedScrollController = ScrollController();
+  final ScrollController _moviesFeedScrollController = ScrollController();
+  final ScrollController _showsSearchScrollController = ScrollController();
+  final ScrollController _moviesSearchScrollController = ScrollController();
   late TabController _tabController;
 
-  static final Map<String, String> _gridFormattedDateCache = {};
-
-  static String _formatGridDateCached(String? dateStr) {
-    if (dateStr == null || dateStr.isEmpty) return '';
-    return _gridFormattedDateCache.putIfAbsent(dateStr, () {
-      try {
-        final dt = DateTime.parse(dateStr);
-        const months = [
-          'JAN',
-          'FEB',
-          'MAR',
-          'APR',
-          'MAY',
-          'JUN',
-          'JUL',
-          'AUG',
-          'SEP',
-          'OCT',
-          'NOV',
-          'DEC',
-        ];
-        return '${months[dt.month - 1]}, ${dt.year}';
-      } catch (_) {
-        return dateStr.length >= 4 ? dateStr.substring(0, 4) : '';
-      }
-    });
-  }
-
-  // Filter state for TV shows
-  String _selectedSortBy = SearchCubit.tvLatestSort;
-  String? _tvLanguage;
-  String? _selectedYear;
-  bool _hasActiveFilters = false;
-  bool _isFetchingTvFilters = false;
-
-  // Filter state - Movies
-  String _selectedMovieSortBy = SearchCubit.movieLatestSort;
-  String? _movieLanguage;
-  String? _selectedMovieYear;
-  bool _hasActiveMovieFilters = false;
-  bool _isFetchingMovieFilters = false;
+  /// One search per tab, so a query in one never disturbs the other.
+  late final SearchCubit _showsSearch;
+  late final SearchCubit _moviesSearch;
 
   int _previousTabIndex = 0;
 
-  final _FilteredGrid _showsGrid = _FilteredGrid();
-  final _FilteredGrid _moviesGrid = _FilteredGrid();
+  /// Languages offered by the language filter, by TMDB code.
+  static const Map<String, String> _languageNames = {
+    'hi': 'Hindi',
+    'mr': 'Marathi',
+  };
 
-  /// TV search results get the same treatment as trending: a memoized index map
-  /// plus change detection, so status lookups are queued once per new page
-  /// rather than on every rebuild. No exclusions apply here.
-  final _FilteredGrid _showsSearchGrid = _FilteredGrid();
+  static ExploreMediaType _typeOf(bool isTv) =>
+      isTv ? ExploreMediaType.tv : ExploreMediaType.movie;
 
-  /// Queues status lookups after the frame, so a build never triggers a fetch.
-  void _queueTvStatuses(Iterable<int> ids) {
-    final pending = ids.toList(growable: false);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<TvStatusCubit>().resolveAll(pending);
-    });
-  }
+  TextEditingController _searchControllerFor(bool isTv) =>
+      isTv ? _showsSearchController : _moviesSearchController;
+
+  SearchCubit _searchCubitFor(bool isTv) => isTv ? _showsSearch : _moviesSearch;
+
+  bool _isSearching(bool isTv) =>
+      _searchControllerFor(isTv).text.trim().length >=
+      SearchCubit.minQueryLength;
+
+  String _queryFor(bool isTv) => _searchControllerFor(isTv).text.trim();
 
   void _handleSubTabChange() {
     if (widget.subTabNotifier != null &&
@@ -106,56 +74,41 @@ class _SearchPageState extends State<SearchPage>
     }
   }
 
+  /// Leaving the Explore tab resets search and the language filter.
   void _resetAllFiltersAndSearch() {
     FocusManager.instance.primaryFocus?.unfocus();
-    bool needsRefresh = false;
 
-    if (_hasActiveFilters ||
-        _hasActiveMovieFilters ||
-        _showsSearchController.text.isNotEmpty ||
-        _moviesSearchController.text.isNotEmpty ||
-        _tvLanguage != null ||
-        _movieLanguage != null ||
-        _selectedYear != null ||
-        _selectedMovieYear != null) {
-      needsRefresh = true;
+    for (final controller in [
+      _showsFeedScrollController,
+      _moviesFeedScrollController,
+      _showsSearchScrollController,
+      _moviesSearchScrollController,
+    ]) {
+      if (controller.hasClients) controller.jumpTo(0);
     }
 
-    if (_showsScrollController.hasClients) {
-      _showsScrollController.jumpTo(0);
-    }
-    if (_moviesScrollController.hasClients) {
-      _moviesScrollController.jumpTo(0);
-    }
-
-    if (needsRefresh) {
-      setState(() {
-        // TV
-        _selectedSortBy = SearchCubit.tvLatestSort;
-        _tvLanguage = null;
-        _selectedYear = null;
-        _hasActiveFilters = false;
-        _showsSearchController.clear();
-
-        // Movies
-        _selectedMovieSortBy = SearchCubit.movieLatestSort;
-        _movieLanguage = null;
-        _selectedMovieYear = null;
-        _hasActiveMovieFilters = false;
-        _moviesSearchController.clear();
-      });
-
-      if (mounted) {
-        context.read<SearchCubit>().clearTvFilters();
-        context.read<SearchCubit>().clearMovieFilters();
-        context.read<SearchCubit>().resetTvTrending();
-        context.read<SearchCubit>().resetMoviesTrending();
+    final feedCubit = context.read<ExploreFeedCubit>();
+    for (final isTv in const [true, false]) {
+      if (_searchControllerFor(isTv).text.isNotEmpty) {
+        _searchControllerFor(isTv).clear();
+        _searchCubitFor(isTv).clear();
+      }
+      final type = _typeOf(isTv);
+      if (feedCubit.state.feedFor(type).language != null) {
+        feedCubit.setLanguage(type, null);
+        _searchCubitFor(isTv).setLanguage(null);
       }
     }
   }
 
   void _handleMainTabChange() {
-    if (widget.mainTabNotifier != null && widget.mainTabNotifier!.value != 2) {
+    if (widget.mainTabNotifier == null) return;
+    if (widget.mainTabNotifier!.value == 2) {
+      // Coming back to Explore: reload the visible feed if it has gone stale.
+      context.read<ExploreFeedCubit>().ensureLoaded(
+        _typeOf(_tabController.index == 0),
+      );
+    } else {
       _resetAllFiltersAndSearch();
     }
   }
@@ -163,6 +116,9 @@ class _SearchPageState extends State<SearchPage>
   @override
   void initState() {
     super.initState();
+    final tmdbClient = context.read<TmdbClient>();
+    _showsSearch = SearchCubit(tmdbClient: tmdbClient, isTv: true);
+    _moviesSearch = SearchCubit(tmdbClient: tmdbClient, isTv: false);
     if (widget.mainTabNotifier != null) {
       widget.mainTabNotifier!.addListener(_handleMainTabChange);
     }
@@ -180,205 +136,40 @@ class _SearchPageState extends State<SearchPage>
         // 1. Unfocus keyboard when switching subtabs
         FocusManager.instance.primaryFocus?.unfocus();
 
-        // 2. Adjust search state if necessary without wiping controller text
-        final isTv = _tabController.index == 0;
-        final activeController = isTv
-            ? _showsSearchController
-            : _moviesSearchController;
-        final trimmedQuery = activeController.text.trim();
-
-        if (trimmedQuery.length >= 3) {
-          final currentState = context.read<SearchCubit>().state;
-          bool shouldSearch = true;
-          if (currentState is SearchResultsSuccess &&
-              currentState.isTv == isTv &&
-              currentState.query == trimmedQuery) {
-            shouldSearch = false;
-          }
-          if (shouldSearch) {
-            context.read<SearchCubit>().executeSearch(trimmedQuery, isTv: isTv);
-          }
-        } else {
-          final currentState = context.read<SearchCubit>().state;
-          if (currentState is SearchResultsSuccess &&
-              currentState.isTv != isTv) {
-            _loadTrendingWithFilters(isTv: isTv);
-          }
-        }
+        // 2. Load (or refresh, if stale) the feed for the tab now showing
+        context.read<ExploreFeedCubit>().ensureLoaded(
+          _typeOf(_tabController.index == 0),
+        );
       }
     });
 
-    // Ensure trending is fetched on initial load if empty
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadTrendingWithFilters(isTv: _tabController.index == 0);
+      if (!mounted) return;
+      context.read<ExploreFeedCubit>().ensureLoaded(
+        _typeOf(_tabController.index == 0),
+      );
     });
 
-    _showsScrollController.addListener(() => _onScroll(true));
-    _moviesScrollController.addListener(() => _onScroll(false));
+    _showsSearchScrollController.addListener(() => _onSearchScroll(true));
+    _moviesSearchScrollController.addListener(() => _onSearchScroll(false));
   }
 
-  void _loadTrendingWithFilters({bool isTv = true}) {
-    if (isTv) {
-      final hasActiveExtra = _tvLanguage != null || _selectedYear != null;
-      if (_hasActiveFilters || hasActiveExtra) {
-        _applyFiltersToTrending();
-      } else {
-        context.read<SearchCubit>().loadTrending();
-      }
-    } else {
-      final hasActiveMovieExtra =
-          _movieLanguage != null || _selectedMovieYear != null;
-      if (_hasActiveMovieFilters || hasActiveMovieExtra) {
-        _applyMovieFiltersToTrending();
-      } else {
-        context.read<SearchCubit>().loadTrending();
-      }
-    }
-  }
-
-  Future<void> _applyFiltersToTrending() async {
-    setState(() {
-      _isFetchingTvFilters = true;
-    });
-
-    if (_showsScrollController.hasClients) {
-      _showsScrollController.jumpTo(0);
-    }
-
-    final hasActiveExtra = _tvLanguage != null || _selectedYear != null;
-    final hasActive = _hasActiveFilters || hasActiveExtra;
-
-    if (!hasActive) {
-      if (!mounted) return;
-      context.read<SearchCubit>().resetTvTrending();
-      setState(() {
-        _isFetchingTvFilters = false;
-      });
-      return;
-    }
-
-    // Immediately clear previous TV results so skeleton loader shows fresh state
-    context.read<SearchCubit>().clearTrendingTvResults();
-
-    try {
-      final tmdbClient = context.read<TmdbClient>();
-      List<dynamic> filteredShows = [];
-
-      if (_selectedSortBy == 'airing_today' && !hasActiveExtra) {
-        filteredShows = await tmdbClient.getAiringTodayTvShows();
-      } else if (_selectedSortBy == 'upcoming' && !hasActiveExtra) {
-        filteredShows = await tmdbClient.getUpcomingTvShows();
-      } else {
-        final effectiveSortBy =
-            (_selectedSortBy == 'trending' ||
-                _selectedSortBy == 'popularity.desc')
-            ? 'popularity.desc'
-            : (_selectedSortBy == 'airing_today' ||
-                      _selectedSortBy == 'upcoming'
-                  ? 'first_air_date.desc'
-                  : _selectedSortBy);
-        filteredShows = await tmdbClient.discoverTvShowsWithFilters(
-          sortBy: effectiveSortBy,
-          language: _tvLanguage,
-          year: _selectedYear,
-        );
-      }
-
-      if (!mounted) return;
-      // Update the search cubit with filtered results
-      context.read<SearchCubit>().updateTrendingTv(filteredShows);
-    } catch (e) {
-      debugPrint('Error applying TV filters: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isFetchingTvFilters = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _applyMovieFiltersToTrending() async {
-    setState(() {
-      _isFetchingMovieFilters = true;
-    });
-
-    if (_moviesScrollController.hasClients) {
-      _moviesScrollController.jumpTo(0);
-    }
-
-    final hasActiveMovieExtra =
-        _movieLanguage != null || _selectedMovieYear != null;
-    final hasActive = _hasActiveMovieFilters || hasActiveMovieExtra;
-
-    if (!hasActive) {
-      if (!mounted) return;
-      context.read<SearchCubit>().resetMoviesTrending();
-      setState(() {
-        _isFetchingMovieFilters = false;
-      });
-      return;
-    }
-
-    // Immediately clear previous Movie results so skeleton loader shows fresh state
-    context.read<SearchCubit>().clearTrendingMovieResults();
-
-    try {
-      final tmdbClient = context.read<TmdbClient>();
-      List<dynamic> filteredMovies = [];
-
-      if (_selectedMovieSortBy == 'now_playing' && !hasActiveMovieExtra) {
-        filteredMovies = await tmdbClient.getNowPlayingMovies();
-      } else if (_selectedMovieSortBy == 'upcoming' && !hasActiveMovieExtra) {
-        filteredMovies = await tmdbClient.getUpcomingMovies();
-      } else {
-        final effectiveSortBy =
-            (_selectedMovieSortBy == 'trending' ||
-                _selectedMovieSortBy == 'popularity.desc')
-            ? 'popularity.desc'
-            : (_selectedMovieSortBy == 'now_playing' ||
-                      _selectedMovieSortBy == 'upcoming'
-                  ? 'primary_release_date.desc'
-                  : _selectedMovieSortBy);
-        filteredMovies = await tmdbClient.discoverMoviesWithFilters(
-          sortBy: effectiveSortBy,
-          language: _movieLanguage,
-          year: _selectedMovieYear,
-        );
-      }
-
-      if (!mounted) return;
-      // Update the search cubit with filtered results
-      context.read<SearchCubit>().updateTrendingMovies(filteredMovies);
-    } catch (e) {
-      debugPrint('Error applying Movie filters: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isFetchingMovieFilters = false;
-        });
-      }
-    }
-  }
-
-  void _onScroll(bool isTv) {
-    final controller = isTv ? _showsScrollController : _moviesScrollController;
+  void _onSearchScroll(bool isTv) {
+    final controller = isTv
+        ? _showsSearchScrollController
+        : _moviesSearchScrollController;
     if (!controller.hasClients) return;
 
-    final currentState = context.read<SearchCubit>().state;
-    if (currentState is SearchTrendingSuccess) {
-      if (currentState.isLoadingMore) return;
-      final hasReachedMax = isTv
-          ? currentState.tvHasReachedMax
-          : currentState.moviesHasReachedMax;
-      if (hasReachedMax) return;
-    } else if (currentState is SearchResultsSuccess) {
-      if (currentState.isLoadingMore || currentState.hasReachedMax) return;
+    final currentState = _searchCubitFor(isTv).state;
+    if (currentState is! SearchResultsSuccess ||
+        currentState.isLoadingMore ||
+        currentState.hasReachedMax) {
+      return;
     }
 
     if (controller.position.pixels >=
         controller.position.maxScrollExtent - 400) {
-      context.read<SearchCubit>().loadMore(isTv);
+      _searchCubitFor(isTv).loadMore();
     }
   }
 
@@ -388,14 +179,14 @@ class _SearchPageState extends State<SearchPage>
     widget.mainTabNotifier?.removeListener(_handleMainTabChange);
     _showsSearchController.dispose();
     _moviesSearchController.dispose();
-    _showsScrollController.dispose();
-    _moviesScrollController.dispose();
+    _showsFeedScrollController.dispose();
+    _moviesFeedScrollController.dispose();
+    _showsSearchScrollController.dispose();
+    _moviesSearchScrollController.dispose();
     _tabController.dispose();
+    _showsSearch.close();
+    _moviesSearch.close();
     super.dispose();
-  }
-
-  String _getImageUrl(String? path, {String size = 'w185'}) {
-    return AppConstants.tmdbImageUrl(path ?? '', size: size);
   }
 
   @override
@@ -413,95 +204,43 @@ class _SearchPageState extends State<SearchPage>
           ],
         ),
       ),
-      // Each tab owns its BlocBuilders rather than sharing one set above the
-      // TabBarView. Nesting them above meant every emit from any of the three
-      // cubits eagerly re-ran both tabs' filtering and index-map work, even for
-      // the tab that is off screen. Scoped this way, a watchlist change only
-      // touches its own tab, and the off-screen tab's work is deferred until
-      // that tab is actually built.
       body: TabBarView(
         controller: _tabController,
         children: [
           _KeepAliveTab(
             key: const PageStorageKey('explore_shows_tab'),
-            child: BlocBuilder<SearchCubit, SearchState>(
-              builder: (context, state) {
-                return BlocBuilder<TvShowWatchlistCubit, TvShowWatchlistState>(
-                  builder: (context, tvState) => _buildShowsTab(state, tvState),
-                );
-              },
-            ),
+            child: _buildTab(isTv: true),
           ),
           _KeepAliveTab(
             key: const PageStorageKey('explore_movies_tab'),
-            child: BlocBuilder<SearchCubit, SearchState>(
-              builder: (context, state) {
-                return BlocBuilder<MovieWatchlistCubit, MovieWatchlistState>(
-                  builder: (context, movieState) =>
-                      _buildMoviesTab(state, movieState),
-                );
-              },
-            ),
+            child: _buildTab(isTv: false),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildShowsTab(SearchState state, TvShowWatchlistState tvState) {
+  Widget _buildTab({required bool isTv}) {
     return Column(
       children: [
-        _buildSearchBar(_showsSearchController, isTv: true),
+        _buildSearchBar(_searchControllerFor(isTv), isTv: isTv),
         Expanded(
           child: RefreshIndicator.adaptive(
             color: AppColors.primary,
             backgroundColor: Theme.of(context).cardColor,
             onRefresh: () async {
-              final trimmedQuery = _showsSearchController.text.trim();
-              if (trimmedQuery.length >= 3) {
-                await context.read<SearchCubit>().executeSearch(
-                  trimmedQuery,
-                  isTv: true,
-                );
-              } else if (_hasActiveFilters ||
-                  _tvLanguage != null ||
-                  _selectedYear != null) {
-                await _applyFiltersToTrending();
+              if (_isSearching(isTv)) {
+                await _searchCubitFor(isTv).executeSearch(_queryFor(isTv));
               } else {
-                await context.read<SearchCubit>().refreshFeed(isTv: true);
+                await context.read<ExploreFeedCubit>().refresh(_typeOf(isTv));
               }
             },
-            child: _buildShowsContent(state, tvState),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMoviesTab(SearchState state, MovieWatchlistState movieState) {
-    return Column(
-      children: [
-        _buildSearchBar(_moviesSearchController, isTv: false),
-        Expanded(
-          child: RefreshIndicator.adaptive(
-            color: AppColors.primary,
-            backgroundColor: Theme.of(context).cardColor,
-            onRefresh: () async {
-              final trimmedQuery = _moviesSearchController.text.trim();
-              if (trimmedQuery.length >= 3) {
-                await context.read<SearchCubit>().executeSearch(
-                  trimmedQuery,
-                  isTv: false,
-                );
-              } else if (_hasActiveMovieFilters ||
-                  _movieLanguage != null ||
-                  _selectedMovieYear != null) {
-                await _applyMovieFiltersToTrending();
-              } else {
-                await context.read<SearchCubit>().refreshFeed(isTv: false);
-              }
-            },
-            child: _buildMoviesContent(state, movieState),
+            child: BlocBuilder<SearchCubit, SearchState>(
+              bloc: _searchCubitFor(isTv),
+              builder: (context, searchState) => _isSearching(isTv)
+                  ? _buildSearchResults(searchState, isTv: isTv)
+                  : _buildFeed(isTv: isTv),
+            ),
           ),
         ),
       ],
@@ -517,19 +256,14 @@ class _SearchPageState extends State<SearchPage>
         left: AppSpacing.md,
         right: AppSpacing.md,
         top: AppSpacing.xs,
-        bottom: AppSpacing.md,
+        bottom: AppSpacing.xs,
       ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: controller,
-              onChanged: (val) {
-                context.read<SearchCubit>().onSearchTextChanged(
-                  val,
-                  isTv: isTv,
-                );
-              },
+              onChanged: _searchCubitFor(isTv).onSearchTextChanged,
               decoration: InputDecoration(
                 hintText: isTv ? 'Search shows...' : 'Search movies...',
                 prefixIcon: Icon(
@@ -557,10 +291,7 @@ class _SearchPageState extends State<SearchPage>
                             ),
                             onPressed: () {
                               controller.clear();
-                              context.read<SearchCubit>().onSearchTextChanged(
-                                '',
-                                isTv: isTv,
-                              );
+                              _searchCubitFor(isTv).clear();
                             },
                           ),
                       ],
@@ -571,33 +302,36 @@ class _SearchPageState extends State<SearchPage>
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          IconButton(
-            onPressed: () => _showLanguageBottomSheet(isTv, controller.text),
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Padding(
-                  padding: AppSpacing.allXXS,
-                  child: Text('🇮🇳', style: AppTextStyles.lg),
-                ),
-                if (isTv ? _tvLanguage != null : _movieLanguage != null)
-                  Positioned(
-                    top: 6,
-                    right: 2,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          width: 2,
+          BlocSelector<ExploreFeedCubit, ExploreFeedState, String?>(
+            selector: (state) => state.feedFor(_typeOf(isTv)).language,
+            builder: (context, language) => IconButton(
+              onPressed: () => _showLanguageBottomSheet(isTv, language),
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Padding(
+                    padding: AppSpacing.allXXS,
+                    child: Text('🇮🇳', style: AppTextStyles.lg),
+                  ),
+                  if (language != null)
+                    Positioned(
+                      top: 6,
+                      right: 2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: AppColors.success,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -605,9 +339,9 @@ class _SearchPageState extends State<SearchPage>
     );
   }
 
-  void _showLanguageBottomSheet(bool isTv, String searchText) {
+  void _showLanguageBottomSheet(bool isTv, String? language) {
     AppHaptics.lightImpact();
-    final currentLanguage = (isTv ? _tvLanguage : _movieLanguage) ?? 'all';
+    final currentLanguage = language ?? 'all';
 
     AppActionSheetAction buildOption(
       String label,
@@ -625,7 +359,7 @@ class _SearchPageState extends State<SearchPage>
         onTap: () {
           if (isSelected) return;
           AppHaptics.lightImpact();
-          _applyLanguage(isTv, value, searchText);
+          _applyLanguage(isTv, value == 'all' ? null : value);
         },
       );
     }
@@ -633,831 +367,274 @@ class _SearchPageState extends State<SearchPage>
     AppActionSheet.show(
       context,
       title: 'Language',
-      subtitle: isTv ? 'Filter TV shows by language' : 'Filter movies by language',
+      subtitle: isTv
+          ? 'Filter TV shows by language'
+          : 'Filter movies by language',
       actions: [
         buildOption('All', 'Every available language', 'all'),
-        buildOption('Hindi', 'हिन्दी', 'hi'),
-        buildOption('Marathi', 'मराठी', 'mr'),
+        buildOption(_languageNames['hi']!, 'हिन्दी', 'hi'),
+        buildOption(_languageNames['mr']!, 'मराठी', 'mr'),
       ],
     );
   }
 
-  void _applyLanguage(bool isTv, String language, String searchText) {
-    final langVal = language == 'all' ? null : language;
-    setState(() {
-      if (isTv) {
-        _tvLanguage = langVal;
-      } else {
-        _movieLanguage = langVal;
-      }
-    });
+  void _applyLanguage(bool isTv, String? language) {
+    final feedScroll = isTv
+        ? _showsFeedScrollController
+        : _moviesFeedScrollController;
+    if (feedScroll.hasClients) feedScroll.jumpTo(0);
 
-    if (isTv) {
-      context.read<SearchCubit>().setTvFilters(
-        sortBy: _selectedSortBy,
-        language: _tvLanguage,
-        year: _selectedYear,
-      );
-      if (searchText.trim().isNotEmpty) {
-        context.read<SearchCubit>().onSearchTextChanged(searchText, isTv: true);
-      } else {
-        _applyFiltersToTrending();
-      }
-    } else {
-      context.read<SearchCubit>().setMovieFilters(
-        sortBy: _selectedMovieSortBy,
-        language: _movieLanguage,
-        year: _selectedMovieYear,
-      );
-      if (searchText.trim().isNotEmpty) {
-        context.read<SearchCubit>().onSearchTextChanged(
-          searchText,
-          isTv: false,
-        );
-      } else {
-        _applyMovieFiltersToTrending();
-      }
+    _searchCubitFor(isTv).setLanguage(language);
+    context.read<ExploreFeedCubit>().setLanguage(_typeOf(isTv), language);
+
+    if (_isSearching(isTv)) {
+      _searchCubitFor(isTv).executeSearch(_queryFor(isTv));
     }
   }
 
-  Widget _buildShowsContent(SearchState state, TvShowWatchlistState tvState) {
-    // Get watchlisted TV show IDs
-    final Set<int> watchlistedIds = {};
-    if (tvState is TvShowWatchlistSuccess) {
-      for (final show in tvState.shows) {
-        final rawId = show['id'];
-        int? id;
-        if (rawId is num) {
-          id = rawId.toInt();
-        } else if (rawId is String) {
-          id = int.tryParse(rawId);
-        }
-        if (id != null) {
-          watchlistedIds.add(id);
-        }
-      }
-    }
+  // ---------------------------------------------------------------------------
+  // Feed
+  // ---------------------------------------------------------------------------
 
-    if (state is SearchLoading || _isFetchingTvFilters) {
-      return Skeletonizer(
-        enabled: true,
-        child: _buildGrid(
-          List.generate(
-            9,
-            (index) => {
-              'name': 'Loading Show Title',
-              'vote_average': 9.9,
-              'id': index,
-            },
-          ),
-          'tv',
-          physics: const NeverScrollableScrollPhysics(),
-        ),
-      );
-    } else if (state is SearchError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Error loading data: ${state.message}',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.sm.copyWith(color: AppColors.error),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              ElevatedButton(
-                onPressed: () => context.read<SearchCubit>().loadTrending(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textOnPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.xl),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xl,
-                    vertical: AppSpacing.sm,
-                  ),
-                ),
-                child: Text(
-                  'RETRY',
-                  style: AppTextStyles.smBold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    } else if (state is SearchTrendingSuccess) {
-      // Filter out watchlisted shows from trending
-      _showsGrid.update(state.trendingTv, watchlistedIds);
-      final filteredTrending = _showsGrid.items;
-      if (_showsGrid.didChange) {
-        _queueTvStatuses(_showsGrid.indexById.keys);
-      }
-
-      if (filteredTrending.length < 12 &&
-          !state.isLoadingMore &&
-          !state.tvHasReachedMax &&
-          !state.tvLoadMoreError &&
-          state.tvPage < 500) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            context.read<SearchCubit>().loadMore(true);
-          }
-        });
-      }
-
-      return _buildGrid(
-        filteredTrending,
-        'tv',
-        controller: _showsScrollController,
-        isLoadingMore: state.isLoadingMore,
-        hasLoadMoreError: state.tvLoadMoreError,
-        onRetry: () => context.read<SearchCubit>().loadMore(true),
-        hasReachedMax: state.tvHasReachedMax,
-        indexById: _showsGrid.indexById,
-      );
-    } else if (state is SearchResultsSuccess) {
-      if (state.isTv) {
-        _showsSearchGrid.update(state.results, const <int>{});
-        if (_showsSearchGrid.didChange) {
-          _queueTvStatuses(_showsSearchGrid.indexById.keys);
-        }
-        return _buildGrid(
-          _showsSearchGrid.items,
-          'tv',
-          controller: _showsScrollController,
-          isLoadingMore: state.isLoadingMore,
-          hasLoadMoreError: state.hasLoadMoreError,
-          onRetry: () => context.read<SearchCubit>().loadMore(true),
-          hasReachedMax: state.hasReachedMax,
-          indexById: _showsSearchGrid.indexById,
-        );
-      } else {
-        // State holds movie search results; shows tab should render shimmer skeleton
-        return Skeletonizer(
-          enabled: true,
-          child: _buildGrid(
-            List.generate(
-              9,
-              (index) => {
-                'name': 'Loading Show Title',
-                'vote_average': 9.9,
-                'id': index,
-              },
-            ),
-            'tv',
-            physics: const NeverScrollableScrollPhysics(),
-          ),
-        );
-      }
-    }
-    return const SizedBox.shrink();
+  Widget _buildFeed({required bool isTv}) {
+    final type = _typeOf(isTv);
+    return BlocBuilder<ExploreFeedCubit, ExploreFeedState>(
+      buildWhen: (previous, current) =>
+          previous.feedFor(type) != current.feedFor(type),
+      builder: (context, feedState) => WatchlistedIdsBuilder(
+        type: type,
+        builder: (context, watchlisted) =>
+            _buildFeedList(type, feedState.feedFor(type), watchlisted),
+      ),
+    );
   }
 
-  Widget _buildMoviesContent(
-    SearchState state,
-    MovieWatchlistState movieState,
+  Widget _buildFeedList(
+    ExploreMediaType type,
+    ExploreFeed feed,
+    Set<int> watchlisted,
   ) {
-    // Get watchlisted movie IDs
-    final Set<int> watchlistedIds = {};
-    if (movieState is MovieWatchlistSuccess) {
-      for (final movie in movieState.movies) {
-        final rawId = movie['id'];
-        int? id;
-        if (rawId is num) {
-          id = rawId.toInt();
-        } else if (rawId is String) {
-          id = int.tryParse(rawId);
-        }
-        if (id != null) {
-          watchlistedIds.add(id);
-        }
-      }
+    final defaultType = type.tmdbType;
+    final trendingRow = feed.rowFor(ExploreSection.trending);
+
+    // Top 5 is the head of the trending list, deliberately left unfiltered so
+    // it always reads as the actual top five.
+    final topWeek = trendingRow.items.take(5).toList(growable: false);
+    final topWeekIds = <int>{
+      for (final item in topWeek) ?exploreIdOf(item['id']),
+    };
+
+    Set<int> excludedFor(ExploreSection section) =>
+        section == ExploreSection.trending
+        ? {...watchlisted, ...topWeekIds}
+        : watchlisted;
+
+    final rows = <Widget>[];
+    var anyLoading = trendingRow.isLoading;
+
+    if (trendingRow.isLoading || topWeek.isNotEmpty) {
+      rows.add(
+        ExploreTopWeekRow(
+          key: const ValueKey(ExploreSection.topWeek),
+          // TMDB trending can't be filtered by language, so with one active
+          // this row is ranked by overall popularity, not this week's trend.
+          title: switch (_languageNames[feed.language]) {
+            final name? => 'Top 5 in $name',
+            null => ExploreSection.topWeek.title,
+          },
+          items: topWeek,
+          defaultType: defaultType,
+          isLoading: trendingRow.isLoading,
+        ),
+      );
     }
 
-    if (state is SearchLoading || _isFetchingMovieFilters) {
-      return Skeletonizer(
-        enabled: true,
-        child: _buildGrid(
-          List.generate(
-            9,
-            (index) => {
-              'title': 'Loading Movie Title',
-              'vote_average': 9.9,
-              'id': index,
-            },
+    for (final section in const [
+      ExploreSection.forYou,
+      ExploreSection.trending,
+      ExploreSection.newlyAdded,
+    ]) {
+      final row = feed.rowFor(section);
+      anyLoading |= row.isLoading;
+      if (row.isLoading) {
+        rows.add(
+          ExploreSectionRow(
+            key: ValueKey(section),
+            storageId: section.name,
+            title: section.title,
+            items: const [],
+            defaultType: defaultType,
+            isLoading: true,
           ),
-          'movie',
-          physics: const NeverScrollableScrollPhysics(),
-        ),
-      );
-    } else if (state is SearchError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Error loading data: ${state.message}',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.sm.copyWith(color: AppColors.error),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              ElevatedButton(
-                onPressed: () => context.read<SearchCubit>().loadTrending(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textOnPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.xl),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xl,
-                    vertical: AppSpacing.sm,
-                  ),
-                ),
-                child: Text(
-                  'RETRY',
-                  style: AppTextStyles.smBold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    } else if (state is SearchTrendingSuccess) {
-      // Filter out watchlisted movies from trending
-      _moviesGrid.update(state.trendingMovies, watchlistedIds);
-      final filteredTrending = _moviesGrid.items;
+        );
+        continue;
+      }
 
-      if (filteredTrending.length < 12 &&
-          !state.isLoadingMore &&
-          !state.moviesHasReachedMax &&
-          !state.moviesLoadMoreError &&
-          state.moviesPage < 500) {
+      final excluded = excludedFor(section);
+      final items = [
+        for (final item in row.items)
+          if (exploreIdOf(item['id']) case final id?
+              when !excluded.contains(id))
+            item,
+      ];
+
+      if (row.items.isNotEmpty && items.length < _minRowItems) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            context.read<SearchCubit>().loadMore(false);
-          }
+          if (mounted) context.read<ExploreFeedCubit>().fillRow(type, section);
         });
       }
+      if (items.isEmpty) continue;
 
-      return _buildGrid(
-        filteredTrending,
-        'movie',
-        controller: _moviesScrollController,
-        isLoadingMore: state.isLoadingMore,
-        hasLoadMoreError: state.moviesLoadMoreError,
-        onRetry: () => context.read<SearchCubit>().loadMore(false),
-        hasReachedMax: state.moviesHasReachedMax,
-        indexById: _moviesGrid.indexById,
-      );
-    } else if (state is SearchResultsSuccess) {
-      if (!state.isTv) {
-        return _buildGrid(
-          state.results,
-          'movie',
-          controller: _moviesScrollController,
-          isLoadingMore: state.isLoadingMore,
-          hasLoadMoreError: state.hasLoadMoreError,
-          onRetry: () => context.read<SearchCubit>().loadMore(false),
-          hasReachedMax: state.hasReachedMax,
-        );
-      } else {
-        // State holds tv search results; movies tab should render shimmer skeleton
-        return Skeletonizer(
-          enabled: true,
-          child: _buildGrid(
-            List.generate(
-              9,
-              (index) => {
-                'title': 'Loading Movie Title',
-                'vote_average': 9.9,
-                'id': index,
-              },
-            ),
-            'movie',
-            physics: const NeverScrollableScrollPhysics(),
-          ),
-        );
-      }
-    }
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildGrid(
-    List<dynamic> items,
-    String defaultType, {
-    ScrollPhysics? physics,
-    ScrollController? controller,
-    bool isLoadingMore = false,
-    bool hasLoadMoreError = false,
-    VoidCallback? onRetry,
-    bool hasReachedMax = false,
-    Map<int, int>? indexById,
-  }) {
-    if (items.isEmpty) {
-      if (hasLoadMoreError && onRetry != null) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Failed to load explore content.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.sm.copyWith(color: AppColors.error),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                ElevatedButton(
-                  onPressed: onRetry,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.textOnPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.xl),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xl,
-                      vertical: AppSpacing.sm,
-                    ),
-                  ),
-                  child: Text(
-                    'RETRY',
-                    style: AppTextStyles.smBold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-      return CustomScrollView(
-        controller: controller,
-        physics: physics ?? const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl,
-                  AppSpacing.xl,
-                  AppSpacing.xl,
-                  AppSpacing.bottomTabPadding,
-                ),
-                child: Text(
-                  'No results found.\nTry searching for something else.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.md.copyWith(
-                    color: Theme.of(context).brightness == Brightness.light
-                        ? AppColors.lightTextTertiary
-                        : AppColors.textTertiary,
-                  ),
-                ),
+      rows.add(
+        ExploreSectionRow(
+          key: ValueKey(section),
+          storageId: section.name,
+          title: section.title,
+          items: items,
+          isLoadingMore: row.isLoadingMore,
+          defaultType: defaultType,
+          onSeeAll: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ExploreSeeAllPage(
+                type: type,
+                section: section,
+                language: feed.language,
+                excludedIds: section == ExploreSection.trending
+                    ? topWeekIds
+                    : const {},
               ),
             ),
           ),
-        ],
+        ),
       );
     }
 
-    final bool hasFooter =
-        isLoadingMore ||
-        (hasLoadMoreError && onRetry != null) ||
-        (hasReachedMax && items.isNotEmpty);
+    final feedScroll = type == ExploreMediaType.tv
+        ? _showsFeedScrollController
+        : _moviesFeedScrollController;
 
-    final itemIndexMap = indexById ?? _FilteredGrid.indexOf(items);
+    if (rows.isEmpty && !anyLoading) {
+      return _buildFeedEmpty(type, feedScroll);
+    }
 
+    return ListView(
+      controller: feedScroll,
+      physics: const AlwaysScrollableScrollPhysics(),
+      // The feed is only a handful of rows. Keeping them all built stops a
+      // row from being torn down when it scrolls out of view and rebuilt
+      // (horizontal list, posters, Top 5 numbers) mid-fling as it returns.
+      scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
+      children: rows,
+    );
+  }
+
+  /// Every row came back empty — offline, or nothing in this language.
+  Widget _buildFeedEmpty(ExploreMediaType type, ScrollController controller) {
     return CustomScrollView(
       controller: controller,
-      physics: physics ?? const AlwaysScrollableScrollPhysics(),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.sm,
-            AppSpacing.sm,
-            AppSpacing.sm,
-            hasFooter ? AppSpacing.sm : AppSpacing.bottomTabPadding,
-          ),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: AppSpacing.xs,
-              mainAxisSpacing: AppSpacing.sm,
-              childAspectRatio: 0.52,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final item = items[index];
-                final String title = item['name'] ?? item['title'] ?? 'Unknown';
-                final String? posterPath = item['poster_path'];
-                final double voteAverage =
-                    (item['vote_average'] as num?)?.toDouble() ?? 0.0;
-                final int id = item['id'];
-                final String mediaType = item['media_type'] ?? defaultType;
-                final String? dateStr =
-                    item['release_date'] ?? item['first_air_date'];
-                final String formattedDate = _formatGridDateCached(dateStr);
-
-                return RepaintBoundary(
-                  key: ValueKey('${defaultType}_$id'),
-                  child: GestureDetector(
-                    onTap: () => _openDetails(
-                      id,
-                      mediaType,
-                      title,
-                      posterPath: posterPath,
-                      backdropPath: item['backdrop_path'] as String?,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Poster Image
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8.0),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Container(
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? AppColors.lightSurfaceElevated
-                                      : AppColors.surfaceLight,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  child: posterPath != null &&
-                                          posterPath.isNotEmpty
-                                      ? CachedNetworkImage(
-                                          imageUrl: _getImageUrl(posterPath),
-                                          fit: BoxFit.cover,
-                                          memCacheWidth: 250,
-                                          placeholder: (context, url) =>
-                                              const SizedBox.shrink(),
-                                          errorWidget: (context, url, error) =>
-                                              Skeleton.ignore(
-                                                child: Icon(
-                                                  Icons.movie_creation_outlined,
-                                                  size: 32,
-                                                  color: Theme.of(context)
-                                                              .brightness ==
-                                                          Brightness.light
-                                                      ? AppColors.lightTextTertiary
-                                                      : AppColors.textTertiary,
-                                                ),
-                                              ),
-                                        )
-                                      : Skeleton.ignore(
-                                          child: Icon(
-                                            Icons.movie_creation_outlined,
-                                            size: 32,
-                                            color: Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? AppColors.lightTextTertiary
-                                                : AppColors.textTertiary,
-                                          ),
-                                        ),
-                                ),
-                                if (mediaType == 'tv' &&
-                                    Skeletonizer.maybeOf(context)?.enabled !=
-                                        true)
-                                  _TvStatusPill(tvId: id),
-                              ],
-                            ),
-                          ),
-                        ),
-                        AppSpacing.gapH4,
-                        // Title
-                        Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.xsBold.copyWith(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        AppSpacing.gapH4,
-                        // Rating & Release Date row
-                        Row(
-                          children: [
-                            if (voteAverage >= 1.0) ...[
-                              Icon(
-                                Icons.star,
-                                color: AppColors.primary,
-                                size: 10.0,
-                              ),
-                              AppSpacing.gapW4,
-                              Text(
-                                voteAverage.toStringAsFixed(1),
-                                style: AppTextStyles.xs.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium?.color ??
-                                      AppColors.textSecondary,
-                                ),
-                              ),
-                              if (formattedDate.isNotEmpty) ...[
-                                AppSpacing.gapW4,
-                                Text(
-                                  '•',
-                                  style: AppTextStyles.xs.copyWith(
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium?.color ??
-                                        AppColors.textSecondary,
-                                  ),
-                                ),
-                                AppSpacing.gapW4,
-                                Expanded(
-                                  child: Text(
-                                    formattedDate,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.xs.copyWith(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium?.color ??
-                                          AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ] else if (formattedDate.isNotEmpty) ...[
-                              Expanded(
-                                child: Text(
-                                  formattedDate,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.xs.copyWith(
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium?.color ??
-                                        AppColors.textSecondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              childCount: items.length,
-              findChildIndexCallback: (Key key) {
-                if (key is ValueKey<String>) {
-                  final keyStr = key.value;
-                  final prefix = '${defaultType}_';
-                  if (keyStr.startsWith(prefix)) {
-                    final id = int.tryParse(keyStr.substring(prefix.length));
-                    if (id != null) return itemIndexMap[id];
-                  }
-                }
-                return null;
-              },
-            ),
-          ),
-        ),
-        if (isLoadingMore)
-          const SliverToBoxAdapter(
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
             child: Padding(
-              padding: EdgeInsets.only(
-                top: AppSpacing.md,
-                bottom: AppSpacing.bottomTabPadding,
-              ),
-              child: Center(child: CircularProgressIndicator.adaptive()),
-            ),
-          ),
-        if (hasLoadMoreError && onRetry != null)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(
-                top: AppSpacing.md,
-                bottom: AppSpacing.bottomTabPadding,
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                AppSpacing.xl,
+                AppSpacing.xl,
+                AppSpacing.bottomTabPadding,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Failed to load more data.',
-                    style: AppTextStyles.sm.copyWith(
+                    'Nothing to show right now.\nCheck your connection and try again.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.md.copyWith(
                       color: Theme.of(context).brightness == Brightness.light
                           ? AppColors.lightTextTertiary
                           : AppColors.textTertiary,
                     ),
                   ),
-                  AppSpacing.gapH8,
+                  AppSpacing.gapH16,
                   TextButton(
-                    onPressed: onRetry,
+                    onPressed: () =>
+                        context.read<ExploreFeedCubit>().retry(type),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.xs,
-                      ),
                     ),
-                    child: Text(
-                      'Retry',
-                      style: AppTextStyles.smBold,
-                    ),
+                    child: Text('Retry', style: AppTextStyles.smBold),
                   ),
                 ],
               ),
             ),
           ),
-        if (hasReachedMax && items.isNotEmpty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(
-                top: AppSpacing.md,
-                bottom: AppSpacing.bottomTabPadding,
-              ),
-              child: Center(
-                child: Text(
-                  defaultType == 'tv'
-                      ? 'No more shows to load'
-                      : 'No more movies to load',
-                  style: AppTextStyles.smMedium.copyWith(
-                    color: Theme.of(context).brightness == Brightness.light
-                        ? AppColors.lightTextTertiary
-                        : AppColors.textTertiary,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        ),
       ],
     );
   }
 
-  void _openDetails(
-    int mediaId,
-    String mediaType,
-    String title, {
-    String? posterPath,
-    String? backdropPath,
-  }) {
-    if (mediaType == 'movie') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MovieDetailsPage(
-            movieId: mediaId,
-            title: title,
-            posterPath: posterPath,
-            backdropPath: backdropPath,
-          ),
-        ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => BlocProvider<ShowDetailsCubit>(
-            create: (context) =>
-                ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-            child: ShowDetailsPage(
-              mediaId: mediaId,
-              mediaType: mediaType,
-              title: title,
-            ),
-          ),
-        ),
-      );
-    }
-  }
-}
+  // ---------------------------------------------------------------------------
+  // Search results
+  // ---------------------------------------------------------------------------
 
-/// Status pill over a TV poster.
-///
-/// A pure lookup — it never fetches. [TvStatusCubit] resolves statuses in the
-/// background when a page arrives, and the selector narrows the rebuild to this
-/// one show, so a batch of resolutions only repaints the tiles it actually
-/// answered rather than the whole grid.
-class _TvStatusPill extends StatelessWidget {
-  const _TvStatusPill({required this.tvId});
+  Widget _buildSearchResults(SearchState state, {required bool isTv}) {
+    final defaultType = isTv ? 'tv' : 'movie';
 
-  final int tvId;
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocSelector<
-      TvStatusCubit,
-      Map<int, TvStatusLabel?>,
-      TvStatusLabel?
-    >(
-      selector: (statuses) => statuses[tvId],
-      builder: (context, label) {
-        if (label == null) {
-          // Kept positioned so the Stack's children stay uniformly positioned.
-          return const Positioned(top: 6, right: 6, child: SizedBox.shrink());
-        }
-        final (String text, Color color) = switch (label) {
-          TvStatusLabel.ended => ('ENDED', AppColors.error),
-          TvStatusLabel.cancelled => ('CANCELLED', AppColors.error),
-          TvStatusLabel.upcoming => ('UPCOMING', AppColors.airing),
-        };
-        return Positioned(
-          top: 6,
-          right: 6,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xs,
-              vertical: AppSpacing.xxs,
-            ),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(4.0),
-            ),
-            child: Text(
-              text,
-              style: AppTextStyles.xsBold.copyWith(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-                letterSpacing: 0.5,
+    if (state is SearchError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Error loading data: ${state.message}',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.sm.copyWith(color: AppColors.error),
               ),
-            ),
+              const SizedBox(height: AppSpacing.md),
+              ElevatedButton(
+                onPressed: () =>
+                    _searchCubitFor(isTv).executeSearch(_queryFor(isTv)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.textOnPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSpacing.xl),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl,
+                    vertical: AppSpacing.sm,
+                  ),
+                ),
+                child: Text('RETRY', style: AppTextStyles.smBold),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    // Loading, or still debouncing the first query.
+    if (state is! SearchResultsSuccess) {
+      return ExplorePosterGrid.skeleton(defaultType);
+    }
+
+    return ExplorePosterGrid(
+      items: state.results,
+      defaultType: defaultType,
+      controller: isTv
+          ? _showsSearchScrollController
+          : _moviesSearchScrollController,
+      isLoadingMore: state.isLoadingMore,
+      hasLoadMoreError: state.hasLoadMoreError,
+      onRetry: _searchCubitFor(isTv).loadMore,
+      hasReachedMax: state.hasReachedMax,
     );
-  }
-}
-
-/// Caches the watchlist-filtered list and its id -> index map for one grid.
-///
-/// Both are O(n) over a trending list that grows with every page fetched, and
-/// they were being recomputed on every rebuild — including the two emits that
-/// each `loadMore` produces while you are mid-fling. Recomputing allocates a
-/// fresh List and HashMap each time, so the cost showed up as GC pressure as
-/// much as raw CPU. Keyed on source identity, so it recomputes only when the
-/// cubit actually hands over a new list or the watchlist changes.
-class _FilteredGrid {
-  List<dynamic>? _sourceItems;
-  Set<int>? _excludedIds;
-
-  List<dynamic>? _items;
-  Map<int, int>? _indexById;
-
-  List<dynamic> get items => _items!;
-  Map<int, int> get indexById => _indexById!;
-
-  /// True when the most recent [update] actually recomputed. Lets the caller
-  /// react to a genuinely new list — queueing status lookups, say — without
-  /// firing on every rebuild.
-  bool didChange = false;
-
-  static int? _idOf(dynamic raw) {
-    if (raw is int) return raw;
-    if (raw is num) return raw.toInt();
-    if (raw == null) return null;
-    return int.tryParse(raw.toString());
-  }
-
-  /// Builds the id -> index map for an arbitrary list (skeleton placeholders and
-  /// raw search results, which are short enough not to need caching).
-  static Map<int, int> indexOf(List<dynamic> items) {
-    final map = <int, int>{};
-    for (int i = 0; i < items.length; i++) {
-      final id = _idOf(items[i]['id']);
-      if (id != null) map[id] = i;
-    }
-    return map;
-  }
-
-  void update(List<dynamic> sourceItems, Set<int> excludedIds) {
-    final unchanged =
-        _items != null &&
-        identical(_sourceItems, sourceItems) &&
-        _excludedIds!.length == excludedIds.length &&
-        _excludedIds!.containsAll(excludedIds);
-    didChange = !unchanged;
-    if (unchanged) return;
-
-    final filtered = <dynamic>[];
-    final index = <int, int>{};
-    for (final item in sourceItems) {
-      final id = _idOf(item['id']);
-      if (id == null || excludedIds.contains(id)) continue;
-      index[id] = filtered.length;
-      filtered.add(item);
-    }
-
-    _sourceItems = sourceItems;
-    _excludedIds = excludedIds;
-    _items = filtered;
-    _indexById = index;
   }
 }
 
