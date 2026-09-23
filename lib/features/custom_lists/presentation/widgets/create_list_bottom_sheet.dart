@@ -289,9 +289,11 @@ class _CreateListBottomSheetState extends State<CreateListBottomSheet> {
                         ? SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(
+                            child: CircularProgressIndicator.adaptive(
                               strokeWidth: 2,
-                              color: AppColors.textOnPrimary,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.textOnPrimary,
+                              ),
                             ),
                           )
                         : Text(

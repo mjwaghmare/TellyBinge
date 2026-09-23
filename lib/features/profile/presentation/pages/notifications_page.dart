@@ -13,6 +13,7 @@ import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
@@ -254,126 +255,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _clearAllNotifications() async {
-    final bool? confirmed = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        final isLight = sheetContext.isLight;
-        return Container(
-          decoration: BoxDecoration(
-            color: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            MediaQuery.of(sheetContext).viewPadding.bottom + AppSpacing.lg,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isLight ? Colors.black12 : Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.delete_sweep_rounded,
-                    color: AppColors.error,
-                    size: 24,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Clear All Notifications?',
-                style: AppTextStyles.lg.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isLight
-                      ? AppColors.lightTextPrimary
-                      : AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'This will remove all alerts from your notification center.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.sm.copyWith(
-                  color: isLight
-                      ? AppColors.lightTextSecondary
-                      : AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(sheetContext, false),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                        side: BorderSide(
-                          color: isLight
-                              ? AppColors.borderLight
-                              : AppColors.borderDark,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: AppTextStyles.smMedium.copyWith(
-                          color: isLight
-                              ? AppColors.lightTextPrimary
-                              : AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(sheetContext, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: AppColors.textOnPrimary,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Text(
-                        'Clear All',
-                        style: AppTextStyles.smBold.copyWith(
-                          color: AppColors.textOnPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
+    final confirmed = await AppConfirmSheet.show(
+      context,
+      icon: Icons.delete_sweep_rounded,
+      title: 'Clear All Notifications?',
+      message: 'This will remove all alerts from your notification center.',
+      confirmLabel: 'Clear All',
     );
+    if (!mounted) return;
 
-    if (confirmed == true) {
+    if (confirmed) {
       unawaited(AppHaptics.mediumImpact());
       final previousNotifications = List<CleanNotificationItem>.from(
         _notifications,

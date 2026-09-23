@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import 'app_bottom_sheet.dart';
 
 /// A single row in an [AppActionSheet].
 class AppActionSheetAction {
@@ -51,16 +52,12 @@ class AppActionSheet extends StatelessWidget {
     // Nothing to offer (e.g. details still loading) - don't open an empty sheet
     if (actions.isEmpty) return Future.value();
 
-    final isLight = context.isLight;
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor:
-          isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
+      backgroundColor: AppBottomSheet.backgroundColor(context),
+      shape: AppBottomSheet.shape,
       builder: (_) =>
           AppActionSheet(title: title, subtitle: subtitle, actions: actions),
     );
@@ -85,16 +82,9 @@ class AppActionSheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Top drag handle
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: borderColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+              const Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.md),
+                child: AppSheetHandle(),
               ),
               if (title != null)
                 Padding(

@@ -6,6 +6,7 @@ import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import 'profile_expiration_card.dart';
 
 /// A circular progress indicator widget displayed in the app header (before
@@ -79,7 +80,7 @@ class _ProfileExpirationIndicatorState
         return Container(
           decoration: BoxDecoration(
             color: sheetBg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: AppBottomSheet.borderRadius,
           ),
           padding: EdgeInsets.only(
             top: AppSpacing.md,
@@ -89,16 +90,7 @@ class _ProfileExpirationIndicatorState
             mainAxisSize: MainAxisSize.min,
             children: [
               // Drag Handle
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.color?.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              const AppSheetHandle(),
               AppSpacing.gapH16,
               const ProfileExpirationCard(),
             ],

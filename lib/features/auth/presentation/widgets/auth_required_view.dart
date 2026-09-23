@@ -7,6 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import 'login_poster_wall.dart';
 
 /// Reusable full-tab prompt displayed when a guest user navigates to a tab
@@ -452,48 +453,35 @@ class AuthRequiredBottomSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: surfaceColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
+        borderRadius: AppBottomSheet.borderRadius,
       ),
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
-            AppSpacing.xl,
-            AppSpacing.md,
-            AppSpacing.xl,
-            MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Drag handle
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.textTertiary.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              const AppSheetHandle(),
               AppSpacing.gapH24,
 
               // Icon
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                ),
-                child: Icon(icon, size: 30, color: AppColors.primary),
-              ),
+              AppSheetIcon(icon: icon),
               AppSpacing.gapH16,
 
               // Title
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.lg.withColor(textColor),
+                style: AppTextStyles.lg
+                    .withColor(textColor)
+                    .copyWith(fontWeight: FontWeight.bold),
               ),
               AppSpacing.gapH8,
 

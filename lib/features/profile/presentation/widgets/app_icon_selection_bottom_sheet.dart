@@ -12,6 +12,7 @@ import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/app_icon_cubit.dart';
 import '../cubit/app_icon_state.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 /// Modal bottom sheet for selecting the application launcher icon.
 /// Displays a 3x3 grid of 9 icon variants (3 free, 6 premium) with live selection.
@@ -32,9 +33,7 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
 
     return showModalBottomSheet<void>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
-      ),
+      shape: AppBottomSheet.shape,
       isScrollControlled: true,
       builder: (_) => BlocProvider(
         create: (_) => AppIconCubit(isProUser: isPro),
@@ -74,8 +73,10 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
       builder: (context, state) {
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceElevated : AppColors.lightSurface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
+            color: isDark
+                ? AppColors.surfaceElevated
+                : AppColors.lightSurfaceElevated,
+            borderRadius: AppBottomSheet.borderRadius,
           ),
           child: SafeArea(
             child: SingleChildScrollView(

@@ -7,6 +7,7 @@ import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
 import 'feedback_image_viewer.dart';
@@ -110,128 +111,41 @@ class FeedbackCommentTile extends StatelessWidget {
 
   void _showCommentActionSheet(BuildContext context) {
     AppHaptics.selectionClick();
-    final isLight = context.isLight;
     final commentText = comment['text'] as String? ?? '';
 
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: isLight
-          ? AppColors.lightSurface
-          : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
-      builder: (sheetCtx) {
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top drag handle
-                Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: isLight
-                        ? AppColors.borderLight
-                        : AppColors.borderDark,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-
-                // Copy Comment Option (Available to all)
-                ListTile(
-                  dense: true,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  leading: Icon(
-                    Icons.copy_rounded,
-                    size: 20,
-                    color: isLight
-                        ? AppColors.lightTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                  title: Text(
-                    'Copy text',
-                    style: AppTextStyles.smMedium.copyWith(
-                      color: isLight
-                          ? AppColors.lightTextPrimary
-                          : AppColors.textPrimary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetCtx);
-                    Clipboard.setData(ClipboardData(text: commentText));
-                    AppSnackbar.showSuccess(
-                      context,
-                      'Comment copied to clipboard',
-                      duration: const Duration(seconds: 2),
-                    );
-                  },
-                ),
-
-                // Owner options: Edit & Delete
-                if (isOwner) ...[
-                  ListTile(
-                    dense: true,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    leading: Icon(
-                      Icons.edit_outlined,
-                      size: 20,
-                      color: isLight
-                          ? AppColors.lightTextPrimary
-                          : AppColors.textPrimary,
-                    ),
-                    title: Text(
-                      'Edit comment',
-                      style: AppTextStyles.smMedium.copyWith(
-                        color: isLight
-                            ? AppColors.lightTextPrimary
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(sheetCtx);
-                      onEdit?.call();
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    leading: const Icon(
-                      Icons.delete_outline_rounded,
-                      size: 20,
-                      color: AppColors.error,
-                    ),
-                    title: Text(
-                      'Delete comment',
-                      style: AppTextStyles.smMedium.copyWith(
-                        color: AppColors.error,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(sheetCtx);
-                      onDelete?.call();
-                    },
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.xs),
-              ],
-            ),
+    AppActionSheet.show(
+      context,
+      title: 'Comment Actions',
+      actions: [
+        AppActionSheetAction(
+          label: 'Copy text',
+          subtitle: 'Copy comment to clipboard',
+          icon: Icons.copy_rounded,
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: commentText));
+            AppSnackbar.showSuccess(
+              context,
+              'Comment copied to clipboard',
+              duration: const Duration(seconds: 2),
+            );
+          },
+        ),
+        if (isOwner) ...[
+          AppActionSheetAction(
+            label: 'Edit comment',
+            subtitle: 'Update your comment',
+            icon: Icons.edit_rounded,
+            onTap: () => onEdit?.call(),
           ),
-        );
-      },
+          AppActionSheetAction(
+            label: 'Delete comment',
+            subtitle: 'Permanently remove this comment',
+            icon: Icons.delete_outline_rounded,
+            isDestructive: true,
+            onTap: () => onDelete?.call(),
+          ),
+        ],
+      ],
     );
   }
 

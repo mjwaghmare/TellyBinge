@@ -18,6 +18,7 @@ import '../../domain/services/feedback_duplicate_detector.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import '../../data/repositories/feedback_repository_impl.dart';
 import '../../data/services/feedback_submission_guard.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import 'feedback_image_viewer.dart';
 
 class SubmitFeedbackSheet extends StatefulWidget {
@@ -38,15 +39,11 @@ class SubmitFeedbackSheet extends StatefulWidget {
     FeedbackRepository? feedbackRepository,
     List<FeedbackItem> existingItems = const [],
   }) {
-    final isLight = context.isLight;
     return showModalBottomSheet<FeedbackItem>(
       context: context,
       isScrollControlled: true,
-      backgroundColor:
-          isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
-      ),
+      backgroundColor: AppBottomSheet.backgroundColor(context),
+      shape: AppBottomSheet.shape,
       builder: (context) => SubmitFeedbackSheet(
         onSubmit: onSubmit,
         feedbackRepository: feedbackRepository,
@@ -330,8 +327,8 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                   padding: const EdgeInsets.all(4.0),
                   decoration: BoxDecoration(
                     color: isLight
-                        ? AppColors.lightSurfaceElevated
-                        : AppColors.surfaceElevated,
+                        ? AppColors.lightBackground
+                        : AppColors.surface,
                     borderRadius: BorderRadius.circular(14.0),
                   ),
                   child: Row(
@@ -393,8 +390,8 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                 Container(
                   decoration: BoxDecoration(
                     color: isLight
-                        ? AppColors.lightSurfaceElevated
-                        : AppColors.surfaceElevated,
+                        ? AppColors.lightBackground
+                        : AppColors.surface,
                     borderRadius: BorderRadius.circular(12.0),
                     border: Border.all(
                       color: isLight
@@ -454,8 +451,8 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                 Container(
                   decoration: BoxDecoration(
                     color: isLight
-                        ? AppColors.lightSurfaceElevated
-                        : AppColors.surfaceElevated,
+                        ? AppColors.lightBackground
+                        : AppColors.surface,
                     borderRadius: BorderRadius.circular(12.0),
                     border: Border.all(
                       color: isLight
@@ -640,9 +637,9 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
                       disabledBackgroundColor: AppColors.primary.withValues(
                         alpha: 0.6,
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 15.0),
+                      minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14.0),
+                        borderRadius: BorderRadius.circular(12.0),
                       ),
                       elevation: 0,
                     ),
@@ -727,7 +724,7 @@ class _SubmitFeedbackSheetState extends State<SubmitFeedbackSheet> {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary
-              : (isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated),
+              : (isLight ? AppColors.lightBackground : AppColors.surface),
           borderRadius: BorderRadius.circular(20.0),
           border: Border.all(
             color: isSelected

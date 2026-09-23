@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class ShowsFilterBottomSheet extends StatefulWidget {
   final String initialSort;
@@ -47,17 +48,14 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
     return FractionallySizedBox(
       heightFactor: 0.6,
       child: Material(
-        color:
-            Theme.of(context).bottomSheetTheme.backgroundColor ??
-            context.adaptiveColor(
-              light: AppColors.lightSurface,
-              dark: AppColors.surfaceDarkAlt,
-            ), // Dark grey background matching the screenshot
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        color: AppBottomSheet.backgroundColor(context),
+        borderRadius: AppBottomSheet.borderRadius,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SizedBox(height: AppSpacing.sm),
+            const AppSheetHandle(),
             const SizedBox(height: AppSpacing.md),
             // Sort by Section
             Padding(

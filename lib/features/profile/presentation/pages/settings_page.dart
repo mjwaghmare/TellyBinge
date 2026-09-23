@@ -18,6 +18,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/cubit/theme_cubit.dart';
+import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -34,6 +35,7 @@ import '../../../feedback/presentation/pages/feedback_board_page.dart';
 import '../widgets/app_icon_selection_bottom_sheet.dart';
 import '../widgets/mw_studio_footer.dart';
 import '../widgets/theme_selection_bottom_sheet.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -640,109 +642,42 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _showDeleteAccountSheet(BuildContext context) {
     AppHaptics.mediumImpact();
-    final isLight = context.isLight;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.12), shape: BoxShape.circle),
-                  child: const Icon(Icons.delete_forever_rounded, color: AppColors.error, size: 26),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Delete Account?',
-                  style: AppTextStyles.lg.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be erased.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.sm.copyWith(
-                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                          side: BorderSide(color: isLight ? AppColors.borderLight : AppColors.borderDark),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () => Navigator.pop(sheetContext),
-                        child: Text(
-                          'Cancel',
-                          style: AppTextStyles.smMedium.copyWith(
-                            color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(sheetContext);
-                          if (Navigator.of(context).canPop()) {
-                            Navigator.of(context).popUntil((route) => route.isFirst);
-                          }
-                          context.read<AuthCubit>().deleteAccount();
-                        },
-                        child: Text(
-                          'Delete',
-                          style: AppTextStyles.smBold.copyWith(color: AppColors.textOnPrimary),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    AppConfirmSheet.show(
+      context,
+      icon: Icons.delete_forever_rounded,
+      title: 'Delete Account?',
+      message:
+          'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be erased.',
+    ).then((confirmed) {
+      if (!confirmed || !context.mounted) return;
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+      context.read<AuthCubit>().deleteAccount();
+    });
   }
-
 
   void _showTmdbAttributionSheet(BuildContext context) {
     AppHaptics.lightImpact();
     final isLight = context.isLight;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.0))),
+    AppBottomSheet.show(
+      context,
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                const AppSheetHandle(),
+                AppSpacing.gapH24,
                 _buildTmdbBadge(),
                 const SizedBox(height: AppSpacing.md),
                 Text(
@@ -770,7 +705,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.tmdbLightBlue,
                       foregroundColor: AppColors.textOnPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                      minimumSize: const Size.fromHeight(48),
+                      elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () async {
@@ -832,35 +768,24 @@ class _SettingsPageState extends State<SettingsPage> {
     AppHaptics.mediumImpact();
     final isLight = context.isLight;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
+    AppBottomSheet.show(
+      context,
       builder: (bottomSheetContext) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.mail_outline_rounded,
-                      color: AppColors.primary,
-                      size: 28,
-                    ),
-                  ),
-                ),
+                const AppSheetHandle(),
+                AppSpacing.gapH24,
+                const AppSheetIcon(icon: Icons.mail_outline_rounded),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   'No Mail App Found',
@@ -886,8 +811,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   decoration: BoxDecoration(
                     color: isLight
-                        ? AppColors.lightSurfaceElevated
-                        : AppColors.surfaceElevated,
+                        ? AppColors.lightBackground
+                        : AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isLight ? AppColors.borderLight : AppColors.borderDark,
@@ -938,9 +863,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     icon: const Icon(Icons.copy_rounded, size: 18),
                     label: const Text('Copy Email Address'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: context.primary,
                       foregroundColor: AppColors.textOnPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                      minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

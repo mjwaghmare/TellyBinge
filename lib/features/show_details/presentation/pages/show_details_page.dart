@@ -14,6 +14,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/action_circle_button.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
+import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/watch_trailer_button.dart';
 import '../../../../core/widgets/watch_providers_section.dart';
@@ -31,6 +32,7 @@ import '../widgets/tv_status_badge.dart';
 import '../../../person/presentation/widgets/person_details_bottom_sheet.dart';
 import '../../../custom_lists/domain/models/custom_list_item_model.dart';
 import '../../../custom_lists/presentation/widgets/add_to_list_bottom_sheet.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class ShowDetailsPage extends StatefulWidget {
   final int mediaId;
@@ -1836,17 +1838,9 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
     double voteAverage,
     int voteCount,
   ) {
-    showModalBottomSheet(
-      context: context,
+    AppBottomSheet.show(
+      context,
       isScrollControlled: true,
-      backgroundColor:
-          Theme.of(context).bottomSheetTheme.backgroundColor ??
-          (context.isLight
-              ? AppColors.lightSurfaceElevated
-              : AppColors.surfaceDarkAlt),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -1855,9 +1849,7 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             children: [
               if (stillPath != null && stillPath.isNotEmpty)
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
+                  borderRadius: AppBottomSheet.borderRadius,
                   child: CachedNetworkImage(
                     imageUrl: _getImageUrl(stillPath, size: 'w780'),
                     fit: BoxFit.cover,
@@ -2278,117 +2270,75 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                         watchedEpisodes,
                                       );
                                   if (unwatchedPrev.isNotEmpty) {
+                                    Future<void> markJustThisOne() async {
+                                      if (!mounted) return;
+                                      setState(() {
+                                        _loadingEpisodeKeys.add(episodeKey);
+                                      });
+                                      try {
+                                        await cubit.toggleEpisodeWatched(
+                                          uid: uid,
+                                          showId: widget.mediaId,
+                                          episodeKey: episodeKey,
+                                          isWatched: true,
+                                          showName: details['name']?.toString(),
+                                          showPoster:
+                                              details['poster_path']?.toString(),
+                                          episodeTitle:
+                                              ep['name']?.toString() ??
+                                              'Episode ${ep['episode_number']}',
+                                        );
+                                      } finally {
+                                        if (mounted) {
+                                          setState(() {
+                                            _loadingEpisodeKeys.remove(
+                                              episodeKey,
+                                            );
+                                          });
+                                        }
+                                      }
+                                    }
+
+                                    Future<void> markAll() async {
+                                      if (!mounted) return;
+                                      final allToMark = [
+                                        ...unwatchedPrev,
+                                        episodeKey,
+                                      ];
+                                      setState(() {
+                                        _loadingEpisodeKeys.addAll(allToMark);
+                                      });
+                                      try {
+                                        await cubit.markMultipleEpisodesWatched(
+                                          uid: uid,
+                                          showId: widget.mediaId,
+                                          episodeKeys: allToMark,
+                                        );
+                                      } finally {
+                                        if (mounted) {
+                                          setState(() {
+                                            _loadingEpisodeKeys.removeAll(
+                                              allToMark,
+                                            );
+                                          });
+                                        }
+                                      }
+                                    }
+
                                     unawaited(
-                                      showDialog(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                        backgroundColor:
-                                            Theme.of(
-                                              context,
-                                            ).dialogTheme.backgroundColor ??
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.surface,
-                                        title: Row(
-                                          children: [
-                                            Text(
-                                              'Mark Previous Episodes',
-                                              style: AppTextStyles.mdBold.copyWith(
-                                                color: context.textPrimary,
-                                              ),
-                                            ),
-                                            AppSpacing.gapW8,
-                                            Icon(Icons.warning_amber_rounded, size: 20),
-                                          ],
-                                        ),
-                                        content: Text(
-                                          'You have ${unwatchedPrev.length} unwatched previous episodes. Would you like to mark them as watched too?',
-                                          style: AppTextStyles.sm.copyWith(
-                                            color: context.textSecondary,
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(ctx);
-                                              if (!mounted) return;
-                                              setState(() {
-                                                _loadingEpisodeKeys.add(
-                                                  episodeKey,
-                                                );
-                                              });
-                                              try {
-                                                await cubit.toggleEpisodeWatched(
-                                                  uid: uid,
-                                                  showId: widget.mediaId,
-                                                  episodeKey: episodeKey,
-                                                  isWatched: true,
-                                                  showName: details['name']
-                                                      ?.toString(),
-                                                  showPoster:
-                                                      details['poster_path']
-                                                          ?.toString(),
-                                                  episodeTitle:
-                                                      ep['name']?.toString() ??
-                                                      'Episode ${ep['episode_number']}',
-                                                );
-                                              } finally {
-                                                if (mounted) {
-                                                  setState(() {
-                                                    _loadingEpisodeKeys.remove(
-                                                      episodeKey,
-                                                    );
-                                                  });
-                                                }
-                                              }
-                                            },
-                                            child: Text(
-                                              'No, just this one',
-                                              style: AppTextStyles.smBold.copyWith(
-                                                color: context.textTertiary,
-                                              ),
-                                            ),
-                                          ),
-                                          TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(ctx);
-                                              if (!mounted) return;
-                                              final allToMark = [
-                                                ...unwatchedPrev,
-                                                episodeKey,
-                                              ];
-                                              setState(() {
-                                                _loadingEpisodeKeys.addAll(
-                                                  allToMark,
-                                                );
-                                              });
-                                              try {
-                                                await cubit
-                                                    .markMultipleEpisodesWatched(
-                                                      uid: uid,
-                                                      showId: widget.mediaId,
-                                                      episodeKeys: allToMark,
-                                                    );
-                                              } finally {
-                                                if (mounted) {
-                                                  setState(() {
-                                                    _loadingEpisodeKeys
-                                                        .removeAll(allToMark);
-                                                  });
-                                                }
-                                              }
-                                            },
-                                            child: Text(
-                                              'Yes, mark all',
-                                              style: AppTextStyles.smBold.copyWith(
-                                                color: AppColors.primary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                      AppConfirmSheet.show(
+                                        context,
+                                        icon: Icons.playlist_add_check_rounded,
+                                        title: 'Mark Previous Episodes?',
+                                        message:
+                                            'You have ${unwatchedPrev.length} unwatched previous episodes. Would you like to mark them as watched too?',
+                                        confirmLabel: 'Yes, mark all',
+                                        cancelLabel: 'No, just this one',
+                                        isDestructive: false,
+                                        onCancel: markJustThisOne,
+                                      ).then((confirmed) {
+                                        if (confirmed) markAll();
+                                      }),
                                   );
                                   return;
                                 }

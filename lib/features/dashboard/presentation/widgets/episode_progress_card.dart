@@ -10,6 +10,7 @@ import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -135,136 +136,26 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
 
     if (!mounted) return;
 
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        return Container(
-          decoration: BoxDecoration(
-            color:
-                Theme.of(context).bottomSheetTheme.backgroundColor ??
-                (context.isLight
-                    ? AppColors.lightSurfaceElevated
-                    : AppColors.surfaceDarkAlt),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.sm,
-            AppSpacing.lg,
-            AppSpacing.xxl,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.isLight ? AppColors.borderLight : AppColors.borderDark,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              AppSpacing.gapH24,
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.stop_circle_outlined,
-                  color: AppColors.error,
-                  size: 28,
-                ),
-              ),
-              AppSpacing.gapH16,
-              Text(
-                'Stop Watching?',
-                style: AppTextStyles.lg.copyWith(
-                  color: context.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              AppSpacing.gapH8,
-              RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  style: AppTextStyles.xs.copyWith(
-                    color: context.textSecondary,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: showName,
-                      style: AppTextStyles.xsMedium.copyWith(
-                        color: context.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const TextSpan(
-                      text:
-                          ' will be removed from your Shows tab.\nYour episode progress is saved.',
-                    ),
-                  ],
-                ),
-              ),
-              AppSpacing.gapH24,
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(sheetContext);
-                    final authState = context.read<AuthCubit>().state;
-                    if (authState is Authenticated) {
-                      AppHaptics.mediumImpact();
-                      context.read<TvShowWatchlistCubit>().stopWatchingShow(
-                        uid: authState.user.uid,
-                        showId: showId,
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    foregroundColor: AppColors.textOnPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'STOP WATCHING',
-                    style: AppTextStyles.smBold.copyWith(
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ),
-              ),
-              AppSpacing.gapH12,
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(sheetContext),
-                  child: Text(
-                    'Cancel',
-                    style: AppTextStyles.md.copyWith(
-                      color: context.textSecondary,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    final confirmed = await AppConfirmSheet.show(
+      context,
+      icon: Icons.stop_circle_outlined,
+      title: 'Stop Watching?',
+      message:
+          '"$showName" will be removed from your Shows tab. Your episode progress is saved.',
+      confirmLabel: 'Stop Watching',
     );
+    if (!confirmed || !mounted) return;
+
+    final authState = context.read<AuthCubit>().state;
+    if (authState is Authenticated) {
+      unawaited(AppHaptics.mediumImpact());
+      unawaited(
+        context.read<TvShowWatchlistCubit>().stopWatchingShow(
+          uid: authState.user.uid,
+          showId: showId,
+        ),
+      );
+    }
   }
 
   Widget _buildPillBadge(BuildContext context, String label, bool isYellow) {

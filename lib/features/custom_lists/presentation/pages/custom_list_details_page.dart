@@ -8,7 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
-import '../../../../core/widgets/app_confirm_dialog.dart';
+import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -69,82 +69,54 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
 
   void _showSortSheet(BuildContext context) {
     AppHaptics.lightImpact();
-    final isLight = context.isLight;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor:
-          isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top drag handle
-                Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: isLight ? AppColors.borderLight : AppColors.borderDark,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Sort items by',
-                      style: AppTextStyles.lg.copyWith(
-                        color: context.textPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _buildSortTile(ctx, 'Date Added (Newest)', CustomListSortOption.dateAddedDesc),
-                _buildSortTile(ctx, 'Date Added (Oldest)', CustomListSortOption.dateAddedAsc),
-                _buildSortTile(ctx, 'Title (A-Z)', CustomListSortOption.titleAsc),
-                _buildSortTile(ctx, 'Rating (Highest)', CustomListSortOption.ratingDesc),
-              ],
-            ),
-          ),
-        );
-      },
+    AppActionSheet.show(
+      context,
+      title: 'Sort items by',
+      actions: [
+        _buildSortAction(
+          'Date Added (Newest)',
+          'Recently added first',
+          Icons.schedule_rounded,
+          CustomListSortOption.dateAddedDesc,
+        ),
+        _buildSortAction(
+          'Date Added (Oldest)',
+          'Earliest added first',
+          Icons.history_rounded,
+          CustomListSortOption.dateAddedAsc,
+        ),
+        _buildSortAction(
+          'Title (A-Z)',
+          'Alphabetical order',
+          Icons.sort_by_alpha_rounded,
+          CustomListSortOption.titleAsc,
+        ),
+        _buildSortAction(
+          'Rating (Highest)',
+          'Top rated first',
+          Icons.star_rounded,
+          CustomListSortOption.ratingDesc,
+        ),
+      ],
     );
   }
 
-  Widget _buildSortTile(BuildContext context, String title, CustomListSortOption option) {
+  AppActionSheetAction _buildSortAction(
+    String label,
+    String subtitle,
+    IconData icon,
+    CustomListSortOption option,
+  ) {
     final isSelected = _sortOption == option;
-    return ListTile(
-      dense: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      title: Text(
-        title,
-        style: (isSelected ? AppTextStyles.smBold : AppTextStyles.smMedium)
-            .copyWith(
-              color: isSelected ? context.primary : context.textPrimary,
-            ),
-      ),
+    return AppActionSheetAction(
+      label: label,
+      subtitle: subtitle,
+      icon: icon,
       trailing: isSelected
-          ? Icon(Icons.check_rounded, color: context.primary, size: 20)
-          : null,
+          ? Icon(Icons.check_circle_rounded, color: context.primary, size: 22)
+          : const SizedBox.shrink(),
       onTap: () {
         AppHaptics.lightImpact();
-        Navigator.pop(context);
         setState(() => _sortOption = option);
       },
     );
@@ -211,9 +183,10 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
   Future<void> _confirmDeleteList(CustomListModel list, String uid) async {
     unawaited(AppHaptics.heavyImpact());
     final cubit = context.read<CustomListsCubit>();
-    final deleted = await AppConfirmDialog.show(
+    final deleted = await AppConfirmSheet.show(
       context,
-      title: 'Delete List',
+      icon: Icons.delete_outline_rounded,
+      title: 'Delete List?',
       message:
           'Are you sure you want to delete "${list.name}"? This action cannot be undone.',
       onConfirm: () async {
@@ -323,8 +296,6 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
 
         final currentList = list;
         final items = _sortItems(currentList.items);
-        final movieCount = items.where((i) => i.isMovie).length;
-        final showCount = items.where((i) => i.isTvShow).length;
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -373,41 +344,23 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
           ),
           body: CustomScrollView(
             slivers: [
-              // Header description & stats
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.xs,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (currentList.description.isNotEmpty) ...[
-                        Text(
-                          currentList.description,
-                          style: AppTextStyles.sm.copyWith(
-                            color: context.textSecondary,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                      ],
-                      Text(
-                        '${items.length} ${items.length == 1 ? 'title' : 'titles'}${movieCount > 0 && showCount > 0 ? ' • $movieCount movies, $showCount shows' : ''}',
-                        style: AppTextStyles.xsMedium.copyWith(
-                          color: context.textTertiary,
-                        ),
+              // Header description
+              if (currentList.description.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
+                    ),
+                    child: Text(
+                      currentList.description,
+                      style: AppTextStyles.sm.copyWith(
+                        color: context.textSecondary,
+                        height: 1.4,
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Divider(
-                        color: isLight ? AppColors.borderLight : AppColors.borderDark,
-                        height: 1,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
 
               // Empty or Grid
               if (items.isEmpty)

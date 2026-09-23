@@ -14,6 +14,7 @@ import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../cubit/person_details_cubit.dart';
 import '../cubit/person_details_state.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 /// A bottom sheet that displays actor/crew profile information, biography,
 /// and their complete filmography (movies & TV shows) with direct navigation.
@@ -78,8 +79,8 @@ class _PersonDetailsBottomSheetState extends State<PersonDetailsBottomSheet> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            color: AppBottomSheet.backgroundColor(context),
+            borderRadius: AppBottomSheet.borderRadius,
             border: Border.all(
               color: isLight ? AppColors.borderLight : AppColors.borderDark,
               width: 1,
@@ -95,19 +96,12 @@ class _PersonDetailsBottomSheetState extends State<PersonDetailsBottomSheet> {
           child: Column(
             children: [
               // Top drag handle
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(
-                    top: AppSpacing.sm,
-                    bottom: AppSpacing.xs,
-                  ),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.textTertiary.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+              const Padding(
+                padding: EdgeInsets.only(
+                  top: AppSpacing.sm,
+                  bottom: AppSpacing.xs,
                 ),
+                child: AppSheetHandle(),
               ),
 
               // Main body driven by Cubit state

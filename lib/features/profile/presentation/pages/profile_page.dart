@@ -39,6 +39,8 @@ import '../cubit/profile_heatmap_state.dart';
 import 'notifications_page.dart';
 import 'settings_page.dart';
 import '../../../../core/services/widget_service.dart';
+import '../../../../core/widgets/app_action_sheet.dart';
+import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/rolling_digit_text.dart';
 
 class HorizontalItem {
@@ -305,159 +307,45 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   void _showSettingsMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).brightness == Brightness.light
-          ? AppColors.lightSurfaceElevated
-          : AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      ),
-      builder: (menuContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text('Settings'),
-                onTap: () {
-                  Navigator.pop(menuContext);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsPage(),
-                    ),
-                  );
-                },
-              ),
-              Divider(color: Theme.of(context).dividerColor),
-              ListTile(
-                leading: const Icon(Icons.logout, color: AppColors.error),
-                title: Text(
-                  'Sign Out',
-                  style: AppTextStyles.sm.copyWith(color: AppColors.error),
-                ),
-                onTap: () {
-                  Navigator.pop(menuContext);
-                  _showSignOutSheet(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
+    AppHaptics.lightImpact();
+    AppActionSheet.show(
+      context,
+      actions: [
+        AppActionSheetAction(
+          label: 'Settings',
+          subtitle: 'Preferences, appearance and account',
+          icon: Icons.settings_rounded,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
+            );
+          },
+        ),
+        AppActionSheetAction(
+          label: 'Sign out',
+          subtitle: 'Sign out of your Popverse account',
+          icon: Icons.logout_rounded,
+          isDestructive: true,
+          onTap: () => _showSignOutSheet(context),
+        ),
+      ],
     );
   }
 
   void _showSignOutSheet(BuildContext context) {
     AppHaptics.mediumImpact();
-    final isLight = context.isLight;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor:
-          isLight ? AppColors.lightSurface : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.logout_rounded,
-                    color: AppColors.error,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Sign Out?',
-                  style: AppTextStyles.lg.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isLight
-                        ? AppColors.lightTextPrimary
-                        : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Are you sure you want to sign out from your Popverse account?',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.sm.copyWith(
-                    color: isLight
-                        ? AppColors.lightTextSecondary
-                        : AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                          side: BorderSide(
-                            color: isLight
-                                ? AppColors.borderLight
-                                : AppColors.borderDark,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () => Navigator.pop(sheetContext),
-                        child: Text(
-                          'Cancel',
-                          style: AppTextStyles.smBold.copyWith(
-                            color: isLight
-                                ? AppColors.lightTextPrimary
-                                : AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(sheetContext);
-                          context.read<AuthCubit>().signOut();
-                        },
-                        child: Text(
-                          'Sign Out',
-                          style: AppTextStyles.smBold.copyWith(
-                            color: AppColors.textOnPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    AppConfirmSheet.show(
+      context,
+      icon: Icons.logout_rounded,
+      title: 'Sign Out?',
+      message: 'Are you sure you want to sign out from your Popverse account?',
+      confirmLabel: 'Sign Out',
+    ).then((confirmed) {
+      if (confirmed && context.mounted) {
+        context.read<AuthCubit>().signOut();
+      }
+    });
   }
 
   @override
@@ -2656,12 +2544,12 @@ class _ProfilePageState extends State<ProfilePage>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: AppColors.textOnPrimary,
+                      minimumSize: const Size(0, 48),
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.xl,
-                        vertical: 14,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 0,
                     ),

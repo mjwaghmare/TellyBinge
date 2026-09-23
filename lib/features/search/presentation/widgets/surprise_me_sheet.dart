@@ -11,6 +11,7 @@ import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
@@ -19,6 +20,7 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class SurpriseMeSheet extends StatefulWidget {
   const SurpriseMeSheet({super.key});
@@ -361,171 +363,42 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
   }
 
   void _showLanguageBottomSheet() {
-    String currentLanguage = _language ?? 'all';
-    showModalBottomSheet(
-      context: context,
-      backgroundColor:
-          Theme.of(context).bottomSheetTheme.backgroundColor ??
-          (Theme.of(context).brightness == Brightness.light
-              ? AppColors.lightSurfaceElevated
-              : AppColors.surfaceElevated),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AppSpacing.gapH16,
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                    ),
-                    child: Text(
-                      'Language',
-                      style: AppTextStyles.mdBold.copyWith(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ),
-                  AppSpacing.gapH16,
-                  _buildLanguageTile('All', 'all', currentLanguage, (val) {
-                    setModalState(() => currentLanguage = val.toString());
-                  }),
-                  _buildLanguageTile('Hindi', 'hi', currentLanguage, (val) {
-                    setModalState(() => currentLanguage = val.toString());
-                  }),
-                  _buildLanguageTile('Marathi', 'mr', currentLanguage, (val) {
-                    setModalState(() => currentLanguage = val.toString());
-                  }),
-                  AppSpacing.gapH16,
-                  Divider(color: Theme.of(context).dividerColor, height: 1),
-                  Padding(
-                    padding: AppSpacing.allSM,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _applyLanguage('all');
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: context.adaptiveColor(
-                                  light: AppColors.borderLight,
-                                  dark: AppColors.borderDark,
-                                ),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppSpacing.xl,
-                                ),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.sm,
-                              ),
-                            ),
-                            child: Text(
-                              'CANCEL',
-                              style: AppTextStyles.smBold.copyWith(
-                                color: context.adaptiveColor(
-                                  light: AppColors.lightTextPrimary,
-                                  dark: AppColors.textPrimary,
-                                ),
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                          ),
-                        ),
-                        AppSpacing.gapW12,
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _applyLanguage(currentLanguage);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppSpacing.xl,
-                                ),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.sm,
-                              ),
-                            ),
-                            child: Text(
-                              'APPLY',
-                              style: AppTextStyles.smBold.copyWith(
-                                color: AppColors.textOnPrimary,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+    AppHaptics.lightImpact();
+    final currentLanguage = _language ?? 'all';
+
+    AppActionSheetAction buildOption(
+      String label,
+      String subtitle,
+      String value,
+    ) {
+      final isSelected = value == currentLanguage;
+      return AppActionSheetAction(
+        label: label,
+        subtitle: subtitle,
+        icon: Icons.translate_rounded,
+        trailing: isSelected
+            ? Icon(Icons.check_circle_rounded, color: context.primary, size: 22)
+            : const SizedBox.shrink(),
+        onTap: () {
+          if (isSelected) return;
+          AppHaptics.lightImpact();
+          _applyLanguage(value);
+        },
+      );
+    }
+
+    AppActionSheet.show(
+      context,
+      title: 'Language',
+      subtitle: 'Surprise picks in this language',
+      actions: [
+        buildOption('All', 'Every available language', 'all'),
+        buildOption('Hindi', 'हिन्दी', 'hi'),
+        buildOption('Marathi', 'मराठी', 'mr'),
+      ],
     );
   }
 
-  Widget _buildLanguageTile(
-    String title,
-    String value,
-    String groupValue,
-    ValueChanged<String?> onChanged,
-  ) {
-    final isSelected = value == groupValue;
-    return ListTile(
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: 0,
-      ),
-      title: Text(
-        title,
-        style: AppTextStyles.sm.copyWith(
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-        ),
-      ),
-      trailing: isSelected
-          ? Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary,
-              ),
-              padding: AppSpacing.allXXS,
-              child: const Icon(Icons.check, size: 16, color: AppColors.textOnPrimary),
-            )
-          : Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: context.adaptiveColor(
-                    light: AppColors.lightTextTertiary,
-                    dark: AppColors.textTertiary,
-                  ),
-                  width: 1.5,
-                ),
-              ),
-            ),
-      onTap: () => onChanged(value),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -537,14 +410,18 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
             light: AppColors.lightSurface,
             dark: AppColors.surface,
           ),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: AppBottomSheet.borderRadius,
         ),
         child: Column(
           children: [
+            const Padding(
+              padding: EdgeInsets.only(top: AppSpacing.sm),
+              child: AppSheetHandle(),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
-                AppSpacing.md,
+                AppSpacing.xs,
                 AppSpacing.xs,
                 AppSpacing.xs,
               ),

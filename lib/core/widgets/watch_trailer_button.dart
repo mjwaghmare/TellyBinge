@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
+import 'app_bottom_sheet.dart';
 import 'app_snackbar.dart';
 
 class WatchTrailerButton extends StatelessWidget {
@@ -417,9 +418,7 @@ class _TrailerBottomSheetState extends State<_TrailerBottomSheet> {
               return Container(
                 decoration: const BoxDecoration(
                   color: Colors.black,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(16.0),
-                  ),
+                  borderRadius: AppBottomSheet.borderRadius,
                 ),
                 child: SingleChildScrollView(
                   controller: scrollController,

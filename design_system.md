@@ -125,15 +125,35 @@ tokens in [`lib/core/theme/app_spacing.dart`](lib/core/theme/app_spacing.dart).
 
 ### Buttons & Interactive Targets
 - **Elevated Button**: Primary brand action button with `AppColors.primary`
-  background, `AppColors.textOnPrimary` text, bold 16pt font, 14pt vertical
-  padding, 8pt border radius.
-- **Destructive Button**: `AppColors.error` background with white text.
+  background, `AppColors.textOnPrimary` text, `smBold` label, **48pt minimum
+  height** (`minimumSize: Size.fromHeight(48)`), **12pt border radius**,
+  `elevation: 0`.
+- **Secondary Button** (Cancel next to a primary action): `OutlinedButton` with
+  a `lightBackground` / `surface` fill and a `borderLight` / `borderDark`
+  outline, same height and radius as the primary button.
+- **Destructive Button**: `AppColors.error` background with `textOnPrimary` text.
 - **Touch Target Minimum**: Every interactive element (icon buttons, text buttons, cards) must maintain a minimum **48x48dp** touch target.
 
 ### Bottom Sheets & Modals
-- **Shape**: `RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16)))`
-  or `20.0pt`.
-- **Background**: `AppColors.surfaceDarkAlt` in dark mode, modal background from theme.
+- **Chrome**: 20pt top corners, `surfaceElevated` / `lightSurfaceElevated`
+  background and a 36×4 drag handle. Use `AppBottomSheet.show()`, or
+  `AppBottomSheet.shape` / `backgroundColor()` / `AppSheetHandle` for sheets
+  that paint their own container ([`app_bottom_sheet.dart`](lib/core/widgets/app_bottom_sheet.dart)).
+- **Option menus & single-choice pickers**: `AppActionSheet` — icon tile, label,
+  optional subtitle; pass a check icon as `trailing` for the selected option and
+  `SizedBox.shrink()` for the rest. Apply the choice on tap (no Apply/Cancel).
+- **Confirmations**: `AppConfirmSheet` — icon, title, message, Cancel + Confirm.
+  Destructive actions are red; neutral questions pass `isDestructive: false`.
+  Don't use `AlertDialog` or `PopupMenuButton` for these.
+- **Centred sheets** (confirmations, sign-in prompt, info sheets): 20pt side
+  padding, `AppSheetIcon` (56px circle, violet or red tint), `lg` bold title,
+  `sm` secondary message, then 48pt buttons. Spacing: handle → 24 → icon →
+  16 → title → 8 → message → 24 → buttons.
+- **Inputs inside a sheet**: fill with `lightBackground` / `surface` so they
+  stand out from the sheet background.
+- **Exceptions**: full-screen browsing sheets (Surprise Me) keep a Level 1
+  background so their grey poster placeholders stay visible; the trailer player
+  stays black; sheets with a full-bleed header image skip the drag handle.
 
 ---
 

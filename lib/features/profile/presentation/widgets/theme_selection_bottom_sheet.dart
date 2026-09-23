@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/cubit/theme_cubit.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 /// Modal bottom sheet for selecting the application theme (System, Light, Dark).
 /// Features realistic interactive smartphone mockups showcasing Popverse's
@@ -18,9 +19,7 @@ class ThemeSelectionBottomSheet extends StatelessWidget {
 
     return showModalBottomSheet<void>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
-      ),
+      shape: AppBottomSheet.shape,
       isScrollControlled: true,
       builder: (_) => BlocProvider.value(
         value: context.read<ThemeCubit>(),
@@ -45,8 +44,10 @@ class ThemeSelectionBottomSheet extends StatelessWidget {
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceElevated : AppColors.lightSurface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
+            color: isDark
+                ? AppColors.surfaceElevated
+                : AppColors.lightSurfaceElevated,
+            borderRadius: AppBottomSheet.borderRadius,
           ),
           child: SafeArea(
             child: SingleChildScrollView(

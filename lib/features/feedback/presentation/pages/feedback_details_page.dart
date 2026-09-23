@@ -8,7 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_confirm_dialog.dart';
+import '../../../../core/widgets/app_action_sheet.dart';
+import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
@@ -307,7 +308,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
         context: context,
         isScrollControlled: true,
         backgroundColor: isLight
-            ? AppColors.lightSurface
+            ? AppColors.lightSurfaceElevated
             : AppColors.surfaceElevated,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
@@ -364,7 +365,7 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
                   Container(
                     decoration: BoxDecoration(
                       color: isLight
-                          ? AppColors.lightSurfaceElevated
+                          ? AppColors.lightBackground
                           : AppColors.surface,
                       borderRadius: BorderRadius.circular(12.0),
                       border: Border.all(
@@ -493,9 +494,10 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     final commentId = comment['id']?.toString() ?? '';
-    final confirmed = await AppConfirmDialog.show(
+    final confirmed = await AppConfirmSheet.show(
       context,
-      title: 'Delete Comment',
+      icon: Icons.delete_outline_rounded,
+      title: 'Delete Comment?',
       message: 'Are you sure you want to delete this comment?',
     );
 
@@ -565,10 +567,35 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
     return 'Just now';
   }
 
-  Future<void> _showDeleteConfirmationDialog() async {
-    final deleted = await AppConfirmDialog.show(
+  void _showFeedbackOptions({required bool isAdmin}) {
+    unawaited(AppHaptics.lightImpact());
+    AppActionSheet.show(
       context,
-      title: 'Delete Feedback',
+      title: 'Feedback Actions',
+      actions: [
+        if (isAdmin)
+          AppActionSheetAction(
+            label: 'Change status',
+            subtitle: 'Current: ${_item.status.label}',
+            icon: Icons.published_with_changes_rounded,
+            onTap: _showChangeStatusBottomSheet,
+          ),
+        AppActionSheetAction(
+          label: 'Delete feedback',
+          subtitle: 'Permanently remove this feedback',
+          icon: Icons.delete_outline_rounded,
+          isDestructive: true,
+          onTap: _showDeleteConfirmationDialog,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showDeleteConfirmationDialog() async {
+    final deleted = await AppConfirmSheet.show(
+      context,
+      icon: Icons.delete_forever_rounded,
+      title: 'Delete Feedback?',
       message:
           'Are you sure you want to delete this feedback? All media and comments will also be permanently removed.',
       onConfirm: () async {
@@ -637,178 +664,32 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
 
   Future<void> _showChangeStatusBottomSheet() async {
     final isLight = context.isLight;
-    final statuses = FeedbackStatus.genericStatuses;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor:
-          isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.0)),
-      ),
-      builder: (sheetCtx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isLight
-                          ? AppColors.borderLight
-                          : AppColors.borderDark,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-
-                // Header title
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: const Icon(
-                        Icons.published_with_changes_rounded,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12.0),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Change Feedback Status',
-                            style: AppTextStyles.mdBold.copyWith(
-                              color: isLight
-                                  ? AppColors.lightTextPrimary
-                                  : AppColors.textPrimary,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 2.0),
-                          Text(
-                            'Current: ${_item.status.label}',
-                            style: AppTextStyles.xs.copyWith(
-                              color: isLight
-                                  ? AppColors.lightTextSecondary
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                Divider(
-                  color: isLight
-                      ? AppColors.borderLight
-                      : AppColors.borderDark,
-                  height: 1,
-                ),
-                const SizedBox(height: 8.0),
-
-                // Status Options List
-                ...statuses.map((status) {
-                  final isCurrent = _item.status == status;
-                  return InkWell(
-                    onTap: _isStatusPending
-                        ? null
-                        : () async {
-                            Navigator.pop(sheetCtx);
-                            if (isCurrent) return;
-                            unawaited(AppHaptics.mediumImpact());
-                            await _updateStatus(status);
-                          },
-                    borderRadius: BorderRadius.circular(14.0),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4.0),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12.0,
-                        vertical: 10.0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isCurrent
-                            ? (isLight
-                                ? AppColors.lightSurfaceElevated
-                                : AppColors.surfaceLight)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(14.0),
-                        border: isCurrent
-                            ? Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.4),
-                                width: 1.5,
-                              )
-                            : null,
-                      ),
-                      child: Row(
-                        children: [
-                          FeedbackPill.status(
-                            status: status,
-                            isLight: isLight,
-                          ),
-                          const SizedBox(width: 12.0),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  status.label,
-                                  style: AppTextStyles.smBold.copyWith(
-                                    color: isLight
-                                        ? AppColors.lightTextPrimary
-                                        : AppColors.textPrimary,
-                                    fontWeight: isCurrent
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2.0),
-                                Text(
-                                  status.description,
-                                  style: AppTextStyles.xs.copyWith(
-                                    color: isLight
-                                        ? AppColors.lightTextSecondary
-                                        : AppColors.textSecondary,
-                                    fontSize: 11.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (isCurrent)
-                            const Icon(
-                              Icons.check_circle_rounded,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-                const SizedBox(height: 8.0),
-              ],
-            ),
+    await AppActionSheet.show(
+      context,
+      title: 'Change status',
+      subtitle: 'Current: ${_item.status.label}',
+      actions: [
+        for (final status in FeedbackStatus.genericStatuses)
+          AppActionSheetAction(
+            label: status.label,
+            subtitle: status.description,
+            icon: status.icon,
+            iconColor: status.textColor(isLight),
+            iconBackgroundColor: status.backgroundColor(isLight),
+            trailing: _item.status == status
+                ? Icon(
+                    Icons.check_circle_rounded,
+                    color: context.primary,
+                    size: 22,
+                  )
+                : const SizedBox.shrink(),
+            onTap: () {
+              if (_isStatusPending || _item.status == status) return;
+              unawaited(AppHaptics.mediumImpact());
+              _updateStatus(status);
+            },
           ),
-        );
-      },
+      ],
     );
   }
 
@@ -848,76 +729,18 @@ class _FeedbackDetailsPageState extends State<FeedbackDetailsPage> {
           if (isOwner || isAdmin)
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
-              child: PopupMenuButton<String>(
-                enabled: !_isStatusPending,
+              child: IconButton(
+                tooltip: 'More options',
                 icon: Icon(
-                  Icons.more_vert_rounded,
+                  Icons.more_horiz,
                   color: isLight
                       ? AppColors.lightTextPrimary
                       : AppColors.textPrimary,
                   size: 22,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14.0),
-                ),
-                color:
-                    isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
-                elevation: 4,
-                onSelected: _isStatusPending
+                onPressed: _isStatusPending
                     ? null
-                    : (value) {
-                        if (value == 'status') {
-                          _showChangeStatusBottomSheet();
-                        } else if (value == 'delete') {
-                          _showDeleteConfirmationDialog();
-                        }
-                      },
-                itemBuilder: (ctx) => [
-                  if (isAdmin)
-                    PopupMenuItem<String>(
-                      value: 'status',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.published_with_changes_rounded,
-                            size: 20,
-                            color: isLight
-                                ? AppColors.lightTextPrimary
-                                : AppColors.textPrimary,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Change Status',
-                            style: AppTextStyles.smBold.copyWith(
-                              color: isLight
-                                  ? AppColors.lightTextPrimary
-                                  : AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (isOwner || isAdmin)
-                    PopupMenuItem<String>(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.delete_outline_rounded,
-                            size: 20,
-                            color: AppColors.error,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Delete Feedback',
-                            style: AppTextStyles.smBold.copyWith(
-                              color: AppColors.error,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+                    : () => _showFeedbackOptions(isAdmin: isAdmin),
               ),
             ),
         ],
