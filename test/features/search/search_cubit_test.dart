@@ -51,6 +51,16 @@ void main() {
     expect(cubit.state, isA<SearchInitial>());
   });
 
+  test('close drops a search that is still in flight without emitting after disposal', () async {
+    final slow = Completer<List<dynamic>>();
+    client.respond = (call) => slow.future;
+
+    final search = cubit.executeSearch('dark');
+    await cubit.close();
+    slow.complete(titles(1, 20));
+    await expectLater(search, completes);
+  });
+
   group('with a language filter', () {
     setUp(() => cubit.setLanguage('hi'));
 

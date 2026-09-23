@@ -159,6 +159,7 @@ class SearchCubit extends Cubit<SearchState> {
   @override
   Future<void> close() {
     _debounceTimer?.cancel();
+    _currentSearchRequestId++;
     return super.close();
   }
 }
