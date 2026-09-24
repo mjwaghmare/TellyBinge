@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/cupertino.dart';
+import '../widgets/profile_quick_actions_sheet.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -1754,86 +1754,38 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildGridItem(HorizontalItem item) {
-    return CupertinoContextMenu(
-      actions: <Widget>[
-        CupertinoContextMenuAction(
-          onPressed: () {
-            AppHaptics.mediumImpact();
-            Navigator.pop(context);
-            final authState = context.read<AuthCubit>().state;
-            final uid = authState is Authenticated ? authState.user.uid : null;
-            if (uid != null) {
-              if (item.isMovie) {
-                context.read<MovieWatchlistCubit>().toggleFavorite(
-                  uid: uid,
-                  movieId: item.movieId,
-                  isFavorite: !item.isFavorite,
-                );
-              } else {
-                context.read<TvShowWatchlistCubit>().toggleFavorite(
-                  uid: uid,
-                  showId: item.movieId,
-                  isFavorite: !item.isFavorite,
-                );
-              }
-            }
-          },
-          child: Text(
-            item.isFavorite ? 'Remove from Favorites' : 'Mark as Favorite',
-          ),
-        ),
-        CupertinoContextMenuAction(
-          isDestructiveAction: true,
-          onPressed: () {
-            AppHaptics.mediumImpact();
-            Navigator.pop(context);
-            final authState = context.read<AuthCubit>().state;
-            final uid = authState is Authenticated ? authState.user.uid : null;
-            if (uid != null) {
-              if (item.isMovie) {
-                context.read<MovieWatchlistCubit>().removeMovie(
-                  uid: uid,
-                  movieId: item.movieId,
-                );
-              } else {
-                context.read<TvShowWatchlistCubit>().removeShow(
-                  uid: uid,
-                  showId: item.movieId,
-                );
-              }
-            }
-          },
-          child: const Text('Remove'),
-        ),
-      ],
-      child: GestureDetector(
-        onTap: () {
-          if (item.movieId <= 0) return;
-          if (item.isMovie) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MovieDetailsPage(movieId: item.movieId),
-              ),
-            );
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => BlocProvider<ShowDetailsCubit>(
-                  create: (context) =>
-                      ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-                  child: ShowDetailsPage(
-                    mediaId: item.movieId,
-                    mediaType: 'tv',
-                    title: item.title,
-                  ),
+    return GestureDetector(
+      onTap: () {
+        if (item.movieId <= 0) return;
+        if (item.isMovie) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MovieDetailsPage(movieId: item.movieId),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BlocProvider<ShowDetailsCubit>(
+                create: (context) =>
+                    ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+                child: ShowDetailsPage(
+                  mediaId: item.movieId,
+                  mediaType: 'tv',
+                  title: item.title,
                 ),
               ),
-            );
-          }
-        },
-        child: SizedBox(
+            ),
+          );
+        }
+      },
+      onLongPress: () => showProfileQuickActions(
+        context,
+        item: item,
+      ),
+      child: SizedBox(
           width: 150,
           height: 225,
           child: Stack(
@@ -1955,8 +1907,7 @@ class _ProfilePageState extends State<ProfilePage>
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   String _getImageUrl(String? path, {String size = 'w342'}) {

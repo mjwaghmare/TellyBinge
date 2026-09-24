@@ -42,7 +42,10 @@ class ExploreBackdropCard extends StatelessWidget {
     if (dateStr == null || dateStr.length < 10) return null;
     try {
       final dt = DateTime.parse(dateStr);
-      final month = _months[dt.month - 1];
+      final currentYear = DateTime.now().year;
+      final month = dt.year != currentYear
+          ? '${_months[dt.month - 1]} \'${dt.year.toString().substring(2)}'
+          : _months[dt.month - 1];
       final day = dt.day.toString();
       return (month, day);
     } catch (_) {

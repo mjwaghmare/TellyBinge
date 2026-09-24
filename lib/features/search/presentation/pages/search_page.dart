@@ -638,6 +638,17 @@ class _SearchPageState extends State<SearchPage>
       ];
 
       if (section == ExploreSection.comingSoon) {
+        // Exclude titles whose release date is in the past (e.g. from cache or API anomalies)
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        items.removeWhere((item) {
+          final dateStr =
+              (item['release_date'] ?? item['first_air_date'] as String?);
+          if (dateStr == null || dateStr.isEmpty) return false;
+          final dt = DateTime.tryParse(dateStr);
+          return dt != null && dt.isBefore(today);
+        });
+
         // Chronological upcoming release order (releasing soonest first)
         items.sort((a, b) {
           final aDate =

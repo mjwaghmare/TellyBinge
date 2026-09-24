@@ -54,10 +54,10 @@ void main() {
         (await fetch(movie, ExploreSection.newlyAdded)).method,
         'nowPlayingMovie',
       );
-      expect(
-        (await fetch(movie, ExploreSection.comingSoon)).method,
-        'upcomingMovie',
-      );
+      final movieUpcoming = await fetch(movie, ExploreSection.comingSoon);
+      expect(movieUpcoming.method, 'discoverMovie');
+      expect(movieUpcoming.releaseDateGte, isNotNull);
+      expect(movieUpcoming.minVoteCount, 0);
       final tvUpcoming = await fetch(tv, ExploreSection.comingSoon);
       expect(tvUpcoming.method, 'discoverTv');
       expect(tvUpcoming.firstAirDateGte, isNotNull);

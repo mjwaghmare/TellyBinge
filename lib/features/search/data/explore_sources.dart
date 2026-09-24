@@ -175,13 +175,6 @@ Future<List<dynamic>> fetchExploreSectionPage(
           throwOnError: true,
         );
       }
-      if (language == null) {
-        return client.getUpcomingMovies(
-          page: page,
-          forceRefresh: forceRefresh,
-          throwOnError: true,
-        );
-      }
       return client.discoverMoviesWithFilters(
         page: page,
         sortBy: 'popularity.desc',
@@ -191,7 +184,7 @@ Future<List<dynamic>> fetchExploreSectionPage(
         forceRefresh: forceRefresh,
         throwOnError: true,
       );
-  }
+    }
 }
 
 /// Vote floor for the rating-sorted For You fallback. The client's default
