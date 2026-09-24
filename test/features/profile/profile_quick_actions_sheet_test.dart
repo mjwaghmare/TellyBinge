@@ -93,7 +93,7 @@ void main() {
         voteAverage: 8.5,
         releaseDate: '2011-04-17',
         isMovie: false,
-        isWatched: false,
+        isWatched: true,
         isFavorite: false,
         watchedCount: 10,
         totalEpisodes: 73,

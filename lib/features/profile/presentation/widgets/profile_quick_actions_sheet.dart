@@ -138,8 +138,8 @@ Future<void> showProfileQuickActions(
     // TV Show
     final tvCubit = safeRead<TvShowWatchlistCubit>();
     final isFavorite = item.isFavorite;
-    final isAllWatched = item.isWatched ||
-        (item.totalEpisodes > 0 && item.watchedCount >= item.totalEpisodes);
+    final isAllWatched =
+        item.totalEpisodes > 0 && item.watchedCount >= item.totalEpisodes;
 
     // 1. Watched Action
     if (!isAllWatched) {
@@ -165,8 +165,9 @@ Future<void> showProfileQuickActions(
             if (confirmed != true || !context.mounted) return;
 
             await AppHaptics.mediumImpact();
+            bool success = false;
             final tmdb = safeRead<TmdbClient>();
-            if (tmdb != null) {
+            if (tmdb != null && tvCubit != null) {
               try {
                 final details = await tmdb.getTvShowDetails(id);
                 final seasons = details['seasons'] as List<dynamic>? ?? [];
@@ -180,18 +181,25 @@ Future<void> showProfileQuickActions(
                   }
                 }
                 if (episodeKeys.isNotEmpty) {
-                  await tvCubit?.markMultipleEpisodesWatched(
+                  await tvCubit.markMultipleEpisodesWatched(
                     uid: uid,
                     showId: id,
                     episodeKeys: episodeKeys,
                   );
+                  success = true;
                 }
               } catch (_) {}
             }
-            if (context.mounted) {
+            if (!context.mounted) return;
+            if (success) {
               AppSnackbar.showSuccess(
                 context,
                 'Marked all episodes of "$title" as watched',
+              );
+            } else {
+              AppSnackbar.showError(
+                context,
+                'Failed to mark episodes as watched',
               );
             }
           },

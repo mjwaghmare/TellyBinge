@@ -1781,10 +1781,13 @@ class _ProfilePageState extends State<ProfilePage>
           );
         }
       },
-      onLongPress: () => showProfileQuickActions(
-        context,
-        item: item,
-      ),
+      onLongPress: () {
+        if (item.movieId <= 0) return;
+        showProfileQuickActions(
+          context,
+          item: item,
+        );
+      },
       child: SizedBox(
           width: 150,
           height: 225,

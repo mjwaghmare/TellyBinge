@@ -15,6 +15,9 @@ import '../cubit/search_state.dart';
 import '../widgets/explore_poster_grid.dart';
 import '../widgets/explore_section_row.dart';
 import '../widgets/watchlisted_ids_builder.dart';
+import '../../data/explore_genres.dart';
+import '../widgets/explore_genre_grid.dart';
+import '../widgets/explore_genre_pills_row.dart';
 import 'explore_see_all_page.dart';
 
 class _LanguageOption {
@@ -79,6 +82,25 @@ class _SearchPageState extends State<SearchPage>
     for (final l in _languages) l.code: l.label,
   };
 
+  GenreOption _selectedShowsGenre = kExploreGenres.first;
+  GenreOption _selectedMoviesGenre = kExploreGenres.first;
+
+  GenreOption _selectedGenreFor(bool isTv) =>
+      isTv ? _selectedShowsGenre : _selectedMoviesGenre;
+
+  void _setSelectedGenreFor(bool isTv, GenreOption genre) {
+    setState(() {
+      final current = _selectedGenreFor(isTv);
+      final newGenre =
+          (current == genre && !genre.isAll) ? kExploreGenres.first : genre;
+      if (isTv) {
+        _selectedShowsGenre = newGenre;
+      } else {
+        _selectedMoviesGenre = newGenre;
+      }
+    });
+  }
+
   static ExploreMediaType _typeOf(bool isTv) =>
       isTv ? ExploreMediaType.tv : ExploreMediaType.movie;
 
@@ -100,7 +122,7 @@ class _SearchPageState extends State<SearchPage>
     }
   }
 
-  /// Leaving the Explore tab resets search and the language filter.
+  /// Leaving the Explore tab resets search, genres, and the language filter.
   void _resetAllFiltersAndSearch() {
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -111,6 +133,18 @@ class _SearchPageState extends State<SearchPage>
       _moviesSearchScrollController,
     ]) {
       if (controller.hasClients) controller.jumpTo(0);
+    }
+
+    if (!_selectedShowsGenre.isAll || !_selectedMoviesGenre.isAll) {
+      if (mounted) {
+        setState(() {
+          _selectedShowsGenre = kExploreGenres.first;
+          _selectedMoviesGenre = kExploreGenres.first;
+        });
+      } else {
+        _selectedShowsGenre = kExploreGenres.first;
+        _selectedMoviesGenre = kExploreGenres.first;
+      }
     }
 
     final feedCubit = context.read<ExploreFeedCubit>();
@@ -247,26 +281,70 @@ class _SearchPageState extends State<SearchPage>
   }
 
   Widget _buildTab({required bool isTv}) {
+    final selectedGenre = _selectedGenreFor(isTv);
+
     return Column(
       children: [
         _buildSearchBar(_searchControllerFor(isTv), isTv: isTv),
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _searchControllerFor(isTv),
+          builder: (context, value, child) {
+            final isSearching =
+                value.text.trim().length >= SearchCubit.minQueryLength;
+            if (isSearching) return const SizedBox.shrink();
+            return ExploreGenrePillsRow(
+              genres: kExploreGenres,
+              selectedGenre: selectedGenre,
+              onGenreSelected: (genre) => _setSelectedGenreFor(isTv, genre),
+            );
+          },
+        ),
         Expanded(
-          child: RefreshIndicator.adaptive(
-            color: AppColors.primary,
-            backgroundColor: Theme.of(context).cardColor,
-            onRefresh: () async {
-              if (_isSearching(isTv)) {
-                await _searchCubitFor(isTv).executeSearch(_queryFor(isTv));
-              } else {
-                await context.read<ExploreFeedCubit>().refresh(_typeOf(isTv));
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _searchControllerFor(isTv),
+            builder: (context, value, child) {
+              final isSearching =
+                  value.text.trim().length >= SearchCubit.minQueryLength;
+              if (isSearching) {
+                return RefreshIndicator.adaptive(
+                  color: AppColors.primary,
+                  backgroundColor: Theme.of(context).cardColor,
+                  onRefresh: () async {
+                    await _searchCubitFor(isTv).executeSearch(_queryFor(isTv));
+                  },
+                  child: BlocBuilder<SearchCubit, SearchState>(
+                    bloc: _searchCubitFor(isTv),
+                    builder: (context, searchState) =>
+                        _buildSearchResults(searchState, isTv: isTv),
+                  ),
+                );
               }
+
+              if (selectedGenre.isAll) {
+                return RefreshIndicator.adaptive(
+                  color: AppColors.primary,
+                  backgroundColor: Theme.of(context).cardColor,
+                  onRefresh: () async {
+                    await context
+                        .read<ExploreFeedCubit>()
+                        .refresh(_typeOf(isTv));
+                  },
+                  child: _buildFeed(isTv: isTv),
+                );
+              }
+
+              return BlocSelector<ExploreFeedCubit, ExploreFeedState, String?>(
+                selector: (state) => state.feedFor(_typeOf(isTv)).language,
+                builder: (context, language) => ExploreGenreGrid(
+                  key: ValueKey(
+                    '${isTv}_${selectedGenre.label}_$language',
+                  ),
+                  type: _typeOf(isTv),
+                  genre: selectedGenre,
+                  language: language,
+                ),
+              );
             },
-            child: BlocBuilder<SearchCubit, SearchState>(
-              bloc: _searchCubitFor(isTv),
-              builder: (context, searchState) => _isSearching(isTv)
-                  ? _buildSearchResults(searchState, isTv: isTv)
-                  : _buildFeed(isTv: isTv),
-            ),
           ),
         ),
       ],
