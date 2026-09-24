@@ -597,23 +597,34 @@ class _SearchPageState extends State<SearchPage>
     }
 
     for (final section in const [
-      ExploreSection.forYou,
       ExploreSection.trending,
-      ExploreSection.newlyAdded,
       ExploreSection.comingSoon,
+      ExploreSection.newlyAdded,
+      ExploreSection.forYou,
     ]) {
       final row = feed.rowFor(section);
       anyLoading |= row.isLoading;
+      final isBackdropRow = section == ExploreSection.comingSoon;
+
       if (row.isLoading) {
         rows.add(
-          ExploreSectionRow(
-            key: ValueKey(section),
-            storageId: section.name,
-            title: section.title,
-            items: const [],
-            defaultType: defaultType,
-            isLoading: true,
-          ),
+          isBackdropRow
+              ? ExploreBackdropSectionRow(
+                  key: ValueKey(section),
+                  storageId: section.name,
+                  title: section.title,
+                  items: const [],
+                  defaultType: defaultType,
+                  isLoading: true,
+                )
+              : ExploreSectionRow(
+                  key: ValueKey(section),
+                  storageId: section.name,
+                  title: section.title,
+                  items: const [],
+                  defaultType: defaultType,
+                  isLoading: true,
+                ),
         );
         continue;
       }
@@ -633,15 +644,7 @@ class _SearchPageState extends State<SearchPage>
       }
       if (items.isEmpty) continue;
 
-      rows.add(
-        ExploreSectionRow(
-          key: ValueKey(section),
-          storageId: section.name,
-          title: section.title,
-          items: items,
-          isLoadingMore: row.isLoadingMore,
-          defaultType: defaultType,
-          onSeeAll: () => Navigator.push(
+      void onSeeAll() => Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ExploreSeeAllPage(
@@ -653,8 +656,28 @@ class _SearchPageState extends State<SearchPage>
                     : const {},
               ),
             ),
-          ),
-        ),
+          );
+
+      rows.add(
+        isBackdropRow
+            ? ExploreBackdropSectionRow(
+                key: ValueKey(section),
+                storageId: section.name,
+                title: section.title,
+                items: items,
+                isLoadingMore: row.isLoadingMore,
+                defaultType: defaultType,
+                onSeeAll: onSeeAll,
+              )
+            : ExploreSectionRow(
+                key: ValueKey(section),
+                storageId: section.name,
+                title: section.title,
+                items: items,
+                isLoadingMore: row.isLoadingMore,
+                defaultType: defaultType,
+                onSeeAll: onSeeAll,
+              ),
       );
     }
 

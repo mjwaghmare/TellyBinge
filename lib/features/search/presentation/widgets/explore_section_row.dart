@@ -5,11 +5,16 @@ import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import 'explore_backdrop_card.dart';
 import 'explore_poster_card.dart';
 
-/// Card geometry shared by every Explore row, matching the grid's 0.52 aspect.
+/// Card geometry shared by standard vertical Explore rows, matching the grid's 0.52 aspect.
 const double _cardWidth = 112;
 const double _rowHeight = _cardWidth / 0.52;
+
+/// Card geometry for 16:9 widescreen backdrop rows.
+const double _backdropCardWidth = 240.0;
+const double _backdropRowHeight = _backdropCardWidth / (16 / 9);
 
 /// Every row shows at most this many titles; See All appears when there are
 /// more behind them.
@@ -141,6 +146,90 @@ class ExploreSectionRow extends StatelessWidget {
                   key: ValueKey('${defaultType}_${item['id']}'),
                   width: _cardWidth,
                   child: ExplorePosterCard(
+                    item: item,
+                    defaultType: defaultType,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Horizontal 16:9 backdrop card row for cinematic sections like "Coming Soon".
+class ExploreBackdropSectionRow extends StatelessWidget {
+  const ExploreBackdropSectionRow({
+    super.key,
+    required this.title,
+    required this.items,
+    required this.defaultType,
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.onSeeAll,
+    this.storageId,
+  });
+
+  /// Keys the row's horizontal scroll offset. Without a distinct key every row
+  /// shares one PageStorage slot. Defaults to [title].
+  final String? storageId;
+
+  final String title;
+  final List<dynamic> items;
+  final String defaultType;
+  final bool isLoading;
+
+  /// Adds a spinner after the last card while the row tops itself up.
+  final bool isLoadingMore;
+  final VoidCallback? onSeeAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = isLoading
+        ? _skeletonItems(defaultType)
+        : items.take(exploreRowMaxItems).toList(growable: false);
+    final showSpinner =
+        isLoadingMore && !isLoading && items.length < exploreRowMaxItems;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ExploreSectionHeader(
+          title: title,
+          onSeeAll: !isLoading && items.length > exploreRowMaxItems
+              ? onSeeAll
+              : null,
+        ),
+        Skeletonizer(
+          enabled: isLoading,
+          child: SizedBox(
+            height: _backdropRowHeight,
+            child: ListView.separated(
+              key: PageStorageKey<String>(
+                'explore_row_backdrop_${defaultType}_${storageId ?? title}',
+              ),
+              scrollDirection: Axis.horizontal,
+              physics: isLoading
+                  ? const NeverScrollableScrollPhysics()
+                  : const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              itemCount: shown.length + (showSpinner ? 1 : 0),
+              separatorBuilder: (_, _) => AppSpacing.gapW12,
+              itemBuilder: (context, index) {
+                if (index == shown.length) {
+                  return const SizedBox(
+                    key: ValueKey('loading_more'),
+                    width: _backdropCardWidth / 4,
+                    child: Center(child: CircularProgressIndicator.adaptive()),
+                  );
+                }
+                final item = shown[index];
+                return SizedBox(
+                  key: ValueKey('${defaultType}_backdrop_${item['id']}'),
+                  width: _backdropCardWidth,
+                  child: ExploreBackdropCard(
                     item: item,
                     defaultType: defaultType,
                   ),

@@ -179,4 +179,53 @@ void main() {
       expect(listView.clipBehavior, Clip.none);
     });
   });
+
+  group('ExploreBackdropSectionRow', () {
+    testWidgets('shows at most five backdrop cards and offers See All', (
+      tester,
+    ) async {
+      var tapped = false;
+      await pump(
+        tester,
+        ExploreBackdropSectionRow(
+          title: 'Coming Soon',
+          items: titles(1, 10),
+          defaultType: 'movie',
+          onSeeAll: () => tapped = true,
+        ),
+      );
+      await tester.dragUntilVisible(
+        find.text('Title 5'),
+        find.byType(ListView),
+        const Offset(-200, 0),
+      );
+      expect(find.text('Title 6'), findsNothing);
+      expect(find.text('See All'), findsOneWidget);
+
+      await tester.tap(find.text('See All'));
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('renders release date badge with month and day', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        ExploreBackdropSectionRow(
+          title: 'Coming Soon',
+          items: [
+            {
+              'id': 101,
+              'title': 'Gladiator II',
+              'release_date': '2026-11-22',
+            },
+          ],
+          defaultType: 'movie',
+        ),
+      );
+      expect(find.text('Gladiator II'), findsOneWidget);
+      expect(find.text('NOV'), findsOneWidget);
+      expect(find.text('22'), findsOneWidget);
+    });
+  });
 }
