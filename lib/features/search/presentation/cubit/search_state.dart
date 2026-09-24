@@ -11,67 +11,6 @@ class SearchInitial extends SearchState {}
 
 class SearchLoading extends SearchState {}
 
-class SearchTrendingSuccess extends SearchState {
-  final List<dynamic> trendingTv;
-  final List<dynamic> trendingMovies;
-  final int tvPage;
-  final int moviesPage;
-  final bool tvHasReachedMax;
-  final bool moviesHasReachedMax;
-  final bool isLoadingMore;
-  final bool tvLoadMoreError;
-  final bool moviesLoadMoreError;
-
-  const SearchTrendingSuccess({
-    required this.trendingTv,
-    required this.trendingMovies,
-    this.tvPage = 1,
-    this.moviesPage = 1,
-    this.tvHasReachedMax = false,
-    this.moviesHasReachedMax = false,
-    this.isLoadingMore = false,
-    this.tvLoadMoreError = false,
-    this.moviesLoadMoreError = false,
-  });
-
-  SearchTrendingSuccess copyWith({
-    List<dynamic>? trendingTv,
-    List<dynamic>? trendingMovies,
-    int? tvPage,
-    int? moviesPage,
-    bool? tvHasReachedMax,
-    bool? moviesHasReachedMax,
-    bool? isLoadingMore,
-    bool? tvLoadMoreError,
-    bool? moviesLoadMoreError,
-  }) {
-    return SearchTrendingSuccess(
-      trendingTv: trendingTv ?? this.trendingTv,
-      trendingMovies: trendingMovies ?? this.trendingMovies,
-      tvPage: tvPage ?? this.tvPage,
-      moviesPage: moviesPage ?? this.moviesPage,
-      tvHasReachedMax: tvHasReachedMax ?? this.tvHasReachedMax,
-      moviesHasReachedMax: moviesHasReachedMax ?? this.moviesHasReachedMax,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      tvLoadMoreError: tvLoadMoreError ?? this.tvLoadMoreError,
-      moviesLoadMoreError: moviesLoadMoreError ?? this.moviesLoadMoreError,
-    );
-  }
-
-  @override
-  List<Object?> get props => [
-    trendingTv,
-    trendingMovies,
-    tvPage,
-    moviesPage,
-    tvHasReachedMax,
-    moviesHasReachedMax,
-    isLoadingMore,
-    tvLoadMoreError,
-    moviesLoadMoreError,
-  ];
-}
-
 class SearchResultsSuccess extends SearchState {
   final List<dynamic> results;
   final String query;

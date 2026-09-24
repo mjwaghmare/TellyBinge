@@ -479,9 +479,20 @@ class TmdbClient {
   }
 
   /// Fetch trending TV shows of the week
-  Future<List<dynamic>> getTrendingTvShows({int page = 1}) async {
+  ///
+  /// Like the other Explore list fetches: [forceRefresh] skips the fresh-cache
+  /// read (a stale copy is still the fallback on failure), and [throwOnError]
+  /// rethrows when there is no fallback instead of returning an empty list,
+  /// so a caller can tell a failure from the end of the list.
+  Future<List<dynamic>> getTrendingTvShows({
+    int page = 1,
+    bool forceRefresh = false,
+    bool throwOnError = false,
+  }) async {
     final cacheKey = 'trending_tv_page_$page';
-    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
       return _filterContent(results);
@@ -505,14 +516,21 @@ class TmdbClient {
         return expiredData['results'] as List<dynamic>;
       }
       debugPrint('Error fetching trending TV shows: $e');
+      if (throwOnError) rethrow;
       return [];
     }
   }
 
   /// Fetch trending Movies of the week
-  Future<List<dynamic>> getTrendingMovies({int page = 1}) async {
+  Future<List<dynamic>> getTrendingMovies({
+    int page = 1,
+    bool forceRefresh = false,
+    bool throwOnError = false,
+  }) async {
     final cacheKey = 'trending_movie_page_$page';
-    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
       return _filterContent(results);
@@ -536,6 +554,7 @@ class TmdbClient {
         return expiredData['results'] as List<dynamic>;
       }
       debugPrint('Error fetching trending movies: $e');
+      if (throwOnError) rethrow;
       return [];
     }
   }
@@ -569,9 +588,15 @@ class TmdbClient {
   }
 
   /// Fetch Now Playing Movies
-  Future<List<dynamic>> getNowPlayingMovies({int page = 1}) async {
+  Future<List<dynamic>> getNowPlayingMovies({
+    int page = 1,
+    bool forceRefresh = false,
+    bool throwOnError = false,
+  }) async {
     final cacheKey = 'now_playing_movie_page_$page';
-    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       return _filterContent(cachedData['results'] as List<dynamic>);
     }
@@ -592,14 +617,21 @@ class TmdbClient {
         return _filterContent(expiredData['results'] as List<dynamic>);
       }
       debugPrint('Error fetching Now Playing movies: $e');
+      if (throwOnError) rethrow;
       return [];
     }
   }
 
   /// Fetch Upcoming TV shows (On the air)
-  Future<List<dynamic>> getUpcomingTvShows({int page = 1}) async {
+  Future<List<dynamic>> getUpcomingTvShows({
+    int page = 1,
+    bool forceRefresh = false,
+    bool throwOnError = false,
+  }) async {
     final cacheKey = 'upcoming_tv_page_$page';
-    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       return _filterContent(cachedData['results'] as List<dynamic>);
     }
@@ -620,14 +652,21 @@ class TmdbClient {
         return _filterContent(expiredData['results'] as List<dynamic>);
       }
       debugPrint('Error fetching Upcoming TV shows: $e');
+      if (throwOnError) rethrow;
       return [];
     }
   }
 
   /// Fetch Upcoming Movies
-  Future<List<dynamic>> getUpcomingMovies({int page = 1}) async {
+  Future<List<dynamic>> getUpcomingMovies({
+    int page = 1,
+    bool forceRefresh = false,
+    bool throwOnError = false,
+  }) async {
     final cacheKey = 'upcoming_movie_page_$page';
-    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       return _filterContent(cachedData['results'] as List<dynamic>);
     }
@@ -648,6 +687,77 @@ class TmdbClient {
         return _filterContent(expiredData['results'] as List<dynamic>);
       }
       debugPrint('Error fetching Upcoming movies: $e');
+      if (throwOnError) rethrow;
+      return [];
+    }
+  }
+
+  /// Fetch Top Rated TV shows
+  Future<List<dynamic>> getTopRatedTvShows({
+    int page = 1,
+    bool forceRefresh = false,
+    bool throwOnError = false,
+  }) async {
+    final cacheKey = 'top_rated_tv_page_$page';
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null && cachedData['results'] != null) {
+      return _filterContent(cachedData['results'] as List<dynamic>);
+    }
+    try {
+      final response = await _getWithRetry(
+        '/tv/top_rated',
+        queryParameters: {'page': page},
+      );
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      return _filterContent(data['results'] as List<dynamic>? ?? []);
+    } catch (e) {
+      final expiredData = await TmdbCacheManager.instance.readCache(
+        cacheKey,
+        maxAge: const Duration(days: 7),
+      );
+      if (expiredData != null && expiredData['results'] != null) {
+        return _filterContent(expiredData['results'] as List<dynamic>);
+      }
+      debugPrint('Error fetching Top Rated TV shows: $e');
+      if (throwOnError) rethrow;
+      return [];
+    }
+  }
+
+  /// Fetch Top Rated Movies
+  Future<List<dynamic>> getTopRatedMovies({
+    int page = 1,
+    bool forceRefresh = false,
+    bool throwOnError = false,
+  }) async {
+    final cacheKey = 'top_rated_movie_page_$page';
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
+    if (cachedData != null && cachedData['results'] != null) {
+      return _filterContent(cachedData['results'] as List<dynamic>);
+    }
+    try {
+      final response = await _getWithRetry(
+        '/movie/top_rated',
+        queryParameters: {'page': page},
+      );
+      final data = response.data as Map<String, dynamic>;
+      await TmdbCacheManager.instance.writeCache(cacheKey, data);
+      return _filterContent(data['results'] as List<dynamic>? ?? []);
+    } catch (e) {
+      final expiredData = await TmdbCacheManager.instance.readCache(
+        cacheKey,
+        maxAge: const Duration(days: 7),
+      );
+      if (expiredData != null && expiredData['results'] != null) {
+        return _filterContent(expiredData['results'] as List<dynamic>);
+      }
+      debugPrint('Error fetching Top Rated movies: $e');
+      if (throwOnError) rethrow;
       return [];
     }
   }
@@ -684,19 +794,34 @@ class TmdbClient {
     String? language,
     String? originCountry,
     String? firstAirDateGte,
+    String? airDateGte,
+    String? airDateLte,
     String? year,
     String? watchProviderId,
+    int? minVoteCount,
+    bool forceRefresh = false,
+    bool throwOnError = false,
   }) async {
     final sortedGenres = (genreIds != null && genreIds.isNotEmpty)
         ? (List<int>.from(genreIds)..sort()).join(',')
         : 'none';
+    // Appended only when set, so keys for existing callers are unchanged.
+    final optionalKey = [
+      if (firstAirDateGte != null) '_firstair_$firstAirDateGte',
+      if (airDateGte != null || airDateLte != null)
+        '_air_${airDateGte ?? 'any'}_${airDateLte ?? 'any'}',
+      if (minVoteCount != null) '_votes_$minVoteCount',
+    ].join();
     final cacheKey =
-        'v3_discover_tv_${sortBy}_${sortedGenres}_${language ?? 'all'}_${originCountry ?? 'all'}_${year ?? 'all'}_${watchProviderId ?? 'all'}_page_$page';
-    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+        'v3_discover_tv_${sortBy}_${sortedGenres}_${language ?? 'all'}_${originCountry ?? 'all'}_${year ?? 'all'}_${watchProviderId ?? 'all'}${optionalKey}_page_$page';
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
+    final allowAnime = genreIds != null && genreIds.contains(16);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
       return {
-        'results': _filterContent(results),
+        'results': _filterContent(results, allowAnime: allowAnime),
         'total_pages': cachedData['total_pages'] ?? 1,
       };
     }
@@ -706,9 +831,9 @@ class TmdbClient {
           year != null ||
           originCountry != null ||
           (watchProviderId != null && watchProviderId.isNotEmpty);
-      final int voteThreshold = hasSpecificFilters
-          ? 0
-          : _getVoteCountThreshold(sortBy, language);
+      final int voteThreshold =
+          minVoteCount ??
+          (hasSpecificFilters ? 0 : _getVoteCountThreshold(sortBy, language));
 
       // Build query params
       final queryParams = <String, dynamic>{
@@ -731,6 +856,8 @@ class TmdbClient {
         final todayStr = DateTime.now().toIso8601String().split('T').first;
         queryParams['first_air_date.lte'] = todayStr;
       }
+      if (airDateGte != null) queryParams['air_date.gte'] = airDateGte;
+      if (airDateLte != null) queryParams['air_date.lte'] = airDateLte;
 
       if (watchProviderId != null && watchProviderId.isNotEmpty) {
         queryParams['with_watch_providers'] = watchProviderId;
@@ -752,7 +879,7 @@ class TmdbClient {
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
       return {
-        'results': _filterContent(results),
+        'results': _filterContent(results, allowAnime: allowAnime),
         'total_pages': data['total_pages'] ?? 1,
       };
     } catch (e) {
@@ -763,11 +890,12 @@ class TmdbClient {
       if (expiredData != null && expiredData['results'] != null) {
         final results = expiredData['results'] as List<dynamic>;
         return {
-          'results': _filterContent(results),
+          'results': _filterContent(results, allowAnime: allowAnime),
           'total_pages': expiredData['total_pages'] ?? 1,
         };
       }
       debugPrint('Error discovering TV shows with filters: $e');
+      if (throwOnError) rethrow;
       return {'results': [], 'total_pages': 1};
     }
   }
@@ -780,8 +908,13 @@ class TmdbClient {
     String? language,
     String? originCountry,
     String? firstAirDateGte,
+    String? airDateGte,
+    String? airDateLte,
     String? year,
     String? watchProviderId,
+    int? minVoteCount,
+    bool forceRefresh = false,
+    bool throwOnError = false,
   }) async {
     final response = await discoverTvShowsWithFiltersPaginated(
       page: page,
@@ -790,8 +923,13 @@ class TmdbClient {
       language: language,
       originCountry: originCountry,
       firstAirDateGte: firstAirDateGte,
+      airDateGte: airDateGte,
+      airDateLte: airDateLte,
       year: year,
       watchProviderId: watchProviderId,
+      minVoteCount: minVoteCount,
+      forceRefresh: forceRefresh,
+      throwOnError: throwOnError,
     );
     return response['results'] as List<dynamic>;
   }
@@ -804,19 +942,32 @@ class TmdbClient {
     String? language,
     String? originCountry,
     String? primaryReleaseDateGte,
+    String? primaryReleaseDateLte,
     String? year,
     String? watchProviderId,
+    int? minVoteCount,
+    bool forceRefresh = false,
+    bool throwOnError = false,
   }) async {
     final sortedGenres = (genreIds != null && genreIds.isNotEmpty)
         ? (List<int>.from(genreIds)..sort()).join(',')
         : 'none';
+    // Appended only when set, so keys for existing callers are unchanged.
+    final optionalKey = [
+      if (primaryReleaseDateGte != null || primaryReleaseDateLte != null)
+        '_release_${primaryReleaseDateGte ?? 'any'}_${primaryReleaseDateLte ?? 'any'}',
+      if (minVoteCount != null) '_votes_$minVoteCount',
+    ].join();
     final cacheKey =
-        'v3_discover_movie_${sortBy}_${sortedGenres}_${language ?? 'all'}_${originCountry ?? 'all'}_${year ?? 'all'}_${watchProviderId ?? 'all'}_page_$page';
-    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+        'v3_discover_movie_${sortBy}_${sortedGenres}_${language ?? 'all'}_${originCountry ?? 'all'}_${year ?? 'all'}_${watchProviderId ?? 'all'}${optionalKey}_page_$page';
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
+    final allowAnime = genreIds != null && genreIds.contains(16);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
       return {
-        'results': _filterContent(results),
+        'results': _filterContent(results, allowAnime: allowAnime),
         'total_pages': cachedData['total_pages'] ?? 1,
       };
     }
@@ -826,9 +977,9 @@ class TmdbClient {
           year != null ||
           originCountry != null ||
           (watchProviderId != null && watchProviderId.isNotEmpty);
-      final int voteThreshold = hasSpecificFilters
-          ? 0
-          : _getVoteCountThreshold(sortBy, language);
+      final int voteThreshold =
+          minVoteCount ??
+          (hasSpecificFilters ? 0 : _getVoteCountThreshold(sortBy, language));
 
       // Build query params
       final queryParams = <String, dynamic>{
@@ -845,8 +996,14 @@ class TmdbClient {
       if (yearRange != null) {
         queryParams['primary_release_date.gte'] = '${yearRange.$1}-01-01';
         queryParams['primary_release_date.lte'] = '${yearRange.$2}-12-31';
-      } else if (primaryReleaseDateGte != null) {
-        queryParams['primary_release_date.gte'] = primaryReleaseDateGte;
+      } else if (primaryReleaseDateGte != null ||
+          primaryReleaseDateLte != null) {
+        if (primaryReleaseDateGte != null) {
+          queryParams['primary_release_date.gte'] = primaryReleaseDateGte;
+        }
+        if (primaryReleaseDateLte != null) {
+          queryParams['primary_release_date.lte'] = primaryReleaseDateLte;
+        }
       } else if (sortBy == 'primary_release_date.desc') {
         final todayStr = DateTime.now().toIso8601String().split('T').first;
         queryParams['primary_release_date.lte'] = todayStr;
@@ -872,7 +1029,7 @@ class TmdbClient {
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
       return {
-        'results': _filterContent(results),
+        'results': _filterContent(results, allowAnime: allowAnime),
         'total_pages': data['total_pages'] ?? 1,
       };
     } catch (e) {
@@ -883,11 +1040,12 @@ class TmdbClient {
       if (expiredData != null && expiredData['results'] != null) {
         final results = expiredData['results'] as List<dynamic>;
         return {
-          'results': _filterContent(results),
+          'results': _filterContent(results, allowAnime: allowAnime),
           'total_pages': expiredData['total_pages'] ?? 1,
         };
       }
       debugPrint('Error discovering movies with filters: $e');
+      if (throwOnError) rethrow;
       return {'results': [], 'total_pages': 1};
     }
   }
@@ -900,8 +1058,12 @@ class TmdbClient {
     String? language,
     String? originCountry,
     String? primaryReleaseDateGte,
+    String? primaryReleaseDateLte,
     String? year,
     String? watchProviderId,
+    int? minVoteCount,
+    bool forceRefresh = false,
+    bool throwOnError = false,
   }) async {
     final response = await discoverMoviesWithFiltersPaginated(
       page: page,
@@ -910,8 +1072,12 @@ class TmdbClient {
       language: language,
       originCountry: originCountry,
       primaryReleaseDateGte: primaryReleaseDateGte,
+      primaryReleaseDateLte: primaryReleaseDateLte,
       year: year,
       watchProviderId: watchProviderId,
+      minVoteCount: minVoteCount,
+      forceRefresh: forceRefresh,
+      throwOnError: throwOnError,
     );
     return response['results'] as List<dynamic>;
   }
@@ -967,7 +1133,10 @@ class TmdbClient {
   }
 
   /// Central helper to filter out unwanted content like Anime and Adult content from TMDB results.
-  List<dynamic> _filterContent(List<dynamic> results) {
+  List<dynamic> _filterContent(
+    List<dynamic> results, {
+    bool allowAnime = false,
+  }) {
     return results.where((item) {
       if (item is! Map<String, dynamic>) return true;
 
@@ -976,13 +1145,16 @@ class TmdbClient {
         return false;
       }
 
-      // 2. Anime Filter
-      final originalLanguage = item['original_language'] as String?;
-      final genreIds = (item['genre_ids'] as List<dynamic>?)?.cast<int>() ?? [];
+      // 2. Anime Filter (bypassed when Anime is explicitly requested)
+      if (!allowAnime) {
+        final originalLanguage = item['original_language'] as String?;
+        final genreIds =
+            (item['genre_ids'] as List<dynamic>?)?.cast<int>() ?? [];
 
-      // Filter out Japanese Animation
-      if (originalLanguage == 'ja' && genreIds.contains(16)) {
-        return false;
+        // Filter out Japanese Animation
+        if (originalLanguage == 'ja' && genreIds.contains(16)) {
+          return false;
+        }
       }
 
       return true;

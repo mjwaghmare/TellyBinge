@@ -11,6 +11,12 @@ class TmdbCacheManager {
 
   static const int _maxMemoryCacheSize = 50;
 
+  /// How long an entry stays on disk after it stops being fresh. Callers fall
+  /// back to stale entries when a request fails (up to 7 days, some 30), so a
+  /// read that finds an entry merely past its own `maxAge` must not delete it —
+  /// that would empty the very fallback an offline retry is about to ask for.
+  static const Duration _retainFor = Duration(days: 30);
+
   /// Payloads smaller than this are decoded on the calling isolate. `compute`
   /// spawns a fresh isolate per call, which costs more than decoding a small
   /// payload inline — and these reads happen per item while scrolling, so the
@@ -125,8 +131,8 @@ class TmdbCacheManager {
         _memoryCacheTimestamps[key] = timestamp;
         _evictOldestIfNeeded();
         return data;
-      } else {
-        // Cache expired, delete in background
+      } else if (age > _retainFor) {
+        // Too old to serve even as a fallback, delete in background
         unawaited(file.delete().catchError((_) => file));
       }
     } catch (e) {

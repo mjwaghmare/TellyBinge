@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../../../features/auth/presentation/cubit/auth_state.dart';
 import '../../domain/models/watch_history_item.dart';
+import '../../../../core/widgets/animated_check_button.dart';
 import '../cubit/tv_show_watchlist_cubit.dart';
 
 class WatchedEpisodeCard extends StatefulWidget {
@@ -247,39 +248,12 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
             // Checkmark
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.md),
-              child: Center(
-                child: GestureDetector(
-                  onTap: _handleUnwatch,
-                  behavior: HitTestBehavior.opaque,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: 48.0,
-                      minHeight: 48.0,
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.brandGreen, // TV Time Green
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.brandGreen, width: 2),
-                        ),
-                        child: _isReverting
-                            ? const Padding(
-                                padding: AppSpacing.allXS,
-                                child: CircularProgressIndicator.adaptive(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.textOnPrimary,
-                                  ),
-                                ),
-                              )
-                            : const Icon(Icons.check, color: AppColors.textOnPrimary, size: 24),
-                      ),
-                    ),
-                  ),
-                ),
+              child: AnimatedCheckButton(
+                isWatched: true,
+                isLoading: _isReverting,
+                activeColor: AppColors.brandGreen,
+                size: 40.0,
+                onTap: _handleUnwatch,
               ),
             ),
           ],

@@ -220,4 +220,50 @@ class EnrichedShow {
       hasUpcoming: hasUpcoming,
     );
   }
+
+  /// True if the current target episode is the final episode of its season.
+  bool get isSeasonFinale {
+    if (targetSeason <= 0 || targetEpisode <= 0) return false;
+    final seasons = rawShowData['seasons'] as List<dynamic>?;
+    if (seasons != null && seasons.isNotEmpty) {
+      for (final s in seasons) {
+        if (s is Map && (s['season_number'] as num?)?.toInt() == targetSeason) {
+          final count = (s['episode_count'] as num?)?.toInt() ?? 0;
+          if (count > 0 && targetEpisode == count) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /// True if completing this episode marks the entire TV show as fully watched.
+  bool get isSeriesFinale {
+    if (!isSeasonFinale) return false;
+
+    // A series finale celebration only applies if the show has concluded (Ended / Canceled).
+    // Returning series waiting for future seasons are season finales, not series finales.
+    final status = rawShowData['status']?.toString().toLowerCase();
+    final isShowEnded = status == 'ended' || status == 'canceled';
+    if (!isShowEnded) return false;
+
+    final numSeasons = (rawShowData['number_of_seasons'] as num?)?.toInt();
+    if (numSeasons != null && numSeasons > 0 && targetSeason == numSeasons) {
+      if (totalEpisodes > 0) {
+        final watched = rawShowData['watchedEpisodes'];
+        final watchedCount = watched is List ? watched.length : 0;
+        return watchedCount + 1 >= totalEpisodes;
+      }
+      return true;
+    }
+
+    if (totalEpisodes > 0) {
+      final watched = rawShowData['watchedEpisodes'];
+      final watchedCount = watched is List ? watched.length : 0;
+      return watchedCount + 1 >= totalEpisodes;
+    }
+
+    return false;
+  }
 }
