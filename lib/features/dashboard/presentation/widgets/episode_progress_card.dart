@@ -36,6 +36,7 @@ class EpisodeProgressCard extends StatefulWidget {
 
 class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
   bool _isMarkingAsWatched = false;
+  bool _isSwipeMarking = false;
   bool _hasFiredSlideHaptic = false;
   String? _lastMarkedEpisodeCode;
   Timer? _markingSafetyTimer;
@@ -66,6 +67,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
             if (mounted) {
               setState(() {
                 _isMarkingAsWatched = false;
+                _isSwipeMarking = false;
                 _lastMarkedEpisodeCode = null;
                 _markStartTime = null;
               });
@@ -74,6 +76,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
         } else {
           setState(() {
             _isMarkingAsWatched = false;
+            _isSwipeMarking = false;
             _lastMarkedEpisodeCode = null;
             _markStartTime = null;
           });
@@ -82,7 +85,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
     }
   }
 
-  Future<void> _markAsWatched() async {
+  Future<void> _markAsWatched({bool fromSwipe = false}) async {
     final show = widget.enrichedShow;
     if (show.isUpToDate ||
         show.targetSeason <= 0 ||
@@ -99,25 +102,15 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
     _markStartTime = DateTime.now();
     setState(() {
       _isMarkingAsWatched = true;
+      _isSwipeMarking = fromSwipe;
     });
-
-    if (isSeries) {
-      AppSnackbar.showSuccess(
-        context,
-        '🏆 Series Complete! You finished $showName!',
-      );
-    } else if (isFinale) {
-      AppSnackbar.showSuccess(
-        context,
-        '🎉 Season ${show.targetSeason} Complete for $showName!',
-      );
-    }
 
     _markingSafetyTimer?.cancel();
     _markingSafetyTimer = Timer(const Duration(seconds: 4), () {
       if (mounted && _isMarkingAsWatched) {
         setState(() {
           _isMarkingAsWatched = false;
+          _isSwipeMarking = false;
           _lastMarkedEpisodeCode = null;
           _markStartTime = null;
         });
@@ -133,8 +126,8 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       final showId = show.rawShowData['id'];
       final episodeKey = '${show.targetSeason}-${show.targetEpisode}';
 
-      unawaited(
-        context.read<TvShowWatchlistCubit>().toggleEpisodeWatched(
+      try {
+        await context.read<TvShowWatchlistCubit>().toggleEpisodeWatched(
           uid: uid,
           showId: showId,
           episodeKey: episodeKey,
@@ -142,8 +135,47 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
           showName: show.rawShowData['name']?.toString(),
           showPoster: show.rawShowData['posterPath']?.toString(),
           episodeTitle: show.episodeTitle,
-        ),
-      );
+        );
+
+        if (mounted) {
+          if (isSeries) {
+            AppSnackbar.showSuccess(
+              context,
+              '🏆 Series Complete! You finished $showName!',
+            );
+          } else if (isFinale) {
+            AppSnackbar.showSuccess(
+              context,
+              '🎉 Season ${show.targetSeason} Complete for $showName!',
+            );
+          }
+        }
+      } catch (e) {
+        _markingSafetyTimer?.cancel();
+        if (mounted) {
+          setState(() {
+            _isMarkingAsWatched = false;
+            _isSwipeMarking = false;
+            _lastMarkedEpisodeCode = null;
+            _markStartTime = null;
+          });
+          AppSnackbar.showError(
+            context,
+            'Failed to mark episode as watched. Please try again.',
+          );
+        }
+      }
+    } else {
+      _markingSafetyTimer?.cancel();
+      if (mounted) {
+        setState(() {
+          _isMarkingAsWatched = false;
+          _isSwipeMarking = false;
+          _lastMarkedEpisodeCode = null;
+          _markStartTime = null;
+        });
+        AppSnackbar.showInfo(context, 'Sign in to track episodes');
+      }
     }
   }
 
@@ -232,7 +264,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.endToStart) {
           if (!isWatched && !isDummy && !_isMarkingAsWatched) {
-            unawaited(_markAsWatched());
+            unawaited(_markAsWatched(fromSwipe: true));
           }
         } else {
           await _showStopWatchingSheet();
@@ -324,7 +356,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
           clipBehavior: Clip.antiAlias,
           height: cardHeight,
           decoration: BoxDecoration(
-            color: _isMarkingAsWatched
+            color: _isSwipeMarking
                 ? context.adaptiveColor(
                     light: AppColors.lightSurfaceElevated,
                     dark: AppColors.surface,
@@ -332,7 +364,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                 : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(6.0),
           ),
-          child: _isMarkingAsWatched
+          child: _isSwipeMarking
               ? Center(
                   child: CircularProgressIndicator.adaptive(
                     strokeWidth: 3,

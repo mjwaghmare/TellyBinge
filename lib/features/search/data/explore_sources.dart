@@ -25,20 +25,52 @@ enum ExploreSection {
     comingSoon => 'Coming Soon',
   };
 
-  /// Returns a display title that respects the active genre filter.
-  /// When discovery sorting is used for [topWeek] due to a genre filter, the
-  /// title drops "This Week" since discovery sort reflects overall popularity
-  /// rather than a weekly-constrained selection.
-  String titleWithGenre(GenreOption? genre) {
-    if (genre == null || genre.isAll) return title;
-    if (this == topWeek) return '${genre.displayName} • Top 5';
-    return '${genre.displayName} • $title';
+  /// Returns a display title that respects active genre and language filters.
+  /// When discovery sorting is used for [topWeek] due to a genre or language
+  /// filter, the title drops "This Week" since discovery sort reflects overall
+  /// popularity rather than a weekly-constrained selection.
+  /// Similarly, [trending] results use "Popular Now" when filtered since discovery
+  /// sort reflects overall popularity rather than TMDB's unfiltered trending window.
+  String titleWithGenre(GenreOption? genre, {String? languageName}) {
+    final hasGenre = genre != null && !genre.isAll;
+    final hasLang = languageName != null && languageName.trim().isNotEmpty;
+    final hasFilter = hasGenre || hasLang;
+
+    final baseTitle = (this == trending && hasFilter) ? 'Popular Now' : title;
+
+    if (hasGenre && hasLang) {
+      if (this == topWeek) return '${genre.displayName} in $languageName • Top 5';
+      return '${genre.displayName} in $languageName • $baseTitle';
+    }
+    if (hasGenre) {
+      if (this == topWeek) return '${genre.displayName} • Top 5';
+      return '${genre.displayName} • $baseTitle';
+    }
+    if (hasLang) {
+      if (this == topWeek) return 'Top 5 in $languageName';
+      return '$baseTitle in $languageName';
+    }
+    return title;
   }
 
   /// Top 5 and Trending Now are the same TMDB list split in two, so they share
   /// one fetch.
   ExploreSection get source => this == topWeek ? trending : this;
 }
+
+/// Standard language names for Explore feed filters.
+const Map<String, String> exploreLanguageNames = {
+  'hi': 'Hindi',
+  'en': 'English',
+  'mr': 'Marathi',
+  'ta': 'Tamil',
+  'te': 'Telugu',
+  'ml': 'Malayalam',
+  'ko': 'Korean',
+  'ja': 'Japanese',
+  'es': 'Spanish',
+  'fr': 'French',
+};
 
 /// Fetches one page of an Explore section.
 ///

@@ -241,16 +241,29 @@ class EnrichedShow {
   /// True if completing this episode marks the entire TV show as fully watched.
   bool get isSeriesFinale {
     if (!isSeasonFinale) return false;
+
+    // A series finale celebration only applies if the show has concluded (Ended / Canceled).
+    // Returning series waiting for future seasons are season finales, not series finales.
+    final status = rawShowData['status']?.toString().toLowerCase();
+    final isShowEnded = status == 'ended' || status == 'canceled';
+    if (!isShowEnded) return false;
+
     final numSeasons = (rawShowData['number_of_seasons'] as num?)?.toInt();
     if (numSeasons != null && numSeasons > 0 && targetSeason == numSeasons) {
+      if (totalEpisodes > 0) {
+        final watched = rawShowData['watchedEpisodes'];
+        final watchedCount = watched is List ? watched.length : 0;
+        return watchedCount + 1 >= totalEpisodes;
+      }
       return true;
     }
+
     if (totalEpisodes > 0) {
-      final watched = List<String>.from(rawShowData['watchedEpisodes'] ?? []);
-      if (watched.length + 1 >= totalEpisodes) {
-        return true;
-      }
+      final watched = rawShowData['watchedEpisodes'];
+      final watchedCount = watched is List ? watched.length : 0;
+      return watchedCount + 1 >= totalEpisodes;
     }
+
     return false;
   }
 }

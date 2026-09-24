@@ -632,19 +632,10 @@ class _SearchPageState extends State<SearchPage>
     var anyLoading = trendingRow.isLoading;
 
     if (trendingRow.isLoading || topWeek.isNotEmpty) {
-      final String topWeekTitle;
-      final activeGenre = feed.genre;
-      if (activeGenre != null && !activeGenre.isAll) {
-        final langName = _languageNames[feed.language];
-        topWeekTitle = langName != null
-            ? '${activeGenre.displayName} in $langName • Top 5'
-            : ExploreSection.topWeek.titleWithGenre(activeGenre);
-      } else {
-        topWeekTitle = switch (_languageNames[feed.language]) {
-          final name? => 'Top 5 in $name',
-          null => ExploreSection.topWeek.title,
-        };
-      }
+      final String topWeekTitle = ExploreSection.topWeek.titleWithGenre(
+        feed.genre,
+        languageName: _languageNames[feed.language],
+      );
 
       rows.add(
         ExploreTopWeekRow(

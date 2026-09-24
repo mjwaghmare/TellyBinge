@@ -759,22 +759,30 @@ class MoviesPageState extends State<MoviesPage> {
               if (direction == DismissDirection.endToStart) {
                 if (!isWatched) {
                   unawaited(AppHaptics.heavyImpact());
-                  if (context.mounted) {
-                    AppSnackbar.showSuccess(
-                      context,
-                      'Marked "$title" as watched 🍿',
-                    );
-                  }
                   setState(() => isMarkingAsWatched = true);
                   await Future.delayed(const Duration(milliseconds: 400));
                   if (context.mounted) {
-                    unawaited(
-                      context.read<MovieWatchlistCubit>().toggleWatched(
+                    try {
+                      await context.read<MovieWatchlistCubit>().toggleWatched(
                         uid: uid,
                         movieId: movieId,
                         isWatched: true,
-                      ),
-                    );
+                      );
+                      if (context.mounted) {
+                        AppSnackbar.showSuccess(
+                          context,
+                          'Marked "$title" as watched 🍿',
+                        );
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        setState(() => isMarkingAsWatched = false);
+                        AppSnackbar.showError(
+                          context,
+                          'Failed to mark "$title" as watched.',
+                        );
+                      }
+                    }
                   }
                 }
               } else {
@@ -878,18 +886,7 @@ class MoviesPageState extends State<MoviesPage> {
                     : Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(6.0),
               ),
-              child: (isMarkingAsWatched || isRemoving)
-                  ? Center(
-                      child: CircularProgressIndicator.adaptive(
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation(
-                          isMarkingAsWatched
-                              ? AppColors.brandGreen
-                              : AppColors.error,
-                        ),
-                      ),
-                    )
-                  : Row(
+              child: Row(
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.zero,
@@ -1069,43 +1066,63 @@ class MoviesPageState extends State<MoviesPage> {
                               if (uid != null && !isMarkingAsWatched && !isRemoving) {
                                 if (!isWatched) {
                                   setState(() => isMarkingAsWatched = true);
-                                  AppSnackbar.showSuccess(
-                                    context,
-                                    'Added "$title" to Watched Movies 🍿',
-                                  );
                                   await Future.delayed(
                                     const Duration(milliseconds: 400),
                                   );
                                   if (context.mounted) {
-                                    unawaited(
-                                      context
+                                    try {
+                                      await context
                                           .read<MovieWatchlistCubit>()
                                           .toggleWatched(
                                             uid: uid,
                                             movieId: movieId,
                                             isWatched: true,
-                                          ),
-                                    );
+                                          );
+                                      if (context.mounted) {
+                                        AppSnackbar.showSuccess(
+                                          context,
+                                          'Added "$title" to Watched Movies 🍿',
+                                        );
+                                      }
+                                    } catch (_) {
+                                      if (context.mounted) {
+                                        setState(() => isMarkingAsWatched = false);
+                                        AppSnackbar.showError(
+                                          context,
+                                          'Failed to mark "$title" as watched.',
+                                        );
+                                      }
+                                    }
                                   }
                                 } else {
                                   setState(() => isRemoving = true);
-                                  AppSnackbar.showInfo(
-                                    context,
-                                    'Moved "$title" back to Watch Next',
-                                  );
                                   await Future.delayed(
                                     const Duration(milliseconds: 300),
                                   );
                                   if (context.mounted) {
-                                    unawaited(
-                                      context
+                                    try {
+                                      await context
                                           .read<MovieWatchlistCubit>()
                                           .toggleWatched(
                                             uid: uid,
                                             movieId: movieId,
                                             isWatched: false,
-                                          ),
-                                    );
+                                          );
+                                      if (context.mounted) {
+                                        AppSnackbar.showInfo(
+                                          context,
+                                          'Moved "$title" back to Watch Next',
+                                        );
+                                      }
+                                    } catch (_) {
+                                      if (context.mounted) {
+                                        setState(() => isRemoving = false);
+                                        AppSnackbar.showError(
+                                          context,
+                                          'Failed to update "$title".',
+                                        );
+                                      }
+                                    }
                                   }
                                 }
                               }

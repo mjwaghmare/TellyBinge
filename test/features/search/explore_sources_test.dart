@@ -238,8 +238,32 @@ void main() {
         '💥 Action • Top 5',
       );
       expect(
+        ExploreSection.trending.titleWithGenre(null),
+        'Trending Now',
+      );
+      expect(
+        ExploreSection.trending.titleWithGenre(const GenreOption(label: 'All')),
+        'Trending Now',
+      );
+      expect(
         ExploreSection.trending.titleWithGenre(action),
-        '💥 Action • Trending Now',
+        '💥 Action • Popular Now',
+      );
+      expect(
+        ExploreSection.topWeek.titleWithGenre(action, languageName: 'Korean'),
+        '💥 Action in Korean • Top 5',
+      );
+      expect(
+        ExploreSection.topWeek.titleWithGenre(null, languageName: 'Korean'),
+        'Top 5 in Korean',
+      );
+      expect(
+        ExploreSection.trending.titleWithGenre(null, languageName: 'Korean'),
+        'Popular Now in Korean',
+      );
+      expect(
+        ExploreSection.trending.titleWithGenre(action, languageName: 'Korean'),
+        '💥 Action in Korean • Popular Now',
       );
     });
   });

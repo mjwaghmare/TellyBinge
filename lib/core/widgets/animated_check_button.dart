@@ -43,6 +43,7 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
   late final List<_Particle> _particles;
 
   Timer? _hapticTimer;
+  bool _isOptimisticWatched = false;
 
   static const List<Color> _celebrationPalette = [
     AppColors.primary,
@@ -87,14 +88,15 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
   }
 
   List<_Particle> _generateParticles() {
-    final random = math.Random(42);
+    final random = math.Random();
     const count = 16;
     return List.generate(count, (index) {
       final baseAngle = (index * 2 * math.pi) / count;
       final angleJitter = (random.nextDouble() - 0.5) * 0.35;
       final angle = baseAngle + angleJitter;
-      final maxDistance = 24.0 + random.nextDouble() * 20.0;
-      final size = 2.2 + random.nextDouble() * 2.2;
+      // Contained distance so particles stay within card padding without clipping
+      final maxDistance = 14.0 + random.nextDouble() * 12.0;
+      final size = 2.0 + random.nextDouble() * 2.0;
       final color = _celebrationPalette[index % _celebrationPalette.length];
       return _Particle(
         angle: angle,
@@ -109,13 +111,26 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
   void didUpdateWidget(AnimatedCheckButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isWatched != oldWidget.isWatched) {
+      _isOptimisticWatched = false;
       if (widget.isWatched) {
         _checkController.forward(from: 0.0);
-        if (widget.isFinale || widget.isMovie) {
+        if ((widget.isFinale || widget.isMovie) && !_particleController.isAnimating) {
           _particleController.forward(from: 0.0);
         }
       } else {
         _checkController.reverse();
+      }
+    } else if (oldWidget.isLoading && !widget.isLoading) {
+      // Loading transitioned from active to finished without changing widget.isWatched
+      if (_isOptimisticWatched && !widget.isWatched) {
+        // Operation finished without confirming watched state (e.g. failure/reverted)
+        setState(() {
+          _isOptimisticWatched = false;
+        });
+        _checkController.reverse();
+      } else if (widget.isWatched) {
+        // Unwatch attempt finished without changing widget.isWatched, restore checkmark
+        _checkController.forward();
       }
     }
   }
@@ -133,10 +148,15 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
     if (widget.isLoading || widget.onTap == null) return;
 
     if (!widget.isWatched) {
+      setState(() {
+        _isOptimisticWatched = true;
+      });
+
       // 1. Instant tactile feedback on touch
       unawaited(AppHaptics.lightImpact());
 
-      // 2. Quick scale bounce
+      // 2. Immediate checkmark pop and scale bounce
+      _checkController.forward(from: 0.0);
       _scaleController.forward().then((_) {
         if (mounted) _scaleController.reverse();
       });
@@ -160,18 +180,38 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
       }
     } else {
       // Unwatching / reverting
+      setState(() {
+        _isOptimisticWatched = false;
+      });
       unawaited(AppHaptics.selectionClick());
+      _checkController.reverse();
       _scaleController.forward().then((_) {
         if (mounted) _scaleController.reverse();
       });
     }
 
     widget.onTap?.call();
+
+    if (!widget.isWatched) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !widget.isLoading && !widget.isWatched) {
+          setState(() {
+            _isOptimisticWatched = false;
+          });
+          _checkController.reverse();
+          _particleController.stop();
+          _particleController.reset();
+          _hapticTimer?.cancel();
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
+    final effectiveWatched = widget.isWatched || _isOptimisticWatched;
+    final showSpinner = widget.isLoading && !_isOptimisticWatched;
     final effectiveActiveColor = widget.activeColor ?? AppColors.success;
 
     final inactiveBg = isLight ? Colors.transparent : AppColors.surface;
@@ -180,10 +220,10 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
         : Colors.transparent;
 
     final checkColor = isLight
-        ? (widget.isWatched
+        ? (effectiveWatched
             ? AppColors.textOnPrimary
             : AppColors.lightTextTertiary)
-        : (widget.isWatched
+        : (effectiveWatched
             ? AppColors.textOnPrimary
             : AppColors.textTertiary);
 
@@ -202,12 +242,14 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
                 animation: _particleController,
                 builder: (context, child) {
                   if (_particleController.isAnimating) {
-                    return CustomPaint(
-                      size: Size(widget.size, widget.size),
-                      painter: _MicroParticlePainter(
-                        progress: _particleController.value,
-                        particles: _particles,
-                        isMovie: widget.isMovie,
+                    return RepaintBoundary(
+                      child: CustomPaint(
+                        size: Size(widget.size, widget.size),
+                        painter: _MicroParticlePainter(
+                          progress: _particleController.value,
+                          particles: _particles,
+                          isMovie: widget.isMovie,
+                        ),
                       ),
                     );
                   }
@@ -225,11 +267,11 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
                   height: widget.size,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: widget.isWatched ? effectiveActiveColor : inactiveBg,
-                    border: widget.isWatched
+                    color: effectiveWatched ? effectiveActiveColor : inactiveBg,
+                    border: effectiveWatched
                         ? null
                         : Border.all(color: inactiveBorder, width: 1.5),
-                    boxShadow: widget.isWatched
+                    boxShadow: effectiveWatched
                         ? [
                             BoxShadow(
                               color: effectiveActiveColor.withValues(
@@ -243,14 +285,14 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
                         : null,
                   ),
                   child: Center(
-                    child: widget.isLoading
+                    child: showSpinner
                         ? SizedBox(
                             width: widget.size * 0.5,
                             height: widget.size * 0.5,
                             child: CircularProgressIndicator.adaptive(
                               strokeWidth: 2.2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                widget.isWatched
+                                effectiveWatched
                                     ? AppColors.textOnPrimary
                                     : (isLight
                                         ? AppColors.lightPrimary
@@ -259,7 +301,7 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
                             ),
                           )
                         : ScaleTransition(
-                            scale: widget.isWatched
+                            scale: effectiveWatched
                                 ? _checkScaleAnimation
                                 : const AlwaysStoppedAnimation(1.0),
                             child: Icon(
@@ -313,7 +355,7 @@ class _MicroParticlePainter extends CustomPainter {
     final opacity = (1.0 - Curves.easeIn.transform(progress)).clamp(0.0, 1.0);
 
     for (final particle in particles) {
-      final distance = (size.width * 0.45) + (particle.maxDistance * distanceFactor);
+      final distance = (size.width * 0.42) + (particle.maxDistance * distanceFactor);
       final x = center.dx + math.cos(particle.angle) * distance;
       final y = center.dy + math.sin(particle.angle) * distance;
 
@@ -325,7 +367,7 @@ class _MicroParticlePainter extends CustomPainter {
 
       if (isMovie && particle.angle.abs() % 2 < 1.0) {
         // Star sparkle particle for cinematic finish
-        _drawSparkle(canvas, Offset(x, y), radius * 1.4, paint);
+        _drawSparkle(canvas, Offset(x, y), radius * 1.3, paint);
       } else {
         canvas.drawCircle(Offset(x, y), radius, paint);
       }

@@ -2264,7 +2264,6 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             size: 36.0,
                             onTap: () async {
                               if (isLoadingThisEp) return;
-                              unawaited(AppHaptics.lightImpact());
                               if (authState is! Authenticated) {
                                 unawaited(
                                   AuthRequiredBottomSheet.show(
@@ -2322,6 +2321,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                               ep['name']?.toString() ??
                                               'Episode ${ep['episode_number']}',
                                         );
+                                        if (isSeasonFinale && context.mounted) {
+                                          AppSnackbar.showSuccess(
+                                            context,
+                                            '🎉 Season $seasonNumber Finale Complete!',
+                                          );
+                                        }
                                       } finally {
                                         if (mounted) {
                                           setState(() {
@@ -2348,6 +2353,12 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                           showId: widget.mediaId,
                                           episodeKeys: allToMark,
                                         );
+                                        if (isSeasonFinale && context.mounted) {
+                                          AppSnackbar.showSuccess(
+                                            context,
+                                            '🎉 Season $seasonNumber Finale Complete!',
+                                          );
+                                        }
                                       } finally {
                                         if (mounted) {
                                           setState(() {
