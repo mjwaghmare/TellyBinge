@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'explore_poster_card.dart';
+import 'explore_quick_actions_sheet.dart';
 
 /// 16:9 widescreen cinematic card for backdrop-led Explore feed rows
 /// (such as "Coming Soon"), featuring a release date badge, dark gradient
@@ -121,6 +122,11 @@ class ExploreBackdropCard extends StatelessWidget {
           backdropPath: backdropPath,
         );
       },
+      onLongPress: () => showExploreQuickActions(
+        context,
+        item: item,
+        defaultType: defaultType,
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12.0),
         child: Container(
@@ -226,15 +232,7 @@ class ExploreBackdropCard extends StatelessWidget {
                   ),
                 ),
 
-              // 4. TV Status Pill (top left)
-              if (mediaType == 'tv' && !isSkeleton)
-                Positioned(
-                  top: AppSpacing.xs,
-                  left: AppSpacing.xs,
-                  child: TvStatusPill(tvId: id),
-                ),
-
-              // 5. Title & Countdown/Date Subtitle (bottom overlay)
+              // 4. Title & Countdown/Date Subtitle (bottom overlay)
               Positioned(
                 left: AppSpacing.sm,
                 right: AppSpacing.sm,

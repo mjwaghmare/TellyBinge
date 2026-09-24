@@ -12,6 +12,7 @@ import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../cubit/tv_status_cubit.dart';
+import 'explore_quick_actions_sheet.dart';
 
 /// Poster tile used across Explore: feed rows, See All and search results.
 ///
@@ -120,6 +121,11 @@ class ExplorePosterCard extends StatelessWidget {
         title: title,
         posterPath: posterPath,
         backdropPath: item['backdrop_path'] as String?,
+      ),
+      onLongPress: () => showExploreQuickActions(
+        context,
+        item: item,
+        defaultType: defaultType,
       ),
       child: posterOnly
           ? poster

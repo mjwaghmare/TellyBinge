@@ -637,6 +637,32 @@ class _SearchPageState extends State<SearchPage>
             item,
       ];
 
+      if (section == ExploreSection.comingSoon) {
+        // Chronological upcoming release order (releasing soonest first)
+        items.sort((a, b) {
+          final aDate =
+              (a['release_date'] ?? a['first_air_date'] as String?) ?? '';
+          final bDate =
+              (b['release_date'] ?? b['first_air_date'] as String?) ?? '';
+          if (aDate.isEmpty && bDate.isEmpty) return 0;
+          if (aDate.isEmpty) return 1;
+          if (bDate.isEmpty) return -1;
+          return aDate.compareTo(bDate);
+        });
+      } else if (section == ExploreSection.newlyAdded) {
+        // Latest to oldest (newest release date descending)
+        items.sort((a, b) {
+          final aDate =
+              (a['release_date'] ?? a['first_air_date'] as String?) ?? '';
+          final bDate =
+              (b['release_date'] ?? b['first_air_date'] as String?) ?? '';
+          if (aDate.isEmpty && bDate.isEmpty) return 0;
+          if (aDate.isEmpty) return 1;
+          if (bDate.isEmpty) return -1;
+          return bDate.compareTo(aDate);
+        });
+      }
+
       if (row.items.isNotEmpty && items.length < _minRowItems) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) context.read<ExploreFeedCubit>().fillRow(type, section);

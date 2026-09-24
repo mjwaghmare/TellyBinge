@@ -12,9 +12,9 @@ import 'explore_poster_card.dart';
 const double _cardWidth = 112;
 const double _rowHeight = _cardWidth / 0.52;
 
-/// Card geometry for 16:9 widescreen backdrop rows.
-const double _backdropCardWidth = 240.0;
-const double _backdropRowHeight = _backdropCardWidth / (16 / 9);
+/// Card geometry for prominent widescreen backdrop rows.
+const double _backdropCardWidth = 290.0;
+const double _backdropRowHeight = 170.0;
 
 /// Every row shows at most this many titles; See All appears when there are
 /// more behind them.

@@ -116,6 +116,23 @@ void main() {
       );
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
+
+    testWidgets('long-pressing a poster card opens quick actions sheet', (tester) async {
+      await pump(
+        tester,
+        ExploreSectionRow(
+          title: 'Trending Now',
+          items: titles(1, 1),
+          defaultType: 'movie',
+        ),
+      );
+      await tester.longPress(find.text('Title 1'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add to Watchlist'), findsOneWidget);
+      expect(find.text('Mark as Watched'), findsOneWidget);
+      expect(find.text('Share Polaroid'), findsOneWidget);
+    });
   });
 
   group('ExploreTopWeekRow', () {
@@ -226,6 +243,23 @@ void main() {
       expect(find.text('Gladiator II'), findsOneWidget);
       expect(find.text('NOV'), findsOneWidget);
       expect(find.text('22'), findsOneWidget);
+    });
+
+    testWidgets('long-pressing a card opens quick actions sheet', (tester) async {
+      await pump(
+        tester,
+        ExploreBackdropSectionRow(
+          title: 'Coming Soon',
+          items: titles(1, 1),
+          defaultType: 'movie',
+        ),
+      );
+      await tester.longPress(find.text('Title 1'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add to Watchlist'), findsOneWidget);
+      expect(find.text('Mark as Watched'), findsOneWidget);
+      expect(find.text('Share Polaroid'), findsOneWidget);
     });
   });
 }
