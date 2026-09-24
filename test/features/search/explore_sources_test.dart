@@ -1,5 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:popverse/features/search/data/explore_genres.dart';
 import 'package:popverse/features/search/data/explore_sources.dart';
 
 import 'fake_explore_tmdb_client.dart';
@@ -18,6 +19,7 @@ void main() {
     ExploreMediaType type,
     ExploreSection section, {
     String? language,
+    GenreOption? genre,
     int page = 1,
     bool forceRefresh = false,
   }) async {
@@ -28,6 +30,7 @@ void main() {
       section: section,
       page: page,
       language: language,
+      genre: genre,
       forceRefresh: forceRefresh,
     );
     expect(client.calls, hasLength(1));
@@ -153,6 +156,75 @@ void main() {
       );
       // Left to the client's default (100 for rating sorts).
       expect(hindi.minVoteCount, isNull);
+    });
+  });
+
+  group('with a genre', () {
+    const action = GenreOption(
+      label: 'Action',
+      emoji: '💥',
+      movieGenreId: 28,
+      tvGenreId: 10759,
+    );
+
+    test('trending and top week fall back to discover with genreIds', () async {
+      final tv = await fetch(
+        ExploreMediaType.tv,
+        ExploreSection.trending,
+        genre: action,
+      );
+      expect(tv.method, 'discoverTv');
+      expect(tv.sortBy, 'popularity.desc');
+      expect(tv.genreIds, [10759]);
+
+      final movie = await fetch(
+        ExploreMediaType.movie,
+        ExploreSection.topWeek,
+        genre: action,
+      );
+      expect(movie.method, 'discoverMovie');
+      expect(movie.sortBy, 'popularity.desc');
+      expect(movie.genreIds, [28]);
+    });
+
+    test('coming soon filters future releases with genreIds', () async {
+      final movie = await fetch(
+        ExploreMediaType.movie,
+        ExploreSection.comingSoon,
+        genre: action,
+      );
+      expect(movie.method, 'discoverMovie');
+      expect(movie.sortBy, 'popularity.desc');
+      expect(movie.genreIds, [28]);
+      expect(movie.releaseDateGte, isNotNull);
+    });
+
+    test('anime genre applies required Japanese language and genre 16', () async {
+      const anime = GenreOption(
+        label: 'Anime',
+        emoji: '🌸',
+        movieGenreId: 16,
+        tvGenreId: 16,
+        requiredLanguage: 'ja',
+      );
+      final call = await fetch(
+        ExploreMediaType.tv,
+        ExploreSection.trending,
+        genre: anime,
+      );
+      expect(call.method, 'discoverTv');
+      expect(call.genreIds, [16]);
+      expect(call.language, 'ja');
+    });
+
+    test('all genre falls back to default list endpoints', () async {
+      final call = await fetch(
+        ExploreMediaType.tv,
+        ExploreSection.trending,
+        genre: const GenreOption(label: 'All'),
+      );
+      expect(call.method, 'trendingTv');
+      expect(call.genreIds, isNull);
     });
   });
 }

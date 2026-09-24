@@ -817,10 +817,11 @@ class TmdbClient {
     final cachedData = forceRefresh
         ? null
         : await TmdbCacheManager.instance.readCache(cacheKey);
+    final allowAnime = genreIds != null && genreIds.contains(16);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
       return {
-        'results': _filterContent(results),
+        'results': _filterContent(results, allowAnime: allowAnime),
         'total_pages': cachedData['total_pages'] ?? 1,
       };
     }
@@ -878,7 +879,7 @@ class TmdbClient {
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
       return {
-        'results': _filterContent(results),
+        'results': _filterContent(results, allowAnime: allowAnime),
         'total_pages': data['total_pages'] ?? 1,
       };
     } catch (e) {
@@ -889,7 +890,7 @@ class TmdbClient {
       if (expiredData != null && expiredData['results'] != null) {
         final results = expiredData['results'] as List<dynamic>;
         return {
-          'results': _filterContent(results),
+          'results': _filterContent(results, allowAnime: allowAnime),
           'total_pages': expiredData['total_pages'] ?? 1,
         };
       }
@@ -962,10 +963,11 @@ class TmdbClient {
     final cachedData = forceRefresh
         ? null
         : await TmdbCacheManager.instance.readCache(cacheKey);
+    final allowAnime = genreIds != null && genreIds.contains(16);
     if (cachedData != null && cachedData['results'] != null) {
       final results = cachedData['results'] as List<dynamic>;
       return {
-        'results': _filterContent(results),
+        'results': _filterContent(results, allowAnime: allowAnime),
         'total_pages': cachedData['total_pages'] ?? 1,
       };
     }
@@ -1027,7 +1029,7 @@ class TmdbClient {
       await TmdbCacheManager.instance.writeCache(cacheKey, data);
       final results = data['results'] as List<dynamic>? ?? [];
       return {
-        'results': _filterContent(results),
+        'results': _filterContent(results, allowAnime: allowAnime),
         'total_pages': data['total_pages'] ?? 1,
       };
     } catch (e) {
@@ -1038,7 +1040,7 @@ class TmdbClient {
       if (expiredData != null && expiredData['results'] != null) {
         final results = expiredData['results'] as List<dynamic>;
         return {
-          'results': _filterContent(results),
+          'results': _filterContent(results, allowAnime: allowAnime),
           'total_pages': expiredData['total_pages'] ?? 1,
         };
       }
@@ -1131,7 +1133,10 @@ class TmdbClient {
   }
 
   /// Central helper to filter out unwanted content like Anime and Adult content from TMDB results.
-  List<dynamic> _filterContent(List<dynamic> results) {
+  List<dynamic> _filterContent(
+    List<dynamic> results, {
+    bool allowAnime = false,
+  }) {
     return results.where((item) {
       if (item is! Map<String, dynamic>) return true;
 
@@ -1140,13 +1145,16 @@ class TmdbClient {
         return false;
       }
 
-      // 2. Anime Filter
-      final originalLanguage = item['original_language'] as String?;
-      final genreIds = (item['genre_ids'] as List<dynamic>?)?.cast<int>() ?? [];
+      // 2. Anime Filter (bypassed when Anime is explicitly requested)
+      if (!allowAnime) {
+        final originalLanguage = item['original_language'] as String?;
+        final genreIds =
+            (item['genre_ids'] as List<dynamic>?)?.cast<int>() ?? [];
 
-      // Filter out Japanese Animation
-      if (originalLanguage == 'ja' && genreIds.contains(16)) {
-        return false;
+        // Filter out Japanese Animation
+        if (originalLanguage == 'ja' && genreIds.contains(16)) {
+          return false;
+        }
       }
 
       return true;

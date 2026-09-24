@@ -16,7 +16,6 @@ import '../widgets/explore_poster_grid.dart';
 import '../widgets/explore_section_row.dart';
 import '../widgets/watchlisted_ids_builder.dart';
 import '../../data/explore_genres.dart';
-import '../widgets/explore_genre_grid.dart';
 import '../widgets/explore_genre_pills_row.dart';
 import 'explore_see_all_page.dart';
 
@@ -82,24 +81,7 @@ class _SearchPageState extends State<SearchPage>
     for (final l in _languages) l.code: l.label,
   };
 
-  GenreOption _selectedShowsGenre = kExploreGenres.first;
-  GenreOption _selectedMoviesGenre = kExploreGenres.first;
 
-  GenreOption _selectedGenreFor(bool isTv) =>
-      isTv ? _selectedShowsGenre : _selectedMoviesGenre;
-
-  void _setSelectedGenreFor(bool isTv, GenreOption genre) {
-    setState(() {
-      final current = _selectedGenreFor(isTv);
-      final newGenre =
-          (current == genre && !genre.isAll) ? kExploreGenres.first : genre;
-      if (isTv) {
-        _selectedShowsGenre = newGenre;
-      } else {
-        _selectedMoviesGenre = newGenre;
-      }
-    });
-  }
 
   static ExploreMediaType _typeOf(bool isTv) =>
       isTv ? ExploreMediaType.tv : ExploreMediaType.movie;
@@ -135,18 +117,6 @@ class _SearchPageState extends State<SearchPage>
       if (controller.hasClients) controller.jumpTo(0);
     }
 
-    if (!_selectedShowsGenre.isAll || !_selectedMoviesGenre.isAll) {
-      if (mounted) {
-        setState(() {
-          _selectedShowsGenre = kExploreGenres.first;
-          _selectedMoviesGenre = kExploreGenres.first;
-        });
-      } else {
-        _selectedShowsGenre = kExploreGenres.first;
-        _selectedMoviesGenre = kExploreGenres.first;
-      }
-    }
-
     final feedCubit = context.read<ExploreFeedCubit>();
     for (final isTv in const [true, false]) {
       if (_searchControllerFor(isTv).text.isNotEmpty) {
@@ -157,6 +127,9 @@ class _SearchPageState extends State<SearchPage>
       if (feedCubit.state.feedFor(type).language != null) {
         feedCubit.setLanguage(type, null);
         _searchCubitFor(isTv).setLanguage(null);
+      }
+      if (feedCubit.state.feedFor(type).genre != null) {
+        feedCubit.setGenre(type, null);
       }
     }
   }
@@ -281,7 +254,7 @@ class _SearchPageState extends State<SearchPage>
   }
 
   Widget _buildTab({required bool isTv}) {
-    final selectedGenre = _selectedGenreFor(isTv);
+    final type = _typeOf(isTv);
 
     return Column(
       children: [
@@ -292,10 +265,25 @@ class _SearchPageState extends State<SearchPage>
             final isSearching =
                 value.text.trim().length >= SearchCubit.minQueryLength;
             if (isSearching) return const SizedBox.shrink();
-            return ExploreGenrePillsRow(
-              genres: kExploreGenres,
-              selectedGenre: selectedGenre,
-              onGenreSelected: (genre) => _setSelectedGenreFor(isTv, genre),
+            return BlocSelector<ExploreFeedCubit, ExploreFeedState, GenreOption>(
+              selector: (state) =>
+                  state.feedFor(type).genre ?? kExploreGenres.first,
+              builder: (context, selectedGenre) => ExploreGenrePillsRow(
+                genres: kExploreGenres,
+                selectedGenre: selectedGenre,
+                onGenreSelected: (genre) {
+                  final current =
+                      context.read<ExploreFeedCubit>().state.feedFor(type).genre;
+                  final newGenre = (current == genre && !genre.isAll)
+                      ? null
+                      : (genre.isAll ? null : genre);
+                  final feedScroll = isTv
+                      ? _showsFeedScrollController
+                      : _moviesFeedScrollController;
+                  if (feedScroll.hasClients) feedScroll.jumpTo(0);
+                  context.read<ExploreFeedCubit>().setGenre(type, newGenre);
+                },
+              ),
             );
           },
         ),
@@ -320,29 +308,15 @@ class _SearchPageState extends State<SearchPage>
                 );
               }
 
-              if (selectedGenre.isAll) {
-                return RefreshIndicator.adaptive(
-                  color: AppColors.primary,
-                  backgroundColor: Theme.of(context).cardColor,
-                  onRefresh: () async {
-                    await context
-                        .read<ExploreFeedCubit>()
-                        .refresh(_typeOf(isTv));
-                  },
-                  child: _buildFeed(isTv: isTv),
-                );
-              }
-
-              return BlocSelector<ExploreFeedCubit, ExploreFeedState, String?>(
-                selector: (state) => state.feedFor(_typeOf(isTv)).language,
-                builder: (context, language) => ExploreGenreGrid(
-                  key: ValueKey(
-                    '${isTv}_${selectedGenre.label}_$language',
-                  ),
-                  type: _typeOf(isTv),
-                  genre: selectedGenre,
-                  language: language,
-                ),
+              return RefreshIndicator.adaptive(
+                color: AppColors.primary,
+                backgroundColor: Theme.of(context).cardColor,
+                onRefresh: () async {
+                  await context
+                      .read<ExploreFeedCubit>()
+                      .refresh(type);
+                },
+                child: _buildFeed(isTv: isTv),
               );
             },
           ),
@@ -658,15 +632,24 @@ class _SearchPageState extends State<SearchPage>
     var anyLoading = trendingRow.isLoading;
 
     if (trendingRow.isLoading || topWeek.isNotEmpty) {
+      final String topWeekTitle;
+      final activeGenre = feed.genre;
+      if (activeGenre != null && !activeGenre.isAll) {
+        final langName = _languageNames[feed.language];
+        topWeekTitle = langName != null
+            ? '${activeGenre.displayName} in $langName • Top 5'
+            : '${activeGenre.displayName} • Top 5 This Week';
+      } else {
+        topWeekTitle = switch (_languageNames[feed.language]) {
+          final name? => 'Top 5 in $name',
+          null => ExploreSection.topWeek.title,
+        };
+      }
+
       rows.add(
         ExploreTopWeekRow(
           key: const ValueKey(ExploreSection.topWeek),
-          // TMDB trending can't be filtered by language, so with one active
-          // this row is ranked by overall popularity, not this week's trend.
-          title: switch (_languageNames[feed.language]) {
-            final name? => 'Top 5 in $name',
-            null => ExploreSection.topWeek.title,
-          },
+          title: topWeekTitle,
           items: topWeek,
           defaultType: defaultType,
           isLoading: trendingRow.isLoading,
@@ -766,6 +749,7 @@ class _SearchPageState extends State<SearchPage>
                 type: type,
                 section: section,
                 language: feed.language,
+                genre: feed.genre,
                 excludedIds: section == ExploreSection.trending
                     ? topWeekIds
                     : const {},
@@ -801,7 +785,7 @@ class _SearchPageState extends State<SearchPage>
         : _moviesFeedScrollController;
 
     if (rows.isEmpty && !anyLoading) {
-      return _buildFeedEmpty(type, feedScroll);
+      return _buildFeedEmpty(type, feedScroll, genre: feed.genre);
     }
 
     return ListView(
@@ -817,8 +801,16 @@ class _SearchPageState extends State<SearchPage>
     );
   }
 
-  /// Every row came back empty — offline, or nothing in this language.
-  Widget _buildFeedEmpty(ExploreMediaType type, ScrollController controller) {
+  /// Every row came back empty — offline, or nothing in this language / genre.
+  Widget _buildFeedEmpty(
+    ExploreMediaType type,
+    ScrollController controller, {
+    GenreOption? genre,
+  }) {
+    final emptyMessage = (genre != null && !genre.isAll)
+        ? 'No ${genre.displayName} titles found right now.\nTry selecting another genre or checking your connection.'
+        : 'Nothing to show right now.\nCheck your connection and try again.';
+
     return CustomScrollView(
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
@@ -837,7 +829,7 @@ class _SearchPageState extends State<SearchPage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Nothing to show right now.\nCheck your connection and try again.',
+                    emptyMessage,
                     textAlign: TextAlign.center,
                     style: AppTextStyles.md.copyWith(
                       color: Theme.of(context).brightness == Brightness.light

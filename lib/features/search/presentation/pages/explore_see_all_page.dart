@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../data/explore_genres.dart';
 import '../../data/explore_sources.dart';
 import '../cubit/explore_feed_cubit.dart';
 import '../widgets/explore_poster_grid.dart';
@@ -17,12 +18,14 @@ class ExploreSeeAllPage extends StatefulWidget {
     required this.type,
     required this.section,
     this.language,
+    this.genre,
     this.excludedIds = const {},
   });
 
   final ExploreMediaType type;
   final ExploreSection section;
   final String? language;
+  final GenreOption? genre;
 
   /// Ids hidden on top of the watchlist, e.g. Trending Now leaves out the
   /// titles already shown in Top 5.
@@ -130,6 +133,7 @@ class _ExploreSeeAllPageState extends State<ExploreSeeAllPage> {
         section: widget.section,
         page: nextPage,
         language: widget.language,
+        genre: widget.genre,
         forceRefresh: forceRefresh,
       );
     } catch (_) {
@@ -165,9 +169,12 @@ class _ExploreSeeAllPageState extends State<ExploreSeeAllPage> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = AppSpacing.xl + MediaQuery.paddingOf(context).bottom;
+    final title = widget.genre != null && !widget.genre!.isAll
+        ? '${widget.genre!.displayName} • ${widget.section.title}'
+        : widget.section.title;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.section.title)),
+      appBar: AppBar(title: Text(title)),
       body: _isLoading
           ? ExplorePosterGrid.skeleton(
               _defaultType,

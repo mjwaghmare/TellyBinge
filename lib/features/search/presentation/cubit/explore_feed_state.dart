@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../data/explore_genres.dart';
 import '../../data/explore_sources.dart';
 
 /// One fetched section. [items] is the raw, unfiltered TMDB list; watchlist
@@ -42,17 +43,26 @@ class ExploreRow extends Equatable {
 class ExploreFeed extends Equatable {
   final Map<ExploreSection, ExploreRow> rows;
   final String? language;
+  final GenreOption? genre;
 
-  const ExploreFeed({this.rows = const {}, this.language});
+  const ExploreFeed({
+    this.rows = const {},
+    this.language,
+    this.genre,
+  });
 
   ExploreRow rowFor(ExploreSection section) =>
       rows[section.source] ?? ExploreRow.loading;
 
   ExploreFeed withRow(ExploreSection section, ExploreRow row) =>
-      ExploreFeed(rows: {...rows, section.source: row}, language: language);
+      ExploreFeed(
+        rows: {...rows, section.source: row},
+        language: language,
+        genre: genre,
+      );
 
   @override
-  List<Object?> get props => [rows, language];
+  List<Object?> get props => [rows, language, genre];
 }
 
 class ExploreFeedState extends Equatable {

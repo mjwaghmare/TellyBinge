@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:popverse/features/search/data/explore_genres.dart';
 import 'package:popverse/features/search/data/explore_sources.dart';
 import 'package:popverse/features/search/presentation/cubit/explore_feed_cubit.dart';
 import 'package:popverse/features/search/presentation/cubit/explore_feed_state.dart';
@@ -90,6 +91,35 @@ void main() {
 
     expect(cubit.state.feedFor(tv).language, 'hi');
     expect(row(ExploreSection.trending).items.first['id'], 900);
+  });
+
+  test('setGenre updates feed genre and reloads with genre', () async {
+    const action = GenreOption(
+      label: 'Action',
+      emoji: '💥',
+      movieGenreId: 28,
+      tvGenreId: 10759,
+    );
+
+    cubit.ensureLoaded(tv);
+    await settle();
+
+    client.calls.clear();
+    cubit.setGenre(tv, action);
+    expect(cubit.state.feedFor(tv).genre, action);
+    expect(row(ExploreSection.trending).isLoading, isTrue);
+
+    await settle();
+    expect(client.calls, isNotEmpty);
+    expect(
+      client.calls.where((c) => c.genreIds != null),
+      isNotEmpty,
+    );
+
+    // Setting 'All' clears genre back to null
+    client.calls.clear();
+    cubit.setGenre(tv, const GenreOption(label: 'All'));
+    expect(cubit.state.feedFor(tv).genre, isNull);
   });
 
   test('fillRow tops a row up with page 2 exactly once', () async {

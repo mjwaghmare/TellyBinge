@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/network/tmdb_client.dart';
+import '../../data/explore_genres.dart';
 import '../../data/explore_sources.dart';
 import 'explore_feed_state.dart';
 
@@ -60,7 +61,33 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         state.feeds.containsKey(type)) {
       return;
     }
-    emit(state.withFeed(type, ExploreFeed(language: language)));
+    emit(
+      state.withFeed(
+        type,
+        ExploreFeed(
+          language: language,
+          genre: state.feedFor(type).genre,
+        ),
+      ),
+    );
+    _load(type, keepItems: false);
+  }
+
+  void setGenre(ExploreMediaType type, GenreOption? genre) {
+    final effectiveGenre = (genre != null && genre.isAll) ? null : genre;
+    if (state.feedFor(type).genre == effectiveGenre &&
+        state.feeds.containsKey(type)) {
+      return;
+    }
+    emit(
+      state.withFeed(
+        type,
+        ExploreFeed(
+          language: state.feedFor(type).language,
+          genre: effectiveGenre,
+        ),
+      ),
+    );
     _load(type, keepItems: false);
   }
 
@@ -78,7 +105,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     if (row.isLoading || row.isLoadingMore || row.page != 1) return;
 
     final generation = _generation[type];
-    final language = state.feedFor(type).language;
+    final feed = state.feedFor(type);
     _emitRow(type, section, row.copyWith(isLoadingMore: true));
 
     List<dynamic> more;
@@ -88,7 +115,8 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         type: type,
         section: section,
         page: 2,
-        language: language,
+        language: feed.language,
+        genre: feed.genre,
       );
     } catch (_) {
       more = const [];
@@ -113,12 +141,13 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     _loadedAt[type] = _now();
 
     if (!keepItems) {
-      final language = state.feedFor(type).language;
+      final feed = state.feedFor(type);
       emit(
         state.withFeed(
           type,
           ExploreFeed(
-            language: language,
+            language: feed.language,
+            genre: feed.genre,
             rows: {for (final s in _sources) s: ExploreRow.loading},
           ),
         ),
@@ -139,6 +168,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     int generation, {
     required bool isRefresh,
   }) async {
+    final feed = state.feedFor(type);
     List<dynamic> items;
     try {
       items = await fetchExploreSectionPage(
@@ -146,7 +176,8 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         type: type,
         section: section,
         page: 1,
-        language: state.feedFor(type).language,
+        language: feed.language,
+        genre: feed.genre,
         forceRefresh: isRefresh,
       );
     } catch (_) {

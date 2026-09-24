@@ -37,11 +37,15 @@ class GenreOption {
           runtimeType == other.runtimeType &&
           label == other.label &&
           movieGenreId == other.movieGenreId &&
-          tvGenreId == other.tvGenreId;
+          tvGenreId == other.tvGenreId &&
+          requiredLanguage == other.requiredLanguage;
 
   @override
   int get hashCode =>
-      label.hashCode ^ movieGenreId.hashCode ^ tvGenreId.hashCode;
+      label.hashCode ^
+      movieGenreId.hashCode ^
+      tvGenreId.hashCode ^
+      requiredLanguage.hashCode;
 }
 
 /// Curated genre pill options offered in the Explore tab.

@@ -1,4 +1,5 @@
 import '../../../core/network/tmdb_client.dart';
+import 'explore_genres.dart';
 
 enum ExploreMediaType {
   tv,
@@ -48,14 +49,24 @@ Future<List<dynamic>> fetchExploreSectionPage(
   required ExploreSection section,
   required int page,
   String? language,
+  GenreOption? genre,
   bool forceRefresh = false,
 }) {
   final isTv = type == ExploreMediaType.tv;
+  final genreId =
+      (genre != null && !genre.isAll) ? genre.genreIdFor(type) : null;
+  final genreIds = genreId != null ? [genreId] : null;
+  final effectiveLanguage = (genre != null &&
+          genre.requiredLanguage != null &&
+          genre.requiredLanguage!.isNotEmpty)
+      ? genre.requiredLanguage
+      : language;
+  final hasGenreFilter = genreIds != null && genreIds.isNotEmpty;
 
   switch (section.source) {
     case ExploreSection.trending:
     case ExploreSection.topWeek:
-      if (language == null) {
+      if (effectiveLanguage == null && !hasGenreFilter) {
         return isTv
             ? client.getTrendingTvShows(
                 page: page,
@@ -72,21 +83,23 @@ Future<List<dynamic>> fetchExploreSectionPage(
           ? client.discoverTvShowsWithFilters(
               page: page,
               sortBy: 'popularity.desc',
-              language: language,
+              genreIds: genreIds,
+              language: effectiveLanguage,
               forceRefresh: forceRefresh,
               throwOnError: true,
             )
           : client.discoverMoviesWithFilters(
               page: page,
               sortBy: 'popularity.desc',
-              language: language,
+              genreIds: genreIds,
+              language: effectiveLanguage,
               forceRefresh: forceRefresh,
               throwOnError: true,
             );
 
     // Placeholder source until onboarding collects genres; see ExploreFeedCubit.
     case ExploreSection.forYou:
-      if (language == null) {
+      if (effectiveLanguage == null && !hasGenreFilter) {
         return isTv
             ? client.getTopRatedTvShows(
                 page: page,
@@ -103,22 +116,24 @@ Future<List<dynamic>> fetchExploreSectionPage(
           ? client.discoverTvShowsWithFilters(
               page: page,
               sortBy: 'vote_average.desc',
-              language: language,
-              minVoteCount: _topRatedVoteFloor(language),
+              genreIds: genreIds,
+              language: effectiveLanguage,
+              minVoteCount: _topRatedVoteFloor(effectiveLanguage),
               forceRefresh: forceRefresh,
               throwOnError: true,
             )
           : client.discoverMoviesWithFilters(
               page: page,
               sortBy: 'vote_average.desc',
-              language: language,
-              minVoteCount: _topRatedVoteFloor(language),
+              genreIds: genreIds,
+              language: effectiveLanguage,
+              minVoteCount: _topRatedVoteFloor(effectiveLanguage),
               forceRefresh: forceRefresh,
               throwOnError: true,
             );
 
     case ExploreSection.newlyAdded:
-      if (language == null) {
+      if (effectiveLanguage == null && !hasGenreFilter) {
         // getUpcomingTvShows is backed by /tv/on_the_air.
         return isTv
             ? client.getUpcomingTvShows(
@@ -139,7 +154,8 @@ Future<List<dynamic>> fetchExploreSectionPage(
           ? client.discoverTvShowsWithFilters(
               page: page,
               sortBy: 'popularity.desc',
-              language: language,
+              genreIds: genreIds,
+              language: effectiveLanguage,
               airDateGte: _date(today),
               airDateLte: _date(today.add(const Duration(days: 7))),
               // Brand-new titles rarely have votes yet; the default floor of 1
@@ -151,7 +167,8 @@ Future<List<dynamic>> fetchExploreSectionPage(
           : client.discoverMoviesWithFilters(
               page: page,
               sortBy: 'popularity.desc',
-              language: language,
+              genreIds: genreIds,
+              language: effectiveLanguage,
               primaryReleaseDateGte: _date(
                 today.subtract(const Duration(days: 42)),
               ),
@@ -168,7 +185,8 @@ Future<List<dynamic>> fetchExploreSectionPage(
         return client.discoverTvShowsWithFilters(
           page: page,
           sortBy: 'popularity.desc',
-          language: language,
+          genreIds: genreIds,
+          language: effectiveLanguage,
           firstAirDateGte: _date(tomorrow),
           minVoteCount: 0,
           forceRefresh: forceRefresh,
@@ -178,13 +196,14 @@ Future<List<dynamic>> fetchExploreSectionPage(
       return client.discoverMoviesWithFilters(
         page: page,
         sortBy: 'popularity.desc',
-        language: language,
+        genreIds: genreIds,
+        language: effectiveLanguage,
         primaryReleaseDateGte: _date(tomorrow),
         minVoteCount: 0,
         forceRefresh: forceRefresh,
         throwOnError: true,
       );
-    }
+  }
 }
 
 /// Vote floor for the rating-sorted For You fallback. The client's default

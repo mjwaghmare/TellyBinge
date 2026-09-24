@@ -8,6 +8,7 @@ class ExploreCall {
     this.forceRefresh = false,
     this.throwOnError = false,
     this.language,
+    this.genreIds,
     this.sortBy,
     this.minVoteCount,
     this.airDateGte,
@@ -22,6 +23,7 @@ class ExploreCall {
   final bool forceRefresh;
   final bool throwOnError;
   final String? language;
+  final List<int>? genreIds;
   final String? sortBy;
   final int? minVoteCount;
   final String? airDateGte;
@@ -31,7 +33,7 @@ class ExploreCall {
   final String? releaseDateLte;
 
   @override
-  String toString() => '$method(page: $page, language: $language)';
+  String toString() => '$method(page: $page, language: $language, genreIds: $genreIds)';
 }
 
 /// Records every Explore fetch and answers with [respond] (empty by default).
@@ -174,6 +176,7 @@ class FakeExploreTmdbClient extends TmdbClient {
       forceRefresh: forceRefresh,
       throwOnError: throwOnError,
       language: language,
+      genreIds: genreIds,
       sortBy: sortBy,
       minVoteCount: minVoteCount,
       airDateGte: airDateGte,
@@ -203,6 +206,7 @@ class FakeExploreTmdbClient extends TmdbClient {
       forceRefresh: forceRefresh,
       throwOnError: throwOnError,
       language: language,
+      genreIds: genreIds,
       sortBy: sortBy,
       minVoteCount: minVoteCount,
       releaseDateGte: primaryReleaseDateGte,
