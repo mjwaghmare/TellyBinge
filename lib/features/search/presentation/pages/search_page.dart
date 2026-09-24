@@ -638,7 +638,7 @@ class _SearchPageState extends State<SearchPage>
         final langName = _languageNames[feed.language];
         topWeekTitle = langName != null
             ? '${activeGenre.displayName} in $langName • Top 5'
-            : '${activeGenre.displayName} • Top 5 This Week';
+            : ExploreSection.topWeek.titleWithGenre(activeGenre);
       } else {
         topWeekTitle = switch (_languageNames[feed.language]) {
           final name? => 'Top 5 in $name',

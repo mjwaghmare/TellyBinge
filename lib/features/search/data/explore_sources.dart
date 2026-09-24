@@ -25,6 +25,16 @@ enum ExploreSection {
     comingSoon => 'Coming Soon',
   };
 
+  /// Returns a display title that respects the active genre filter.
+  /// When discovery sorting is used for [topWeek] due to a genre filter, the
+  /// title drops "This Week" since discovery sort reflects overall popularity
+  /// rather than a weekly-constrained selection.
+  String titleWithGenre(GenreOption? genre) {
+    if (genre == null || genre.isAll) return title;
+    if (this == topWeek) return '${genre.displayName} • Top 5';
+    return '${genre.displayName} • $title';
+  }
+
   /// Top 5 and Trending Now are the same TMDB list split in two, so they share
   /// one fetch.
   ExploreSection get source => this == topWeek ? trending : this;
@@ -66,6 +76,9 @@ Future<List<dynamic>> fetchExploreSectionPage(
   switch (section.source) {
     case ExploreSection.trending:
     case ExploreSection.topWeek:
+      // TMDB trending endpoints take no language or genre filters. When either
+      // is active, the section falls back to /discover by popularity (which
+      // reflects overall popularity rather than a weekly-constrained window).
       if (effectiveLanguage == null && !hasGenreFilter) {
         return isTv
             ? client.getTrendingTvShows(

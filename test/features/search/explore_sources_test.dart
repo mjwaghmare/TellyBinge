@@ -226,5 +226,21 @@ void main() {
       expect(call.method, 'trendingTv');
       expect(call.genreIds, isNull);
     });
+
+    test('topWeek drops weekly claim when genre is active', () {
+      expect(ExploreSection.topWeek.titleWithGenre(null), 'Top 5 This Week');
+      expect(
+        ExploreSection.topWeek.titleWithGenre(const GenreOption(label: 'All')),
+        'Top 5 This Week',
+      );
+      expect(
+        ExploreSection.topWeek.titleWithGenre(action),
+        '💥 Action • Top 5',
+      );
+      expect(
+        ExploreSection.trending.titleWithGenre(action),
+        '💥 Action • Trending Now',
+      );
+    });
   });
 }

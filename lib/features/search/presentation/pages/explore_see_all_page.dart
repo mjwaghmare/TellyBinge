@@ -169,9 +169,7 @@ class _ExploreSeeAllPageState extends State<ExploreSeeAllPage> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = AppSpacing.xl + MediaQuery.paddingOf(context).bottom;
-    final title = widget.genre != null && !widget.genre!.isAll
-        ? '${widget.genre!.displayName} • ${widget.section.title}'
-        : widget.section.title;
+    final title = widget.section.titleWithGenre(widget.genre);
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),

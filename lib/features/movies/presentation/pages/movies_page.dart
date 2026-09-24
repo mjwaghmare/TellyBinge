@@ -9,6 +9,8 @@ import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/animated_check_button.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
@@ -756,8 +758,15 @@ class MoviesPageState extends State<MoviesPage> {
             void executeAction() async {
               if (direction == DismissDirection.endToStart) {
                 if (!isWatched) {
+                  unawaited(AppHaptics.heavyImpact());
+                  if (context.mounted) {
+                    AppSnackbar.showSuccess(
+                      context,
+                      'Marked "$title" as watched 🍿',
+                    );
+                  }
                   setState(() => isMarkingAsWatched = true);
-                  await Future.delayed(const Duration(milliseconds: 500));
+                  await Future.delayed(const Duration(milliseconds: 400));
                   if (context.mounted) {
                     unawaited(
                       context.read<MovieWatchlistCubit>().toggleWatched(
@@ -1051,67 +1060,56 @@ class MoviesPageState extends State<MoviesPage> {
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md,
                           ),
-                          child: GestureDetector(
+                          child: AnimatedCheckButton(
+                            isWatched: isWatched,
+                            isLoading: isMarkingAsWatched || isRemoving,
+                            isMovie: true,
+                            size: 36.0,
                             onTap: () async {
-                              if (uid != null) {
+                              if (uid != null && !isMarkingAsWatched && !isRemoving) {
                                 if (!isWatched) {
                                   setState(() => isMarkingAsWatched = true);
+                                  AppSnackbar.showSuccess(
+                                    context,
+                                    'Added "$title" to Watched Movies 🍿',
+                                  );
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 400),
+                                  );
+                                  if (context.mounted) {
+                                    unawaited(
+                                      context
+                                          .read<MovieWatchlistCubit>()
+                                          .toggleWatched(
+                                            uid: uid,
+                                            movieId: movieId,
+                                            isWatched: true,
+                                          ),
+                                    );
+                                  }
                                 } else {
                                   setState(() => isRemoving = true);
-                                }
-                                await Future.delayed(
-                                  const Duration(milliseconds: 600),
-                                );
-                                if (context.mounted) {
-                                  unawaited(
-                                    context
-                                        .read<MovieWatchlistCubit>()
-                                        .toggleWatched(
-                                          uid: uid,
-                                          movieId: movieId,
-                                          isWatched: !isWatched,
-                                        ),
+                                  AppSnackbar.showInfo(
+                                    context,
+                                    'Moved "$title" back to Watch Next',
                                   );
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 300),
+                                  );
+                                  if (context.mounted) {
+                                    unawaited(
+                                      context
+                                          .read<MovieWatchlistCubit>()
+                                          .toggleWatched(
+                                            uid: uid,
+                                            movieId: movieId,
+                                            isWatched: false,
+                                          ),
+                                    );
+                                  }
                                 }
                               }
                             },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isWatched
-                                    ? AppColors.success
-                                    : context.adaptiveColor(
-                                        light: Colors.transparent,
-                                        dark: AppColors.surface,
-                                      ),
-                                border: isWatched
-                                    ? null
-                                    : Border.all(
-                                        color: context.adaptiveColor(
-                                          light: AppColors.lightTextTertiary,
-                                          dark: Colors.transparent,
-                                        ),
-                                        width: 1.5,
-                                      ),
-                              ),
-                              child: Center(
-                                child: (isMarkingAsWatched || isRemoving)
-                                    ? const CircularProgressIndicator.adaptive()
-                                    : Icon(
-                                        Icons.check,
-                                        size: 20,
-                                        color: isWatched
-                                            ? AppColors.textOnPrimary
-                                            : context.adaptiveColor(
-                                                light: AppColors.lightTextTertiary,
-                                                dark: AppColors.textTertiary,
-                                              ),
-                                      ),
-                              ),
-                            ),
                           ),
                         ),
                       ],

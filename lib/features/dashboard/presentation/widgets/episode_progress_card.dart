@@ -11,6 +11,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_confirm_sheet.dart';
+import '../../../../core/widgets/animated_check_button.dart';
+import '../../../../core/widgets/app_snackbar.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -89,11 +91,27 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
       return;
     }
 
+    final isFinale = show.isSeasonFinale;
+    final isSeries = show.isSeriesFinale;
+    final showName = (show.rawShowData['name'] ?? 'Show').toString();
+
     _lastMarkedEpisodeCode = show.episodeCode;
     _markStartTime = DateTime.now();
     setState(() {
       _isMarkingAsWatched = true;
     });
+
+    if (isSeries) {
+      AppSnackbar.showSuccess(
+        context,
+        '🏆 Series Complete! You finished $showName!',
+      );
+    } else if (isFinale) {
+      AppSnackbar.showSuccess(
+        context,
+        '🎉 Season ${show.targetSeason} Complete for $showName!',
+      );
+    }
 
     _markingSafetyTimer?.cancel();
     _markingSafetyTimer = Timer(const Duration(seconds: 4), () {
@@ -506,7 +524,11 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                       child: Skeleton.ignore(
                         child: Padding(
                           padding: const EdgeInsets.only(right: AppSpacing.md),
-                          child: GestureDetector(
+                          child: AnimatedCheckButton(
+                            isWatched: isWatched,
+                            isLoading: _isMarkingAsWatched,
+                            isFinale: show.isSeasonFinale || show.isSeriesFinale,
+                            size: 40.0,
                             onTap: () {
                               if (!isWatched &&
                                   !isDummy &&
@@ -514,52 +536,6 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                                 _markAsWatched();
                               }
                             },
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                minWidth: 48.0,
-                                minHeight: 48.0,
-                              ),
-                              child: Center(
-                                child: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: isWatched
-                                        ? AppColors.success
-                                        : context.adaptiveColor(
-                                            light: Colors.transparent,
-                                            dark: AppColors.surface,
-                                          ),
-                                    border: isWatched
-                                        ? null
-                                        : Border.all(
-                                            color: context.adaptiveColor(
-                                              light: AppColors.lightTextTertiary,
-                                              dark: Colors.transparent,
-                                            ),
-                                            width: 1.5,
-                                          ),
-                                  ),
-                                  child: _isMarkingAsWatched
-                                      ? const CircularProgressIndicator.adaptive()
-                                      : (isWatched
-                                            ? const Icon(
-                                                Icons.check,
-                                                color: AppColors.textOnPrimary,
-                                                size: 24,
-                                              )
-                                            : Icon(
-                                                Icons.check,
-                                                color: context.adaptiveColor(
-                                                  light: AppColors.lightTextTertiary,
-                                                  dark: AppColors.textTertiary,
-                                                ),
-                                                size: 24,
-                                              )),
-                                ),
-                              ),
-                            ),
                           ),
                         ),
                       ),

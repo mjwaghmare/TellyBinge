@@ -13,6 +13,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/action_circle_button.dart';
+import '../../../../core/widgets/animated_check_button.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/app_snackbar.dart';
@@ -2254,7 +2255,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                             episodeKey,
                           );
 
-                          return GestureDetector(
+                          final isSeasonFinale = index == episodes.length - 1;
+
+                          return AnimatedCheckButton(
+                            isWatched: isWatched,
+                            isLoading: isLoadingThisEp,
+                            isFinale: isSeasonFinale,
+                            size: 36.0,
                             onTap: () async {
                               if (isLoadingThisEp) return;
                               unawaited(AppHaptics.lightImpact());
@@ -2403,36 +2410,13 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                                   });
                                 }
                               }
+                              if (!isWatched && context.mounted && isSeasonFinale) {
+                                AppSnackbar.showSuccess(
+                                  context,
+                                  '🎉 Season $seasonNumber Finale Complete!',
+                                );
+                              }
                             },
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isWatched
-                                    ? AppColors.success
-                                    : Colors.transparent,
-                                border: Border.all(
-                                  color: isWatched
-                                      ? AppColors.success
-                                      : (context.isLight
-                                            ? AppColors.lightTextTertiary
-                                            : AppColors.textTertiary),
-                                  width: 2,
-                                ),
-                              ),
-                              child: isLoadingThisEp
-                                  ? const CircularProgressIndicator.adaptive()
-                                  : Icon(
-                                      Icons.check,
-                                      size: 20,
-                                      color: isWatched
-                                          ? AppColors.textOnPrimary
-                                          : (context.isLight
-                                                ? AppColors.lightTextTertiary
-                                                : AppColors.textTertiary),
-                                    ),
-                            ),
                           );
                         },
                       );
