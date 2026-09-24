@@ -658,9 +658,15 @@ class TmdbClient {
   }
 
   /// Fetch Upcoming Movies
-  Future<List<dynamic>> getUpcomingMovies({int page = 1}) async {
+  Future<List<dynamic>> getUpcomingMovies({
+    int page = 1,
+    bool forceRefresh = false,
+    bool throwOnError = false,
+  }) async {
     final cacheKey = 'upcoming_movie_page_$page';
-    final cachedData = await TmdbCacheManager.instance.readCache(cacheKey);
+    final cachedData = forceRefresh
+        ? null
+        : await TmdbCacheManager.instance.readCache(cacheKey);
     if (cachedData != null && cachedData['results'] != null) {
       return _filterContent(cachedData['results'] as List<dynamic>);
     }
@@ -681,6 +687,7 @@ class TmdbClient {
         return _filterContent(expiredData['results'] as List<dynamic>);
       }
       debugPrint('Error fetching Upcoming movies: $e');
+      if (throwOnError) rethrow;
       return [];
     }
   }

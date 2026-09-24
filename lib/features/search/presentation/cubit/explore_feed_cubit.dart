@@ -34,6 +34,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     ExploreSection.forYou,
     ExploreSection.trending,
     ExploreSection.newlyAdded,
+    ExploreSection.comingSoon,
   ];
 
   /// Bumped on every reload so results from a superseded load (say, the

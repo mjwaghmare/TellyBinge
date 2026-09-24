@@ -54,6 +54,14 @@ void main() {
         (await fetch(movie, ExploreSection.newlyAdded)).method,
         'nowPlayingMovie',
       );
+      expect(
+        (await fetch(movie, ExploreSection.comingSoon)).method,
+        'upcomingMovie',
+      );
+      final tvUpcoming = await fetch(tv, ExploreSection.comingSoon);
+      expect(tvUpcoming.method, 'discoverTv');
+      expect(tvUpcoming.firstAirDateGte, isNotNull);
+      expect(tvUpcoming.minVoteCount, 0);
     });
 
     test('passes page and forceRefresh through', () async {
@@ -103,6 +111,30 @@ void main() {
         movie.releaseDateGte!.compareTo(movie.releaseDateLte!),
         lessThan(0),
       );
+    });
+
+    test('coming soon filters future releases with popularity sort', () async {
+      final tv = await fetch(
+        ExploreMediaType.tv,
+        ExploreSection.comingSoon,
+        language: 'hi',
+      );
+      expect(tv.method, 'discoverTv');
+      expect(tv.sortBy, 'popularity.desc');
+      expect(tv.language, 'hi');
+      expect(tv.firstAirDateGte, isNotNull);
+      expect(tv.minVoteCount, 0);
+
+      final movie = await fetch(
+        ExploreMediaType.movie,
+        ExploreSection.comingSoon,
+        language: 'hi',
+      );
+      expect(movie.method, 'discoverMovie');
+      expect(movie.sortBy, 'popularity.desc');
+      expect(movie.language, 'hi');
+      expect(movie.releaseDateGte, isNotNull);
+      expect(movie.minVoteCount, 0);
     });
 
     test('for you sorts by rating with a Marathi vote floor', () async {

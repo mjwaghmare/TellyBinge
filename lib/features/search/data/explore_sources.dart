@@ -13,13 +13,15 @@ enum ExploreSection {
   topWeek,
   forYou,
   trending,
-  newlyAdded;
+  newlyAdded,
+  comingSoon;
 
   String get title => switch (this) {
     topWeek => 'Top 5 This Week',
     forYou => 'For You',
     trending => 'Trending Now',
     newlyAdded => 'Newly Added',
+    comingSoon => 'Coming Soon',
   };
 
   /// Top 5 and Trending Now are the same TMDB list split in two, so they share
@@ -158,11 +160,45 @@ Future<List<dynamic>> fetchExploreSectionPage(
               forceRefresh: forceRefresh,
               throwOnError: true,
             );
+
+    case ExploreSection.comingSoon:
+      final today = DateTime.now();
+      final tomorrow = today.add(const Duration(days: 1));
+      if (isTv) {
+        return client.discoverTvShowsWithFilters(
+          page: page,
+          sortBy: 'popularity.desc',
+          language: language,
+          firstAirDateGte: _date(tomorrow),
+          minVoteCount: 0,
+          forceRefresh: forceRefresh,
+          throwOnError: true,
+        );
+      }
+      if (language == null) {
+        return client.getUpcomingMovies(
+          page: page,
+          forceRefresh: forceRefresh,
+          throwOnError: true,
+        );
+      }
+      return client.discoverMoviesWithFilters(
+        page: page,
+        sortBy: 'popularity.desc',
+        language: language,
+        primaryReleaseDateGte: _date(tomorrow),
+        minVoteCount: 0,
+        forceRefresh: forceRefresh,
+        throwOnError: true,
+      );
   }
 }
 
 /// Vote floor for the rating-sorted For You fallback. The client's default
-/// drops to 0 for Marathi, which lets "10.0 from one vote" titles top the row.
-int? _topRatedVoteFloor(String? language) => language == 'mr' ? 15 : null;
+/// drops to 0 for regional Indian languages, which lets "10.0 from one vote" titles top the row.
+int? _topRatedVoteFloor(String? language) => switch (language) {
+  'mr' || 'ta' || 'te' || 'ml' => 15,
+  _ => null,
+};
 
 String _date(DateTime d) => d.toIso8601String().split('T').first;

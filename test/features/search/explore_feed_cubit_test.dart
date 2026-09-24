@@ -25,6 +25,7 @@ void main() {
         'trendingTv' => titles(100 * call.page, 20),
         'topRatedTv' => titles(1000 + 100 * call.page, 20),
         'onTheAirTv' => titles(5000 + 100 * call.page, 20),
+        'discoverTv' => titles(7000 + 100 * call.page, 20),
         _ => const [],
       },
     );
@@ -48,6 +49,7 @@ void main() {
       'trendingTv',
       'topRatedTv',
       'onTheAirTv',
+      'discoverTv',
     });
     expect(row(ExploreSection.trending).items, hasLength(20));
     expect(row(ExploreSection.forYou).page, 1);
@@ -136,7 +138,7 @@ void main() {
     now = now.add(ExploreFeedCubit.staleAfter);
     cubit.ensureLoaded(tv);
     await settle();
-    expect(client.calls, hasLength(3));
+    expect(client.calls, hasLength(4));
     expect(
       client.calls,
       everyElement(predicate<ExploreCall>((c) => c.forceRefresh)),

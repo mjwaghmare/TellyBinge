@@ -17,6 +17,20 @@ import '../widgets/explore_section_row.dart';
 import '../widgets/watchlisted_ids_builder.dart';
 import 'explore_see_all_page.dart';
 
+class _LanguageOption {
+  final String code;
+  final String label;
+  final String nativeName;
+  final String flag;
+
+  const _LanguageOption({
+    required this.code,
+    required this.label,
+    required this.nativeName,
+    required this.flag,
+  });
+}
+
 class SearchPage extends StatefulWidget {
   final ValueNotifier<int>? subTabNotifier;
   final ValueNotifier<int>? mainTabNotifier;
@@ -47,10 +61,22 @@ class _SearchPageState extends State<SearchPage>
 
   int _previousTabIndex = 0;
 
-  /// Languages offered by the language filter, by TMDB code.
-  static const Map<String, String> _languageNames = {
-    'hi': 'Hindi',
-    'mr': 'Marathi',
+  /// Languages offered by the language filter, sorted for Indian audience preference.
+  static const List<_LanguageOption> _languages = [
+    _LanguageOption(code: 'hi', label: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳'),
+    _LanguageOption(code: 'en', label: 'English', nativeName: 'English', flag: '🇬🇧'),
+    _LanguageOption(code: 'mr', label: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳'),
+    _LanguageOption(code: 'ta', label: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳'),
+    _LanguageOption(code: 'te', label: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳'),
+    _LanguageOption(code: 'ml', label: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳'),
+    _LanguageOption(code: 'ko', label: 'Korean', nativeName: '한국어', flag: '🇰🇷'),
+    _LanguageOption(code: 'ja', label: 'Japanese', nativeName: '日本語', flag: '🇯🇵'),
+    _LanguageOption(code: 'es', label: 'Spanish', nativeName: 'Español', flag: '🇪🇸'),
+    _LanguageOption(code: 'fr', label: 'French', nativeName: 'Français', flag: '🇫🇷'),
+  ];
+
+  static final Map<String, String> _languageNames = {
+    for (final l in _languages) l.code: l.label,
   };
 
   static ExploreMediaType _typeOf(bool isTv) =>
@@ -251,6 +277,7 @@ class _SearchPageState extends State<SearchPage>
     TextEditingController controller, {
     required bool isTv,
   }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Padding(
       padding: const EdgeInsets.only(
         left: AppSpacing.md,
@@ -261,42 +288,94 @@ class _SearchPageState extends State<SearchPage>
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: _searchCubitFor(isTv).onSearchTextChanged,
-              decoration: InputDecoration(
-                hintText: isTv ? 'Search shows...' : 'Search movies...',
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: context.adaptiveColor(
-                    light: AppColors.lightTextTertiary,
-                    dark: AppColors.textTertiary,
-                  ),
+            child: SizedBox(
+              height: 44.0,
+              child: TextField(
+                controller: controller,
+                onChanged: _searchCubitFor(isTv).onSearchTextChanged,
+                style: AppTextStyles.smMedium.copyWith(
+                  color: isLight
+                      ? AppColors.lightTextPrimary
+                      : AppColors.textPrimary,
                 ),
-                suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: controller,
-                  builder: (context, value, child) {
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (value.text.isNotEmpty)
-                          IconButton(
-                            icon: Icon(
-                              Icons.clear,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? AppColors.lightTextTertiary
-                                  : AppColors.textTertiary,
-                            ),
-                            onPressed: () {
-                              controller.clear();
-                              _searchCubitFor(isTv).clear();
-                            },
-                          ),
-                      ],
-                    );
-                  },
+                cursorColor: AppColors.primary,
+                textAlignVertical: TextAlignVertical.center,
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: isTv ? 'Search shows...' : 'Search movies...',
+                  hintStyle: AppTextStyles.sm.copyWith(
+                    color: isLight
+                        ? AppColors.lightTextTertiary
+                        : AppColors.textTertiary,
+                  ),
+                  filled: true,
+                  fillColor: isLight
+                      ? AppColors.lightSurfaceElevated
+                      : AppColors.surfaceElevated,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: 10.0,
+                  ),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 12.0, right: 8.0),
+                    child: Icon(
+                      Icons.search_rounded,
+                      size: 20,
+                      color: isLight
+                          ? AppColors.lightTextTertiary
+                          : AppColors.textTertiary,
+                    ),
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                  suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: controller,
+                    builder: (context, value, child) {
+                      if (value.text.isEmpty) return const SizedBox.shrink();
+                      return IconButton(
+                        icon: Icon(
+                          Icons.cancel_rounded,
+                          size: 18,
+                          color: isLight
+                              ? AppColors.lightTextTertiary
+                              : AppColors.textTertiary,
+                        ),
+                        splashRadius: 18,
+                        onPressed: () {
+                          AppHaptics.lightImpact();
+                          controller.clear();
+                          _searchCubitFor(isTv).clear();
+                        },
+                      );
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(
+                      color: isLight
+                          ? AppColors.borderLight
+                          : AppColors.borderDark,
+                      width: 1.0,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(
+                      color: isLight
+                          ? AppColors.borderLight
+                          : AppColors.borderDark,
+                      width: 1.0,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 1.5,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -304,35 +383,98 @@ class _SearchPageState extends State<SearchPage>
           const SizedBox(width: AppSpacing.sm),
           BlocSelector<ExploreFeedCubit, ExploreFeedState, String?>(
             selector: (state) => state.feedFor(_typeOf(isTv)).language,
-            builder: (context, language) => IconButton(
-              onPressed: () => _showLanguageBottomSheet(isTv, language),
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Padding(
-                    padding: AppSpacing.allXXS,
-                    child: Text('🇮🇳', style: AppTextStyles.lg),
-                  ),
-                  if (language != null)
-                    Positioned(
-                      top: 6,
-                      right: 2,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: AppColors.success,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            width: 2,
-                          ),
-                        ),
+            builder: (context, language) {
+              final selected = language != null
+                  ? _languages.cast<_LanguageOption?>().firstWhere(
+                      (l) => l?.code == language,
+                      orElse: () => null,
+                    )
+                  : null;
+              final isFiltered = selected != null;
+
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showLanguageBottomSheet(isTv, language),
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 44.0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    decoration: BoxDecoration(
+                      color: isFiltered
+                          ? (isLight
+                              ? AppColors.lightPrimaryContainer
+                              : AppColors.primaryDark.withValues(alpha: 0.35))
+                          : (isLight
+                              ? AppColors.lightSurfaceElevated
+                              : AppColors.surfaceElevated),
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: isFiltered
+                            ? (isLight
+                                ? AppColors.lightPrimary
+                                : AppColors.primary)
+                            : (isLight
+                                ? AppColors.borderLight
+                                : AppColors.borderDark),
+                        width: isFiltered ? 1.5 : 1.0,
                       ),
                     ),
-                ],
-              ),
-            ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isFiltered) ...[
+                          Text(selected.flag, style: const TextStyle(fontSize: 14)),
+                          AppSpacing.gapW4,
+                          Text(
+                            selected.code.toUpperCase(),
+                            style: AppTextStyles.xsBold.copyWith(
+                              color: isLight
+                                  ? AppColors.lightPrimary
+                                  : AppColors.primaryLight,
+                            ),
+                          ),
+                          AppSpacing.gapW4,
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ] else ...[
+                          Icon(
+                            Icons.translate_rounded,
+                            size: 18,
+                            color: isLight
+                                ? AppColors.lightTextSecondary
+                                : AppColors.textSecondary,
+                          ),
+                          AppSpacing.gapW4,
+                          Text(
+                            'All',
+                            style: AppTextStyles.xsBold.copyWith(
+                              color: isLight
+                                  ? AppColors.lightTextSecondary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_drop_down_rounded,
+                            size: 18,
+                            color: isLight
+                                ? AppColors.lightTextTertiary
+                                : AppColors.textTertiary,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -346,15 +488,20 @@ class _SearchPageState extends State<SearchPage>
     AppActionSheetAction buildOption(
       String label,
       String subtitle,
-      String value,
-    ) {
+      String value, {
+      String? flag,
+    }) {
       final isSelected = value == currentLanguage;
       return AppActionSheetAction(
-        label: label,
+        label: flag != null ? '$flag  $label' : label,
         subtitle: subtitle,
-        icon: Icons.translate_rounded,
+        icon: value == 'all' ? Icons.public_rounded : Icons.translate_rounded,
         trailing: isSelected
-            ? Icon(Icons.check_circle_rounded, color: context.primary, size: 22)
+            ? const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.primary,
+                size: 22,
+              )
             : const SizedBox.shrink(),
         onTap: () {
           if (isSelected) return;
@@ -366,14 +513,14 @@ class _SearchPageState extends State<SearchPage>
 
     AppActionSheet.show(
       context,
-      title: 'Language',
+      title: 'Filter by Language',
       subtitle: isTv
-          ? 'Filter TV shows by language'
-          : 'Filter movies by language',
+          ? 'Discover TV shows in your preferred language'
+          : 'Discover movies in your preferred language',
       actions: [
-        buildOption('All', 'Every available language', 'all'),
-        buildOption(_languageNames['hi']!, 'हिन्दी', 'hi'),
-        buildOption(_languageNames['mr']!, 'मराठी', 'mr'),
+        buildOption('All', 'Every available language', 'all', flag: '🌐'),
+        for (final l in _languages)
+          buildOption(l.label, l.nativeName, l.code, flag: l.flag),
       ],
     );
   }
@@ -453,6 +600,7 @@ class _SearchPageState extends State<SearchPage>
       ExploreSection.forYou,
       ExploreSection.trending,
       ExploreSection.newlyAdded,
+      ExploreSection.comingSoon,
     ]) {
       final row = feed.rowFor(section);
       anyLoading |= row.isLoading;

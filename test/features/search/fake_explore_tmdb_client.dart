@@ -12,6 +12,7 @@ class ExploreCall {
     this.minVoteCount,
     this.airDateGte,
     this.airDateLte,
+    this.firstAirDateGte,
     this.releaseDateGte,
     this.releaseDateLte,
   });
@@ -25,6 +26,7 @@ class ExploreCall {
   final int? minVoteCount;
   final String? airDateGte;
   final String? airDateLte;
+  final String? firstAirDateGte;
   final String? releaseDateGte;
   final String? releaseDateLte;
 
@@ -129,6 +131,20 @@ class FakeExploreTmdbClient extends TmdbClient {
   );
 
   @override
+  Future<List<dynamic>> getUpcomingMovies({
+    int page = 1,
+    bool forceRefresh = false,
+    bool throwOnError = false,
+  }) => _record(
+    ExploreCall(
+      'upcomingMovie',
+      page: page,
+      forceRefresh: forceRefresh,
+      throwOnError: throwOnError,
+    ),
+  );
+
+  @override
   Future<List<dynamic>> searchTv(String query, {int page = 1}) =>
       _record(ExploreCall('searchTv', page: page));
 
@@ -162,6 +178,7 @@ class FakeExploreTmdbClient extends TmdbClient {
       minVoteCount: minVoteCount,
       airDateGte: airDateGte,
       airDateLte: airDateLte,
+      firstAirDateGte: firstAirDateGte,
     ),
   );
 
