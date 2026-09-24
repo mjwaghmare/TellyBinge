@@ -178,19 +178,19 @@ class _ExploreTopWeekRowState extends State<ExploreTopWeekRow> {
   static const double _posterWidth = _cardWidth;
   static const double _posterHeight = _posterWidth * 1.5;
 
-  /// Bebas Neue's cap height as a fraction of its font size.
-  static const double _capHeightRatio = 0.7;
+  /// Bold stroke thickness for the rank number outline.
+  static const double _strokeWidth = 4.0;
 
-  /// Digits stand as tall as the poster.
-  static const double _fontSize = _posterHeight / _capHeightRatio;
+  /// Sized so digits stand tall alongside the poster (~160px visual height)
+  /// with comfortable breathing room so the bold stroke never clips.
+  static const double _fontSize = 216.0;
 
   /// Share of each number's slot the poster covers, as in Netflix's row: the
   /// digit's right side disappears behind the poster.
   static const double _overlapRatio = 0.3;
 
-  /// Laid-out rank numbers, reused across builds. Laying out five 240px
-  /// glyphs on every rebuild (e.g. each time the row scrolls back into
-  /// view) showed up as scroll jank.
+  /// Laid-out rank numbers, reused across builds. Laying out five glyphs
+  /// on every rebuild showed up as scroll jank.
   List<TextPainter>? _numbers;
   double _slotWidth = 0;
   Brightness? _numbersBrightness;
@@ -232,17 +232,19 @@ class _ExploreTopWeekRowState extends State<ExploreTopWeekRow> {
       letterSpacing: 0,
       foreground: Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
+        ..strokeWidth = _strokeWidth
         ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round
         ..color = isLight
-            ? Colors.black.withValues(alpha: 0.35)
-            : Colors.white.withValues(alpha: 0.45),
+            ? AppColors.lightTextPrimary.withValues(alpha: 0.60)
+            : AppColors.textPrimary.withValues(alpha: 0.70),
     );
     final numbers = [
       for (var rank = 1; rank <= exploreRowMaxItems; rank++)
         TextPainter(
           text: TextSpan(text: '$rank', style: style),
           textDirection: TextDirection.ltr,
+          textScaler: TextScaler.noScaling,
           maxLines: 1,
         )..layout(),
     ];
@@ -276,6 +278,7 @@ class _ExploreTopWeekRowState extends State<ExploreTopWeekRow> {
             height: _posterHeight,
             child: ListView.separated(
               key: PageStorageKey<String>('explore_row_${defaultType}_top'),
+              clipBehavior: Clip.none,
               scrollDirection: Axis.horizontal,
               physics: isLoading
                   ? const NeverScrollableScrollPhysics()
@@ -295,6 +298,7 @@ class _ExploreTopWeekRowState extends State<ExploreTopWeekRow> {
                     container: true,
                     label: isLoading ? null : 'Rank $rank, $name',
                     child: Stack(
+                      clipBehavior: Clip.none,
                       children: [
                         // Left out while loading: the outline would tower over
                         // the shimmering poster placeholders.
@@ -305,6 +309,7 @@ class _ExploreTopWeekRowState extends State<ExploreTopWeekRow> {
                                 painter: _RankNumberPainter(
                                   number: numbers[index],
                                   slotWidth: slotWidth,
+                                  fontSize: _fontSize,
                                 ),
                               ),
                             ),
@@ -333,22 +338,32 @@ class _ExploreTopWeekRowState extends State<ExploreTopWeekRow> {
   }
 }
 
-/// Paints a rank number right-aligned in its slot, with its baseline on the
-/// poster's bottom edge so the digit spans the poster's height.
+/// Paints a rank number right-aligned in its slot, vertically centered against
+/// the poster so the bold outline is never clipped at the top or bottom.
 class _RankNumberPainter extends CustomPainter {
-  _RankNumberPainter({required this.number, required this.slotWidth});
+  _RankNumberPainter({
+    required this.number,
+    required this.slotWidth,
+    required this.fontSize,
+  });
 
   final TextPainter number;
   final double slotWidth;
+  final double fontSize;
 
   @override
   void paint(Canvas canvas, Size size) {
     final baseline = number.computeDistanceToActualBaseline(
       TextBaseline.alphabetic,
     );
+    // In Bebas Neue, the visual glyph center sits 0.35 * fontSize above the
+    // alphabetic baseline (cap height is ~0.71, descender overshoot ~0.01).
+    // Placing the visual center at size.height / 2 positions all digits on
+    // an identical baseline with balanced top and bottom clearance.
+    final baselineY = (size.height / 2) + (0.35 * fontSize);
     number.paint(
       canvas,
-      Offset(slotWidth - number.width, size.height - baseline),
+      Offset(slotWidth - number.width, baselineY - baseline),
     );
   }
 
@@ -356,6 +371,7 @@ class _RankNumberPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RankNumberPainter oldDelegate) =>
       oldDelegate.slotWidth != slotWidth ||
+      oldDelegate.fontSize != fontSize ||
       !identical(oldDelegate.number, number);
 }
 

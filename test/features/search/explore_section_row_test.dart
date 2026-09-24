@@ -158,5 +158,25 @@ void main() {
       );
       expect(numbers, findsNothing);
     });
+
+    testWidgets('renders rank numbers with Clip.none to avoid edge clipping', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        ExploreTopWeekRow(
+          title: 'Top 5 This Week',
+          items: titles(1, 5),
+          defaultType: 'movie',
+        ),
+      );
+      final listViewFinder = find.descendant(
+        of: find.byType(ExploreTopWeekRow),
+        matching: find.byType(ListView),
+      );
+      expect(listViewFinder, findsOneWidget);
+      final listView = tester.widget<ListView>(listViewFinder);
+      expect(listView.clipBehavior, Clip.none);
+    });
   });
 }
