@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 /// Semantic classification for TV show lifecycle states.
@@ -86,34 +87,34 @@ class TvStatusBadge extends StatelessWidget {
       // High-contrast tokens for dark backgrounds / hero backdrop overlays
       switch (statusType) {
         case TvShowStatusType.returning:
-          backgroundColor = const Color(0xFF14532D).withValues(alpha: 0.55);
-          borderColor = const Color(0xFF22C55E).withValues(alpha: 0.45);
-          textColor = const Color(0xFF86EFAC);
-          dotColor = const Color(0xFF4ADE80);
+          backgroundColor = AppColors.success.withValues(alpha: 0.20);
+          borderColor = AppColors.success.withValues(alpha: 0.45);
+          textColor = AppColors.success;
+          dotColor = AppColors.success;
           break;
         case TvShowStatusType.ended:
-          backgroundColor = Colors.black.withValues(alpha: 0.45);
-          borderColor = const Color(0xFF71717A).withValues(alpha: 0.5);
-          textColor = const Color(0xFFE4E4E7);
-          dotColor = const Color(0xFFA1A1AA);
+          backgroundColor = AppColors.surfaceElevated.withValues(alpha: 0.75);
+          borderColor = AppColors.borderDark;
+          textColor = AppColors.textPrimary;
+          dotColor = AppColors.textSecondary;
           break;
         case TvShowStatusType.cancelled:
-          backgroundColor = AppColors.error.withValues(alpha: 0.25);
+          backgroundColor = AppColors.error.withValues(alpha: 0.20);
           borderColor = AppColors.error.withValues(alpha: 0.45);
-          textColor = const Color(0xFFFCA5A5);
+          textColor = AppColors.errorSoft;
           dotColor = AppColors.error;
           break;
         case TvShowStatusType.upcoming:
-          backgroundColor = AppColors.airing.withValues(alpha: 0.25);
+          backgroundColor = AppColors.airing.withValues(alpha: 0.20);
           borderColor = AppColors.airing.withValues(alpha: 0.45);
-          textColor = const Color(0xFF93C5FD);
+          textColor = AppColors.skyBlue;
           dotColor = AppColors.airing;
           break;
         case TvShowStatusType.unknown:
-          backgroundColor = Colors.black.withValues(alpha: 0.45);
-          borderColor = const Color(0xFF71717A).withValues(alpha: 0.5);
-          textColor = const Color(0xFFE4E4E7);
-          dotColor = const Color(0xFFA1A1AA);
+          backgroundColor = AppColors.surfaceElevated.withValues(alpha: 0.75);
+          borderColor = AppColors.borderDark;
+          textColor = AppColors.textPrimary;
+          dotColor = AppColors.textSecondary;
           break;
       }
     } else {
@@ -155,8 +156,8 @@ class TvStatusBadge extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: 8.0,
-        vertical: 3.5,
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
       ),
       decoration: BoxDecoration(
         color: backgroundColor,
@@ -175,7 +176,7 @@ class TvStatusBadge extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 5.0),
+          AppSpacing.gapW4,
           Text(
             label,
             style: AppTextStyles.xsBold.copyWith(

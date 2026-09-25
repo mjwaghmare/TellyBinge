@@ -81,7 +81,7 @@ class ThemeSelectionBottomSheet extends StatelessWidget {
                       color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  AppSpacing.gapH4,
                   Text(
                     'Choose how Popverse looks on your device',
                     style: AppTextStyles.sm.copyWith(
@@ -174,7 +174,7 @@ class _ThemePhoneOption extends StatelessWidget {
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.all(3.0),
+            padding: AppSpacing.allXXS,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
@@ -252,7 +252,7 @@ class _PhoneDeviceFrame extends StatelessWidget {
                   width: 20,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF111111),
+                    color: AppColors.darkBackground,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -267,10 +267,10 @@ class _PhoneDeviceFrame extends StatelessWidget {
                     borderRadius: bezelRadius,
                     border: Border.all(
                       color: mode == ThemeMode.light
-                          ? const Color(0xFFD1D5DB)
+                          ? AppColors.borderLight
                           : (mode == ThemeMode.dark
-                              ? const Color(0xFF2E2E34)
-                              : const Color(0xFF4B5563)),
+                              ? AppColors.borderDark
+                              : AppColors.textTertiary),
                       width: 1.5,
                     ),
                   ),
@@ -308,7 +308,7 @@ class _PhoneDeviceFrame extends StatelessWidget {
             Center(
               child: Container(
                 width: 1.0,
-                color: const Color(0xFF9CA3AF).withValues(alpha: 0.4),
+                color: AppColors.textSecondary.withValues(alpha: 0.4),
               ),
             ),
           ],
@@ -328,12 +328,12 @@ class _MiniPopverseScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final surface = isDark ? AppColors.surface : AppColors.lightSurface;
-    final cardBg = isDark ? const Color(0xFF1E1E24) : const Color(0xFFE2E8F0);
-    final cardAccent = isDark ? const Color(0xFF2A2A32) : const Color(0xFFCBD5E1);
+    final cardBg = isDark ? AppColors.surfaceElevated : AppColors.lightSurfaceElevated;
+    final cardAccent = isDark ? AppColors.surfaceStackedDark : AppColors.borderLight;
     final textMuted = isDark ? AppColors.textTertiary : AppColors.lightTextTertiary;
     final primary = isDark ? AppColors.primary : AppColors.lightPrimary;
     final chipBg = isDark ? AppColors.surfaceElevated : AppColors.lightSurfaceElevated;
-    final borderColor = isDark ? const Color(0xFF222228) : AppColors.borderLight;
+    final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
 
     return Container(
       color: bg,
@@ -343,12 +343,12 @@ class _MiniPopverseScreen extends StatelessWidget {
           // ── Top area: Dynamic Island clearance + TabBar ──
           Container(
             color: surface,
-            padding: const EdgeInsets.only(top: 13),
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
             child: Column(
               children: [
                 // TabBar: 2 tab pills ("WATCH LIST" active, "UPCOMING" muted)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
                   child: Row(
                     children: [
                       // Active tab
@@ -370,7 +370,7 @@ class _MiniPopverseScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      AppSpacing.gapW4,
                       // Inactive tab
                       Expanded(
                         child: Column(
@@ -397,12 +397,15 @@ class _MiniPopverseScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpacing.micro),
 
           // ── Sticky section chip ("WATCH NEXT") ──
           Center(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xxs,
+                vertical: AppSpacing.micro,
+              ),
               decoration: BoxDecoration(
                 color: chipBg,
                 borderRadius: BorderRadius.circular(6),
@@ -418,12 +421,12 @@ class _MiniPopverseScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpacing.micro),
 
           // ── 3-Column Poster Grid with gradient overlays ──
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3.5),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   const crossAxisCount = 3;
@@ -467,9 +470,9 @@ class _MiniPopverseScreen extends StatelessWidget {
                                         begin: Alignment.bottomCenter,
                                         end: Alignment.topCenter,
                                         colors: [
-                                          const Color(0xFF0D0D0D)
+                                          AppColors.darkBackground
                                               .withValues(alpha: 0.9),
-                                          const Color(0xFF0D0D0D)
+                                          AppColors.darkBackground
                                               .withValues(alpha: 0.3),
                                           Colors.transparent,
                                         ],

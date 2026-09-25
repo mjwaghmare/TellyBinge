@@ -694,9 +694,9 @@ class _PersonDetailsBottomSheetState extends State<PersonDetailsBottomSheet> {
                           const Icon(
                             Icons.star_rounded,
                             size: 13,
-                            color: Color(0xFFFFB800),
+                            color: AppColors.gold,
                           ),
-                          const SizedBox(width: 2),
+                          const SizedBox(width: AppSpacing.micro),
                           Text(
                             voteAverage.toStringAsFixed(1),
                             style: AppTextStyles.xsBold.copyWith(

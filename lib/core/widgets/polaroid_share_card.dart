@@ -58,7 +58,7 @@ class PolaroidShareCard extends StatelessWidget {
           color: Colors.white, // Crisp gallery-white photo paper
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-            color: const Color(0xFFE4E4E7).withValues(alpha: 0.8),
+            color: AppColors.borderLight.withValues(alpha: 0.8),
             width: 0.5,
           ),
           boxShadow: [
@@ -199,12 +199,12 @@ class PolaroidShareCard extends StatelessWidget {
   Widget _buildPhotoImage() {
     if (imageUrl == null || imageUrl!.isEmpty) {
       return Container(
-        color: const Color(0xFF1E1E1E),
+        color: AppColors.surfaceElevated,
         child: const Center(
           child: Icon(
             Icons.movie_filter_rounded,
             size: 48,
-            color: Color(0xFF71717A),
+            color: AppColors.textTertiary,
           ),
         ),
       );
@@ -214,7 +214,7 @@ class PolaroidShareCard extends StatelessWidget {
       imageUrl: imageUrl!,
       fit: BoxFit.cover,
       placeholder: (context, url) => Container(
-        color: const Color(0xFF1E1E1E),
+        color: AppColors.surfaceElevated,
         child: const Center(
           child: SizedBox(
             width: 28,
@@ -227,12 +227,12 @@ class PolaroidShareCard extends StatelessWidget {
         ),
       ),
       errorWidget: (context, url, error) => Container(
-        color: const Color(0xFF1E1E1E),
+        color: AppColors.surfaceElevated,
         child: const Center(
           child: Icon(
             Icons.broken_image_rounded,
             size: 44,
-            color: Color(0xFF71717A),
+            color: AppColors.textTertiary,
           ),
         ),
       ),
@@ -262,7 +262,7 @@ class PolaroidShareCard extends StatelessWidget {
             fontSize: 24,
             fontWeight: FontWeight.w700,
             height: 1.1,
-            color: const Color(0xFF18181B), // Dark ink
+            color: AppColors.lightTextPrimary, // Dark ink
           ),
         ),
 
@@ -284,7 +284,7 @@ class PolaroidShareCard extends StatelessWidget {
                   style: GoogleFonts.caveat(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF3F3F46),
+                    color: AppColors.lightTextSecondary,
                   ),
                 ),
             ],
@@ -320,7 +320,7 @@ class PolaroidShareCard extends StatelessWidget {
           child: Icon(
             icon,
             size: 18,
-            color: const Color(0xFF18181B), // Ink style stars
+            color: AppColors.lightTextPrimary, // Ink style stars
           ),
         );
 
@@ -348,7 +348,7 @@ class PolaroidShareCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(
-          color: const Color(0xFF18181B).withValues(alpha: 0.55),
+          color: AppColors.lightTextPrimary.withValues(alpha: 0.55),
           width: 0.8,
         ),
         borderRadius: BorderRadius.circular(3),
@@ -363,7 +363,7 @@ class PolaroidShareCard extends StatelessWidget {
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.4,
-              color: const Color(0xFF18181B),
+              color: AppColors.lightTextPrimary,
             ),
           ),
           AppSpacing.gapW4,

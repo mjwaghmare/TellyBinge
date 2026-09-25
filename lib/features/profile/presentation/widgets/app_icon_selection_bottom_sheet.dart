@@ -313,9 +313,9 @@ class _AppIconTile extends StatelessWidget {
                   top: -2,
                   right: -2,
                   child: Container(
-                    padding: const EdgeInsets.all(3.5),
+                    padding: AppSpacing.allXXS,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF161616),
+                      color: AppColors.surface,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: AppColors.gold.withValues(alpha: 0.8),

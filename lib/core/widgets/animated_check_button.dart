@@ -49,10 +49,10 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
   static const List<Color> _celebrationPalette = [
     AppColors.primary,
     AppColors.success,
-    Color(0xFFFFB800), // Gold
-    Color(0xFFEC4899), // Pink
-    Color(0xFF00E5FF), // Cyan
-    Color(0xFF8B5CF6), // Violet
+    AppColors.gold,
+    AppColors.errorSoft,
+    AppColors.skyBlue,
+    AppColors.primaryLight,
   ];
 
   @override
