@@ -14,6 +14,7 @@ class SettingsState extends Equatable {
   final bool notify1DayBefore;
   final bool resetOnboarding;
   final bool hapticsEnabled;
+  final bool reducedMotion;
 
   const SettingsState({
     this.allowAdultContent = false,
@@ -22,6 +23,7 @@ class SettingsState extends Equatable {
     this.notify1DayBefore = true,
     this.resetOnboarding = false,
     this.hapticsEnabled = true,
+    this.reducedMotion = false,
   });
 
   SettingsState copyWith({
@@ -31,6 +33,7 @@ class SettingsState extends Equatable {
     bool? notify1DayBefore,
     bool? resetOnboarding,
     bool? hapticsEnabled,
+    bool? reducedMotion,
   }) {
     return SettingsState(
       allowAdultContent: allowAdultContent ?? this.allowAdultContent,
@@ -39,6 +42,7 @@ class SettingsState extends Equatable {
       notify1DayBefore: notify1DayBefore ?? this.notify1DayBefore,
       resetOnboarding: resetOnboarding ?? this.resetOnboarding,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
+      reducedMotion: reducedMotion ?? this.reducedMotion,
     );
   }
 
@@ -50,6 +54,7 @@ class SettingsState extends Equatable {
     notify1DayBefore,
     resetOnboarding,
     hapticsEnabled,
+    reducedMotion,
   ];
 }
 
@@ -65,6 +70,8 @@ class SettingsCubit extends Cubit<SettingsState> {
       AppStorageKeys.notify1DayBefore;
   static const String _hapticsEnabledKey =
       AppStorageKeys.hapticsEnabled;
+  static const String _reducedMotionKey =
+      AppStorageKeys.reducedMotionEnabled;
 
   SettingsCubit({required this.prefs, required this.tmdbClient})
     : super(const SettingsState()) {
@@ -79,6 +86,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final notify1DayBefore = prefs.getBool(_notify1DayBeforeKey) ?? true;
     final hasSeenOnboarding = prefs.getBool(OnboardingStorage.seenKey) ?? false;
     final hapticsEnabled = prefs.getBool(_hapticsEnabledKey) ?? true;
+    final reducedMotion = prefs.getBool(_reducedMotionKey) ?? false;
 
     tmdbClient.allowAdultContent = allowAdult;
     AppHaptics.isEnabled = hapticsEnabled;
@@ -90,6 +98,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         notify1DayBefore: notify1DayBefore,
         resetOnboarding: !hasSeenOnboarding,
         hapticsEnabled: hapticsEnabled,
+        reducedMotion: reducedMotion,
       ),
     );
   }
@@ -98,6 +107,11 @@ class SettingsCubit extends Cubit<SettingsState> {
     await prefs.setBool(_hapticsEnabledKey, value);
     AppHaptics.isEnabled = value;
     emit(state.copyWith(hapticsEnabled: value));
+  }
+
+  Future<void> toggleReducedMotion(bool value) async {
+    await prefs.setBool(_reducedMotionKey, value);
+    emit(state.copyWith(reducedMotion: value));
   }
 
   Future<void> toggleAdultContent(bool value) async {

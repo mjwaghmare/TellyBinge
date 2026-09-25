@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../sync/sync_status_cubit.dart';
 import '../sync/sync_status_state.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
@@ -17,6 +18,7 @@ class OfflineSyncBanner extends StatelessWidget {
       builder: (context, state) {
         final isLight = AppColors.isLight(context);
         final isVisible = state.shouldShowBanner;
+        final isReduced = AppMotion.isReducedMotion(context);
 
         final isSynced = state.justSynced;
         final iconData = isSynced
@@ -27,12 +29,15 @@ class OfflineSyncBanner extends StatelessWidget {
             : (isLight ? AppColors.lightPrimary : AppColors.primary);
 
         return AnimatedSlide(
-          offset: isVisible ? Offset.zero : const Offset(0, -1.2),
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
+          offset: (isReduced || isVisible) ? Offset.zero : const Offset(0, -1.2),
+          duration: isReduced ? AppMotion.instant : AppMotion.medium,
+          curve: AppMotion.emphasized,
           child: AnimatedOpacity(
             opacity: isVisible ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 250),
+            duration: AppMotion.fadeDuration(
+              context,
+              normalDuration: AppMotion.normal,
+            ),
             child: IgnorePointer(
               ignoring: !isVisible,
               child: Center(

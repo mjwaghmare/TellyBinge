@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/services/app_haptics.dart';
 import '../core/constants/app_assets.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_motion.dart';
 import '../core/widgets/app_snackbar.dart';
 import '../core/widgets/offline_sync_banner.dart';
 import '../core/sync/sync_status_cubit.dart';
@@ -425,6 +426,7 @@ class _CustomGlowBottomBar extends StatelessWidget {
     VoidCallback? onLongPress,
   }) {
     final isSelected = currentIndex == index;
+    final isReduced = AppMotion.isReducedMotion(context);
     return Expanded(
       child: Semantics(
         button: true,
@@ -440,12 +442,15 @@ class _CustomGlowBottomBar extends StatelessWidget {
               Align(
                 alignment: Alignment.topCenter,
                 child: AnimatedScale(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutBack,
+                  duration: isReduced ? AppMotion.instant : const Duration(milliseconds: 400),
+                  curve: isReduced ? Curves.linear : Curves.easeOutBack,
                   scale: isSelected ? 1.0 : 0.0,
                   alignment: Alignment.topCenter,
                   child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 300),
+                    duration: AppMotion.fadeDuration(
+                      context,
+                      normalDuration: const Duration(milliseconds: 300),
+                    ),
                     opacity: isSelected ? 1.0 : 0.0,
                     child: Container(
                       width: 150,

@@ -11,6 +11,7 @@ import '../network/tmdb_client.dart';
 import '../services/app_haptics.dart';
 import '../services/share_card_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/tmdb_artwork.dart';
@@ -282,6 +283,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
 
   /// Evaluates tilt position against the 4 directional edges and triggers crisp haptics upon entry
   void _checkEdgeHaptics(double x, double y) {
+    if (AppMotion.isReducedMotion(context)) return;
     const double threshold = 0.068; // Subtle angle limit to trigger side haptic
     const double resetMargin = 0.036; // Return toward center to re-arm
 
@@ -561,6 +563,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
 
   @override
   Widget build(BuildContext context) {
+    final isReduced = AppMotion.isReducedMotion(context);
     final screenWidth = MediaQuery.sizeOf(context).width;
     // Scaled-up Polaroid card size for a prominent hero visual
     final cardWidth = (screenWidth * 0.76).clamp(280.0, 325.0);
@@ -686,9 +689,13 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
                           FadeTransition(
                             opacity: _cardFadeAnimation,
                             child: SlideTransition(
-                              position: _cardSlideAnimation,
+                              position: isReduced
+                                  ? const AlwaysStoppedAnimation(Offset.zero)
+                                  : _cardSlideAnimation,
                               child: ScaleTransition(
-                                scale: _cardScaleAnimation,
+                                scale: isReduced
+                                    ? const AlwaysStoppedAnimation(1.0)
+                                    : _cardScaleAnimation,
                                 child: PolaroidShareCard(
                                   title: widget.title,
                                   imageUrl: _displayedImageUrl,
@@ -697,8 +704,8 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
                                   showRating: _showRating,
                                   showDate: _showDate,
                                   cardWidth: cardWidth,
-                                  tiltX: _isExporting ? 0.0 : _tiltX,
-                                  tiltY: _isExporting ? 0.0 : _tiltY,
+                                  tiltX: (_isExporting || isReduced) ? 0.0 : _tiltX,
+                                  tiltY: (_isExporting || isReduced) ? 0.0 : _tiltY,
                                   showBackground: false,
                                   onRatingChanged: (newRating) {
                                     setState(() {
@@ -719,7 +726,9 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
                 FadeTransition(
                   opacity: _controlsFadeAnimation,
                   child: SlideTransition(
-                    position: _controlsSlideAnimation,
+                    position: isReduced
+                        ? const AlwaysStoppedAnimation(Offset.zero)
+                        : _controlsSlideAnimation,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.md,
@@ -741,7 +750,9 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
 
                           // Alternate artwork picker (grows in once fetched)
                           AnimatedSize(
-                            duration: const Duration(milliseconds: 280),
+                            duration: isReduced
+                                ? AppMotion.instant
+                                : const Duration(milliseconds: 280),
                             curve: Curves.easeOutCubic,
                             child: _artworkOptions.isEmpty
                                 ? const SizedBox(width: double.infinity)

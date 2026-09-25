@@ -420,16 +420,23 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               scaffoldMessengerKey: scaffoldMessengerKey,
               // Force dark theme like original TV Time
               debugShowCheckedModeBanner: false,
-              scrollBehavior: const BouncingScrollBehavior(),
               builder: (context, child) {
-                final mediaQuery = MediaQuery.of(context);
-                return MediaQuery(
-                  data: mediaQuery.copyWith(
-                    textScaler: mediaQuery.textScaler.clamp(
-                      maxScaleFactor: 1.3,
-                    ),
-                  ),
-                  child: child ?? const SizedBox.shrink(),
+                return BlocBuilder<SettingsCubit, SettingsState>(
+                  buildWhen: (previous, current) =>
+                      previous.reducedMotion != current.reducedMotion,
+                  builder: (context, settingsState) {
+                    final mediaQuery = MediaQuery.of(context);
+                    return MediaQuery(
+                      data: mediaQuery.copyWith(
+                        disableAnimations: mediaQuery.disableAnimations ||
+                            settingsState.reducedMotion,
+                        textScaler: mediaQuery.textScaler.clamp(
+                          maxScaleFactor: 1.3,
+                        ),
+                      ),
+                      child: child ?? const SizedBox.shrink(),
+                    );
+                  },
                 );
               },
               home: const AuthGate(),

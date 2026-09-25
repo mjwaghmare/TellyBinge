@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
+import 'app_motion.dart';
 
 class AppTheme {
   AppTheme._();
@@ -154,6 +155,15 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8.0),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ReducedMotionPageTransitionsBuilder(
+            defaultBuilder: ZoomPageTransitionsBuilder(),
+          ),
+          TargetPlatform.iOS: ReducedMotionPageTransitionsBuilder(),
+          TargetPlatform.macOS: ReducedMotionPageTransitionsBuilder(),
+        },
       ),
     );
   }
@@ -308,6 +318,15 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8.0),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ReducedMotionPageTransitionsBuilder(
+            defaultBuilder: ZoomPageTransitionsBuilder(),
+          ),
+          TargetPlatform.iOS: ReducedMotionPageTransitionsBuilder(),
+          TargetPlatform.macOS: ReducedMotionPageTransitionsBuilder(),
+        },
       ),
     );
   }

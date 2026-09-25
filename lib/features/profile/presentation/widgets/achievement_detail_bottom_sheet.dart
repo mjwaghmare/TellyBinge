@@ -3,6 +3,7 @@ import 'dart:ui' show FontFeature, lerpDouble;
 import 'package:flutter/material.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/achievement.dart';
@@ -975,7 +976,7 @@ class _BadgeEmblemState extends State<_BadgeEmblem>
   }
 
   void _onTapSpin() {
-    if (_controller.isAnimating) return;
+    if (_controller.isAnimating || AppMotion.isReducedMotion(context)) return;
     AppHaptics.lightImpact();
     _controller.forward(from: 0.0);
   }
@@ -995,9 +996,10 @@ class _BadgeEmblemState extends State<_BadgeEmblem>
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
-            final flipVal = _flipAnim.value;
-            final scaleVal = _scaleAnim.value;
-            final shimmerVal = _shimmerAnim.value;
+            final isReduced = AppMotion.isReducedMotion(context);
+            final flipVal = isReduced ? 0.0 : _flipAnim.value;
+            final scaleVal = isReduced ? 1.0 : _scaleAnim.value;
+            final shimmerVal = isReduced ? 0.0 : _shimmerAnim.value;
 
             final cosVal = math.cos(flipVal);
             final isFront = cosVal >= 0;

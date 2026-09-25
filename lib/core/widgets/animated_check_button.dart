@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../services/app_haptics.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 
 /// A rich, interactive circular check button featuring scale bounce, smooth
 /// color morphing, haptic feedback sequencing, and a lightweight micro-particle
@@ -110,15 +111,24 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
   @override
   void didUpdateWidget(AnimatedCheckButton oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final isReduced = AppMotion.isReducedMotion(context);
     if (widget.isWatched != oldWidget.isWatched) {
       _isOptimisticWatched = false;
       if (widget.isWatched) {
-        _checkController.forward(from: 0.0);
-        if ((widget.isFinale || widget.isMovie) && !_particleController.isAnimating) {
-          _particleController.forward(from: 0.0);
+        if (isReduced) {
+          _checkController.value = 1.0;
+        } else {
+          _checkController.forward(from: 0.0);
+          if ((widget.isFinale || widget.isMovie) && !_particleController.isAnimating) {
+            _particleController.forward(from: 0.0);
+          }
         }
       } else {
-        _checkController.reverse();
+        if (isReduced) {
+          _checkController.value = 0.0;
+        } else {
+          _checkController.reverse();
+        }
       }
     } else if (oldWidget.isLoading && !widget.isLoading) {
       // Loading transitioned from active to finished without changing widget.isWatched
@@ -127,10 +137,18 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
         setState(() {
           _isOptimisticWatched = false;
         });
-        _checkController.reverse();
+        if (isReduced) {
+          _checkController.value = 0.0;
+        } else {
+          _checkController.reverse();
+        }
       } else if (widget.isWatched) {
         // Unwatch attempt finished without changing widget.isWatched, restore checkmark
-        _checkController.forward();
+        if (isReduced) {
+          _checkController.value = 1.0;
+        } else {
+          _checkController.forward();
+        }
       }
     }
   }
@@ -146,6 +164,7 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
 
   void _handleTap() {
     if (widget.isLoading || widget.onTap == null) return;
+    final isReduced = AppMotion.isReducedMotion(context);
 
     if (!widget.isWatched) {
       setState(() {
@@ -155,28 +174,33 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
       // 1. Instant tactile feedback on touch
       unawaited(AppHaptics.lightImpact());
 
-      // 2. Immediate checkmark pop and scale bounce
-      _checkController.forward(from: 0.0);
-      _scaleController.forward().then((_) {
-        if (mounted) _scaleController.reverse();
-      });
-
-      // 3. Trigger celebratory particle burst if finale or movie
-      if (widget.isFinale || widget.isMovie) {
-        _particleController.forward(from: 0.0);
-        _hapticTimer?.cancel();
-        _hapticTimer = Timer(const Duration(milliseconds: 140), () {
-          if (mounted) {
-            unawaited(AppHaptics.heavyImpact());
-          }
-        });
+      if (isReduced) {
+        // Drop animations down to instant under reduced motion
+        _checkController.value = 1.0;
       } else {
-        _hapticTimer?.cancel();
-        _hapticTimer = Timer(const Duration(milliseconds: 140), () {
-          if (mounted) {
-            unawaited(AppHaptics.mediumImpact());
-          }
+        // 2. Immediate checkmark pop and scale bounce
+        _checkController.forward(from: 0.0);
+        _scaleController.forward().then((_) {
+          if (mounted) _scaleController.reverse();
         });
+
+        // 3. Trigger celebratory particle burst if finale or movie
+        if (widget.isFinale || widget.isMovie) {
+          _particleController.forward(from: 0.0);
+          _hapticTimer?.cancel();
+          _hapticTimer = Timer(const Duration(milliseconds: 140), () {
+            if (mounted) {
+              unawaited(AppHaptics.heavyImpact());
+            }
+          });
+        } else {
+          _hapticTimer?.cancel();
+          _hapticTimer = Timer(const Duration(milliseconds: 140), () {
+            if (mounted) {
+              unawaited(AppHaptics.mediumImpact());
+            }
+          });
+        }
       }
     } else {
       // Unwatching / reverting
@@ -184,10 +208,14 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
         _isOptimisticWatched = false;
       });
       unawaited(AppHaptics.selectionClick());
-      _checkController.reverse();
-      _scaleController.forward().then((_) {
-        if (mounted) _scaleController.reverse();
-      });
+      if (isReduced) {
+        _checkController.value = 0.0;
+      } else {
+        _checkController.reverse();
+        _scaleController.forward().then((_) {
+          if (mounted) _scaleController.reverse();
+        });
+      }
     }
 
     widget.onTap?.call();
@@ -198,9 +226,13 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
           setState(() {
             _isOptimisticWatched = false;
           });
-          _checkController.reverse();
-          _particleController.stop();
-          _particleController.reset();
+          if (isReduced) {
+            _checkController.value = 0.0;
+          } else {
+            _checkController.reverse();
+            _particleController.stop();
+            _particleController.reset();
+          }
           _hapticTimer?.cancel();
         }
       });
@@ -210,6 +242,7 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
+    final isReduced = AppMotion.isReducedMotion(context);
     final effectiveWatched = widget.isWatched || _isOptimisticWatched;
     final showSpinner = widget.isLoading && !_isOptimisticWatched;
     final effectiveActiveColor = widget.activeColor ?? AppColors.success;
@@ -250,7 +283,7 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
               AnimatedBuilder(
                 animation: _particleController,
                 builder: (context, child) {
-                  if (_particleController.isAnimating) {
+                  if (!isReduced && _particleController.isAnimating) {
                     return RepaintBoundary(
                       child: CustomPaint(
                         size: Size(widget.size, widget.size),
@@ -268,9 +301,13 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
 
               // 2. Animated Scaling Button
               ScaleTransition(
-                scale: _scaleAnimation,
+                scale: isReduced
+                    ? const AlwaysStoppedAnimation(1.0)
+                    : _scaleAnimation,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
+                  duration: isReduced
+                      ? AppMotion.instant
+                      : const Duration(milliseconds: 220),
                   curve: Curves.easeInOut,
                   width: widget.size,
                   height: widget.size,
@@ -311,7 +348,9 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
                           )
                         : ScaleTransition(
                             scale: effectiveWatched
-                                ? _checkScaleAnimation
+                                ? (isReduced
+                                    ? const AlwaysStoppedAnimation(1.0)
+                                    : _checkScaleAnimation)
                                 : const AlwaysStoppedAnimation(1.0),
                             child: Icon(
                               Icons.check_rounded,

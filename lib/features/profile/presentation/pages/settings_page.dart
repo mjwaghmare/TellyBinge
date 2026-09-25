@@ -259,6 +259,27 @@ class _SettingsPageState extends State<SettingsPage> {
                   );
                 },
               ),
+              _buildDivider(),
+              BlocBuilder<SettingsCubit, SettingsState>(
+                buildWhen: (previous, current) =>
+                    previous.reducedMotion != current.reducedMotion,
+                builder: (context, settingsState) {
+                  return _SettingsTile(
+                    icon: Icons.motion_photos_off_outlined,
+                    title: 'Reduce Motion',
+                    subtitle: 'Reduce motion and micro-animations',
+                    trailing: Switch.adaptive(
+                      value: settingsState.reducedMotion,
+                      activeTrackColor: AppColors.primary,
+                      activeThumbColor: AppColors.textOnPrimary,
+                      onChanged: (value) {
+                        AppHaptics.lightImpact();
+                        context.read<SettingsCubit>().toggleReducedMotion(value);
+                      },
+                    ),
+                  );
+                },
+              ),
             ],
           ),
 
