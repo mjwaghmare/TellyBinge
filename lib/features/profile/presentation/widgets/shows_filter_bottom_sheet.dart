@@ -41,6 +41,7 @@ class _ShowsFilterBottomSheetState extends State<ShowsFilterBottomSheet> {
     'Up to date',
     'Finished',
     'Stopped',
+    'Favorites',
   ];
 
   @override

@@ -21,6 +21,7 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 
 class SurpriseMeSheet extends StatefulWidget {
   const SurpriseMeSheet({super.key});
@@ -595,14 +596,14 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
 
     if (items.isEmpty) {
       return Center(
-        child: Text(
-          'Nothing found.',
-          style: AppTextStyles.sm.copyWith(
-            color: context.adaptiveColor(
-              light: AppColors.lightTextSecondary,
-              dark: AppColors.textSecondary,
-            ),
-          ),
+        child: AppEmptyState(
+          icon: Icons.casino_outlined,
+          title: 'Nothing Found',
+          body:
+              'We couldn\'t find any random picks right now. Roll the dice again!',
+          primaryLabel: 'ROLL AGAIN',
+          onPrimary: _shuffleCurrentTab,
+          compact: true,
         ),
       );
     }

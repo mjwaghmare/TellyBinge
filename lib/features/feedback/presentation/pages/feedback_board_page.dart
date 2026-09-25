@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
@@ -555,68 +556,34 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl,
-          vertical: AppSpacing.xxl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(
-                  alpha: isLight ? 0.1 : 0.15,
-                ),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.primary.withValues(
-                    alpha: isLight ? 0.2 : 0.25,
-                  ),
-                  width: 1.5,
-                ),
+        child: isFiltering
+            ? AppEmptyState(
+                icon: Icons.search_off_rounded,
+                title: _searchQuery.isNotEmpty
+                    ? 'No Matching Feedback'
+                    : 'No $_selectedFilter Feedback Yet',
+                body: _searchQuery.isNotEmpty
+                    ? 'Try adjusting your search terms or filter.'
+                    : 'There is no feedback in this category yet.',
+                primaryLabel: 'CLEAR FILTERS',
+                onPrimary: () {
+                  setState(() {
+                    _selectedFilter = 'All';
+                    _searchController.clear();
+                    _searchQuery = '';
+                  });
+                },
+                compact: true,
+              )
+            : AppEmptyState(
+                icon: Icons.mark_chat_unread_outlined,
+                title: 'No Feedback Yet',
+                body:
+                    'Be the first to share an idea, report an issue, or suggest improvements!',
+                primaryLabel: 'SUBMIT FEEDBACK',
+                onPrimary: _openSubmitSheet,
+                compact: true,
               ),
-              child: Icon(
-                isFiltering
-                    ? Icons.search_off_rounded
-                    : Icons.mark_chat_unread_outlined,
-                color: AppColors.primaryLight,
-                size: 34,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              isFiltering
-                  ? (_searchQuery.isNotEmpty
-                        ? 'No matching feedback'
-                        : 'No $_selectedFilter feedback yet')
-                  : 'No feedback yet',
-              style: AppTextStyles.mdBold.copyWith(
-                color: isLight
-                    ? AppColors.lightTextPrimary
-                    : AppColors.textPrimary,
-                fontSize: 18,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              isFiltering
-                  ? (_searchQuery.isNotEmpty
-                        ? 'Try adjusting your search terms or filter.'
-                        : 'There is no feedback in this category yet.')
-                  : 'Be the first to share an idea, report an issue, or suggest improvements!',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.sm.copyWith(
-                color: isLight
-                    ? AppColors.lightTextSecondary
-                    : AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

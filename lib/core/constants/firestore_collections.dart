@@ -11,4 +11,5 @@ class FirestoreCollections {
   static const String appConfig = 'app_config';
   static const String systemConfigs = 'system_configs';
   static const String customLists = 'custom_lists';
+  static const String achievements = 'achievements';
 }

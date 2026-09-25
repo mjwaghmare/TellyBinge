@@ -52,6 +52,10 @@ service cloud.firestore {
       match /custom_lists/{listId} {
         allow read, write: if isAuthenticated() && isOwner(userId);
       }
+
+      match /achievements/{achievementId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
     }
 
     // Comments collection

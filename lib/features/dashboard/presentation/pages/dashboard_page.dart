@@ -25,6 +25,7 @@ import '../widgets/upcoming_episode_card.dart';
 import '../models/enriched_show.dart';
 import '../../domain/models/watch_history_item.dart';
 import '../../../../core/services/widget_service.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onNavigateToExplore;
@@ -95,7 +96,13 @@ class DashboardPageState extends State<DashboardPage> {
         body: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, authState) {
             if (authState is! Authenticated) {
-              return Center(child: Text('Please log in to see your watchlist'));
+              return AppEmptyState(
+                icon: Icons.login_rounded,
+                title: 'Sign In Required',
+                body: 'Sign in to view and manage your watchlist.',
+                primaryLabel: 'SIGN IN',
+                onPrimary: () => context.read<AuthCubit>().signInWithGoogle(),
+              );
             }
             final uid = authState.user.uid;
             _watchHistoryCubit.init(uid);
@@ -128,10 +135,20 @@ class DashboardPageState extends State<DashboardPage> {
                   if (watchlistState.shows.isEmpty) {
                     return TabBarView(
                       children: [
-                        _buildEmptyState(
-                          'Your watchlist is empty.\nAdd shows from the Explore tab.',
+                        AppEmptyState(
+                          icon: Icons.tv_outlined,
+                          title: 'Your Watch List Is Empty',
+                          body: 'Add TV shows from the Explore tab to start tracking episodes, get countdowns, and manage your progress.',
+                          primaryLabel: 'BROWSE SHOWS',
+                          onPrimary: widget.onNavigateToExplore,
                         ),
-                        _buildEmptyState('No upcoming episodes scheduled.'),
+                        AppEmptyState(
+                          icon: Icons.calendar_today_outlined,
+                          title: 'No Upcoming Episodes',
+                          body: 'None of your tracked shows have new episodes scheduled. Check back later or add more shows.',
+                          primaryLabel: 'BROWSE SHOWS',
+                          onPrimary: widget.onNavigateToExplore,
+                        ),
                       ],
                     );
                   }
@@ -361,7 +378,13 @@ class DashboardPageState extends State<DashboardPage> {
             }
 
             if (watchNext.isEmpty && haventStarted.isEmpty && history.isEmpty) {
-              return _buildEmptyState('No shows in your Watch List yet.');
+              return AppEmptyState(
+                icon: Icons.tv_outlined,
+                title: 'Your Watch List Is Empty',
+                body: 'Add TV shows from the Explore tab to start tracking episodes, get countdowns, and manage your progress.',
+                primaryLabel: 'BROWSE SHOWS',
+                onPrimary: widget.onNavigateToExplore,
+              );
             }
 
             return RefreshIndicator.adaptive(
@@ -614,7 +637,13 @@ class DashboardPageState extends State<DashboardPage> {
     addGroup('LATER', laterShows);
 
     if (slivers.isEmpty) {
-      return _buildEmptyState('No upcoming episodes scheduled.');
+      return AppEmptyState(
+        icon: Icons.calendar_today_outlined,
+        title: 'No Upcoming Episodes',
+        body: 'None of your tracked shows have new episodes scheduled. Check back later or add more shows.',
+        primaryLabel: 'BROWSE SHOWS',
+        onPrimary: widget.onNavigateToExplore,
+      );
     }
 
     return Stack(
@@ -649,61 +678,7 @@ class DashboardPageState extends State<DashboardPage> {
 
   // --- COMPONENT BUILDERS ---
 
-  Widget _buildEmptyState(String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xxl,
-          AppSpacing.xxl,
-          AppSpacing.xxl,
-          AppSpacing.bottomTabPadding,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.tv_outlined,
-              size: 64,
-              color: context.adaptiveColor(
-                light: AppColors.lightTextTertiary,
-                dark: AppColors.textTertiary,
-              ),
-            ),
-            AppSpacing.gapH16,
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.sm.copyWith(
-                color:
-                    Theme.of(context).textTheme.bodyMedium?.color ??
-                    AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-            AppSpacing.gapH20,
-            SizedBox(
-              width: 160,
-              height: 40,
-              child: ElevatedButton(
-                onPressed: widget.onNavigateToExplore,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textOnPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: Text(
-                  'ADD SHOWS',
-                  style: AppTextStyles.xsBold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildGridToggle() {
     return Positioned(

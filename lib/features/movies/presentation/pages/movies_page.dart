@@ -17,6 +17,7 @@ import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../cubit/movie_watchlist_cubit.dart';
 import '../cubit/movie_watchlist_state.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 
 class MoviesPage extends StatefulWidget {
   final VoidCallback? onNavigateToExplore;
@@ -282,8 +283,12 @@ class MoviesPageState extends State<MoviesPage> {
     String? uid,
   ) {
     if (!isLoading && items.isEmpty) {
-      return _buildEmptyState(
-        'Your watchlist is empty.\nAdd movies from the Explore tab.',
+      return AppEmptyState(
+        icon: Icons.movie_filter_outlined,
+        title: 'Your Movie Watchlist Is Empty',
+        body: 'Discover movies on the Explore tab and add them to your watchlist to track what you want to see.',
+        primaryLabel: 'BROWSE MOVIES',
+        onPrimary: widget.onNavigateToExplore,
       );
     }
 
@@ -501,7 +506,13 @@ class MoviesPageState extends State<MoviesPage> {
     String? uid,
   ) {
     if (!isLoading && items.isEmpty) {
-      return _buildEmptyState('No upcoming movies added.');
+      return AppEmptyState(
+        icon: Icons.event_outlined,
+        title: 'No Upcoming Movies',
+        body: 'You haven\'t added any unreleased movies yet. Browse the Explore tab to add movies you\'re waiting for.',
+        primaryLabel: 'BROWSE MOVIES',
+        onPrimary: widget.onNavigateToExplore,
+      );
     }
 
     final groups = ['THIS WEEK', 'LATER'];
@@ -611,61 +622,7 @@ class MoviesPageState extends State<MoviesPage> {
   );
 }
 
-  Widget _buildEmptyState(String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xxl,
-          AppSpacing.xxl,
-          AppSpacing.xxl,
-          AppSpacing.bottomTabPadding,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.movie_filter_outlined,
-              size: 64,
-              color: context.adaptiveColor(
-                light: AppColors.lightTextTertiary,
-                dark: AppColors.textTertiary,
-              ),
-            ),
-            AppSpacing.gapH16,
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.sm.copyWith(
-                color:
-                    Theme.of(context).textTheme.bodyMedium?.color ??
-                    AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-            AppSpacing.gapH20,
-            SizedBox(
-              width: 160,
-              height: 40,
-              child: ElevatedButton(
-                onPressed: widget.onNavigateToExplore,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textOnPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: Text(
-                  'ADD MOVIES',
-                  style: AppTextStyles.xsBold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildStickyHeader(String title) {
     return SliverPersistentHeader(

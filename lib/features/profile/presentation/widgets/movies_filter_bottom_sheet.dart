@@ -40,6 +40,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
     'Not watched',
     'Upcoming',
     'Watched',
+    'Favorites',
   ];
 
   @override

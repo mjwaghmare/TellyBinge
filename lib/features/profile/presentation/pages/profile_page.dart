@@ -42,6 +42,7 @@ import '../../../../core/services/widget_service.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/rolling_digit_text.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 
 class HorizontalItem {
   final int movieId;
@@ -79,8 +80,15 @@ class HorizontalItem {
 
 class ProfilePage extends StatefulWidget {
   final ValueListenable<int>? tabNotifier;
+  final VoidCallback? onNavigateToShowsExplore;
+  final VoidCallback? onNavigateToMoviesExplore;
 
-  const ProfilePage({super.key, this.tabNotifier});
+  const ProfilePage({
+    super.key,
+    this.tabNotifier,
+    this.onNavigateToShowsExplore,
+    this.onNavigateToMoviesExplore,
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -575,7 +583,11 @@ class _ProfilePageState extends State<ProfilePage>
 
                   var filteredMovies = watchlistState.movies;
 
-                  if (_movieProgressOption == 'Watched') {
+                  if (_movieProgressOption == 'Favorites') {
+                    filteredMovies = filteredMovies
+                        .where((m) => m['isFavorite'] as bool? ?? false)
+                        .toList();
+                  } else if (_movieProgressOption == 'Watched') {
                     filteredMovies = filteredMovies
                         .where((m) => m['isWatched'] as bool? ?? false)
                         .toList();
@@ -635,7 +647,11 @@ class _ProfilePageState extends State<ProfilePage>
                   var filteredShows = showWatchlistState.shows;
 
                   // 1. Progress Filter
-                  if (_showProgressOption == 'Stopped') {
+                  if (_showProgressOption == 'Favorites') {
+                    filteredShows = filteredShows
+                        .where((s) => s['isFavorite'] as bool? ?? false)
+                        .toList();
+                  } else if (_showProgressOption == 'Stopped') {
                     filteredShows = filteredShows
                         .where((s) => s['status'] == 'STOPPED')
                         .toList();
@@ -774,6 +790,86 @@ class _ProfilePageState extends State<ProfilePage>
                 );
                 final totalMinutes = stats.totalMovieMinutes;
                 final totalShowMinutes = stats.totalShowMinutes;
+
+                final hasNoShows = showWatchlistState is TvShowWatchlistSuccess &&
+                    showWatchlistState.shows.isEmpty;
+                final Widget showsEmptyWidget = hasNoShows
+                    ? AppEmptyState(
+                        icon: Icons.live_tv_outlined,
+                        title: 'No Shows Yet',
+                        body: 'Start tracking TV shows to see them here. Your collection will grow as you add and watch shows.',
+                        primaryLabel: 'BROWSE SHOWS',
+                        onPrimary: widget.onNavigateToShowsExplore ?? () {
+                          if (widget.tabNotifier is ValueNotifier<int>) {
+                            (widget.tabNotifier as ValueNotifier<int>).value = 2;
+                          }
+                        },
+                        compact: true,
+                      )
+                    : (_showProgressOption == 'Favorites'
+                        ? AppEmptyState(
+                            icon: Icons.favorite_border_rounded,
+                            title: 'No Favorite Shows Yet',
+                            body: 'Mark shows as favorites to quickly find them here.',
+                            primaryLabel: 'CLEAR FILTERS',
+                            onPrimary: () {
+                              setState(() {
+                                _showProgressOption = 'All';
+                              });
+                            },
+                            compact: true,
+                          )
+                        : AppEmptyState.noResults(
+                            title: 'No Shows Matched',
+                            body: 'Try adjusting your sort or progress filter to see more results.',
+                            onClearFilters: () {
+                              setState(() {
+                                _showSortOption = 'Last added';
+                                _showProgressOption = 'All';
+                              });
+                            },
+                            compact: true,
+                          ));
+
+                final hasNoMovies = watchlistState is MovieWatchlistSuccess &&
+                    watchlistState.movies.isEmpty;
+                final Widget moviesEmptyWidget = hasNoMovies
+                    ? AppEmptyState(
+                        icon: Icons.movie_creation_outlined,
+                        title: 'No Movies Yet',
+                        body: 'Start adding movies to your watchlist to see them here.',
+                        primaryLabel: 'BROWSE MOVIES',
+                        onPrimary: widget.onNavigateToMoviesExplore ?? () {
+                          if (widget.tabNotifier is ValueNotifier<int>) {
+                            (widget.tabNotifier as ValueNotifier<int>).value = 2;
+                          }
+                        },
+                        compact: true,
+                      )
+                    : (_movieProgressOption == 'Favorites'
+                        ? AppEmptyState(
+                            icon: Icons.favorite_border_rounded,
+                            title: 'No Favorite Movies Yet',
+                            body: 'Mark movies as favorites to quickly find them here.',
+                            primaryLabel: 'CLEAR FILTERS',
+                            onPrimary: () {
+                              setState(() {
+                                _movieProgressOption = 'All';
+                              });
+                            },
+                            compact: true,
+                          )
+                        : AppEmptyState.noResults(
+                            title: 'No Movies Matched',
+                            body: 'Try adjusting your sort or progress filter to see more results.',
+                            onClearFilters: () {
+                              setState(() {
+                                _movieSortOption = 'Last Added';
+                                _movieProgressOption = 'All';
+                              });
+                            },
+                            compact: true,
+                          ));
 
                 return NestedScrollView(
                   headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -960,11 +1056,11 @@ class _ProfilePageState extends State<ProfilePage>
                             child: _showProgressOption == 'All'
                                 ? _buildGroupedShowsGrid(
                                     displayedShows,
-                                    'No shows matched your filter.',
+                                    showsEmptyWidget,
                                   )
                                 : _buildGrid(
                                     displayedShows,
-                                    'No shows matched your filter.',
+                                    showsEmptyWidget,
                                   ),
                           ),
                           floatingActionButton: Builder(
@@ -1084,11 +1180,11 @@ class _ProfilePageState extends State<ProfilePage>
                             child: _movieProgressOption == 'All'
                                 ? _buildGroupedMoviesGrid(
                                     displayedMovies,
-                                    'No movies matched your filter.',
+                                    moviesEmptyWidget,
                                   )
                                 : _buildGrid(
                                     displayedMovies,
-                                    'No movies matched your filter.',
+                                    moviesEmptyWidget,
                                   ),
                           ),
                           floatingActionButton: Builder(
@@ -1572,18 +1668,13 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildGroupedMoviesGrid(
     List<HorizontalItem> items,
-    String emptyMessage,
+    Widget emptyWidget,
   ) {
     if (items.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-          child: Text(
-            emptyMessage,
-            style: AppTextStyles.sm.copyWith(
-              color: Theme.of(context).disabledColor,
-            ),
-          ),
+          child: emptyWidget,
         ),
       );
     }
@@ -1675,18 +1766,13 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildGroupedShowsGrid(
     List<HorizontalItem> items,
-    String emptyMessage,
+    Widget emptyWidget,
   ) {
     if (items.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-          child: Text(
-            emptyMessage,
-            style: AppTextStyles.sm.copyWith(
-              color: Theme.of(context).disabledColor,
-            ),
-          ),
+          child: emptyWidget,
         ),
       );
     }
@@ -1736,17 +1822,12 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildGrid(List<HorizontalItem> items, String emptyMessage) {
+  Widget _buildGrid(List<HorizontalItem> items, Widget emptyWidget) {
     if (items.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-          child: Text(
-            emptyMessage,
-            style: AppTextStyles.sm.copyWith(
-              color: Theme.of(context).disabledColor,
-            ),
-          ),
+          child: emptyWidget,
         ),
       );
     }
@@ -1957,6 +2038,25 @@ class _ProfilePageState extends State<ProfilePage>
   Widget _buildHeatmapSection(BuildContext context, String uid) {
     return BlocBuilder<ProfileHeatmapCubit, ProfileHeatmapState>(
       builder: (context, state) {
+        if (state is ProfileHeatmapError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            child: AppEmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Could Not Load Activity',
+              body: 'Failed to load your watch history heatmap.',
+              primaryLabel: 'RETRY',
+              onPrimary: () => context
+                  .read<ProfileHeatmapCubit>()
+                  .loadMonthActivity(uid, _heatmapMonth),
+              compact: true,
+            ),
+          );
+        }
+
         DateTime currentMonth = _heatmapMonth;
         Map<DateTime, int> tvCounts = const {};
         Map<DateTime, int> movieCounts = const {};
@@ -2460,67 +2560,20 @@ class _ProfilePageState extends State<ProfilePage>
         if (lists.isEmpty) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                0,
-                AppSpacing.xl,
-                AppSpacing.bottomTabPadding,
+              padding: const EdgeInsets.only(
+                bottom: AppSpacing.bottomTabPadding,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: context.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.playlist_add_rounded,
-                      size: 36,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'No Custom Lists Yet',
-                    style: AppTextStyles.lg.copyWith(
-                      color: context.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
+              child: AppEmptyState(
+                icon: Icons.playlist_add_rounded,
+                title: 'No Custom Lists Yet',
+                body:
                     'Create themed lists to organize your favorite movies and TV shows together.',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.sm.copyWith(
-                      color: context.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      AppHaptics.lightImpact();
-                      CreateListBottomSheet.show(context);
-                    },
-                    icon: const Icon(Icons.add_rounded, size: 20),
-                    label: const Text('Create First List'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: AppColors.textOnPrimary,
-                      minimumSize: const Size(0, 48),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xl,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                  ),
-                ],
+                primaryLabel: 'Create First List',
+                onPrimary: () {
+                  AppHaptics.lightImpact();
+                  CreateListBottomSheet.show(context);
+                },
+                compact: true,
               ),
             ),
           );

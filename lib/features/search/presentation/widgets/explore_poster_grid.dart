@@ -4,6 +4,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 import '../cubit/explore_feed_cubit.dart';
 import 'explore_poster_card.dart';
 
@@ -112,33 +113,14 @@ class ExplorePosterGrid extends StatelessWidget {
             hasScrollBody: false,
             child: Center(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.xl,
-                  AppSpacing.xl,
-                  AppSpacing.xl,
-                  bottomPadding,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      emptyMessage,
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.md.copyWith(color: tertiary),
-                    ),
-                    // Everything fetched so far was filtered out, but the
-                    // list itself goes on.
-                    if (onLoadMore != null) ...[
-                      AppSpacing.gapH12,
-                      TextButton(
-                        onPressed: onLoadMore,
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                        ),
-                        child: Text('Load more', style: AppTextStyles.smBold),
-                      ),
-                    ],
-                  ],
+                padding: EdgeInsets.only(bottom: bottomPadding),
+                child: AppEmptyState(
+                  icon: Icons.search_off_rounded,
+                  title: 'No Results Found',
+                  body: emptyMessage,
+                  primaryLabel: onLoadMore != null ? 'Load More' : null,
+                  onPrimary: onLoadMore,
+                  compact: true,
                 ),
               ),
             ),

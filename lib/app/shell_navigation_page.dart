@@ -265,7 +265,21 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
             isAuthenticated
                 ? BlocProvider<ProfileHeatmapCubit>(
                     create: (context) => ProfileHeatmapCubit(),
-                    child: ProfilePage(tabNotifier: _tabNotifier),
+                    child: ProfilePage(
+                      tabNotifier: _tabNotifier,
+                      onNavigateToShowsExplore: () {
+                        setState(() {
+                          _tabNotifier.value = 2;
+                        });
+                        _exploreSubTabNotifier.value = 0;
+                      },
+                      onNavigateToMoviesExplore: () {
+                        setState(() {
+                          _tabNotifier.value = 2;
+                        });
+                        _exploreSubTabNotifier.value = 1;
+                      },
+                    ),
                   )
                 : AuthRequiredView(
                     tabNotifier: _tabNotifier,

@@ -14,6 +14,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_confirm_sheet.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
@@ -723,51 +724,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        SizedBox(height: MediaQuery.of(context).size.height * 0.22),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    _emptyState.emoji,
-                    style: AppTextStyles.xxl.copyWith(fontSize: 44.0),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                _emptyState.title,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.lg.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isLight
-                      ? AppColors.lightTextPrimary
-                      : AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                _emptyState.subtitle,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.sm.copyWith(
-                  color: isLight
-                      ? AppColors.lightTextSecondary
-                      : AppColors.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
+        SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+        AppEmptyState(
+          emoji: _emptyState.emoji,
+          title: _emptyState.title,
+          body: _emptyState.subtitle,
         ),
       ],
     );

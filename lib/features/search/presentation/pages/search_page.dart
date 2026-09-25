@@ -8,6 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../../core/widgets/app_error_view.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 import '../../data/explore_sources.dart';
 import '../cubit/explore_feed_cubit.dart';
 import '../cubit/explore_feed_state.dart';
@@ -799,9 +800,7 @@ class _SearchPageState extends State<SearchPage>
     ScrollController controller, {
     GenreOption? genre,
   }) {
-    final emptyMessage = (genre != null && !genre.isAll)
-        ? 'No ${genre.displayName} titles found right now.\nTry selecting another genre or checking your connection.'
-        : 'Nothing to show right now.\nCheck your connection and try again.';
+    final bool isSpecificGenre = genre != null && !genre.isAll;
 
     return CustomScrollView(
       controller: controller,
@@ -811,35 +810,30 @@ class _SearchPageState extends State<SearchPage>
           hasScrollBody: false,
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                AppSpacing.xl,
-                AppSpacing.xl,
-                AppSpacing.bottomTabPadding,
+              padding: const EdgeInsets.only(
+                bottom: AppSpacing.bottomTabPadding,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    emptyMessage,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.md.copyWith(
-                      color: Theme.of(context).brightness == Brightness.light
-                          ? AppColors.lightTextTertiary
-                          : AppColors.textTertiary,
+              child: isSpecificGenre
+                  ? AppEmptyState(
+                      icon: Icons.category_outlined,
+                      title: 'No Titles Found',
+                      body:
+                          'No ${genre.displayName} titles found right now. Try selecting another genre or checking your connection.',
+                      primaryLabel: 'RETRY',
+                      onPrimary: () =>
+                          context.read<ExploreFeedCubit>().retry(type),
+                      compact: true,
+                    )
+                  : AppEmptyState(
+                      icon: Icons.tv_off_rounded,
+                      title: 'Nothing to Show',
+                      body:
+                          'Nothing to show right now. Check your connection and try again.',
+                      primaryLabel: 'RETRY',
+                      onPrimary: () =>
+                          context.read<ExploreFeedCubit>().retry(type),
+                      compact: true,
                     ),
-                  ),
-                  AppSpacing.gapH16,
-                  TextButton(
-                    onPressed: () =>
-                        context.read<ExploreFeedCubit>().retry(type),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                    ),
-                    child: Text('Retry', style: AppTextStyles.smBold),
-                  ),
-                ],
-              ),
             ),
           ),
         ),

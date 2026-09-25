@@ -5,6 +5,7 @@ import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_spacing.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/achievement.dart';
 
@@ -572,6 +573,33 @@ class _AchievementCardContent extends StatelessWidget {
                 // Progress indicator for pending single-tier achievements
                 if (showSingleProgress)
                   _AchievementProgress(achievement: achievement),
+
+                // Unlocked date tag for unlocked achievements
+                if (achievement.isUnlocked && achievement.unlockedAt != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xxs),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.verified_rounded,
+                          size: 13,
+                          color: tierColors.first,
+                        ),
+                        AppSpacing.gapW4,
+                        Text(
+                          'Unlocked ${DateFormat.yMMMd().format(achievement.unlockedAt!)}',
+                          style: AppTextStyles.xs.copyWith(
+                            color: isLight
+                                ? AppColors.lightTextTertiary
+                                : AppColors.textTertiary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),

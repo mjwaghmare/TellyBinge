@@ -50,6 +50,8 @@ import 'features/custom_lists/data/repositories/custom_lists_repository_impl.dar
 import 'features/custom_lists/presentation/cubit/custom_lists_cubit.dart';
 import 'core/sync/sync_status_cubit.dart';
 import 'features/profile/presentation/cubit/achievements_cubit.dart';
+import 'features/profile/domain/repositories/achievements_repository.dart';
+import 'features/profile/data/repositories/achievements_repository_impl.dart';
 import 'firebase_options.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -363,6 +365,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         RepositoryProvider<CustomListsRepository>(
           create: (context) => CustomListsRepositoryImpl(),
         ),
+        RepositoryProvider<AchievementsRepository>(
+          create: (context) => AchievementsRepositoryImpl(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -405,6 +410,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ),
           BlocProvider<AchievementsCubit>(
             create: (context) => AchievementsCubit(
+              achievementsRepository: context.read<AchievementsRepository>(),
               prefs: context.read<SharedPreferences>(),
               navigatorKey: navigatorKey,
             ),
