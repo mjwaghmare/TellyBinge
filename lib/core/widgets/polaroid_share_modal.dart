@@ -94,13 +94,14 @@ class PolaroidShareModal extends StatefulWidget {
 }
 
 class _PolaroidShareModalState extends State<PolaroidShareModal>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final GlobalKey _boundaryKey = GlobalKey();
   late bool _showRating;
   final bool _showDate = true;
   double? _currentRating;
   bool _isSharing = false;
   bool _isExporting = false;
+  bool _isDismissing = false;
 
   // 3D Motion Sensors & Dynamic Calibration (Purely device-driven)
   StreamSubscription<AccelerometerEvent>? _sensorSubscription;
@@ -235,7 +236,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
 
     // 3. Smooth Display-Synchronized Ticker (interpolates device tilt at 60/120Hz)
     _tiltTicker = createTicker((_) {
-      if (!mounted || _isExporting) return;
+      if (!mounted || _isExporting || _isDismissing) return;
 
       final targetX = _targetTiltX.clamp(-0.10, 0.10);
       final targetY = _targetTiltY.clamp(-0.10, 0.10);
@@ -251,39 +252,92 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
         _checkEdgeHaptics(newX, newY);
       }
     });
-    _tiltTicker.start();
 
-    // 4. Initialize Accelerometer listener with dynamic resting calibration
-    try {
-      _sensorSubscription = accelerometerEventStream().listen((event) {
-        if (!mounted || _isExporting) return;
+    WidgetsBinding.instance.addObserver(this);
+  }
 
-        // Establish initial baseline on device holding angle (handles iOS portrait coordinates)
-        if (_baseX == null) {
-          _baseX = event.x;
-          _baseY = event.y;
-        } else {
-          // Slow adaptive drift compensation to allow natural posture adjustment
-          _baseX = _baseX! * 0.994 + event.x * 0.006;
-          _baseY = _baseY! * 0.994 + event.y * 0.006;
-        }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.isReducedMotion(context)) {
+      _stopSensorsAndTicker();
+      if (_tiltX != 0.0 || _tiltY != 0.0) {
+        setState(() {
+          _tiltX = 0.0;
+          _tiltY = 0.0;
+        });
+      }
+    } else if (!_isDismissing && !_isExporting) {
+      _startSensorsAndTicker();
+    }
+  }
 
-        // Relative delta from natural resting holding angle (subtle playful response)
-        final dx = ((event.x - _baseX!) / 2.6).clamp(-1.0, 1.0);
-        final dy = ((event.y - _baseY!) / 2.6).clamp(-1.0, 1.0);
+  void _startSensorsAndTicker() {
+    if (_isDismissing || _isExporting || !mounted) return;
+    if (AppMotion.isReducedMotion(context)) return;
 
-        // Store targets for the smooth ticker loop (~5° max, noticeable gyro depth)
-        _targetTiltX = dx * 0.09;
-        _targetTiltY = dy * 0.09;
-      }, onError: (_) {
-        // Sensors unavailable (e.g. desktop/simulator) - ignore gracefully
-      });
-    } catch (_) {}
+    if (!_tiltTicker.isTicking) {
+      _tiltTicker.start();
+    }
+    if (_sensorSubscription == null) {
+      try {
+        _sensorSubscription = accelerometerEventStream().listen((event) {
+          if (!mounted || _isExporting || _isDismissing) return;
+
+          // Establish initial baseline on device holding angle (handles iOS portrait coordinates)
+          if (_baseX == null) {
+            _baseX = event.x;
+            _baseY = event.y;
+          } else {
+            // Slow adaptive drift compensation to allow natural posture adjustment
+            _baseX = _baseX! * 0.994 + event.x * 0.006;
+            _baseY = _baseY! * 0.994 + event.y * 0.006;
+          }
+
+          // Relative delta from natural resting holding angle (subtle playful response)
+          final dx = ((event.x - _baseX!) / 2.6).clamp(-1.0, 1.0);
+          final dy = ((event.y - _baseY!) / 2.6).clamp(-1.0, 1.0);
+
+          // Store targets for the smooth ticker loop (~5° max, noticeable gyro depth)
+          _targetTiltX = dx * 0.09;
+          _targetTiltY = dy * 0.09;
+        }, onError: (_) {
+          // Sensors unavailable (e.g. desktop/simulator) - ignore gracefully
+        });
+      } catch (_) {}
+    }
+  }
+
+  void _stopSensorsAndTicker() {
+    if (_tiltTicker.isTicking) {
+      _tiltTicker.stop();
+    }
+    _sensorSubscription?.cancel();
+    _sensorSubscription = null;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) {
+      _stopSensorsAndTicker();
+    } else if (!_isDismissing && !_isExporting && mounted) {
+      _startSensorsAndTicker();
+    }
+  }
+
+  void _handleDismiss() {
+    if (_isDismissing) return;
+    _isDismissing = true;
+    _stopSensorsAndTicker();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   /// Evaluates tilt position against the 4 directional edges and triggers crisp haptics upon entry
   void _checkEdgeHaptics(double x, double y) {
-    if (AppMotion.isReducedMotion(context)) return;
+    if (_isDismissing || !mounted || AppMotion.isReducedMotion(context)) return;
     const double threshold = 0.068; // Subtle angle limit to trigger side haptic
     const double resetMargin = 0.036; // Return toward center to re-arm
 
@@ -330,8 +384,10 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _isDismissing = true;
+    _stopSensorsAndTicker();
     _tiltTicker.dispose();
-    _sensorSubscription?.cancel();
     _entranceController.dispose();
     super.dispose();
   }
@@ -446,7 +502,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
       );
 
       if (mounted && success) {
-        Navigator.pop(context);
+        _handleDismiss();
       }
     } finally {
       if (mounted) {
@@ -454,6 +510,9 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
           _isSharing = false;
           _isExporting = false;
         });
+        if (!_isDismissing) {
+          _startSensorsAndTicker();
+        }
       }
     }
   }
@@ -568,8 +627,16 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
     // Scaled-up Polaroid card size for a prominent hero visual
     final cardWidth = (screenWidth * 0.76).clamp(280.0, 325.0);
 
-    return Scaffold(
-      backgroundColor: Colors.black,
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _isDismissing = true;
+          _stopSensorsAndTicker();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -667,7 +734,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
                               size: 20,
                               color: Colors.white,
                             ),
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: _handleDismiss,
                           ),
                         ),
                       ),
@@ -813,6 +880,7 @@ class _PolaroidShareModalState extends State<PolaroidShareModal>
             ),
           ),
         ],
+      ),
       ),
     );
   }

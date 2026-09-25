@@ -4,6 +4,7 @@ import '../../../../core/services/app_haptics.dart';
 
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/theme/app_spacing.dart';
 
 class RollingDiceButton extends StatefulWidget {
@@ -21,33 +22,99 @@ class RollingDiceButton extends StatefulWidget {
 }
 
 class _RollingDiceButtonState extends State<RollingDiceButton>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _controller;
+  bool _isRepeating = false;
+  bool _isFinishing = false;
+
+  bool get _isAppResumed {
+    final state = WidgetsBinding.instance.lifecycleState;
+    return state == null || state == AppLifecycleState.resumed;
+  }
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this);
+    WidgetsBinding.instance.addObserver(this);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAnimation();
   }
 
   @override
   void didUpdateWidget(covariant RollingDiceButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isRolling != oldWidget.isRolling) {
-      if (widget.isRolling) {
-        _controller.repeat();
+      _syncAnimation();
+    }
+  }
+
+  void _syncAnimation() {
+    final isReduced = AppMotion.isReducedMotion(context);
+    if (widget.isRolling) {
+      if (isReduced) {
+        _isRepeating = false;
+        _isFinishing = false;
+        if (_controller.isAnimating) {
+          _controller.stop();
+        }
+        _controller.value = 0;
       } else {
+        if ((!_isRepeating || _isFinishing || !_controller.isAnimating) &&
+            _isAppResumed) {
+          _isRepeating = true;
+          _isFinishing = false;
+          _controller.repeat();
+        }
+      }
+    } else {
+      _isRepeating = false;
+      if (_controller.isAnimating) {
+        _isFinishing = true;
         _controller.forward().then((_) {
+          _isFinishing = false;
           if (mounted && !widget.isRolling) {
-            _controller.value = 0; // Reset smoothly after finishing the loop
+            _controller.value = 0;
           }
         });
+      } else {
+        _isFinishing = false;
+        _controller.value = 0;
       }
     }
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) {
+      if (_controller.isAnimating) {
+        _controller.stop();
+        if (!widget.isRolling) {
+          _isFinishing = false;
+          _controller.value = 0;
+        }
+      }
+      _isRepeating = false;
+    } else if (widget.isRolling &&
+        mounted &&
+        !AppMotion.isReducedMotion(context)) {
+      _isRepeating = true;
+      _isFinishing = false;
+      _controller.repeat();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
   }
@@ -76,7 +143,12 @@ class _RollingDiceButtonState extends State<RollingDiceButton>
                 fit: BoxFit.contain,
                 onLoaded: (composition) {
                   _controller.duration = composition.duration;
-                  if (widget.isRolling) {
+                  if (widget.isRolling &&
+                      !AppMotion.isReducedMotion(context) &&
+                      _isAppResumed &&
+                      (!_isRepeating || _isFinishing || !_controller.isAnimating)) {
+                    _isRepeating = true;
+                    _isFinishing = false;
                     _controller.repeat();
                   }
                 },
