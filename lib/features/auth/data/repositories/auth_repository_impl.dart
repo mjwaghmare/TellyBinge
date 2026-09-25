@@ -38,10 +38,25 @@ class AuthRepositoryImpl implements AuthRepository {
     return await _getUserFromFirestore(firebaseUser.uid, firebaseUser);
   }
 
+  bool _isGoogleSignInCanceled(Object e) {
+    return e is GoogleSignInException &&
+        e.code == GoogleSignInExceptionCode.canceled;
+  }
+
   @override
   Future<UserModel?> signInWithGoogle() async {
     try {
-      final googleUser = await _googleSignIn.authenticate();
+      // Catch cancellation specifically at the authenticate() call site so
+      // errors from later steps (_syncUserToFirestore) are never misclassified.
+      final GoogleSignInAccount googleUser;
+      try {
+        googleUser = await _googleSignIn.authenticate();
+      } on GoogleSignInException catch (e) {
+        if (e.code == GoogleSignInExceptionCode.canceled) {
+          return null;
+        }
+        rethrow;
+      }
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
@@ -75,34 +90,85 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  Future<void> _reauthenticateWithGoogle(User user) async {
+    final googleUser = await _googleSignIn.authenticate();
+    final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+    final OAuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: null,
+      idToken: googleAuth.idToken,
+    );
+    await user.reauthenticateWithCredential(credential);
+  }
+
   @override
   Future<void> deleteAccount() async {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser == null) return;
     final uid = firebaseUser.uid;
 
-    // 1. Delete user profile document from Firestore
-    try {
-      await _firestore.collection(FirestoreCollections.users).doc(uid).delete();
-    } catch (e) {
-      // Continue even if Firestore doc deletion fails
+    // Snapshot the profile before deletion so we can restore it exactly if
+    // Auth deletion fails (avoids regenerating from User fields which would
+    // lose user-customized data).
+    final profileRef = _firestore
+        .collection(FirestoreCollections.users)
+        .doc(uid);
+    final profileSnapshot = await profileRef.get();
+    final profileData = profileSnapshot.data();
+
+    // Restore helper: writes the original profile back, or falls back to
+    // _syncUserToFirestore if no profile existed before deletion.
+    Future<void> restoreProfile() async {
+      try {
+        if (profileData != null) {
+          await profileRef.set(profileData);
+        } else {
+          await _syncUserToFirestore(firebaseUser);
+        }
+      } catch (_) {}
     }
 
-    // 2. Delete Firebase Auth user
+    // Delete Firestore profile while still authenticated as owner (required by
+    // security rules), then delete the Firebase Auth user.
+    await profileRef.delete();
+
     try {
       await firebaseUser.delete();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
-        throw Exception(
-          'For security, please sign out and sign in again before deleting your account.',
-        );
+        try {
+          await _reauthenticateWithGoogle(firebaseUser);
+        } catch (reauthErr) {
+          // Re-auth failed or cancelled — restore the profile so the user is
+          // not left with an Auth account but no profile document.
+          await restoreProfile();
+          if (_isGoogleSignInCanceled(reauthErr)) {
+            throw Exception('Account deletion cancelled.');
+          }
+          throw Exception('Account deletion failed: $reauthErr');
+        }
+
+        // Credentials are now fresh — retry Auth deletion.
+        try {
+          await firebaseUser.delete();
+        } on FirebaseAuthException catch (deleteErr) {
+          // Auth deletion failed after re-auth — restore the profile.
+          await restoreProfile();
+          throw Exception(
+            'Account deletion failed: ${deleteErr.message ?? deleteErr.code}',
+          );
+        }
+      } else {
+        // Non-recoverable Auth error — restore the profile.
+        await restoreProfile();
+        throw Exception('Account deletion failed: ${e.message ?? e.code}');
       }
-      throw Exception('Account deletion failed: ${e.message ?? e.code}');
     } catch (e) {
+      // Unexpected error — restore the profile.
+      await restoreProfile();
       throw Exception('Account deletion failed: $e');
     }
 
-    // 3. Clear Google Sign-In local session
+    // Clear Google Sign-In local session
     try {
       await _googleSignIn.signOut();
     } catch (_) {}

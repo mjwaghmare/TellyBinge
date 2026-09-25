@@ -79,12 +79,13 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signOut() async {
-    emit(AuthLoading());
     try {
       await authRepository.signOut();
       // The watchlist streams close on sign-out, so nothing would resubmit or
       // cancel what is already scheduled for this account.
-      await NotificationService().clearForSignOut();
+      try {
+        await NotificationService().clearForSignOut();
+      } catch (_) {}
       emit(Unauthenticated());
     } catch (e) {
       emit(AuthError(Failure.fromException(e)));
@@ -92,12 +93,17 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> deleteAccount() async {
-    emit(AuthLoading());
     try {
       await authRepository.deleteAccount();
-      await NotificationService().clearForSignOut();
+      try {
+        await NotificationService().clearForSignOut();
+      } catch (_) {}
       emit(Unauthenticated());
     } catch (e) {
+      if (e.toString().contains('Account deletion cancelled.')) {
+        // User cancelled re-authentication; remain in current state
+        return;
+      }
       emit(AuthError(Failure.fromException(e)));
     }
   }

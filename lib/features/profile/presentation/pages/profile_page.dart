@@ -341,9 +341,15 @@ class _ProfilePageState extends State<ProfilePage>
       title: 'Sign Out?',
       message: 'Are you sure you want to sign out from your Popverse account?',
       confirmLabel: 'Sign Out',
-    ).then((confirmed) {
+    ).then((confirmed) async {
       if (confirmed && context.mounted) {
-        context.read<AuthCubit>().signOut();
+        final authCubit = context.read<AuthCubit>();
+        await authCubit.signOut();
+        if (context.mounted && authCubit.state is Unauthenticated) {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+        }
       }
     });
   }
