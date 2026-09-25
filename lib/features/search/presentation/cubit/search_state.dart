@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/errors/failures.dart';
 
 abstract class SearchState extends Equatable {
   const SearchState();
@@ -63,10 +64,12 @@ class SearchResultsSuccess extends SearchState {
 }
 
 class SearchError extends SearchState {
-  final String message;
+  final Failure failure;
+  String get message => failure.message;
 
-  const SearchError(this.message);
+  SearchError(Object error)
+      : failure = error is Failure ? error : Failure.fromException(error);
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [failure];
 }

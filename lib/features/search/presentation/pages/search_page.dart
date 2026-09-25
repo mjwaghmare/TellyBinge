@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
+import '../../../../core/widgets/app_error_view.dart';
 import '../../data/explore_sources.dart';
 import '../cubit/explore_feed_cubit.dart';
 import '../cubit/explore_feed_state.dart';
@@ -854,37 +855,10 @@ class _SearchPageState extends State<SearchPage>
     final defaultType = isTv ? 'tv' : 'movie';
 
     if (state is SearchError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Error loading data: ${state.message}',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.sm.copyWith(color: AppColors.error),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              ElevatedButton(
-                onPressed: () =>
-                    _searchCubitFor(isTv).executeSearch(_queryFor(isTv)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textOnPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.xl),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xl,
-                    vertical: AppSpacing.sm,
-                  ),
-                ),
-                child: Text('RETRY', style: AppTextStyles.smBold),
-              ),
-            ],
-          ),
-        ),
+      return AppErrorView(
+        failure: state.failure,
+        onRetry: () =>
+            _searchCubitFor(isTv).executeSearch(_queryFor(isTv)),
       );
     }
 

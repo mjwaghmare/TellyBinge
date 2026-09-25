@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../domain/repositories/movie_watchlist_repository.dart';
@@ -11,6 +12,9 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   final MovieWatchlistRepository movieWatchlistRepository;
   final TmdbClient? tmdbClient;
   StreamSubscription? _watchlistSubscription;
+
+  final _failureController = StreamController<Failure>.broadcast();
+  Stream<Failure> get failureStream => _failureController.stream;
 
   // Sets to manage concurrent requests and failure retry loops
   final Set<int> _backfillingMovieIds = {};
@@ -306,6 +310,9 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
       );
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.updateMovieReleaseDate: $e');
+      final failure = Failure.fromException(e);
+      _failureController.add(failure);
+      throw failure;
     }
   }
 
@@ -336,11 +343,11 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
         isWatched: isWatched,
         isFavorite: isFavorite,
       );
-      // No scheduling here — the Firestore write lands on the watchlist stream,
-      // which submits the whole list. Scheduling directly would bypass the
-      // pending-notification cap that reconcile enforces.
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.addMovie: $e');
+      final failure = Failure.fromException(e);
+      _failureController.add(failure);
+      throw failure;
     }
   }
 
@@ -349,6 +356,25 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     required int movieId,
     required bool isWatched,
   }) async {
+    final previousState = state;
+    if (state is MovieWatchlistSuccess) {
+      final currentMovies = (state as MovieWatchlistSuccess).movies;
+      final updatedMovies = currentMovies.map((m) {
+        if ((m['id'] as num?)?.toInt() == movieId) {
+          final copy = Map<String, dynamic>.from(m);
+          copy['isWatched'] = isWatched;
+          if (isWatched) {
+            copy['watchedAt'] = DateTime.now().toIso8601String();
+          } else {
+            copy.remove('watchedAt');
+          }
+          return copy;
+        }
+        return m;
+      }).toList();
+      emit(MovieWatchlistSuccess(updatedMovies));
+    }
+
     try {
       await movieWatchlistRepository.toggleWatched(
         uid: uid,
@@ -357,6 +383,12 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
       );
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.toggleWatched: $e');
+      if (!isClosed) {
+        emit(previousState);
+      }
+      final failure = Failure.fromException(e);
+      _failureController.add(failure);
+      throw failure;
     }
   }
 
@@ -365,6 +397,20 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     required int movieId,
     required bool isFavorite,
   }) async {
+    final previousState = state;
+    if (state is MovieWatchlistSuccess) {
+      final currentMovies = (state as MovieWatchlistSuccess).movies;
+      final updatedMovies = currentMovies.map((m) {
+        if ((m['id'] as num?)?.toInt() == movieId) {
+          final copy = Map<String, dynamic>.from(m);
+          copy['isFavorite'] = isFavorite;
+          return copy;
+        }
+        return m;
+      }).toList();
+      emit(MovieWatchlistSuccess(updatedMovies));
+    }
+
     try {
       await movieWatchlistRepository.toggleFavorite(
         uid: uid,
@@ -373,10 +419,25 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
       );
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.toggleFavorite: $e');
+      if (!isClosed) {
+        emit(previousState);
+      }
+      final failure = Failure.fromException(e);
+      _failureController.add(failure);
+      throw failure;
     }
   }
 
   Future<void> removeMovie({required String uid, required int movieId}) async {
+    final previousState = state;
+    if (state is MovieWatchlistSuccess) {
+      final currentMovies = (state as MovieWatchlistSuccess).movies;
+      final updatedMovies = currentMovies
+          .where((m) => (m['id'] as num?)?.toInt() != movieId)
+          .toList();
+      emit(MovieWatchlistSuccess(updatedMovies));
+    }
+
     try {
       await movieWatchlistRepository.removeMovie(uid: uid, movieId: movieId);
 
@@ -387,6 +448,12 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
       );
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.removeMovie: $e');
+      if (!isClosed) {
+        emit(previousState);
+      }
+      final failure = Failure.fromException(e);
+      _failureController.add(failure);
+      throw failure;
     }
   }
 
@@ -403,6 +470,7 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   @override
   Future<void> close() {
     _watchlistSubscription?.cancel();
+    _failureController.close();
     return super.close();
   }
 }

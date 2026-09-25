@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/app_haptics.dart';
@@ -16,6 +15,7 @@ import '../../../../core/widgets/action_circle_button.dart';
 import '../../../../core/widgets/animated_check_button.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../../core/widgets/app_confirm_sheet.dart';
+import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/collapsing_header_snap.dart';
 import '../../../../core/widgets/media_hero_image.dart';
@@ -288,83 +288,18 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
             state is ShowDetailsSuccess && state.isCastLoading;
         final bool isSimilarLoading =
             state is ShowDetailsSuccess && state.isSimilarLoading;
-        final String? error = state is ShowDetailsError ? state.message : null;
-
-        if (error != null && state is! ShowDetailsSuccess) {
-          String userFriendlyError =
-              'An unexpected error occurred. Please try again.';
-          if (error.contains('404')) {
-            userFriendlyError =
-                'This TV show could not be found or may have been removed.';
-          } else if (error.contains('SocketException') ||
-              error.contains('DioException')) {
-            userFriendlyError =
-                'Please check your internet connection and try again.';
-          }
-
+        if (state is ShowDetailsError) {
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               title: Text(widget.title),
             ),
-            body: Center(
-              child: Padding(
-                padding: AppSpacing.allXXL,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      AppAssets.errorDevices,
-                      width: 140,
-                      height: 140,
-                      fit: BoxFit.contain,
-                    ),
-                    AppSpacing.gapH32,
-                    Text(
-                      'Oops! Something went wrong',
-                      style: AppTextStyles.lg.copyWith(
-                        color: context.textPrimary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    AppSpacing.gapH12,
-                    Text(
-                      userFriendlyError,
-                      style: AppTextStyles.md.copyWith(
-                        color: context.textSecondary,
-                        height: 1.4,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    AppSpacing.gapH32,
-                    ElevatedButton(
-                      onPressed: () => context
-                          .read<ShowDetailsCubit>()
-                          .loadDetails(widget.mediaId, widget.mediaType),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textOnPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.xl),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xxl,
-                          vertical: AppSpacing.sm,
-                        ),
-                      ),
-                      child: Text(
-                        'RETRY',
-                        style: AppTextStyles.smBold.copyWith(
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            body: AppErrorView(
+              failure: state.failure,
+              onRetry: () => context
+                  .read<ShowDetailsCubit>()
+                  .loadDetails(widget.mediaId, widget.mediaType),
             ),
           );
         }

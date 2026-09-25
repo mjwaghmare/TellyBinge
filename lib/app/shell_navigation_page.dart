@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/services/app_haptics.dart';
 import '../core/constants/app_assets.dart';
 import '../core/theme/app_colors.dart';
+import '../core/widgets/app_snackbar.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/auth/presentation/cubit/auth_state.dart';
 import '../features/dashboard/presentation/pages/dashboard_page.dart';
@@ -59,11 +61,32 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
       GlobalKey<DashboardPageState>();
   final GlobalKey<MoviesPageState> _moviesKey = GlobalKey<MoviesPageState>();
   bool _hasStartedWatchers = false;
+  StreamSubscription? _movieFailureSub;
+  StreamSubscription? _tvFailureSub;
+  StreamSubscription? _customListsFailureSub;
 
   @override
   void initState() {
     super.initState();
     _tabNotifier = ValueNotifier<int>(widget.initialIndex);
+
+    _movieFailureSub = context.read<MovieWatchlistCubit>().failureStream.listen((failure) {
+      if (mounted) {
+        AppSnackbar.showError(context, failure.message);
+      }
+    });
+
+    _tvFailureSub = context.read<TvShowWatchlistCubit>().failureStream.listen((failure) {
+      if (mounted) {
+        AppSnackbar.showError(context, failure.message);
+      }
+    });
+
+    _customListsFailureSub = context.read<CustomListsCubit>().failureStream.listen((failure) {
+      if (mounted) {
+        AppSnackbar.showError(context, failure.message);
+      }
+    });
 
     ShellNavigationController.onSwitchTab = (int tab, {int? subTab}) {
       if (mounted) {
@@ -109,6 +132,9 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
 
   @override
   void dispose() {
+    _movieFailureSub?.cancel();
+    _tvFailureSub?.cancel();
+    _customListsFailureSub?.cancel();
     ShellNavigationController.onSwitchTab = null;
     ShellNavigationController.onShowSurpriseMe = null;
     _tabNotifier.dispose();

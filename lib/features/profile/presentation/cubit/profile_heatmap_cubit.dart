@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/failures.dart';
 import '../../data/repositories/profile_activity_repository_impl.dart';
 import '../../domain/repositories/profile_activity_repository.dart';
 import 'profile_heatmap_state.dart';
@@ -36,7 +37,7 @@ class ProfileHeatmapCubit extends Cubit<ProfileHeatmapState> {
     } catch (e, stackTrace) {
       debugPrint('Error loading heatmap: $e');
       debugPrint(stackTrace.toString());
-      emit(ProfileHeatmapError(e.toString()));
+      emit(ProfileHeatmapError(Failure.fromException(e)));
     }
   }
 }

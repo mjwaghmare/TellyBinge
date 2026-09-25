@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/failures.dart';
 import '../../data/repositories/watch_history_repository_impl.dart';
 import '../../domain/repositories/watch_history_repository.dart';
 
@@ -12,7 +13,7 @@ abstract class WatchHistoryState extends Equatable {
   const WatchHistoryState();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class WatchHistoryInitial extends WatchHistoryState {}
@@ -25,16 +26,18 @@ class WatchHistoryLoaded extends WatchHistoryState {
   const WatchHistoryLoaded(this.history);
 
   @override
-  List<Object> get props => [history];
+  List<Object?> get props => [history];
 }
 
 class WatchHistoryError extends WatchHistoryState {
-  final String message;
+  final Failure failure;
+  String get message => failure.message;
 
-  const WatchHistoryError(this.message);
+  WatchHistoryError(Object error)
+      : failure = error is Failure ? error : Failure.fromException(error);
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [failure];
 }
 
 class WatchHistoryCubit extends Cubit<WatchHistoryState> {
@@ -69,12 +72,12 @@ class WatchHistoryCubit extends Cubit<WatchHistoryState> {
             onError: (e) {
               if (isClosed) return;
               debugPrint('Error listening to history: $e');
-              emit(WatchHistoryError(e.toString()));
+              emit(WatchHistoryError(Failure.fromException(e)));
             },
           );
     } catch (e) {
       if (!isClosed) {
-        emit(WatchHistoryError(e.toString()));
+        emit(WatchHistoryError(Failure.fromException(e)));
       }
     }
   }

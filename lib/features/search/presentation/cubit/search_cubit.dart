@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/network/tmdb_client.dart';
 import 'explore_feed_cubit.dart';
 import 'search_state.dart';
@@ -115,7 +116,7 @@ class SearchCubit extends Cubit<SearchState> {
       );
     } catch (e) {
       if (_currentSearchRequestId == requestId) {
-        emit(SearchError(e.toString()));
+        emit(SearchError(Failure.fromException(e)));
       }
     }
   }

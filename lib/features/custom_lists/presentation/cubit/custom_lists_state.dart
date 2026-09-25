@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/errors/failures.dart';
 import '../../domain/models/custom_list_model.dart';
 
 abstract class CustomListsState extends Equatable {
@@ -22,10 +23,12 @@ class CustomListsSuccess extends CustomListsState {
 }
 
 class CustomListsError extends CustomListsState {
-  final String message;
+  final Failure failure;
+  String get message => failure.message;
 
-  const CustomListsError(this.message);
+  CustomListsError(Object error)
+      : failure = error is Failure ? error : Failure.fromException(error);
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [failure];
 }

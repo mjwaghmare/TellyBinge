@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/errors/failures.dart';
 import '../../domain/models/user_model.dart';
 
 abstract class AuthState extends Equatable {
@@ -35,11 +36,13 @@ class Unauthenticated extends AuthState {}
 class AuthGuest extends AuthState {}
 
 class AuthError extends AuthState {
-  final String message;
+  final Failure failure;
   final bool isGuest;
+  String get message => failure.message;
 
-  const AuthError(this.message, {this.isGuest = false});
+  AuthError(Object error, {this.isGuest = false})
+      : failure = error is Failure ? error : Failure.fromException(error);
 
   @override
-  List<Object?> get props => [message, isGuest];
+  List<Object?> get props => [failure, isGuest];
 }

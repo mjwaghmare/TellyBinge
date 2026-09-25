@@ -78,7 +78,11 @@ class _WatchedEpisodeCardState extends State<WatchedEpisodeCard> {
           showId: widget.item.showId,
           episodeKey: widget.item.episodeKey,
           isWatched: false,
-        ),
+        ).catchError((_) {
+          if (mounted) {
+            setState(() => _isReverting = false);
+          }
+        }),
       );
     }
   }

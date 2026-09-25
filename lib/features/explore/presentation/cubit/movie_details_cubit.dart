@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/network/tmdb_client.dart';
 import 'movie_details_state.dart';
 
@@ -176,7 +177,7 @@ class MovieDetailsCubit extends Cubit<MovieDetailsState> {
       );
     } catch (e) {
       if (!isClosed && _loadGeneration == capturedGeneration) {
-        emit(MovieDetailsError(e.toString()));
+        emit(MovieDetailsError(Failure.fromException(e)));
       }
     }
   }

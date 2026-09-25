@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/errors/failures.dart';
 
 abstract class ProfileHeatmapState extends Equatable {
   const ProfileHeatmapState();
@@ -27,10 +28,12 @@ class ProfileHeatmapLoaded extends ProfileHeatmapState {
 }
 
 class ProfileHeatmapError extends ProfileHeatmapState {
-  final String message;
+  final Failure failure;
+  String get message => failure.message;
 
-  const ProfileHeatmapError(this.message);
+  ProfileHeatmapError(Object error)
+      : failure = error is Failure ? error : Failure.fromException(error);
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [failure];
 }

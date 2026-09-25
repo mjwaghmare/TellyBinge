@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/failures.dart';
 import '../../domain/models/feedback_item.dart';
 import '../../domain/repositories/feedback_repository.dart';
 import 'feedback_state.dart';
@@ -96,10 +97,11 @@ class FeedbackCubit extends Cubit<FeedbackState> {
 
     try {
       await feedbackRepository.toggleVote(feedbackId: item.id, userId: userId);
-    } catch (_) {
+    } catch (e) {
       if (previousState != null && state is FeedbackLoaded) {
         emit(previousState);
       }
+      throw Failure.fromException(e);
     }
   }
 
@@ -120,7 +122,9 @@ class FeedbackCubit extends Cubit<FeedbackState> {
         text: text,
         commentId: commentId,
       );
-    } catch (_) {}
+    } catch (e) {
+      throw Failure.fromException(e);
+    }
   }
 
   @override

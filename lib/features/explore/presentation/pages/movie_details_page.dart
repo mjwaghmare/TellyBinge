@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/app_haptics.dart';
@@ -11,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/action_circle_button.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
+import '../../../../core/widgets/app_error_view.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../auth/presentation/widgets/auth_required_view.dart';
@@ -281,7 +281,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 uid: uid,
                 movieId: widget.movieId,
                 isWatched: !isWatched,
-              );
+              ).catchError((_) {});
             },
           ),
         if (isAdded)
@@ -295,7 +295,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               context.read<MovieWatchlistCubit>().removeMovie(
                 uid: uid,
                 movieId: widget.movieId,
-              );
+              ).catchError((_) {});
             },
           ),
       ],
@@ -316,20 +316,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
         final bool isSimilarLoading =
             state is MovieDetailsSuccess && state.isSimilarLoading;
 
-        final String? error = state is MovieDetailsError ? state.message : null;
-
-        if (error != null && state is! MovieDetailsSuccess) {
-          String userFriendlyError =
-              'An unexpected error occurred. Please try again.';
-          if (error.contains('404')) {
-            userFriendlyError =
-                'This movie could not be found or may have been removed.';
-          } else if (error.contains('SocketException') ||
-              error.contains('DioException')) {
-            userFriendlyError =
-                'Please check your internet connection and try again.';
-          }
-
+        if (state is MovieDetailsError) {
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
@@ -343,65 +330,13 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-            body: Center(
-              child: Padding(
-                padding: AppSpacing.allXXL,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      AppAssets.errorDevices,
-                      width: 140,
-                      height: 140,
-                      fit: BoxFit.contain,
-                    ),
-                    AppSpacing.gapH32,
-                    Text(
-                      'Oops! Something went wrong',
-                      style: AppTextStyles.lg.copyWith(
-                        color: context.textPrimary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    AppSpacing.gapH12,
-                    Text(
-                      userFriendlyError,
-                      style: AppTextStyles.sm.copyWith(
-                        color: context.textSecondary,
-                        height: 1.4,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    AppSpacing.gapH32,
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<MovieDetailsCubit>().loadMovieDetails(
-                          widget.movieId,
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textOnPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.xl),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xxl,
-                          vertical: AppSpacing.sm,
-                        ),
-                      ),
-                      child: Text(
-                        'RETRY',
-                        style: AppTextStyles.smBold.copyWith(
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            body: AppErrorView(
+              failure: state.failure,
+              onRetry: () {
+                context.read<MovieDetailsCubit>().loadMovieDetails(
+                  widget.movieId,
+                );
+              },
             ),
           );
         }
@@ -563,7 +498,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                               runtime:
                                   runtimeMinutes > 0 ? runtimeMinutes : null,
                               voteAverage: voteAverage > 0 ? voteAverage : null,
-                            );
+                            )
+                            .catchError((_) {});
                       }
                     });
                   }
@@ -626,7 +562,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                             runtime: runtimeMinutes,
                             voteAverage: voteAverage,
                             genres: genres,
-                          );
+                          ).catchError((_) {});
                         } else {
                           AuthRequiredBottomSheet.show(
                             context,

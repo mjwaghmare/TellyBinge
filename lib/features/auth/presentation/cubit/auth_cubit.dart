@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'auth_state.dart';
@@ -39,7 +40,7 @@ class AuthCubit extends Cubit<AuthState> {
         }
       },
       onError: (error) {
-        emit(AuthError(error.toString()));
+        emit(AuthError(Failure.fromException(error)));
       },
     );
   }
@@ -69,10 +70,10 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } catch (e) {
       if (wasGuest) {
-        emit(AuthError(e.toString(), isGuest: true));
+        emit(AuthError(Failure.fromException(e), isGuest: true));
         emit(AuthGuest());
       } else {
-        emit(AuthError(e.toString()));
+        emit(AuthError(Failure.fromException(e)));
       }
     }
   }
@@ -86,7 +87,7 @@ class AuthCubit extends Cubit<AuthState> {
       await NotificationService().clearForSignOut();
       emit(Unauthenticated());
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(AuthError(Failure.fromException(e)));
     }
   }
 
@@ -97,7 +98,7 @@ class AuthCubit extends Cubit<AuthState> {
       await NotificationService().clearForSignOut();
       emit(Unauthenticated());
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(AuthError(Failure.fromException(e)));
     }
   }
 

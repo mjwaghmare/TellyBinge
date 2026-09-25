@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/errors/failures.dart';
 
 abstract class ShowDetailsState extends Equatable {
   const ShowDetailsState();
@@ -54,10 +55,12 @@ class ShowDetailsSuccess extends ShowDetailsState {
 }
 
 class ShowDetailsError extends ShowDetailsState {
-  final String message;
+  final Failure failure;
+  String get message => failure.message;
 
-  const ShowDetailsError(this.message);
+  ShowDetailsError(Object error)
+      : failure = error is Failure ? error : Failure.fromException(error);
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [failure];
 }

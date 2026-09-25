@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/network/tmdb_client.dart';
 import 'show_details_state.dart';
 
@@ -117,7 +118,7 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
       }
     } catch (e) {
       if (_loadGeneration == capturedGeneration) {
-        emit(ShowDetailsError(e.toString()));
+        emit(ShowDetailsError(Failure.fromException(e)));
       }
     }
   }
