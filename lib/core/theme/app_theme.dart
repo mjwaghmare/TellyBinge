@@ -93,8 +93,23 @@ class AppTheme {
           side: const BorderSide(color: AppColors.borderDark, width: 1.0),
         ),
       ),
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(48.0, 48.0),
+          tapTargetSize: MaterialTapTargetSize.padded,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(48.0, 48.0),
+          tapTargetSize: MaterialTapTargetSize.padded,
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          minimumSize: const Size(48.0, 48.0),
+          tapTargetSize: MaterialTapTargetSize.padded,
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
           textStyle: const TextStyle(
@@ -109,6 +124,8 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
+          minimumSize: const Size(48.0, 48.0),
+          tapTargetSize: MaterialTapTargetSize.padded,
           foregroundColor: AppColors.primary,
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
@@ -230,8 +247,23 @@ class AppTheme {
           side: const BorderSide(color: AppColors.borderLight, width: 1.0),
         ),
       ),
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(48.0, 48.0),
+          tapTargetSize: MaterialTapTargetSize.padded,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(48.0, 48.0),
+          tapTargetSize: MaterialTapTargetSize.padded,
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          minimumSize: const Size(48.0, 48.0),
+          tapTargetSize: MaterialTapTargetSize.padded,
           backgroundColor: AppColors.lightPrimary,
           foregroundColor: AppColors.textOnPrimary,
           textStyle: const TextStyle(
@@ -246,6 +278,8 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
+          minimumSize: const Size(48.0, 48.0),
+          tapTargetSize: MaterialTapTargetSize.padded,
           foregroundColor: AppColors.lightPrimary,
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),

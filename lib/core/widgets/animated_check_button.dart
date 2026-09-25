@@ -227,13 +227,22 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
             ? AppColors.textOnPrimary
             : AppColors.textTertiary);
 
+    final semanticLabel = effectiveWatched
+        ? (widget.isMovie ? 'Mark as unwatched' : 'Mark episode as unwatched')
+        : (widget.isMovie ? 'Mark as watched' : 'Mark episode as watched');
+
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 48.0, minHeight: 48.0),
       child: Center(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: _handleTap,
-          child: Stack(
+        child: Semantics(
+          button: true,
+          enabled: !widget.isLoading,
+          label: semanticLabel,
+          value: effectiveWatched ? 'Watched' : 'Unwatched',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _handleTap,
+            child: Stack(
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
@@ -317,8 +326,9 @@ class _AnimatedCheckButtonState extends State<AnimatedCheckButton>
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _Particle {

@@ -426,10 +426,14 @@ class _CustomGlowBottomBar extends StatelessWidget {
   }) {
     final isSelected = currentIndex == index;
     return Expanded(
-      child: _LongPressHapticButton(
-        onTap: () => onTap(index),
-        onLongPress: onLongPress,
-        child: Stack(
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        label: '$label tab',
+        child: _LongPressHapticButton(
+          onTap: () => onTap(index),
+          onLongPress: onLongPress,
+          child: Stack(
           alignment: Alignment.center,
           children: [
             if (!isLight)
@@ -484,8 +488,9 @@ class _CustomGlowBottomBar extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _LongPressHapticButton extends StatefulWidget {

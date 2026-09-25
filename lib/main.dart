@@ -421,6 +421,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               // Force dark theme like original TV Time
               debugShowCheckedModeBanner: false,
               scrollBehavior: const BouncingScrollBehavior(),
+              builder: (context, child) {
+                final mediaQuery = MediaQuery.of(context);
+                return MediaQuery(
+                  data: mediaQuery.copyWith(
+                    textScaler: mediaQuery.textScaler.clamp(
+                      maxScaleFactor: 1.3,
+                    ),
+                  ),
+                  child: child ?? const SizedBox.shrink(),
+                );
+              },
               home: const AuthGate(),
               onGenerateRoute: (settings) {
                 final path = settings.name;

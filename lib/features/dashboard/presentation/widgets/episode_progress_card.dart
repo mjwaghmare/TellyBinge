@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -258,104 +259,117 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
     // But we check if the ID is -1 (dummy skeleton) to hide the action circle.
     final isDummy = show.rawShowData['id'] == -1;
 
-    return Dismissible(
-      key: dismissibleKey,
-      direction: DismissDirection.horizontal,
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.endToStart) {
+    return Semantics(
+      customSemanticsActions: {
+        CustomSemanticsAction(
+          label: isWatched ? 'Mark up to date' : 'Mark next episode watched',
+        ): () {
           if (!isWatched && !isDummy && !_isMarkingAsWatched) {
             unawaited(_markAsWatched(fromSwipe: true));
           }
-        } else {
-          await _showStopWatchingSheet();
-        }
-        return false;
+        },
+        const CustomSemanticsAction(label: 'Stop watching show'): () {
+          _showStopWatchingSheet();
+        },
       },
-      onUpdate: (details) {
-        if (details.progress > 0.05 && !_hasFiredSlideHaptic) {
-          _hasFiredSlideHaptic = true;
-        }
-        if (details.progress < 0.05) {
-          _hasFiredSlideHaptic = false;
-        }
-      },
-      background: Container(
-        margin: AppSpacing.cardMargin,
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(6.0),
-        ),
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: AppSpacing.xl),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.stop_circle_outlined, color: AppColors.textOnPrimary, size: 28),
-            AppSpacing.gapW8,
-            Text(
-              'STOP WATCHING',
-              style: AppTextStyles.smBold.copyWith(
-                color: AppColors.textOnPrimary,
-                fontSize: 13,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
-        ),
-      ),
-      secondaryBackground: Container(
-        margin: AppSpacing.cardMargin,
-        decoration: BoxDecoration(
-          color: AppColors.success,
-          borderRadius: BorderRadius.circular(6.0),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.xl),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              'WATCHED',
-              style: AppTextStyles.smBold.copyWith(
-                color: AppColors.textOnPrimary,
-                fontSize: 13,
-                letterSpacing: 1.2,
-              ),
-            ),
-            AppSpacing.gapW8,
-            const Icon(
-              Icons.check_circle_outline_rounded,
-              color: AppColors.textOnPrimary,
-              size: 28,
-            ),
-          ],
-        ),
-      ),
-      child: GestureDetector(
-        onTap: () {
-          if (isDummy) return;
-          final showId = show.rawShowData['id'];
-          Navigator.push(
-            context,
-            CupertinoPageRoute(
-              builder: (context) => BlocProvider<ShowDetailsCubit>(
-                create: (context) =>
-                    ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-                child: ShowDetailsPage(
-                  mediaId: showId,
-                  mediaType: 'tv',
-                  title: show.rawShowData['name'] ?? '',
+      child: Dismissible(
+        key: dismissibleKey,
+        direction: DismissDirection.horizontal,
+        confirmDismiss: (direction) async {
+          if (direction == DismissDirection.endToStart) {
+            if (!isWatched && !isDummy && !_isMarkingAsWatched) {
+              unawaited(_markAsWatched(fromSwipe: true));
+            }
+          } else {
+            await _showStopWatchingSheet();
+          }
+          return false;
+        },
+        onUpdate: (details) {
+          if (details.progress > 0.05 && !_hasFiredSlideHaptic) {
+            _hasFiredSlideHaptic = true;
+          }
+          if (details.progress < 0.05) {
+            _hasFiredSlideHaptic = false;
+          }
+        },
+        background: Container(
+          margin: AppSpacing.cardMargin,
+          decoration: BoxDecoration(
+            color: AppColors.error,
+            borderRadius: BorderRadius.circular(6.0),
+          ),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.only(left: AppSpacing.xl),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.stop_circle_outlined, color: AppColors.textOnPrimary, size: 28),
+              AppSpacing.gapW8,
+              Text(
+                'STOP WATCHING',
+                style: AppTextStyles.smBold.copyWith(
+                  color: AppColors.textOnPrimary,
+                  fontSize: 13,
+                  letterSpacing: 1.2,
                 ),
               ),
-            ),
-          );
-        },
-        child: Container(
+            ],
+          ),
+        ),
+        secondaryBackground: Container(
           margin: AppSpacing.cardMargin,
-          clipBehavior: Clip.antiAlias,
-          height: cardHeight,
           decoration: BoxDecoration(
+            color: AppColors.success,
+            borderRadius: BorderRadius.circular(6.0),
+          ),
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: AppSpacing.xl),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                'WATCHED',
+                style: AppTextStyles.smBold.copyWith(
+                  color: AppColors.textOnPrimary,
+                  fontSize: 13,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              AppSpacing.gapW8,
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                color: AppColors.textOnPrimary,
+                size: 28,
+              ),
+            ],
+          ),
+        ),
+        child: GestureDetector(
+          onTap: () {
+            if (isDummy) return;
+            final showId = show.rawShowData['id'];
+            Navigator.push(
+              context,
+              CupertinoPageRoute(
+                builder: (context) => BlocProvider<ShowDetailsCubit>(
+                  create: (context) =>
+                      ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+                  child: ShowDetailsPage(
+                    mediaId: showId,
+                    mediaType: 'tv',
+                    title: show.rawShowData['name'] ?? '',
+                  ),
+                ),
+              ),
+            );
+          },
+          child: Container(
+            margin: AppSpacing.cardMargin,
+            clipBehavior: Clip.antiAlias,
+            constraints: BoxConstraints(minHeight: cardHeight),
+            decoration: BoxDecoration(
             color: _isSwipeMarking
                 ? context.adaptiveColor(
                     light: AppColors.lightSurfaceElevated,
@@ -576,6 +590,7 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
                 ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

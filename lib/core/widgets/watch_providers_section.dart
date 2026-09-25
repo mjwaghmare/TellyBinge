@@ -306,7 +306,7 @@ class _WatchProvidersSectionState extends State<WatchProvidersSection> {
                       }
                     },
                     child: Container(
-                      constraints: const BoxConstraints(minHeight: 34),
+                      constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,

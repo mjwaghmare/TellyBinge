@@ -330,13 +330,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                 top: MediaQuery.paddingOf(context).top + 6,
                 left: 16,
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.6),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
+                    tooltip: 'Back',
                     padding: EdgeInsets.zero,
                     icon: const Icon(
                       Icons.arrow_back_ios_new,
@@ -494,13 +495,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.xs),
             child: Container(
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.6),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
+                tooltip: 'Share',
                 padding: EdgeInsets.zero,
                 icon: const Icon(
                   Icons.ios_share_rounded,
@@ -553,13 +555,14 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                     return Padding(
                       padding: const EdgeInsets.only(right: AppSpacing.xs),
                       child: Container(
-                        width: 44,
-                        height: 44,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
+                          tooltip: 'More actions',
                           padding: EdgeInsets.zero,
                           icon: const Icon(
                             Icons.more_horiz,

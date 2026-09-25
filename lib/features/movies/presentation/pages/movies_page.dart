@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -749,134 +750,141 @@ class MoviesPageState extends State<MoviesPage> {
 
     return StatefulBuilder(
       builder: (context, setState) {
-        return Dismissible(
-          key: ValueKey('movie_swipe_$movieId'),
-          direction: DismissDirection.horizontal,
-          confirmDismiss: (direction) async {
-            if (uid == null) return false;
-
-            void executeAction() async {
-              if (direction == DismissDirection.endToStart) {
-                if (!isWatched) {
-                  unawaited(AppHaptics.heavyImpact());
-                  setState(() => isMarkingAsWatched = true);
-                  await Future.delayed(const Duration(milliseconds: 400));
-                  if (context.mounted) {
-                    try {
-                      await context.read<MovieWatchlistCubit>().toggleWatched(
-                        uid: uid,
-                        movieId: movieId,
-                        isWatched: true,
-                      );
-                      if (context.mounted) {
-                        AppSnackbar.showSuccess(
-                          context,
-                          'Marked "$title" as watched 🍿',
-                        );
-                      }
-                    } catch (_) {
-                      if (context.mounted) {
-                        setState(() => isMarkingAsWatched = false);
-                        AppSnackbar.showError(
-                          context,
-                          'Failed to mark "$title" as watched.',
-                        );
-                      }
-                    }
-                  }
-                }
-              } else {
-                setState(() => isRemoving = true);
-                await Future.delayed(const Duration(milliseconds: 500));
-                if (context.mounted) {
-                  unawaited(
-                    context.read<MovieWatchlistCubit>().removeMovie(
-                      uid: uid,
-                      movieId: movieId,
-                    ),
+        void executeAction(DismissDirection direction) async {
+          if (uid == null) return;
+          if (direction == DismissDirection.endToStart) {
+            if (!isWatched) {
+              unawaited(AppHaptics.heavyImpact());
+              setState(() => isMarkingAsWatched = true);
+              await Future.delayed(const Duration(milliseconds: 400));
+              if (context.mounted) {
+                try {
+                  await context.read<MovieWatchlistCubit>().toggleWatched(
+                    uid: uid,
+                    movieId: movieId,
+                    isWatched: true,
                   );
+                  if (context.mounted) {
+                    AppSnackbar.showSuccess(
+                      context,
+                      'Marked "$title" as watched 🍿',
+                    );
+                  }
+                } catch (_) {
+                  if (context.mounted) {
+                    setState(() => isMarkingAsWatched = false);
+                    AppSnackbar.showError(
+                      context,
+                      'Failed to mark "$title" as watched.',
+                    );
+                  }
                 }
               }
             }
-
-            executeAction();
-            return false;
-          },
-          onUpdate: (details) {
-            if (details.progress > 0.05 && !hasFiredSlideHaptic) {
-              setState(() => hasFiredSlideHaptic = true);
-            }
-            if (details.progress < 0.05 && hasFiredSlideHaptic) {
-              setState(() => hasFiredSlideHaptic = false);
-            }
-          },
-          background: Container(
-            margin: AppSpacing.cardMargin,
-            decoration: BoxDecoration(
-              color: AppColors.error,
-              borderRadius: BorderRadius.circular(6.0),
-            ),
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.only(left: AppSpacing.xl),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.delete_outline, color: AppColors.textOnPrimary, size: 28),
-                AppSpacing.gapW8,
-                Text(
-                  'REMOVE',
-                  style: AppTextStyles.xsBold.copyWith(
-                    color: AppColors.textOnPrimary,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          secondaryBackground: Container(
-            margin: AppSpacing.cardMargin,
-            decoration: BoxDecoration(
-              color: AppColors.success,
-              borderRadius: BorderRadius.circular(6.0),
-            ),
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: AppSpacing.xl),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'WATCHED',
-                  style: AppTextStyles.xsBold.copyWith(
-                    color: AppColors.textOnPrimary,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                AppSpacing.gapW8,
-                const Icon(
-                  Icons.check_circle_outline_rounded,
-                  color: AppColors.textOnPrimary,
-                  size: 28,
-                ),
-              ],
-            ),
-          ),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MovieDetailsPage(
-                    movieId: movieId,
-                    title: title,
-                    posterPath: posterPath,
-                  ),
+          } else {
+            setState(() => isRemoving = true);
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (context.mounted) {
+              unawaited(
+                context.read<MovieWatchlistCubit>().removeMovie(
+                  uid: uid,
+                  movieId: movieId,
                 ),
               );
+            }
+          }
+        }
+
+        return Semantics(
+          customSemanticsActions: {
+            CustomSemanticsAction(
+              label: isWatched ? 'Mark as unwatched' : 'Mark as watched',
+            ): () => executeAction(DismissDirection.endToStart),
+            const CustomSemanticsAction(label: 'Remove from watchlist'): () =>
+                executeAction(DismissDirection.startToEnd),
+          },
+          child: Dismissible(
+            key: ValueKey('movie_swipe_$movieId'),
+            direction: DismissDirection.horizontal,
+            confirmDismiss: (direction) async {
+              executeAction(direction);
+              return false;
             },
-            child: Container(
+            onUpdate: (details) {
+              if (details.progress > 0.05 && !hasFiredSlideHaptic) {
+                setState(() => hasFiredSlideHaptic = true);
+              }
+              if (details.progress < 0.05 && hasFiredSlideHaptic) {
+                setState(() => hasFiredSlideHaptic = false);
+              }
+            },
+            background: Container(
               margin: AppSpacing.cardMargin,
-              clipBehavior: Clip.antiAlias,
-              height: 96.0,
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(6.0),
+              ),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(left: AppSpacing.xl),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.delete_outline, color: AppColors.textOnPrimary, size: 28),
+                  AppSpacing.gapW8,
+                  Text(
+                    'REMOVE',
+                    style: AppTextStyles.xsBold.copyWith(
+                      color: AppColors.textOnPrimary,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            secondaryBackground: Container(
+              margin: AppSpacing.cardMargin,
+              decoration: BoxDecoration(
+                color: AppColors.success,
+                borderRadius: BorderRadius.circular(6.0),
+              ),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: AppSpacing.xl),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'WATCHED',
+                    style: AppTextStyles.xsBold.copyWith(
+                      color: AppColors.textOnPrimary,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  AppSpacing.gapW8,
+                  const Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: AppColors.textOnPrimary,
+                    size: 28,
+                  ),
+                ],
+              ),
+            ),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MovieDetailsPage(
+                      movieId: movieId,
+                      title: title,
+                      posterPath: posterPath,
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                margin: AppSpacing.cardMargin,
+                clipBehavior: Clip.antiAlias,
+                constraints: const BoxConstraints(minHeight: 96.0),
               decoration: BoxDecoration(
                 color: (isMarkingAsWatched || isRemoving)
                     ? context.adaptiveColor(
@@ -1133,9 +1141,10 @@ class MoviesPageState extends State<MoviesPage> {
                     ),
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 
   Widget _buildUpcomingMovieCard(Map<String, dynamic> item, String? uid) {

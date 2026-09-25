@@ -40,13 +40,13 @@ class AppColors {
   // 3. Status & Functional Tokens
   static const Color watched = primary; // Violet watch indicator
   static const Color airing = Color(0xFF2196F3); // Blue for airing shows
-  static const Color ended = Color(0xFF757575); // Neutral Grey for ended shows
+  static const Color ended = Color(0xFF8E8E93); // Neutral Grey for ended shows (WCAG AA 5.5:1 on dark surface)
   static const Color error = Color(0xFFE53935); // Red for error/destructive
   static const Color success = Color(0xFF4CAF50); // Green for positive states
 
   // Light Mode Status Tonal Containers
   static const Color lightSuccessContainer = Color(0xFFDCFCE7);
-  static const Color lightOnSuccessContainer = Color(0xFF15803D);
+  static const Color lightOnSuccessContainer = Color(0xFF166534); // Deep green (WCAG AA 6.0:1 on container)
   static const Color lightAiringContainer = Color(0xFFDBEAFE);
   static const Color lightOnAiringContainer = Color(0xFF1D4ED8);
   static const Color lightErrorContainer = Color(0xFFFEE2E2);
@@ -83,13 +83,13 @@ class AppColors {
   // 5. Text Tokens (Dark Mode)
   static const Color textPrimary = Color(0xFFF4F4F5); // 92% off-white (anti-halation, reduced eye fatigue)
   static const Color textSecondary = Color(0xFFA1A1AA); // Balanced zinc secondary
-  static const Color textTertiary = Color(0xFF71717A); // Balanced zinc tertiary
+  static const Color textTertiary = Color(0xFF8E8E93); // Balanced zinc tertiary (WCAG AA 4.8:1 on elevated, 5.5:1 on surface)
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
   // Text Tokens (Light Mode)
   static const Color lightTextPrimary = Color(0xFF1F2937);
   static const Color lightTextSecondary = Color(0xFF6B7280);
-  static const Color lightTextTertiary = Color(0xFF64748B);
+  static const Color lightTextTertiary = Color(0xFF4B5563); // High contrast tertiary (WCAG AA 6.8:1 on light surface)
 
   // 6. Heatmap Activity Tokens
   static const Color heatmapEmptyLight = Color(0xFFEBEDF0);

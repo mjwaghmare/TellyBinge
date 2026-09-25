@@ -2012,10 +2012,13 @@ class _ProfilePageState extends State<ProfilePage>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _isSignUpMonthOrPast(currentMonth)
-                          ? AppSpacing.gapW24
+                          ? const SizedBox(width: 48, height: 48)
                           : IconButton(
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              tooltip: 'Previous month',
                               icon: Icon(
                                 Icons.chevron_left,
                                 color: Theme.of(
@@ -2056,10 +2059,13 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                       AppSpacing.gapW8,
                       _isCurrentMonthOrFuture(currentMonth)
-                          ? AppSpacing.gapW24
+                          ? const SizedBox(width: 48, height: 48)
                           : IconButton(
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              tooltip: 'Next month',
                               icon: Icon(
                                 Icons.chevron_right,
                                 color: Theme.of(
