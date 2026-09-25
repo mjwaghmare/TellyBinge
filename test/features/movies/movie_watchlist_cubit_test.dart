@@ -18,6 +18,9 @@ class MockMovieWatchlistRepository implements MovieWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) => _streamController.stream;
 
   @override
+  Stream<bool> watchPendingWrites(String uid) => const Stream.empty();
+
+  @override
   Future<void> toggleWatched({
     required String uid,
     required int movieId,

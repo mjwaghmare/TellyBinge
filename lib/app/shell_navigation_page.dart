@@ -5,6 +5,8 @@ import '../core/services/app_haptics.dart';
 import '../core/constants/app_assets.dart';
 import '../core/theme/app_colors.dart';
 import '../core/widgets/app_snackbar.dart';
+import '../core/widgets/offline_sync_banner.dart';
+import '../core/sync/sync_status_cubit.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/auth/presentation/cubit/auth_state.dart';
 import '../features/dashboard/presentation/pages/dashboard_page.dart';
@@ -124,6 +126,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
     context.read<MovieWatchlistCubit>().watchWatchlist(uid);
     context.read<TvShowWatchlistCubit>().watchWatchlist(uid);
     context.read<CustomListsCubit>().watchCustomLists(uid);
+    context.read<SyncStatusCubit>().startMonitoring(uid);
   }
 
   void _evaluateAchievements() {
@@ -192,6 +195,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
               context.read<MovieWatchlistCubit>().clearWatchlist();
               context.read<TvShowWatchlistCubit>().clearWatchlist();
               context.read<CustomListsCubit>().clearLists();
+              context.read<SyncStatusCubit>().stopMonitoring();
             }
           },
         ),
@@ -279,7 +283,19 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
           return Scaffold(
             extendBody: true,
             resizeToAvoidBottomInset: false,
-            body: IndexedStack(index: _tabNotifier.value, children: pages),
+            body: Stack(
+              children: [
+                IndexedStack(index: _tabNotifier.value, children: pages),
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    child: OfflineSyncBanner(),
+                  ),
+                ),
+              ],
+            ),
             floatingActionButton: FloatingActionButton(
               onPressed: _showSurpriseMeSheet,
               backgroundColor: Colors.transparent,

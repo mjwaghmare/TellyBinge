@@ -7,6 +7,7 @@ abstract class CustomListsRepository {
   static const int maxItemsPerList = 500;
 
   Stream<List<CustomListModel>> watchCustomLists(String uid);
+  Stream<bool> watchPendingWrites(String uid);
 
   Future<String> createList({
     required String uid,

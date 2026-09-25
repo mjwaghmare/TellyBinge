@@ -14,6 +14,9 @@ class MockCustomListsRepository implements CustomListsRepository {
   Stream<List<CustomListModel>> watchCustomLists(String uid) => _controller.stream;
 
   @override
+  Stream<bool> watchPendingWrites(String uid) => const Stream.empty();
+
+  @override
   Future<String> createList({
     required String uid,
     required String name,
@@ -102,6 +105,9 @@ class _FailingCustomListsRepository implements CustomListsRepository {
   Stream<List<CustomListModel>> watchCustomLists(String uid) {
     return Stream.error(Exception('Firestore watch failed'));
   }
+
+  @override
+  Stream<bool> watchPendingWrites(String uid) => const Stream.empty();
 
   @override
   Future<String> createList({required String uid, required String name, String? description}) async {

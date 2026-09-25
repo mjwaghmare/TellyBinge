@@ -20,12 +20,20 @@ class CustomListsRepositoryImpl implements CustomListsRepository {
   Stream<List<CustomListModel>> watchCustomLists(String uid) {
     return _listsCollection(uid)
         .orderBy('createdAt', descending: true)
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         return CustomListModel.fromJson(doc.data(), doc.id);
       }).toList();
     });
+  }
+
+  @override
+  Stream<bool> watchPendingWrites(String uid) {
+    return _listsCollection(uid)
+        .snapshots(includeMetadataChanges: true)
+        .map((snapshot) => snapshot.metadata.hasPendingWrites)
+        .distinct();
   }
 
   @override

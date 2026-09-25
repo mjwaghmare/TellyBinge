@@ -25,8 +25,16 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) {
     return _showsCollection(uid)
         .orderBy('addedAt', descending: true)
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  @override
+  Stream<bool> watchPendingWrites(String uid) {
+    return _showsCollection(uid)
+        .snapshots(includeMetadataChanges: true)
+        .map((snapshot) => snapshot.metadata.hasPendingWrites)
+        .distinct();
   }
 
   @override

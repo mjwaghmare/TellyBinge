@@ -48,6 +48,7 @@ import 'features/dashboard/data/repositories/tv_watchlist_repository_impl.dart';
 import 'features/custom_lists/domain/repositories/custom_lists_repository.dart';
 import 'features/custom_lists/data/repositories/custom_lists_repository_impl.dart';
 import 'features/custom_lists/presentation/cubit/custom_lists_cubit.dart';
+import 'core/sync/sync_status_cubit.dart';
 import 'features/profile/presentation/cubit/achievements_cubit.dart';
 import 'firebase_options.dart';
 
@@ -396,6 +397,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ),
           BlocProvider<CustomListsCubit>(
             create: (context) => CustomListsCubit(
+              customListsRepository: context.read<CustomListsRepository>(),
+            ),
+          ),
+          BlocProvider<SyncStatusCubit>(
+            create: (context) => SyncStatusCubit(
+              movieWatchlistRepository:
+                  context.read<MovieWatchlistRepository>(),
+              tvWatchlistRepository: context.read<TvWatchlistRepository>(),
               customListsRepository: context.read<CustomListsRepository>(),
             ),
           ),

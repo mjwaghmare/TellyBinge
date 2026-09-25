@@ -18,8 +18,16 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) {
     return _moviesCollection(uid)
         .orderBy('addedAt', descending: true)
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  @override
+  Stream<bool> watchPendingWrites(String uid) {
+    return _moviesCollection(uid)
+        .snapshots(includeMetadataChanges: true)
+        .map((snapshot) => snapshot.metadata.hasPendingWrites)
+        .distinct();
   }
 
   @override

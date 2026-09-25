@@ -2,6 +2,7 @@ import '../models/tv_show_watchlist_item.dart';
 
 abstract class TvWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid);
+  Stream<bool> watchPendingWrites(String uid);
   Future<void> addShow({
     required String uid,
     required int showId,

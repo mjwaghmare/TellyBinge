@@ -19,6 +19,9 @@ class MockTvWatchlistRepository implements TvWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) => _streamController.stream;
 
   @override
+  Stream<bool> watchPendingWrites(String uid) => const Stream.empty();
+
+  @override
   Future<void> toggleEpisodeWatched({
     required String uid,
     required int showId,
