@@ -200,12 +200,31 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
     final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
       unawaited(AppHaptics.mediumImpact());
-      unawaited(
-        context.read<TvShowWatchlistCubit>().stopWatchingShow(
-          uid: authState.user.uid,
-          showId: showId,
-        ),
+      final cubit = context.read<TvShowWatchlistCubit>();
+      final staged = cubit.stageStopWatchingShow(
+        uid: authState.user.uid,
+        showId: showId,
       );
+      if (staged) {
+        if (mounted) {
+          AppSnackbar.showWithAction(
+            context,
+            message: 'Stopped watching "$showName"',
+            actionLabel: 'UNDO',
+            onAction: () {
+              AppHaptics.lightImpact();
+              cubit.cancelPendingStopWatching(showId);
+            },
+          );
+        }
+      } else {
+        unawaited(
+          cubit.stopWatchingShow(
+            uid: authState.user.uid,
+            showId: showId,
+          ),
+        );
+      }
     }
   }
 

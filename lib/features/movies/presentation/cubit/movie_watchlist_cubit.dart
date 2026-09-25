@@ -19,6 +19,7 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   // Sets to manage concurrent requests and failure retry loops
   final Set<int> _backfillingMovieIds = {};
   final Set<int> _failedMovieIds = {};
+  final Map<int, _PendingMovieRemoval> _pendingMovieRemovals = {};
   bool _isSyncing = false;
   Future<void>? _activeSyncFuture;
 
@@ -33,13 +34,19 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
         .watchWatchlist(uid)
         .listen(
           (movies) {
-            emit(MovieWatchlistSuccess(movies));
+            final activeMovies = _pendingMovieRemovals.isEmpty
+                ? movies
+                : movies
+                    .where((m) => !_pendingMovieRemovals
+                        .containsKey((m['id'] as num?)?.toInt()))
+                    .toList();
+            emit(MovieWatchlistSuccess(activeMovies));
 
             // Hand the whole watchlist over; the service reconciles it against
             // what's actually scheduled. Watched movies are simply absent here and
             // get cancelled as a result.
             NotificationService().submitTitles(NotificationMedia.movie, [
-              for (final movie in movies)
+              for (final movie in activeMovies)
                 if ((movie['isWatched'] as bool? ?? false) == false &&
                     (movie['id'] as num?) != null &&
                     (movie['releaseDate'] as String?) != null)
@@ -429,6 +436,9 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   }
 
   Future<void> removeMovie({required String uid, required int movieId}) async {
+    _pendingMovieRemovals[movieId]?.timer.cancel();
+    _pendingMovieRemovals.remove(movieId);
+
     final previousState = state;
     if (state is MovieWatchlistSuccess) {
       final currentMovies = (state as MovieWatchlistSuccess).movies;
@@ -442,10 +452,12 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
       await movieWatchlistRepository.removeMovie(uid: uid, movieId: movieId);
 
       // Cancel scheduled notification if it exists
-      await NotificationService().cancelNotification(
-        NotificationMedia.movie,
-        movieId,
-      );
+      await NotificationService()
+          .cancelNotification(
+            NotificationMedia.movie,
+            movieId,
+          )
+          .catchError((_) {});
     } catch (e) {
       debugPrint('Error in MovieWatchlistCubit.removeMovie: $e');
       if (!isClosed) {
@@ -457,7 +469,123 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     }
   }
 
+  bool stageRemoveMovie({
+    required String uid,
+    required int movieId,
+    Duration delay = const Duration(seconds: 4),
+    VoidCallback? onCommitted,
+  }) {
+    if (state is! MovieWatchlistSuccess) return false;
+
+    final currentMovies = (state as MovieWatchlistSuccess).movies;
+    final index = currentMovies.indexWhere(
+      (m) => (m['id'] as num?)?.toInt() == movieId,
+    );
+    if (index == -1) return false;
+
+    final movieData = currentMovies[index];
+
+    // Cancel existing pending removal timer for this movie if any
+    _pendingMovieRemovals[movieId]?.timer.cancel();
+
+    // Optimistically remove from state
+    final updatedMovies = List<Map<String, dynamic>>.from(currentMovies)..removeAt(index);
+    emit(MovieWatchlistSuccess(updatedMovies));
+
+    late final _PendingMovieRemoval pendingRecord;
+    final timer = Timer(delay, () {
+      pendingRecord.commitFuture = _commitRemoveMovie(
+        pendingRecord,
+        onCommitted: onCommitted,
+      );
+    });
+
+    pendingRecord = _PendingMovieRemoval(
+      uid: uid,
+      movieId: movieId,
+      movieData: movieData,
+      originalIndex: index,
+      timer: timer,
+    );
+    _pendingMovieRemovals[movieId] = pendingRecord;
+    return true;
+  }
+
+  Future<void> _commitRemoveMovie(
+    _PendingMovieRemoval pendingRecord, {
+    VoidCallback? onCommitted,
+  }) async {
+    pendingRecord.isCommitting = true;
+    try {
+      await movieWatchlistRepository.removeMovie(
+        uid: pendingRecord.uid,
+        movieId: pendingRecord.movieId,
+      );
+      if (_pendingMovieRemovals[pendingRecord.movieId] == pendingRecord) {
+        _pendingMovieRemovals.remove(pendingRecord.movieId);
+      }
+      await NotificationService()
+          .cancelNotification(NotificationMedia.movie, pendingRecord.movieId)
+          .catchError((_) {});
+      onCommitted?.call();
+    } catch (e) {
+      if (_pendingMovieRemovals[pendingRecord.movieId] == pendingRecord) {
+        _pendingMovieRemovals.remove(pendingRecord.movieId);
+      }
+      debugPrint('Error committing delayed movie removal: $e');
+      if (!isClosed && state is MovieWatchlistSuccess) {
+        final restored = List<Map<String, dynamic>>.from(
+          (state as MovieWatchlistSuccess).movies,
+        );
+        final insertIdx = pendingRecord.originalIndex.clamp(0, restored.length);
+        restored.insert(insertIdx, pendingRecord.movieData);
+        emit(MovieWatchlistSuccess(restored));
+      }
+      final failure = Failure.fromException(e);
+      if (!_failureController.isClosed) {
+        _failureController.add(failure);
+      }
+    }
+  }
+
+  bool cancelPendingMovieRemoval(int movieId) {
+    final pending = _pendingMovieRemovals[movieId];
+    if (pending == null || pending.isCommitting) return false;
+
+    _pendingMovieRemovals.remove(movieId);
+    pending.timer.cancel();
+
+    if (!isClosed && state is MovieWatchlistSuccess) {
+      final currentMovies = List<Map<String, dynamic>>.from(
+        (state as MovieWatchlistSuccess).movies,
+      );
+      final insertIdx = pending.originalIndex.clamp(0, currentMovies.length);
+      currentMovies.insert(insertIdx, pending.movieData);
+      emit(MovieWatchlistSuccess(currentMovies));
+    }
+    return true;
+  }
+
+  Future<void> flushPendingMovieRemovals() async {
+    if (_pendingMovieRemovals.isEmpty) return;
+
+    final pendingList = _pendingMovieRemovals.values.toList();
+    for (final pending in pendingList) {
+      if (!pending.isCommitting) {
+        pending.timer.cancel();
+        pending.commitFuture = _commitRemoveMovie(pending);
+      }
+    }
+
+    await Future.wait(
+      pendingList
+          .map((p) => p.commitFuture)
+          .whereType<Future<void>>(),
+    );
+  }
+
   void clearWatchlist() {
+    unawaited(flushPendingMovieRemovals());
     _watchlistSubscription?.cancel();
     _watchlistSubscription = null;
     _backfillingMovieIds.clear();
@@ -468,9 +596,28 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   }
 
   @override
-  Future<void> close() {
-    _watchlistSubscription?.cancel();
-    _failureController.close();
+  Future<void> close() async {
+    await flushPendingMovieRemovals();
+    await _watchlistSubscription?.cancel();
+    await _failureController.close();
     return super.close();
   }
+}
+
+class _PendingMovieRemoval {
+  final String uid;
+  final int movieId;
+  final Map<String, dynamic> movieData;
+  final int originalIndex;
+  final Timer timer;
+  bool isCommitting = false;
+  Future<void>? commitFuture;
+
+  _PendingMovieRemoval({
+    required this.uid,
+    required this.movieId,
+    required this.movieData,
+    required this.originalIndex,
+    required this.timer,
+  });
 }

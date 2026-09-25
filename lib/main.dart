@@ -208,7 +208,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   /// stale by the time the user opens the app — and no AuthCubit state change
   /// fires on resume to trigger AuthGate's sync.
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
 
     // Leaving the foreground: push out any debounced widget write before iOS
@@ -216,7 +216,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // swiping to the home screen leaves the widget stale until the next resume.
     // No-op when nothing is queued.
     if (state != AppLifecycleState.resumed) {
-      WidgetService.flushPendingUpdate();
+      unawaited(WidgetService.flushPendingUpdate());
+      final shouldFlushPendingWatchlist = state == AppLifecycleState.paused ||
+          state == AppLifecycleState.hidden ||
+          state == AppLifecycleState.detached;
+      if (shouldFlushPendingWatchlist) {
+        final navContext = navigatorKey.currentContext;
+        if (navContext != null && navContext.mounted) {
+          try {
+            await Future.wait([
+              navContext.read<MovieWatchlistCubit>().flushPendingMovieRemovals(),
+              navContext.read<TvShowWatchlistCubit>().flushPendingStopWatching(),
+            ]);
+          } catch (_) {}
+        }
+      }
       return;
     }
 
@@ -234,7 +248,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null || uid.isEmpty) return;
-    _AuthGateState.syncWidget(uid, force: true);
+    unawaited(_AuthGateState.syncWidget(uid, force: true));
   }
 
   @override

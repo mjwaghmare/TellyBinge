@@ -13,11 +13,43 @@ class AppSnackbar {
     required String message,
     required AppSnackbarType type,
     Duration duration = const Duration(seconds: 3),
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
-      create(context, message: message, type: type, duration: duration),
+      create(
+        context,
+        message: message,
+        type: type,
+        duration: duration,
+        actionLabel: actionLabel,
+        onAction: onAction != null
+            ? () {
+                messenger.hideCurrentSnackBar();
+                onAction();
+              }
+            : null,
+      ),
+    );
+  }
+
+  static void showWithAction(
+    BuildContext context, {
+    required String message,
+    required String actionLabel,
+    required VoidCallback onAction,
+    AppSnackbarType type = AppSnackbarType.info,
+    Duration duration = const Duration(seconds: 4),
+  }) {
+    show(
+      context,
+      message: message,
+      type: type,
+      duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 
@@ -25,12 +57,16 @@ class AppSnackbar {
     BuildContext context,
     String message, {
     Duration duration = const Duration(seconds: 3),
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     show(
       context,
       message: message,
       type: AppSnackbarType.info,
       duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 
@@ -38,12 +74,16 @@ class AppSnackbar {
     BuildContext context,
     String message, {
     Duration duration = const Duration(seconds: 3),
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     show(
       context,
       message: message,
       type: AppSnackbarType.success,
       duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 
@@ -51,12 +91,16 @@ class AppSnackbar {
     BuildContext context,
     String message, {
     Duration duration = const Duration(seconds: 3),
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     show(
       context,
       message: message,
       type: AppSnackbarType.error,
       duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 
@@ -65,6 +109,8 @@ class AppSnackbar {
     required String message,
     required AppSnackbarType type,
     Duration duration = const Duration(seconds: 3),
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     final isLight = AppColors.isLight(context);
 
@@ -132,6 +178,26 @@ class AppSnackbar {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (actionLabel != null && onAction != null) ...[
+              AppSpacing.gapW8,
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onAction,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: AppSpacing.xxs,
+                  ),
+                  child: Text(
+                    actionLabel,
+                    style: AppTextStyles.smBold.copyWith(
+                      color: AppColors.primary,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

@@ -783,14 +783,25 @@ class MoviesPageState extends State<MoviesPage> {
             }
           } else {
             setState(() => isRemoving = true);
-            await Future.delayed(const Duration(milliseconds: 500));
+            await Future.delayed(const Duration(milliseconds: 300));
             if (context.mounted) {
-              unawaited(
-                context.read<MovieWatchlistCubit>().removeMovie(
-                  uid: uid,
-                  movieId: movieId,
-                ),
+              final movieTitle = title;
+              final movieCubit = context.read<MovieWatchlistCubit>();
+              final staged = movieCubit.stageRemoveMovie(
+                uid: uid,
+                movieId: movieId,
               );
+              if (staged) {
+                AppSnackbar.showWithAction(
+                  context,
+                  message: 'Removed "$movieTitle" from watchlist',
+                  actionLabel: 'UNDO',
+                  onAction: () {
+                    AppHaptics.lightImpact();
+                    movieCubit.cancelPendingMovieRemoval(movieId);
+                  },
+                );
+              }
             }
           }
         }

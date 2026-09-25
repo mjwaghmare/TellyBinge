@@ -201,10 +201,31 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                   showId: widget.mediaId,
                 );
               } else {
-                context.read<TvShowWatchlistCubit>().stopWatchingShow(
+                final cubit = context.read<TvShowWatchlistCubit>();
+                final showTitle =
+                    widget.title.isNotEmpty ? widget.title : 'this show';
+                final staged = cubit.stageStopWatchingShow(
                   uid: uid,
                   showId: widget.mediaId,
                 );
+                if (staged) {
+                  AppSnackbar.showWithAction(
+                    context,
+                    message: 'Stopped watching "$showTitle"',
+                    actionLabel: 'UNDO',
+                    onAction: () {
+                      AppHaptics.lightImpact();
+                      cubit.cancelPendingStopWatching(widget.mediaId);
+                    },
+                  );
+                } else {
+                  unawaited(
+                    cubit.stopWatchingShow(
+                      uid: uid,
+                      showId: widget.mediaId,
+                    ),
+                  );
+                }
               }
             },
           ),
