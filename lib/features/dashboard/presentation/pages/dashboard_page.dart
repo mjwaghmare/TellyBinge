@@ -11,7 +11,6 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
-import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/tv_show_watchlist_cubit.dart';
@@ -798,15 +797,11 @@ class DashboardPageState extends State<DashboardPage> {
         Navigator.push(
           context,
           CupertinoPageRoute(
-            builder: (context) => BlocProvider<ShowDetailsCubit>(
-              create: (context) =>
-                  ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-              child: ShowDetailsPage(
-                mediaId: showId,
-                mediaType: 'tv',
-                title: title,
-                initialTabIndex: isUpcoming ? 0 : 1,
-              ),
+            builder: (context) => ShowDetailsPage(
+              mediaId: showId,
+              mediaType: 'tv',
+              title: title,
+              initialTabIndex: isUpcoming ? 0 : 1,
             ),
           ),
         );

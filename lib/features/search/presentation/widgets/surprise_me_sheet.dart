@@ -12,7 +12,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
-import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
 import 'rolling_dice_button.dart';
@@ -370,13 +369,20 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     AppActionSheetAction buildOption(
       String label,
       String subtitle,
-      String value,
-    ) {
+      String value, {
+      String? flag,
+    }) {
       final isSelected = value == currentLanguage;
       return AppActionSheetAction(
         label: label,
         subtitle: subtitle,
-        icon: Icons.translate_rounded,
+        iconWidget: flag != null
+            ? Text(
+                flag,
+                style: const TextStyle(fontSize: 20),
+              )
+            : null,
+        icon: flag == null ? Icons.translate_rounded : null,
         trailing: isSelected
             ? Icon(Icons.check_circle_rounded, color: context.primary, size: 22)
             : const SizedBox.shrink(),
@@ -393,9 +399,9 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
       title: 'Language',
       subtitle: 'Surprise picks in this language',
       actions: [
-        buildOption('All', 'Every available language', 'all'),
-        buildOption('Hindi', 'हिन्दी', 'hi'),
-        buildOption('Marathi', 'मराठी', 'mr'),
+        buildOption('All', 'Every available language', 'all', flag: '🌐'),
+        buildOption('Hindi', 'हिन्दी', 'hi', flag: '🇮🇳'),
+        buildOption('Marathi', 'मराठी', 'mr', flag: '🇮🇳'),
       ],
     );
   }
@@ -650,15 +656,10 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => BlocProvider(
-                    create: (context) => ShowDetailsCubit(
-                      tmdbClient: context.read<TmdbClient>(),
-                    ),
-                    child: ShowDetailsPage(
-                      mediaId: id as int,
-                      mediaType: 'tv',
-                      title: title ?? '',
-                    ),
+                  builder: (context) => ShowDetailsPage(
+                    mediaId: id as int,
+                    mediaType: 'tv',
+                    title: title ?? '',
                   ),
                 ),
               );

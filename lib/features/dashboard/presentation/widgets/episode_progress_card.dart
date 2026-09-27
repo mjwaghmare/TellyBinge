@@ -6,7 +6,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -15,7 +14,6 @@ import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/animated_check_button.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
-import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/tv_show_watchlist_cubit.dart';
@@ -372,14 +370,10 @@ class _EpisodeProgressCardState extends State<EpisodeProgressCard> {
             Navigator.push(
               context,
               CupertinoPageRoute(
-                builder: (context) => BlocProvider<ShowDetailsCubit>(
-                  create: (context) =>
-                      ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-                  child: ShowDetailsPage(
-                    mediaId: showId,
-                    mediaType: 'tv',
-                    title: show.rawShowData['name'] ?? '',
-                  ),
+                builder: (context) => ShowDetailsPage(
+                  mediaId: showId,
+                  mediaType: 'tv',
+                  title: show.rawShowData['name'] ?? '',
                 ),
               ),
             );

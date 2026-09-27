@@ -63,8 +63,9 @@ class TmdbClient {
     String path, {
     Map<String, dynamic>? queryParameters,
     int maxRetries = 3,
+    Duration deadline = const Duration(seconds: 25),
   }) async {
-    final overallDeadline = DateTime.now().add(const Duration(seconds: 60));
+    final overallDeadline = DateTime.now().add(deadline);
 
     for (int retry = 0; retry < maxRetries; retry++) {
       Duration remaining = overallDeadline.difference(DateTime.now());

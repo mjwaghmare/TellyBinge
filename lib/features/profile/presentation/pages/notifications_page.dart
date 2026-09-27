@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -20,7 +19,6 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
-import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 
 /// Clean Notification Model supporting poster, title, episode code, and deep link
@@ -323,15 +321,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
         Navigator.push(
           context,
           CupertinoPageRoute(
-            builder: (context) => BlocProvider<ShowDetailsCubit>(
-              create: (context) =>
-                  ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-              child: ShowDetailsPage(
-                mediaId: showId,
-                mediaType: 'tv',
-                title: showTitle,
-                initialTabIndex: 0,
-              ),
+            builder: (_) => ShowDetailsPage(
+              mediaId: showId,
+              mediaType: 'tv',
+              title: showTitle,
+              initialTabIndex: 0,
             ),
           ),
         );

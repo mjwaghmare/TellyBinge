@@ -38,7 +38,7 @@ import '../../../custom_lists/domain/models/custom_list_item_model.dart';
 import '../../../custom_lists/presentation/widgets/add_to_list_bottom_sheet.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 
-class ShowDetailsPage extends StatefulWidget {
+class ShowDetailsPage extends StatelessWidget {
   final int mediaId;
   final String mediaType;
   final String title;
@@ -53,10 +53,58 @@ class ShowDetailsPage extends StatefulWidget {
   });
 
   @override
-  State<ShowDetailsPage> createState() => _ShowDetailsPageState();
+  Widget build(BuildContext context) {
+    final existingCubit = _tryFindCubit(context);
+    if (existingCubit != null) {
+      return ShowDetailsView(
+        mediaId: mediaId,
+        mediaType: mediaType,
+        title: title,
+        initialTabIndex: initialTabIndex,
+      );
+    }
+
+    return BlocProvider<ShowDetailsCubit>(
+      create: (context) => ShowDetailsCubit(
+        tmdbClient: context.read<TmdbClient>(),
+      ),
+      child: ShowDetailsView(
+        mediaId: mediaId,
+        mediaType: mediaType,
+        title: title,
+        initialTabIndex: initialTabIndex,
+      ),
+    );
+  }
+
+  static ShowDetailsCubit? _tryFindCubit(BuildContext context) {
+    try {
+      return BlocProvider.of<ShowDetailsCubit>(context, listen: false);
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
-class _ShowDetailsPageState extends State<ShowDetailsPage> {
+class ShowDetailsView extends StatefulWidget {
+  final int mediaId;
+  final String mediaType;
+  final String title;
+  final int initialTabIndex;
+
+  const ShowDetailsView({
+    super.key,
+    required this.mediaId,
+    required this.mediaType,
+    required this.title,
+    this.initialTabIndex = 0,
+  });
+
+  @override
+  State<ShowDetailsView> createState() => _ShowDetailsViewState();
+}
+
+class _ShowDetailsViewState extends State<ShowDetailsView> {
   static const double _heroExpandedHeight = 300.0;
 
   late final ScrollController _scrollController;
@@ -1047,18 +1095,11 @@ class _ShowDetailsPageState extends State<ShowDetailsPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      BlocProvider<ShowDetailsCubit>(
-                                        create: (context) => ShowDetailsCubit(
-                                          tmdbClient: context
-                                              .read<TmdbClient>(),
-                                        ),
-                                        child: ShowDetailsPage(
-                                          mediaId: (item['id'] as num).toInt(),
-                                          title: item['name'] ?? 'Unknown',
-                                          mediaType: 'tv',
-                                        ),
-                                      ),
+                                  builder: (context) => ShowDetailsPage(
+                                    mediaId: (item['id'] as num).toInt(),
+                                    title: item['name'] ?? 'Unknown',
+                                    mediaType: 'tv',
+                                  ),
                                 ),
                               );
                             },

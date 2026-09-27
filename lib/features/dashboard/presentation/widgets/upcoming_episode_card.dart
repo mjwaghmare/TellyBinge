@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
-import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../models/enriched_show.dart';
 
 class UpcomingEpisodeCard extends StatelessWidget {
@@ -116,14 +113,10 @@ class UpcomingEpisodeCard extends StatelessWidget {
         Navigator.push(
           context,
           CupertinoPageRoute(
-            builder: (context) => BlocProvider<ShowDetailsCubit>(
-              create: (context) =>
-                  ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-              child: ShowDetailsPage(
-                mediaId: showId,
-                mediaType: 'tv',
-                title: show.rawShowData['name'] ?? '',
-              ),
+            builder: (context) => ShowDetailsPage(
+              mediaId: showId,
+              mediaType: 'tv',
+              title: show.rawShowData['name'] ?? '',
             ),
           ),
         );

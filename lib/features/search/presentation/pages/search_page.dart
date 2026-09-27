@@ -547,9 +547,17 @@ class _SearchPageState extends State<SearchPage>
     }) {
       final isSelected = value == currentLanguage;
       return AppActionSheetAction(
-        label: flag != null ? '$flag  $label' : label,
+        label: label,
         subtitle: subtitle,
-        icon: value == 'all' ? Icons.public_rounded : Icons.translate_rounded,
+        iconWidget: flag != null
+            ? Text(
+                flag,
+                style: const TextStyle(fontSize: 20),
+              )
+            : null,
+        icon: flag == null
+            ? (value == 'all' ? Icons.public_rounded : Icons.translate_rounded)
+            : null,
         trailing: isSelected
             ? const Icon(
                 Icons.check_circle_rounded,

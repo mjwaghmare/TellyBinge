@@ -4,12 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
-import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../cubit/tv_status_cubit.dart';
 import 'explore_quick_actions_sheet.dart';
@@ -218,14 +216,10 @@ void openExploreDetails(
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BlocProvider<ShowDetailsCubit>(
-          create: (context) =>
-              ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-          child: ShowDetailsPage(
-            mediaId: mediaId,
-            mediaType: mediaType,
-            title: title,
-          ),
+        builder: (context) => ShowDetailsPage(
+          mediaId: mediaId,
+          mediaType: mediaType,
+          title: title,
         ),
       ),
     );

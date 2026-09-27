@@ -11,7 +11,6 @@ import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/widget_service.dart';
@@ -34,7 +33,6 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
-import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../cubit/profile_heatmap_cubit.dart';
 import '../cubit/profile_heatmap_state.dart';
@@ -1550,9 +1548,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => BlocProvider<ShowDetailsCubit>(
-                create: (context) => ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-                child: ShowDetailsPage(mediaId: item.movieId, mediaType: 'tv', title: item.title),
+              builder: (context) => ShowDetailsPage(
+                mediaId: item.movieId,
+                mediaType: 'tv',
+                title: item.title,
               ),
             ),
           );

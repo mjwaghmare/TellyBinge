@@ -6,7 +6,8 @@ import '../theme/app_text_styles.dart';
 /// A single row in an [AppActionSheet].
 class AppActionSheetAction {
   final String label;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final VoidCallback onTap;
   final bool isDestructive;
   final String? subtitle;
@@ -16,14 +17,20 @@ class AppActionSheetAction {
 
   const AppActionSheetAction({
     required this.label,
-    required this.icon,
+    this.icon,
+    Widget? iconWidget,
+    Widget? leading,
     required this.onTap,
     this.isDestructive = false,
     this.subtitle,
     this.iconColor,
     this.iconBackgroundColor,
     this.trailing,
-  });
+  })  : iconWidget = iconWidget ?? leading,
+        assert(
+          icon != null || iconWidget != null || leading != null,
+          'Either icon or iconWidget must be provided',
+        );
 }
 
 /// App-styled action sheet with a clean, compact popup design.
@@ -202,14 +209,30 @@ class AppActionSheet extends StatelessWidget {
   }
 
   Widget _buildTile(BuildContext context, AppActionSheetAction action) {
-    final Color iconColor;
+    final isLight = context.isLight;
+
+    final Color fgColor;
+    final Color bgColor;
 
     if (action.isDestructive) {
-      iconColor = action.iconColor ?? AppColors.error;
+      fgColor = action.iconColor ?? AppColors.error;
+      bgColor = action.iconBackgroundColor ??
+          (isLight
+              ? AppColors.lightErrorContainer
+              : AppColors.error.withValues(alpha: 0.15));
     } else if (action.iconColor != null) {
-      iconColor = action.iconColor!;
+      fgColor = action.iconColor!;
+      bgColor = action.iconBackgroundColor ??
+          (isLight
+              ? fgColor.withValues(alpha: 0.12)
+              : fgColor.withValues(alpha: 0.18));
     } else {
-      iconColor = context.textPrimary;
+      // Default smart brand container
+      fgColor = isLight ? AppColors.lightPrimary : AppColors.primaryLight;
+      bgColor = action.iconBackgroundColor ??
+          (isLight
+              ? AppColors.lightPrimaryContainer
+              : AppColors.primary.withValues(alpha: 0.15));
     }
 
     final Color labelColor = action.isDestructive
@@ -226,16 +249,44 @@ class AppActionSheet extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm + 2,
+            vertical: AppSpacing.sm,
           ),
           child: Row(
             children: [
-              Icon(action.icon, size: 22, color: iconColor),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: action.iconWidget ??
+                      (action.icon != null
+                          ? Icon(action.icon, size: 20, color: fgColor)
+                          : const SizedBox.shrink()),
+                ),
+              ),
               AppSpacing.gapW12,
               Expanded(
-                child: Text(
-                  action.label,
-                  style: AppTextStyles.smBold.copyWith(color: labelColor),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      action.label,
+                      style: AppTextStyles.smBold.copyWith(color: labelColor),
+                    ),
+                    if (action.subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        action.subtitle!,
+                        style: AppTextStyles.xs.copyWith(
+                          color: context.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (action.trailing != null) ...[

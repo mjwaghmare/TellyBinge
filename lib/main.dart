@@ -22,7 +22,6 @@ import 'core/services/widget_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/background_sync_service.dart';
 import 'core/services/quick_actions_service.dart';
-import 'features/show_details/presentation/cubit/show_details_cubit.dart';
 import 'features/show_details/presentation/pages/show_details_page.dart';
 import 'features/explore/presentation/pages/movie_details_page.dart';
 import 'core/storage/settings_storage.dart';
@@ -154,16 +153,11 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   StreamSubscription<Uri?>? _widgetClickSubscription;
-  // Single TmdbClient instance for widget-driven navigation.
-  // Initialised here (outside the RepositoryProvider tree) to avoid creating
-  // a fresh HTTP client on every widget tap.
-  late final TmdbClient _tmdbClient;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _tmdbClient = TmdbClient();
     HomeWidget.setAppGroupId(WidgetService.iOSGroupId);
     QuickActionsService.instance.initialize(navigatorKey);
 
@@ -297,14 +291,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             nav.push(
               MaterialPageRoute(
                 settings: RouteSettings(name: '/show/$showId'),
-                builder: (context) => BlocProvider<ShowDetailsCubit>(
-                  create: (_) => ShowDetailsCubit(tmdbClient: _tmdbClient),
-                  child: ShowDetailsPage(
-                    mediaId: showId,
-                    mediaType: 'tv',
-                    title: 'Show Details',
-                    initialTabIndex: 1,
-                  ),
+                builder: (context) => ShowDetailsPage(
+                  mediaId: showId,
+                  mediaType: 'tv',
+                  title: 'Show Details',
+                  initialTabIndex: 1,
                 ),
               ),
             );
@@ -472,16 +463,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   if (showId != null) {
                     return MaterialPageRoute(
                       settings: settings,
-                      builder: (context) => BlocProvider<ShowDetailsCubit>(
-                        create: (context) => ShowDetailsCubit(
-                          tmdbClient: context.read<TmdbClient>(),
-                        ),
-                        child: ShowDetailsPage(
-                          mediaId: showId,
-                          mediaType: 'tv',
-                          title: 'Show Details',
-                          initialTabIndex: 1,
-                        ),
+                      builder: (context) => ShowDetailsPage(
+                        mediaId: showId,
+                        mediaType: 'tv',
+                        title: 'Show Details',
+                        initialTabIndex: 1,
                       ),
                     );
                   }
