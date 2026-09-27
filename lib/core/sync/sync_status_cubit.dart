@@ -10,9 +10,15 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
   final TvWatchlistRepository tvWatchlistRepository;
   final CustomListsRepository customListsRepository;
 
+  final Duration pendingDebounceDuration;
+  final Duration settleDuration;
+
   StreamSubscription<bool>? _moviesSub;
   StreamSubscription<bool>? _tvSub;
   StreamSubscription<bool>? _customListsSub;
+
+  Timer? _offlineDebounceTimer;
+  Timer? _settleTimer;
   Timer? _justSyncedTimer;
 
   bool _moviesPending = false;
@@ -23,6 +29,8 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
     required this.movieWatchlistRepository,
     required this.tvWatchlistRepository,
     required this.customListsRepository,
+    this.pendingDebounceDuration = const Duration(seconds: 2),
+    this.settleDuration = const Duration(milliseconds: 300),
   }) : super(const SyncStatusState());
 
   void startMonitoring(String uid) {
@@ -47,23 +55,57 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
     if (source == 'lists') _listsPending = pending;
 
     final overallPending = _moviesPending || _tvPending || _listsPending;
-    final wasPending = state.hasPendingWrites;
 
-    if (overallPending == wasPending) return;
+    if (overallPending) {
+      _settleTimer?.cancel();
+      _settleTimer = null;
 
-    if (wasPending && !overallPending) {
-      // Transition from pending to synced: show confirmation banner briefly
-      _justSyncedTimer?.cancel();
-      emit(state.copyWith(hasPendingWrites: false, justSynced: true));
-      _justSyncedTimer = Timer(const Duration(seconds: 3), () {
-        if (!isClosed) {
-          emit(state.copyWith(justSynced: false));
+      if (!state.hasPendingWrites) {
+        if (_offlineDebounceTimer == null || !_offlineDebounceTimer!.isActive) {
+          if (pendingDebounceDuration == Duration.zero) {
+            _justSyncedTimer?.cancel();
+            emit(state.copyWith(hasPendingWrites: true, justSynced: false));
+          } else {
+            _offlineDebounceTimer = Timer(pendingDebounceDuration, () {
+              if (!isClosed) {
+                _justSyncedTimer?.cancel();
+                emit(state.copyWith(hasPendingWrites: true, justSynced: false));
+              }
+            });
+          }
         }
-      });
+      }
     } else {
-      _justSyncedTimer?.cancel();
-      emit(state.copyWith(hasPendingWrites: overallPending, justSynced: false));
+      _offlineDebounceTimer?.cancel();
+      _offlineDebounceTimer = null;
+
+      if (state.hasPendingWrites) {
+        if (settleDuration == Duration.zero) {
+          _emitJustSynced();
+        } else {
+          _settleTimer?.cancel();
+          _settleTimer = Timer(settleDuration, () {
+            if (!isClosed) {
+              final stillPending =
+                  _moviesPending || _tvPending || _listsPending;
+              if (!stillPending) {
+                _emitJustSynced();
+              }
+            }
+          });
+        }
+      }
     }
+  }
+
+  void _emitJustSynced() {
+    _justSyncedTimer?.cancel();
+    emit(state.copyWith(hasPendingWrites: false, justSynced: true));
+    _justSyncedTimer = Timer(const Duration(seconds: 3), () {
+      if (!isClosed) {
+        emit(state.copyWith(justSynced: false));
+      }
+    });
   }
 
   void stopMonitoring() {
@@ -76,7 +118,12 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
     _moviesPending = false;
     _tvPending = false;
     _listsPending = false;
+    _offlineDebounceTimer?.cancel();
+    _settleTimer?.cancel();
     _justSyncedTimer?.cancel();
+    _offlineDebounceTimer = null;
+    _settleTimer = null;
+    _justSyncedTimer = null;
     emit(const SyncStatusState());
   }
 

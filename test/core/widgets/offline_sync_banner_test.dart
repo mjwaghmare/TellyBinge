@@ -19,6 +19,8 @@ void main() {
       movieWatchlistRepository: movieRepo,
       tvWatchlistRepository: tvRepo,
       customListsRepository: listsRepo,
+      pendingDebounceDuration: Duration.zero,
+      settleDuration: Duration.zero,
     );
   });
 

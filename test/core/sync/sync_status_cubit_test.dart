@@ -124,6 +124,8 @@ void main() {
       movieWatchlistRepository: movieRepo,
       tvWatchlistRepository: tvRepo,
       customListsRepository: listsRepo,
+      pendingDebounceDuration: Duration.zero,
+      settleDuration: Duration.zero,
     );
   });
 
@@ -178,6 +180,59 @@ void main() {
       expect(cubit.state.hasPendingWrites, isFalse);
       expect(cubit.state.justSynced, isFalse);
       expect(cubit.state.shouldShowBanner, isFalse);
+    });
+
+    testWidgets('debounces transient writes so offline banner does not emit prematurely', (tester) async {
+      final debouncedCubit = SyncStatusCubit(
+        movieWatchlistRepository: movieRepo,
+        tvWatchlistRepository: tvRepo,
+        customListsRepository: listsRepo,
+        pendingDebounceDuration: const Duration(seconds: 2),
+        settleDuration: Duration.zero,
+      );
+
+      debouncedCubit.updatePending('movies', true);
+      // Immediately, hasPendingWrites should still be false
+      expect(debouncedCubit.state.hasPendingWrites, isFalse);
+
+      // Advance 500ms (write finishes well within 2s debounce)
+      await tester.pump(const Duration(milliseconds: 500));
+      debouncedCubit.updatePending('movies', false);
+
+      // Advance past the 2s mark
+      await tester.pump(const Duration(seconds: 3));
+      expect(debouncedCubit.state.hasPendingWrites, isFalse);
+      expect(debouncedCubit.state.justSynced, isFalse);
+
+      await debouncedCubit.close();
+    });
+
+    testWidgets('emits hasPendingWrites true when writes remain pending past debounce duration', (tester) async {
+      final debouncedCubit = SyncStatusCubit(
+        movieWatchlistRepository: movieRepo,
+        tvWatchlistRepository: tvRepo,
+        customListsRepository: listsRepo,
+        pendingDebounceDuration: const Duration(seconds: 2),
+        settleDuration: Duration.zero,
+      );
+
+      debouncedCubit.updatePending('movies', true);
+      expect(debouncedCubit.state.hasPendingWrites, isFalse);
+
+      // Advance 1 second - still within debounce window
+      await tester.pump(const Duration(seconds: 1));
+      expect(debouncedCubit.state.hasPendingWrites, isFalse);
+
+      // Elapse past 2s debounce window (stalled / offline write)
+      await tester.pump(const Duration(seconds: 2));
+      expect(debouncedCubit.state.hasPendingWrites, isTrue);
+      expect(debouncedCubit.state.shouldShowBanner, isTrue);
+
+      // Resolves now that user is reconnected
+      debouncedCubit.updatePending('movies', false);
+      expect(debouncedCubit.state.justSynced, isTrue);
+
+      await debouncedCubit.close();
     });
   });
 }
