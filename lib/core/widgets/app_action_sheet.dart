@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
-import 'app_bottom_sheet.dart';
 
 /// A single row in an [AppActionSheet].
 class AppActionSheetAction {
@@ -27,7 +26,7 @@ class AppActionSheetAction {
   });
 }
 
-/// App-styled action sheet with icon rows and optional destructive actions.
+/// App-styled action sheet with a clean, compact popup design.
 ///
 /// The sheet pops itself before invoking the tapped action's [onTap], so
 /// callbacks should use the caller's context rather than the sheet's.
@@ -56,8 +55,8 @@ class AppActionSheet extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: AppBottomSheet.backgroundColor(context),
-      shape: AppBottomSheet.shape,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (_) =>
           AppActionSheet(title: title, subtitle: subtitle, actions: actions),
     );
@@ -66,158 +65,183 @@ class AppActionSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLight = context.isLight;
-    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
+    final sheetColor = isLight
+        ? AppColors.lightSurface
+        : AppColors.surfaceElevated;
+    final dividerColor = isLight
+        ? AppColors.borderLight
+        : Colors.white.withValues(alpha: 0.08);
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Top drag handle
-              const Padding(
-                padding: EdgeInsets.only(bottom: AppSpacing.md),
-                child: AppSheetHandle(),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        0,
+        AppSpacing.sm,
+        AppSpacing.sm,
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Action card – scrollable so the Cancel button stays visible
+            Flexible(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: sheetColor,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Scrollbar(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (title != null || subtitle != null) ...[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.md,
+                                AppSpacing.md,
+                                AppSpacing.md,
+                                0,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (title != null)
+                                    Text(
+                                      title!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTextStyles.smBold.copyWith(
+                                        color: context.textPrimary,
+                                      ),
+                                    ),
+                                  if (subtitle != null) ...[
+                                    if (title != null)
+                                      const SizedBox(height: 2),
+                                    Text(
+                                      subtitle!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTextStyles.xs.copyWith(
+                                        color: context.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(top: AppSpacing.sm),
+                              child: Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: dividerColor,
+                              ),
+                            ),
+                          ],
+                          for (var i = 0; i < actions.length; i++) ...[
+                            if (i > 0 || (title == null && subtitle == null))
+                              if (i > 0)
+                                Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: dividerColor,
+                                  indent: AppSpacing.md,
+                                  endIndent: AppSpacing.md,
+                                ),
+                            _buildTile(context, actions[i]),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              if (title != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                  child: Text(
-                    title!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.lg.copyWith(
-                      color: context.textPrimary,
-                      fontWeight: FontWeight.bold,
+            ),
+            // Cancel button
+            const SizedBox(height: AppSpacing.xs),
+            SizedBox(
+              width: double.infinity,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: sheetColor,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () => Navigator.pop(context),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.sm + 2,
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Cancel',
+                          style: AppTextStyles.smBold.copyWith(
+                            color: context.textPrimary,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              if (subtitle != null)
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: AppSpacing.xs,
-                    right: AppSpacing.xs,
-                    top: 2,
-                    bottom: AppSpacing.xs,
-                  ),
-                  child: Text(
-                    subtitle!,
-                    style: AppTextStyles.sm.copyWith(
-                      color: context.textSecondary,
-                    ),
-                  ),
-                ),
-              if (title != null || subtitle != null)
-                const SizedBox(height: AppSpacing.sm),
-              for (var i = 0; i < actions.length; i++) ...[
-                if (i > 0)
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: borderColor,
-                  ),
-                _buildTile(context, actions[i]),
-              ],
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildTile(BuildContext context, AppActionSheetAction action) {
-    final isLight = context.isLight;
-
-    final Color fgColor;
-    final Color bgColor;
+    final Color iconColor;
 
     if (action.isDestructive) {
-      fgColor = action.iconColor ?? AppColors.error;
-      bgColor = action.iconBackgroundColor ??
-          (isLight
-              ? AppColors.lightErrorContainer
-              : AppColors.error.withValues(alpha: 0.15));
+      iconColor = action.iconColor ?? AppColors.error;
     } else if (action.iconColor != null) {
-      fgColor = action.iconColor!;
-      bgColor = action.iconBackgroundColor ??
-          (isLight
-              ? fgColor.withValues(alpha: 0.12)
-              : fgColor.withValues(alpha: 0.18));
+      iconColor = action.iconColor!;
     } else {
-      // Default smart brand container
-      fgColor = isLight ? AppColors.lightPrimary : AppColors.primaryLight;
-      bgColor = action.iconBackgroundColor ??
-          (isLight
-              ? AppColors.lightPrimaryContainer
-              : AppColors.primary.withValues(alpha: 0.15));
+      iconColor = context.textPrimary;
     }
+
+    final Color labelColor = action.isDestructive
+        ? AppColors.error
+        : context.textPrimary;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(10.0),
         onTap: () {
           Navigator.pop(context);
           action.onTap();
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xs,
-            vertical: AppSpacing.sm,
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + 2,
           ),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Icon(action.icon, size: 20, color: fgColor),
-                ),
-              ),
+              Icon(action.icon, size: 22, color: iconColor),
               AppSpacing.gapW12,
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      action.label,
-                      style: AppTextStyles.smBold.copyWith(
-                        color: action.isDestructive
-                            ? AppColors.error
-                            : context.textPrimary,
-                      ),
-                    ),
-                    if (action.subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        action.subtitle!,
-                        style: AppTextStyles.xs.copyWith(
-                          color: context.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ],
+                child: Text(
+                  action.label,
+                  style: AppTextStyles.smBold.copyWith(color: labelColor),
                 ),
               ),
-              AppSpacing.gapW8,
-              action.trailing ??
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 20,
-                    color: context.textTertiary,
-                  ),
+              if (action.trailing != null) ...[
+                AppSpacing.gapW8,
+                action.trailing!,
+              ],
             ],
           ),
         ),
