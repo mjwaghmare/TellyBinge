@@ -220,6 +220,44 @@ class MoviesPageState extends State<MoviesPage> {
           });
         }
 
+        if (state is MovieWatchlistSuccess && state.movies.isEmpty) {
+          return DefaultTabController(
+            length: 2,
+            child: Scaffold(
+              appBar: AppBar(
+                elevation: 0,
+                toolbarHeight: 0, // Hide main toolbar for clean tab view
+                bottom: const TabBar(
+                  tabs: [
+                    Tab(text: 'WATCH LIST'),
+                    Tab(text: 'UPCOMING'),
+                  ],
+                ),
+              ),
+              body: TabBarView(
+                children: [
+                  AppEmptyState(
+                    icon: Icons.movie_filter_outlined,
+                    title: 'Your Movie Watchlist Is Empty',
+                    body:
+                        'Discover movies on the Explore tab and add them to your watchlist to track what you want to see.',
+                    primaryLabel: 'BROWSE MOVIES',
+                    onPrimary: widget.onNavigateToExplore,
+                  ),
+                  AppEmptyState(
+                    icon: Icons.event_outlined,
+                    title: 'No Upcoming Movies',
+                    body:
+                        'You haven\'t added any unreleased movies yet. Browse the Explore tab to add movies you\'re waiting for.',
+                    primaryLabel: 'BROWSE MOVIES',
+                    onPrimary: widget.onNavigateToExplore,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         return DefaultTabController(
           length: 2,
           child: Scaffold(
@@ -233,15 +271,10 @@ class MoviesPageState extends State<MoviesPage> {
                 ],
               ),
             ),
-            body: Stack(
+            body: TabBarView(
               children: [
-                TabBarView(
-                  children: [
-                    _buildWatchListView(watchlist, isLoading, uid),
-                    _buildUpcomingView(upcoming, isLoading, uid),
-                  ],
-                ),
-                Positioned(top: 14, right: 16, child: _buildGridToggle()),
+                _buildWatchListView(watchlist, isLoading, uid),
+                _buildUpcomingView(upcoming, isLoading, uid),
               ],
             ),
           ),
@@ -356,9 +389,11 @@ class MoviesPageState extends State<MoviesPage> {
     final watchedHistoryIndexMap = _buildIndexMap(displayWatchedHistory);
     final watchNextIndexMap = _buildIndexMap(displayWatchNext);
 
-    return Skeletonizer(
-      enabled: isLoading,
-      child: RefreshIndicator.adaptive(
+    return Stack(
+      children: [
+        Skeletonizer(
+          enabled: isLoading,
+          child: RefreshIndicator.adaptive(
         onRefresh: () async {
           if (uid != null) {
             unawaited(
@@ -497,6 +532,9 @@ class MoviesPageState extends State<MoviesPage> {
           ],
         ),
       ),
+    ),
+        Positioned(top: 14, right: 16, child: _buildGridToggle()),
+      ],
     );
   }
 
@@ -533,9 +571,11 @@ class MoviesPageState extends State<MoviesPage> {
           )
         : items;
 
-    return Skeletonizer(
-      enabled: isLoading,
-      child: RefreshIndicator.adaptive(
+    return Stack(
+      children: [
+        Skeletonizer(
+          enabled: isLoading,
+          child: RefreshIndicator.adaptive(
         onRefresh: () async {
           if (uid != null) {
             unawaited(
@@ -619,8 +659,11 @@ class MoviesPageState extends State<MoviesPage> {
         ],
       ),
     ),
-  );
-}
+  ),
+        Positioned(top: 14, right: 16, child: _buildGridToggle()),
+      ],
+    );
+  }
 
 
 

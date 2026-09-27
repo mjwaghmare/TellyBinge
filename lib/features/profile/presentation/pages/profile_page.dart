@@ -1,48 +1,49 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import '../widgets/profile_quick_actions_sheet.dart';
-import 'dart:math';
-import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/network/tmdb_client.dart';
+import '../../../../core/services/app_haptics.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/widget_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/services/notification_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../../../core/widgets/app_action_sheet.dart';
+import '../../../../core/widgets/app_confirm_sheet.dart';
+import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../core/widgets/rolling_digit_text.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
-
-import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
-import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
-import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
-import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
-import '../../../explore/presentation/pages/movie_details_page.dart';
-import '../../../show_details/presentation/pages/show_details_page.dart';
-import '../../../show_details/presentation/cubit/show_details_cubit.dart';
 import '../../../custom_lists/domain/models/custom_list_model.dart';
 import '../../../custom_lists/presentation/cubit/custom_lists_cubit.dart';
 import '../../../custom_lists/presentation/cubit/custom_lists_state.dart';
-import '../../../custom_lists/presentation/widgets/create_list_bottom_sheet.dart';
 import '../../../custom_lists/presentation/pages/custom_list_details_page.dart';
-import '../../../../core/network/tmdb_client.dart';
-import '../widgets/shows_filter_bottom_sheet.dart';
-import '../widgets/movies_filter_bottom_sheet.dart';
-import '../widgets/profile_expiration_indicator.dart';
-import 'package:intl/intl.dart';
-import '../../../../core/services/app_haptics.dart';
+import '../../../custom_lists/presentation/widgets/create_list_bottom_sheet.dart';
+import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
+import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
+import '../../../explore/presentation/pages/movie_details_page.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
+import '../../../show_details/presentation/cubit/show_details_cubit.dart';
+import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../cubit/profile_heatmap_cubit.dart';
 import '../cubit/profile_heatmap_state.dart';
+import '../widgets/movies_filter_bottom_sheet.dart';
+import '../widgets/profile_expiration_indicator.dart';
+import '../widgets/profile_quick_actions_sheet.dart';
+import '../widgets/shows_filter_bottom_sheet.dart';
 import 'notifications_page.dart';
 import 'settings_page.dart';
-import '../../../../core/services/widget_service.dart';
-import '../../../../core/widgets/app_action_sheet.dart';
-import '../../../../core/widgets/app_confirm_sheet.dart';
-import '../../../../core/widgets/rolling_digit_text.dart';
-import '../../../../core/widgets/app_empty_state.dart';
 
 class HorizontalItem {
   final int movieId;
@@ -83,19 +84,13 @@ class ProfilePage extends StatefulWidget {
   final VoidCallback? onNavigateToShowsExplore;
   final VoidCallback? onNavigateToMoviesExplore;
 
-  const ProfilePage({
-    super.key,
-    this.tabNotifier,
-    this.onNavigateToShowsExplore,
-    this.onNavigateToMoviesExplore,
-  });
+  const ProfilePage({super.key, this.tabNotifier, this.onNavigateToShowsExplore, this.onNavigateToMoviesExplore});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage>
-    with SingleTickerProviderStateMixin {
+class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
   String _movieSortOption = 'Last Added';
   String _movieProgressOption = 'All';
   String _showSortOption = 'Last added';
@@ -106,12 +101,8 @@ class _ProfilePageState extends State<ProfilePage>
 
   late TabController _tabController;
   int _previousTabIndex = 0;
-  DateTime _heatmapMonth = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-    1,
-  );
-  late PageController _heatmapPageController;
+  DateTime _heatmapMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
+
   int _heatmapPageIndex = 0;
   bool _isHeatmapExpanded = false;
   bool _isLocalLoading = false;
@@ -137,23 +128,12 @@ class _ProfilePageState extends State<ProfilePage>
     return parts.join(' ');
   }
 
-  ({
-    int watchedMoviesCount,
-    int totalMovieMinutes,
-    int watchedShowsCount,
-    int totalEpisodesCount,
-    int totalShowMinutes,
-  })
-  _calculateProfileStats(
-    MovieWatchlistState watchlistState,
-    TvShowWatchlistState showWatchlistState,
-  ) {
+  ({int watchedMoviesCount, int totalMovieMinutes, int watchedShowsCount, int totalEpisodesCount, int totalShowMinutes})
+  _calculateProfileStats(MovieWatchlistState watchlistState, TvShowWatchlistState showWatchlistState) {
     int watchedMoviesCount = 0;
     int totalMovieMinutes = 0;
     if (watchlistState is MovieWatchlistSuccess) {
-      final watchedMovies = watchlistState.movies.where(
-        (m) => m['isWatched'] as bool? ?? false,
-      );
+      final watchedMovies = watchlistState.movies.where((m) => m['isWatched'] as bool? ?? false);
       watchedMoviesCount = watchedMovies.length;
       totalMovieMinutes = watchedMovies
           .map((m) => (m['runtime'] as num?)?.toInt() ?? 0)
@@ -224,8 +204,7 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   void initState() {
     super.initState();
-    final isCurrentTab =
-        widget.tabNotifier == null || widget.tabNotifier?.value == 3;
+    final isCurrentTab = widget.tabNotifier == null || widget.tabNotifier?.value == 3;
     if (isCurrentTab) {
       _profileVisitCount = 1;
     }
@@ -242,16 +221,13 @@ class _ProfilePageState extends State<ProfilePage>
       }
     });
     widget.tabNotifier?.addListener(_onAppTabChanged);
-    _heatmapPageController = PageController();
+
 
     // Fetch heatmap watch history for current month
     final authState = context.read<AuthCubit>().state;
     final user = authState is Authenticated ? authState.user : null;
     if (user != null) {
-      context.read<ProfileHeatmapCubit>().loadMonthActivity(
-        user.uid,
-        _heatmapMonth,
-      );
+      context.read<ProfileHeatmapCubit>().loadMonthActivity(user.uid, _heatmapMonth);
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -259,9 +235,7 @@ class _ProfilePageState extends State<ProfilePage>
         final movieState = context.read<MovieWatchlistCubit>().state;
         final showState = context.read<TvShowWatchlistCubit>().state;
         final currentAuthState = context.read<AuthCubit>().state;
-        final currentUser = currentAuthState is Authenticated
-            ? currentAuthState.user
-            : null;
+        final currentUser = currentAuthState is Authenticated ? currentAuthState.user : null;
         final displayName = currentUser?.displayName.isNotEmpty == true
             ? currentUser!.displayName
             : (currentUser?.email.split('@').first ?? '');
@@ -310,7 +284,7 @@ class _ProfilePageState extends State<ProfilePage>
     _isFabVisible.dispose();
     widget.tabNotifier?.removeListener(_onAppTabChanged);
     _tabController.dispose();
-    _heatmapPageController.dispose();
+
     super.dispose();
   }
 
@@ -324,10 +298,7 @@ class _ProfilePageState extends State<ProfilePage>
           subtitle: 'Preferences, appearance and account',
           icon: Icons.settings_rounded,
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SettingsPage()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsPage()));
           },
         ),
         AppActionSheetAction(
@@ -366,17 +337,12 @@ class _ProfilePageState extends State<ProfilePage>
   Widget build(BuildContext context) {
     final authState = context.watch<AuthCubit>().state;
     final user = authState is Authenticated ? authState.user : null;
-    final displayName = (user?.displayName.isNotEmpty == true)
-        ? user!.displayName
-        : 'User';
+    final displayName = (user?.displayName.isNotEmpty == true) ? user!.displayName : 'User';
     final photoURL = user?.photoUrl;
 
     final movieWatchlistState = context.watch<MovieWatchlistCubit>().state;
     final showWatchlistState = context.watch<TvShowWatchlistCubit>().state;
-    final profileStats = _calculateProfileStats(
-      movieWatchlistState,
-      showWatchlistState,
-    );
+    final profileStats = _calculateProfileStats(movieWatchlistState, showWatchlistState);
     final rawMovies = movieWatchlistState is MovieWatchlistSuccess
         ? movieWatchlistState.movies
         : const <Map<String, dynamic>>[];
@@ -396,14 +362,11 @@ class _ProfilePageState extends State<ProfilePage>
     String generateUsername(String name) {
       if (name.isEmpty || name == 'User') return 'user_popverse';
       // Strip everything except letters and numbers, then lowercase
-      String cleanName = name
-          .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
-          .toLowerCase();
+      String cleanName = name.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase();
 
       // If it ends with exactly one digit (like 'mjwaghmare5'), pad it to '05'
       if (RegExp(r'[a-z]\d$').hasMatch(cleanName)) {
-        cleanName =
-            '${cleanName.substring(0, cleanName.length - 1)}0${cleanName.substring(cleanName.length - 1)}';
+        cleanName = '${cleanName.substring(0, cleanName.length - 1)}0${cleanName.substring(cleanName.length - 1)}';
       }
 
       return cleanName;
@@ -424,16 +387,10 @@ class _ProfilePageState extends State<ProfilePage>
             // Avatar with ring
             Container(
               padding: AppSpacing.allMicro,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary,
-              ),
+              decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.primary),
               child: Container(
                 padding: AppSpacing.allMicro,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, shape: BoxShape.circle),
                 child: CircleAvatar(
                   radius: 22,
                   backgroundColor: AppColors.brandGreen,
@@ -442,13 +399,8 @@ class _ProfilePageState extends State<ProfilePage>
                       : null,
                   child: (photoURL == null || photoURL.isEmpty)
                       ? Text(
-                          displayName.isNotEmpty
-                              ? displayName[0].toUpperCase()
-                              : 'U',
-                          style: AppTextStyles.lg.copyWith(
-                            color: AppColors.textOnPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                          style: AppTextStyles.lg.copyWith(color: AppColors.textOnPrimary, fontWeight: FontWeight.bold),
                         )
                       : null,
                 ),
@@ -477,8 +429,7 @@ class _ProfilePageState extends State<ProfilePage>
           ],
         ),
         actions: [
-          if (defaultTargetPlatform == TargetPlatform.iOS &&
-              (user?.isAdmin ?? false))
+          if (defaultTargetPlatform == TargetPlatform.iOS && (user?.isAdmin ?? false))
             const ProfileExpirationIndicator(),
           IconButton(
             icon: ValueListenableBuilder<bool>(
@@ -487,25 +438,15 @@ class _ProfilePageState extends State<ProfilePage>
                 return Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Icon(
-                      Icons.notifications_outlined,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                      size: 26,
-                    ),
+                    Icon(Icons.notifications_outlined, color: Theme.of(context).textTheme.bodyLarge?.color, size: 26),
                     if (hasUnread)
                       Positioned(
                         right: 0,
                         top: 0,
                         child: Container(
                           padding: const EdgeInsets.all(AppSpacing.xxs),
-                          decoration: const BoxDecoration(
-                            color: AppColors.error,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 8,
-                            minHeight: 8,
-                          ),
+                          decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+                          constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
                         ),
                       ),
                   ],
@@ -515,21 +456,12 @@ class _ProfilePageState extends State<ProfilePage>
             onPressed: () async {
               await NotificationService().markNotificationsAsRead();
               if (context.mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NotificationsPage(),
-                  ),
-                );
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsPage()));
               }
             },
           ),
           IconButton(
-            icon: Icon(
-              Icons.menu,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-              size: 28,
-            ),
+            icon: Icon(Icons.menu, color: Theme.of(context).textTheme.bodyLarge?.color, size: 28),
             onPressed: _showSettingsMenu,
           ),
           const SizedBox(width: AppSpacing.xs),
@@ -557,9 +489,10 @@ class _ProfilePageState extends State<ProfilePage>
                 List<HorizontalItem> watchedMovies = [];
                 List<HorizontalItem> displayedMovies = [];
                 List<HorizontalItem> displayedShows = [];
-                bool isLoadingMovies = watchlistState is MovieWatchlistLoading;
+                bool isLoadingMovies =
+                    watchlistState is MovieWatchlistLoading || watchlistState is MovieWatchlistInitial;
                 bool isLoadingShows =
-                    showWatchlistState is TvShowWatchlistLoading;
+                    showWatchlistState is TvShowWatchlistLoading || showWatchlistState is TvShowWatchlistInitial;
 
                 if (watchlistState is MovieWatchlistSuccess) {
                   watchedMovies = watchlistState.movies
@@ -569,8 +502,7 @@ class _ProfilePageState extends State<ProfilePage>
                           movieId: (m['id'] as num?)?.toInt() ?? 0,
                           title: m['title'] as String? ?? '',
                           imageUrl: _getImageUrl(m['posterPath'] as String?),
-                          voteAverage:
-                              (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
+                          voteAverage: (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
                           releaseDate: m['releaseDate'] as String? ?? '',
                           isFavorite: m['isFavorite'] as bool? ?? false,
                           isWatched: m['isWatched'] as bool? ?? false,
@@ -584,13 +516,9 @@ class _ProfilePageState extends State<ProfilePage>
                   var filteredMovies = watchlistState.movies;
 
                   if (_movieProgressOption == 'Favorites') {
-                    filteredMovies = filteredMovies
-                        .where((m) => m['isFavorite'] as bool? ?? false)
-                        .toList();
+                    filteredMovies = filteredMovies.where((m) => m['isFavorite'] as bool? ?? false).toList();
                   } else if (_movieProgressOption == 'Watched') {
-                    filteredMovies = filteredMovies
-                        .where((m) => m['isWatched'] as bool? ?? false)
-                        .toList();
+                    filteredMovies = filteredMovies.where((m) => m['isWatched'] as bool? ?? false).toList();
                   } else if (_movieProgressOption == 'Not watched') {
                     filteredMovies = filteredMovies.where((m) {
                       final isWatched = m['isWatched'] as bool? ?? false;
@@ -617,8 +545,7 @@ class _ProfilePageState extends State<ProfilePage>
                           movieId: (m['id'] as num?)?.toInt() ?? 0,
                           title: m['title'] as String? ?? '',
                           imageUrl: _getImageUrl(m['posterPath'] as String?),
-                          voteAverage:
-                              (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
+                          voteAverage: (m['voteAverage'] as num?)?.toDouble() ?? 0.0,
                           releaseDate: m['releaseDate'] as String? ?? '',
                           isFavorite: m['isFavorite'] as bool? ?? false,
                           isWatched: m['isWatched'] as bool? ?? false,
@@ -648,47 +575,28 @@ class _ProfilePageState extends State<ProfilePage>
 
                   // 1. Progress Filter
                   if (_showProgressOption == 'Favorites') {
-                    filteredShows = filteredShows
-                        .where((s) => s['isFavorite'] as bool? ?? false)
-                        .toList();
+                    filteredShows = filteredShows.where((s) => s['isFavorite'] as bool? ?? false).toList();
                   } else if (_showProgressOption == 'Stopped') {
-                    filteredShows = filteredShows
-                        .where((s) => s['status'] == 'STOPPED')
-                        .toList();
+                    filteredShows = filteredShows.where((s) => s['status'] == 'STOPPED').toList();
                   } else {
                     if (_showProgressOption != 'All') {
                       // Exclude stopped shows from specific categories
-                      filteredShows = filteredShows
-                          .where((s) => s['status'] != 'STOPPED')
-                          .toList();
+                      filteredShows = filteredShows.where((s) => s['status'] != 'STOPPED').toList();
                     }
 
                     if (_showProgressOption == 'Watching') {
-                      filteredShows = filteredShows
-                          .where((s) => s['category'] == 'WATCH_NEXT')
-                          .toList();
+                      filteredShows = filteredShows.where((s) => s['category'] == 'WATCH_NEXT').toList();
                     } else if (_showProgressOption == 'Haven\'t started') {
-                      filteredShows = filteredShows
-                          .where((s) => s['category'] == 'HAVENT_STARTED')
-                          .toList();
+                      filteredShows = filteredShows.where((s) => s['category'] == 'HAVENT_STARTED').toList();
                     } else if (_showProgressOption == 'Up to date') {
-                      filteredShows = filteredShows
-                          .where((s) => s['category'] == 'UP_TO_DATE')
-                          .toList();
+                      filteredShows = filteredShows.where((s) => s['category'] == 'UP_TO_DATE').toList();
                     } else if (_showProgressOption == 'Finished') {
-                      filteredShows = filteredShows
-                          .where((s) => s['category'] == 'FINISHED')
-                          .toList();
+                      filteredShows = filteredShows.where((s) => s['category'] == 'FINISHED').toList();
                     }
                   }
 
                   displayedShows = filteredShows
-                      .map(
-                        (s) => _showToHorizontalItem(
-                          s,
-                          watchedAt: s['watchedAt'] as String?,
-                        ),
-                      )
+                      .map((s) => _showToHorizontalItem(s, watchedAt: s['watchedAt'] as String?))
                       .toList();
                 }
 
@@ -719,9 +627,7 @@ class _ProfilePageState extends State<ProfilePage>
 
                   // Secondary: user-chosen sort option
                   if (_movieSortOption == 'Alphabetical') {
-                    return a.title.toLowerCase().compareTo(
-                      b.title.toLowerCase(),
-                    );
+                    return a.title.toLowerCase().compareTo(b.title.toLowerCase());
                   } else if (_movieSortOption == 'Last Added') {
                     final dateA = _parseDate(a.addedAt ?? '');
                     final dateB = _parseDate(b.addedAt ?? '');
@@ -763,9 +669,7 @@ class _ProfilePageState extends State<ProfilePage>
 
                   // Secondary: user-chosen sort option
                   if (_showSortOption == 'Alphabetical') {
-                    return a.title.toLowerCase().compareTo(
-                      b.title.toLowerCase(),
-                    );
+                    return a.title.toLowerCase().compareTo(b.title.toLowerCase());
                   } else if (_showSortOption == 'Last added') {
                     final dateA = _parseDate(a.addedAt ?? '');
                     final dateB = _parseDate(b.addedAt ?? '');
@@ -784,92 +688,92 @@ class _ProfilePageState extends State<ProfilePage>
                   return 0;
                 });
 
-                final stats = _calculateProfileStats(
-                  watchlistState,
-                  showWatchlistState,
-                );
+                final stats = _calculateProfileStats(watchlistState, showWatchlistState);
                 final totalMinutes = stats.totalMovieMinutes;
                 final totalShowMinutes = stats.totalShowMinutes;
 
-                final hasNoShows = showWatchlistState is TvShowWatchlistSuccess &&
-                    showWatchlistState.shows.isEmpty;
+                final hasNoShows = showWatchlistState is TvShowWatchlistSuccess && showWatchlistState.shows.isEmpty;
                 final Widget showsEmptyWidget = hasNoShows
                     ? AppEmptyState(
                         icon: Icons.live_tv_outlined,
                         title: 'No Shows Yet',
-                        body: 'Start tracking TV shows to see them here. Your collection will grow as you add and watch shows.',
+                        body:
+                            'Start tracking TV shows to see them here. Your collection will grow as you add and watch shows.',
                         primaryLabel: 'BROWSE SHOWS',
-                        onPrimary: widget.onNavigateToShowsExplore ?? () {
-                          if (widget.tabNotifier is ValueNotifier<int>) {
-                            (widget.tabNotifier as ValueNotifier<int>).value = 2;
-                          }
-                        },
+                        onPrimary:
+                            widget.onNavigateToShowsExplore ??
+                            () {
+                              if (widget.tabNotifier is ValueNotifier<int>) {
+                                (widget.tabNotifier as ValueNotifier<int>).value = 2;
+                              }
+                            },
                         compact: true,
                       )
                     : (_showProgressOption == 'Favorites'
-                        ? AppEmptyState(
-                            icon: Icons.favorite_border_rounded,
-                            title: 'No Favorite Shows Yet',
-                            body: 'Mark shows as favorites to quickly find them here.',
-                            primaryLabel: 'CLEAR FILTERS',
-                            onPrimary: () {
-                              setState(() {
-                                _showProgressOption = 'All';
-                              });
-                            },
-                            compact: true,
-                          )
-                        : AppEmptyState.noResults(
-                            title: 'No Shows Matched',
-                            body: 'Try adjusting your sort or progress filter to see more results.',
-                            onClearFilters: () {
-                              setState(() {
-                                _showSortOption = 'Last added';
-                                _showProgressOption = 'All';
-                              });
-                            },
-                            compact: true,
-                          ));
+                          ? AppEmptyState(
+                              icon: Icons.favorite_border_rounded,
+                              title: 'No Favorite Shows Yet',
+                              body: 'Mark shows as favorites to quickly find them here.',
+                              primaryLabel: 'CLEAR FILTERS',
+                              onPrimary: () {
+                                setState(() {
+                                  _showProgressOption = 'All';
+                                });
+                              },
+                              compact: true,
+                            )
+                          : AppEmptyState.noResults(
+                              title: 'No Shows Matched',
+                              body: 'Try adjusting your sort or progress filter to see more results.',
+                              onClearFilters: () {
+                                setState(() {
+                                  _showSortOption = 'Last added';
+                                  _showProgressOption = 'All';
+                                });
+                              },
+                              compact: true,
+                            ));
 
-                final hasNoMovies = watchlistState is MovieWatchlistSuccess &&
-                    watchlistState.movies.isEmpty;
+                final hasNoMovies = watchlistState is MovieWatchlistSuccess && watchlistState.movies.isEmpty;
                 final Widget moviesEmptyWidget = hasNoMovies
                     ? AppEmptyState(
                         icon: Icons.movie_creation_outlined,
                         title: 'No Movies Yet',
                         body: 'Start adding movies to your watchlist to see them here.',
                         primaryLabel: 'BROWSE MOVIES',
-                        onPrimary: widget.onNavigateToMoviesExplore ?? () {
-                          if (widget.tabNotifier is ValueNotifier<int>) {
-                            (widget.tabNotifier as ValueNotifier<int>).value = 2;
-                          }
-                        },
+                        onPrimary:
+                            widget.onNavigateToMoviesExplore ??
+                            () {
+                              if (widget.tabNotifier is ValueNotifier<int>) {
+                                (widget.tabNotifier as ValueNotifier<int>).value = 2;
+                              }
+                            },
                         compact: true,
                       )
                     : (_movieProgressOption == 'Favorites'
-                        ? AppEmptyState(
-                            icon: Icons.favorite_border_rounded,
-                            title: 'No Favorite Movies Yet',
-                            body: 'Mark movies as favorites to quickly find them here.',
-                            primaryLabel: 'CLEAR FILTERS',
-                            onPrimary: () {
-                              setState(() {
-                                _movieProgressOption = 'All';
-                              });
-                            },
-                            compact: true,
-                          )
-                        : AppEmptyState.noResults(
-                            title: 'No Movies Matched',
-                            body: 'Try adjusting your sort or progress filter to see more results.',
-                            onClearFilters: () {
-                              setState(() {
-                                _movieSortOption = 'Last Added';
-                                _movieProgressOption = 'All';
-                              });
-                            },
-                            compact: true,
-                          ));
+                          ? AppEmptyState(
+                              icon: Icons.favorite_border_rounded,
+                              title: 'No Favorite Movies Yet',
+                              body: 'Mark movies as favorites to quickly find them here.',
+                              primaryLabel: 'CLEAR FILTERS',
+                              onPrimary: () {
+                                setState(() {
+                                  _movieProgressOption = 'All';
+                                });
+                              },
+                              compact: true,
+                            )
+                          : AppEmptyState.noResults(
+                              title: 'No Movies Matched',
+                              body: 'Try adjusting your sort or progress filter to see more results.',
+                              onClearFilters: () {
+                                setState(() {
+                                  _movieSortOption = 'Last Added';
+                                  _movieProgressOption = 'All';
+                                });
+                              },
+                              compact: true,
+                            ));
 
                 return NestedScrollView(
                   headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -880,19 +784,12 @@ class _ProfilePageState extends State<ProfilePage>
                           children: [
                             // Stats Section (Episodes watched & Movies watched)
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.md,
-                                vertical: AppSpacing.sm,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: _buildStatColumn(
-                                      icon: const Icon(
-                                        Icons.tv_rounded,
-                                        color: AppColors.primary,
-                                        size: 24,
-                                      ),
+                                      icon: const Icon(Icons.tv_rounded, color: AppColors.primary, size: 24),
                                       count: '${stats.totalEpisodesCount}',
                                       label: 'Episodes watched',
                                       timeSpent: _formatTime(totalShowMinutes),
@@ -905,22 +802,14 @@ class _ProfilePageState extends State<ProfilePage>
                                   Container(
                                     height: 40,
                                     width: 1,
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.xs,
-                                    ),
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.light
+                                    margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                                    color: Theme.of(context).brightness == Brightness.light
                                         ? AppColors.borderLight
                                         : AppColors.borderDark,
                                   ),
                                   Expanded(
                                     child: _buildStatColumn(
-                                      icon: const Icon(
-                                        Icons.movie_filter_outlined,
-                                        color: AppColors.primary,
-                                        size: 24,
-                                      ),
+                                      icon: const Icon(Icons.movie_filter_outlined, color: AppColors.primary, size: 24),
                                       count: '${watchedMovies.length}',
                                       label: 'Movies watched',
                                       timeSpent: _formatTime(totalMinutes),
@@ -935,19 +824,14 @@ class _ProfilePageState extends State<ProfilePage>
                             ),
                             Center(
                               child: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: AppSpacing.micro,
-                                  bottom: AppSpacing.xxs,
-                                ),
+                                padding: const EdgeInsets.only(top: AppSpacing.micro, bottom: AppSpacing.xxs),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
                                       'Tap any card to view Watch Activity',
                                       style: AppTextStyles.xsBold.copyWith(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.light
+                                        color: Theme.of(context).brightness == Brightness.light
                                             ? AppColors.primaryDark
                                             : AppColors.primaryLight,
                                       ),
@@ -956,9 +840,7 @@ class _ProfilePageState extends State<ProfilePage>
                                     Icon(
                                       Icons.info_outline_rounded,
                                       size: 13,
-                                      color:
-                                          Theme.of(context).brightness ==
-                                              Brightness.light
+                                      color: Theme.of(context).brightness == Brightness.light
                                           ? AppColors.primaryDark
                                           : AppColors.primaryLight,
                                     ),
@@ -971,14 +853,8 @@ class _ProfilePageState extends State<ProfilePage>
                               duration: const Duration(milliseconds: 500),
                               curve: Curves.easeInOut,
                               child: _isHeatmapExpanded
-                                  ? _buildHeatmapSection(
-                                      context,
-                                      user?.uid ?? '',
-                                    )
-                                  : const SizedBox(
-                                      width: double.infinity,
-                                      height: 0,
-                                    ),
+                                  ? _buildHeatmapSection(context, user?.uid ?? '')
+                                  : const SizedBox(width: double.infinity, height: 0),
                             ),
                           ],
                         ),
@@ -988,18 +864,13 @@ class _ProfilePageState extends State<ProfilePage>
                         delegate: _SliverAppBarDelegate(
                           TabBar(
                             controller: _tabController,
-                            labelColor:
-                                Theme.of(context).brightness == Brightness.light
+                            labelColor: Theme.of(context).brightness == Brightness.light
                                 ? AppColors.lightTextPrimary
                                 : AppColors.textPrimary,
-                            unselectedLabelColor:
-                                Theme.of(context).brightness == Brightness.light
+                            unselectedLabelColor: Theme.of(context).brightness == Brightness.light
                                 ? AppColors.lightTextSecondary
                                 : AppColors.textSecondary,
-                            labelStyle: AppTextStyles.smBold.copyWith(
-                              letterSpacing: 0.5,
-                              fontWeight: FontWeight.w800,
-                            ),
+                            labelStyle: AppTextStyles.smBold.copyWith(letterSpacing: 0.5, fontWeight: FontWeight.w800),
                             unselectedLabelStyle: AppTextStyles.smBold.copyWith(
                               letterSpacing: 0.5,
                               fontWeight: FontWeight.w700,
@@ -1007,8 +878,7 @@ class _ProfilePageState extends State<ProfilePage>
                             indicatorColor: AppColors.primary,
                             indicatorWeight: 3.0,
                             indicatorSize: TabBarIndicatorSize.tab,
-                            dividerColor:
-                                Theme.of(context).brightness == Brightness.light
+                            dividerColor: Theme.of(context).brightness == Brightness.light
                                 ? AppColors.borderLight
                                 : AppColors.borderDark,
                             tabs: const [
@@ -1030,19 +900,15 @@ class _ProfilePageState extends State<ProfilePage>
                         if (notification.direction == ScrollDirection.reverse) {
                           if (_isFabVisible.value) _isFabVisible.value = false;
                           _fabTimer?.cancel();
-                        } else if (notification.direction ==
-                            ScrollDirection.forward) {
+                        } else if (notification.direction == ScrollDirection.forward) {
                           if (!_isFabVisible.value) _isFabVisible.value = true;
                           _fabTimer?.cancel();
                         }
                       } else if (notification is ScrollEndNotification) {
                         _fabTimer?.cancel();
-                        _fabTimer = Timer(
-                          const Duration(milliseconds: 800),
-                          () {
-                            if (mounted) _isFabVisible.value = true;
-                          },
-                        );
+                        _fabTimer = Timer(const Duration(milliseconds: 800), () {
+                          if (mounted) _isFabVisible.value = true;
+                        });
                       }
                       return false;
                     },
@@ -1054,248 +920,184 @@ class _ProfilePageState extends State<ProfilePage>
                           body: Skeletonizer(
                             enabled: isLoadingShows || _isFilteringShows,
                             child: _showProgressOption == 'All'
-                                ? _buildGroupedShowsGrid(
-                                    displayedShows,
-                                    showsEmptyWidget,
-                                  )
-                                : _buildGrid(
-                                    displayedShows,
-                                    showsEmptyWidget,
-                                  ),
+                                ? _buildGroupedShowsGrid(displayedShows, showsEmptyWidget)
+                                : _buildGrid(displayedShows, showsEmptyWidget),
                           ),
-                          floatingActionButton: Builder(
-                            builder: (context) {
-                              final isShowFilterActive =
-                                  _showSortOption != 'Last added' ||
-                                  _showProgressOption != 'All';
-                              final fabWidget = Container(
-                                margin: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-                                height: 40,
-                                decoration: isShowFilterActive
-                                    ? BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.success
-                                                .withValues(alpha: 0.5),
-                                            blurRadius: 8,
-                                            spreadRadius: 1,
-                                          ),
-                                        ],
-                                      )
-                                    : null,
-                                child: ElevatedButton.icon(
-                                  onPressed: () async {
-                                    final result =
-                                        await showModalBottomSheet<
-                                          Map<String, String>
-                                        >(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (context) =>
-                                              ShowsFilterBottomSheet(
-                                                initialSort: _showSortOption,
-                                                initialProgress:
-                                                    _showProgressOption,
-                                              ),
+                          floatingActionButton: (hasNoShows || isLoadingShows)
+                              ? null
+                              : Builder(
+                                  builder: (context) {
+                                    final isShowFilterActive =
+                                        _showSortOption != 'Last added' || _showProgressOption != 'All';
+                                    final fabWidget = Container(
+                                      margin: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
+                                      height: 40,
+                                      decoration: isShowFilterActive
+                                          ? BoxDecoration(
+                                              borderRadius: BorderRadius.circular(20),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: AppColors.success.withValues(alpha: 0.5),
+                                                  blurRadius: 8,
+                                                  spreadRadius: 1,
+                                                ),
+                                              ],
+                                            )
+                                          : null,
+                                      child: ElevatedButton.icon(
+                                        onPressed: () async {
+                                          final result = await showModalBottomSheet<Map<String, String>>(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.transparent,
+                                            builder: (context) => ShowsFilterBottomSheet(
+                                              initialSort: _showSortOption,
+                                              initialProgress: _showProgressOption,
+                                            ),
+                                          );
+                                          if (result != null) {
+                                            if (!context.mounted) return;
+                                            setState(() {
+                                              _showSortOption = result['sort'] ?? 'Last added';
+                                              _showProgressOption = result['progress'] ?? 'All';
+                                              _isFilteringShows = true;
+                                            });
+                                            final scrollController = PrimaryScrollController.of(context);
+                                            if (scrollController.hasClients) {
+                                              scrollController.animateTo(
+                                                0,
+                                                duration: const Duration(milliseconds: 300),
+                                                curve: Curves.easeOut,
+                                              );
+                                            }
+                                            await Future.delayed(const Duration(milliseconds: 300));
+                                            if (mounted) {
+                                              setState(() {
+                                                _isFilteringShows = false;
+                                              });
+                                            }
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: AppColors.textOnPrimary,
+                                          elevation: isShowFilterActive ? 0 : 4,
+                                          side: isShowFilterActive
+                                              ? BorderSide(color: AppColors.success, width: 1.5)
+                                              : null,
+                                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 0),
+                                          shape: const StadiumBorder(),
+                                        ),
+                                        icon: Icon(Icons.tune, size: 20),
+                                        label: Text('FILTERS', style: AppTextStyles.xs.copyWith(letterSpacing: 0.8)),
+                                      ),
+                                    );
+                                    return ValueListenableBuilder<bool>(
+                                      valueListenable: _isFabVisible,
+                                      builder: (context, isVisible, _) {
+                                        return AnimatedSlide(
+                                          duration: const Duration(milliseconds: 320),
+                                          curve: Curves.easeInOutCubic,
+                                          offset: isVisible ? Offset.zero : const Offset(0, 3.0),
+                                          child: fabWidget,
                                         );
-                                    if (result != null) {
-                                      if (!context.mounted) return;
-                                      setState(() {
-                                        _showSortOption =
-                                            result['sort'] ?? 'Last added';
-                                        _showProgressOption =
-                                            result['progress'] ?? 'All';
-                                        _isFilteringShows = true;
-                                      });
-                                      final scrollController =
-                                          PrimaryScrollController.of(context);
-                                      if (scrollController.hasClients) {
-                                        scrollController.animateTo(
-                                          0,
-                                          duration: const Duration(
-                                            milliseconds: 300,
-                                          ),
-                                          curve: Curves.easeOut,
-                                        );
-                                      }
-                                      await Future.delayed(
-                                        const Duration(milliseconds: 300),
-                                      );
-                                      if (mounted) {
-                                        setState(() {
-                                          _isFilteringShows = false;
-                                        });
-                                      }
-                                    }
+                                      },
+                                    );
                                   },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: AppColors.textOnPrimary,
-                                    elevation: isShowFilterActive ? 0 : 4,
-                                    side: isShowFilterActive
-                                        ? BorderSide(
-                                            color: AppColors.success,
-                                            width: 1.5,
-                                          )
-                                        : null,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.xl,
-                                      vertical: 0,
-                                    ),
-                                    shape: const StadiumBorder(),
-                                  ),
-                                  icon: Icon(Icons.tune, size: 20),
-                                  label: Text(
-                                    'FILTERS',
-                                    style: AppTextStyles.xs.copyWith(
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
                                 ),
-                              );
-                              return ValueListenableBuilder<bool>(
-                                valueListenable: _isFabVisible,
-                                builder: (context, isVisible, _) {
-                                  return AnimatedSlide(
-                                    duration: const Duration(milliseconds: 320),
-                                    curve: Curves.easeInOutCubic,
-                                    offset: isVisible
-                                        ? Offset.zero
-                                        : const Offset(0, 3.0),
-                                    child: fabWidget,
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          floatingActionButtonLocation:
-                              FloatingActionButtonLocation.centerFloat,
+                          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
                         ),
                         Scaffold(
                           backgroundColor: Colors.transparent,
                           body: Skeletonizer(
                             enabled: isLoadingMovies || _isFilteringMovies,
                             child: _movieProgressOption == 'All'
-                                ? _buildGroupedMoviesGrid(
-                                    displayedMovies,
-                                    moviesEmptyWidget,
-                                  )
-                                : _buildGrid(
-                                    displayedMovies,
-                                    moviesEmptyWidget,
-                                  ),
+                                ? _buildGroupedMoviesGrid(displayedMovies, moviesEmptyWidget)
+                                : _buildGrid(displayedMovies, moviesEmptyWidget),
                           ),
-                          floatingActionButton: Builder(
-                            builder: (context) {
-                              final isMovieFilterActive =
-                                  _movieSortOption != 'Last Added' ||
-                                  _movieProgressOption != 'All';
-                              final fabWidget = Container(
-                                margin: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-                                height: 40,
-                                decoration: isMovieFilterActive
-                                    ? BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.success
-                                                .withValues(alpha: 0.5),
-                                            blurRadius: 8,
-                                            spreadRadius: 1,
-                                          ),
-                                        ],
-                                      )
-                                    : null,
-                                child: ElevatedButton.icon(
-                                  onPressed: () async {
-                                    final result =
-                                        await showModalBottomSheet<
-                                          Map<String, String>
-                                        >(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (context) =>
-                                              MoviesFilterBottomSheet(
-                                                initialSort: _movieSortOption,
-                                                initialProgress:
-                                                    _movieProgressOption,
-                                              ),
+                          floatingActionButton: (hasNoMovies || isLoadingMovies)
+                              ? null
+                              : Builder(
+                                  builder: (context) {
+                                    final isMovieFilterActive =
+                                        _movieSortOption != 'Last Added' || _movieProgressOption != 'All';
+                                    final fabWidget = Container(
+                                      margin: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
+                                      height: 40,
+                                      decoration: isMovieFilterActive
+                                          ? BoxDecoration(
+                                              borderRadius: BorderRadius.circular(20),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: AppColors.success.withValues(alpha: 0.5),
+                                                  blurRadius: 8,
+                                                  spreadRadius: 1,
+                                                ),
+                                              ],
+                                            )
+                                          : null,
+                                      child: ElevatedButton.icon(
+                                        onPressed: () async {
+                                          final result = await showModalBottomSheet<Map<String, String>>(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.transparent,
+                                            builder: (context) => MoviesFilterBottomSheet(
+                                              initialSort: _movieSortOption,
+                                              initialProgress: _movieProgressOption,
+                                            ),
+                                          );
+                                          if (result != null) {
+                                            if (!context.mounted) return;
+                                            setState(() {
+                                              _movieSortOption = result['sort'] ?? 'Last Added';
+                                              _movieProgressOption = result['progress'] ?? 'All';
+                                              _isFilteringMovies = true;
+                                            });
+                                            final scrollController = PrimaryScrollController.of(context);
+                                            if (scrollController.hasClients) {
+                                              scrollController.animateTo(
+                                                0,
+                                                duration: const Duration(milliseconds: 300),
+                                                curve: Curves.easeOut,
+                                              );
+                                            }
+                                            await Future.delayed(const Duration(milliseconds: 300));
+                                            if (mounted) {
+                                              setState(() {
+                                                _isFilteringMovies = false;
+                                              });
+                                            }
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: AppColors.textOnPrimary,
+                                          elevation: isMovieFilterActive ? 0 : 4,
+                                          side: isMovieFilterActive
+                                              ? BorderSide(color: AppColors.success, width: 1.5)
+                                              : null,
+                                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 0),
+                                          shape: const StadiumBorder(),
+                                        ),
+                                        icon: Icon(Icons.tune, size: 20),
+                                        label: Text('FILTERS', style: AppTextStyles.xs.copyWith(letterSpacing: 0.8)),
+                                      ),
+                                    );
+                                    return ValueListenableBuilder<bool>(
+                                      valueListenable: _isFabVisible,
+                                      builder: (context, isVisible, _) {
+                                        return AnimatedSlide(
+                                          duration: const Duration(milliseconds: 320),
+                                          curve: Curves.easeInOutCubic,
+                                          offset: isVisible ? Offset.zero : const Offset(0, 3.0),
+                                          child: fabWidget,
                                         );
-                                    if (result != null) {
-                                      if (!context.mounted) return;
-                                      setState(() {
-                                        _movieSortOption =
-                                            result['sort'] ?? 'Last Added';
-                                        _movieProgressOption =
-                                            result['progress'] ?? 'All';
-                                        _isFilteringMovies = true;
-                                      });
-                                      final scrollController =
-                                          PrimaryScrollController.of(context);
-                                      if (scrollController.hasClients) {
-                                        scrollController.animateTo(
-                                          0,
-                                          duration: const Duration(
-                                            milliseconds: 300,
-                                          ),
-                                          curve: Curves.easeOut,
-                                        );
-                                      }
-                                      await Future.delayed(
-                                        const Duration(milliseconds: 300),
-                                      );
-                                      if (mounted) {
-                                        setState(() {
-                                          _isFilteringMovies = false;
-                                        });
-                                      }
-                                    }
+                                      },
+                                    );
                                   },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: AppColors.textOnPrimary,
-                                    elevation: isMovieFilterActive ? 0 : 4,
-                                    side: isMovieFilterActive
-                                        ? BorderSide(
-                                            color: AppColors.success,
-                                            width: 1.5,
-                                          )
-                                        : null,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.xl,
-                                      vertical: 0,
-                                    ),
-                                    shape: const StadiumBorder(),
-                                  ),
-                                  icon: Icon(Icons.tune, size: 20),
-                                  label: Text(
-                                    'FILTERS',
-                                    style: AppTextStyles.xs.copyWith(
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
                                 ),
-                              );
-                              return ValueListenableBuilder<bool>(
-                                valueListenable: _isFabVisible,
-                                builder: (context, isVisible, _) {
-                                  return AnimatedSlide(
-                                    duration: const Duration(milliseconds: 320),
-                                    curve: Curves.easeInOutCubic,
-                                    offset: isVisible
-                                        ? Offset.zero
-                                        : const Offset(0, 3.0),
-                                    child: fabWidget,
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          floatingActionButtonLocation:
-                              FloatingActionButtonLocation.centerFloat,
+                          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
                         ),
                         _buildCustomListsTab(),
                       ],
@@ -1312,22 +1114,16 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildProfileTag(ProfileTag tag) {
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final accentColor = isLight
-        ? AppColors.primaryDark
-        : AppColors.primaryLight;
+    final accentColor = isLight ? AppColors.primaryDark : AppColors.primaryLight;
 
     return Container(
       margin: const EdgeInsets.only(top: AppSpacing.xxs),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
       decoration: BoxDecoration(
-        color: isLight
-            ? AppColors.primary.withValues(alpha: 0.08)
-            : AppColors.primary.withValues(alpha: 0.15),
+        color: isLight ? AppColors.primary.withValues(alpha: 0.08) : AppColors.primary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: isLight
-              ? AppColors.primary.withValues(alpha: 0.22)
-              : AppColors.primary.withValues(alpha: 0.35),
+          color: isLight ? AppColors.primary.withValues(alpha: 0.22) : AppColors.primary.withValues(alpha: 0.35),
           width: 0.8,
         ),
       ),
@@ -1337,14 +1133,7 @@ class _ProfilePageState extends State<ProfilePage>
         children: [
           Text(tag.emoji, style: AppTextStyles.xs.copyWith(height: 1.1)),
           AppSpacing.gapW4,
-          Text(
-            tag.label,
-            style: AppTextStyles.xsBold.copyWith(
-              color: accentColor,
-              letterSpacing: 0.1,
-              height: 1.1,
-            ),
-          ),
+          Text(tag.label, style: AppTextStyles.xsBold.copyWith(color: accentColor, letterSpacing: 0.1, height: 1.1)),
         ],
       ),
     );
@@ -1374,40 +1163,30 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     // 2. Screen Veteran applies to highly experienced users
-    if (totalTitles >= 60 ||
-        totalEpisodesCount >= 150 ||
-        totalMinutes >= 20 * 24 * 60) {
+    if (totalTitles >= 60 || totalEpisodesCount >= 150 || totalMinutes >= 20 * 24 * 60) {
       return ProfileTag.screenVeteran;
     }
 
     // 3. Viewing balance between movies and TV shows
-    final effectiveMovieWeight =
-        watchedMoviesCount * 1.5 + (totalMovieMinutes / 60);
-    final effectiveShowWeight =
-        watchedShowsCount * 1.5 + totalEpisodesCount + (totalShowMinutes / 60);
+    final effectiveMovieWeight = watchedMoviesCount * 1.5 + (totalMovieMinutes / 60);
+    final effectiveShowWeight = watchedShowsCount * 1.5 + totalEpisodesCount + (totalShowMinutes / 60);
 
-    if (effectiveMovieWeight >=
-        2.0 * (effectiveShowWeight == 0 ? 1 : effectiveShowWeight)) {
+    if (effectiveMovieWeight >= 2.0 * (effectiveShowWeight == 0 ? 1 : effectiveShowWeight)) {
       return ProfileTag.movieBuff;
-    } else if (effectiveShowWeight >=
-        2.0 * (effectiveMovieWeight == 0 ? 1 : effectiveMovieWeight)) {
+    } else if (effectiveShowWeight >= 2.0 * (effectiveMovieWeight == 0 ? 1 : effectiveMovieWeight)) {
       return ProfileTag.seriesExplorer;
     } else {
       return ProfileTag.screenExplorer;
     }
   }
 
-  int _calculateViewingStreak(
-    List<Map<String, dynamic>> rawMovies,
-    List<Map<String, dynamic>> rawShows,
-  ) {
+  int _calculateViewingStreak(List<Map<String, dynamic>> rawMovies, List<Map<String, dynamic>> rawShows) {
     final activeDates = <DateTime>{};
 
     for (final movie in rawMovies) {
       final isWatched = movie['isWatched'] as bool? ?? false;
       if (!isWatched) continue;
-      final dateStr =
-          movie['watchedAt'] as String? ?? movie['addedAt'] as String?;
+      final dateStr = movie['watchedAt'] as String? ?? movie['addedAt'] as String?;
       if (dateStr != null && dateStr.isNotEmpty) {
         final dt = DateTime.tryParse(dateStr);
         if (dt != null) {
@@ -1419,8 +1198,7 @@ class _ProfilePageState extends State<ProfilePage>
     for (final show in rawShows) {
       final watchedEps = show['watchedEpisodes'] as List?;
       if (watchedEps == null || watchedEps.isEmpty) continue;
-      final dateStr =
-          show['watchedAt'] as String? ?? show['addedAt'] as String?;
+      final dateStr = show['watchedAt'] as String? ?? show['addedAt'] as String?;
       if (dateStr != null && dateStr.isNotEmpty) {
         final dt = DateTime.tryParse(dateStr);
         if (dt != null) {
@@ -1466,10 +1244,7 @@ class _ProfilePageState extends State<ProfilePage>
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xs,
-          vertical: AppSpacing.xs,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
         child: Row(
           children: [
             AnimatedContainer(
@@ -1480,16 +1255,14 @@ class _ProfilePageState extends State<ProfilePage>
               decoration: BoxDecoration(
                 color: isSelected
                     ? (isLight
-                        ? AppColors.primaryLight.withValues(alpha: 0.3)
-                        : AppColors.primary.withValues(alpha: 0.25))
+                          ? AppColors.primaryLight.withValues(alpha: 0.3)
+                          : AppColors.primary.withValues(alpha: 0.25))
                     : (isLight
-                        ? AppColors.primaryLight.withValues(alpha: 0.2)
-                        : AppColors.primary.withValues(alpha: 0.15)),
+                          ? AppColors.primaryLight.withValues(alpha: 0.2)
+                          : AppColors.primary.withValues(alpha: 0.15)),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected
-                      ? (isLight ? AppColors.lightPrimary : AppColors.primary)
-                      : Colors.transparent,
+                  color: isSelected ? (isLight ? AppColors.lightPrimary : AppColors.primary) : Colors.transparent,
                   width: 2.0,
                 ),
               ),
@@ -1507,34 +1280,24 @@ class _ProfilePageState extends State<ProfilePage>
                       value: int.parse(count),
                       animationTrigger: _profileVisitCount,
                       animateInitial: _profileVisitCount > 0,
-                      style: AppTextStyles.posterStat
-                          .withTabularFigures()
-                          .copyWith(
-                            fontSize: 22.0,
-                            color: isLight
-                                ? AppColors.lightTextPrimary
-                                : AppColors.textPrimary,
-                          ),
+                      style: AppTextStyles.posterStat.withTabularFigures().copyWith(
+                        fontSize: 22.0,
+                        color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                      ),
                     )
                   else
                     Text(
                       count,
-                      style: AppTextStyles.posterStat
-                          .withTabularFigures()
-                          .copyWith(
-                            fontSize: 22.0,
-                            color: isLight
-                                ? AppColors.lightTextPrimary
-                                : AppColors.textPrimary,
-                          ),
+                      style: AppTextStyles.posterStat.withTabularFigures().copyWith(
+                        fontSize: 22.0,
+                        color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                      ),
                     ),
                   const SizedBox(height: 1),
                   Text(
                     label,
                     style: AppTextStyles.xsMedium.copyWith(
-                      color: isLight
-                          ? AppColors.lightTextPrimary
-                          : AppColors.textPrimary,
+                      color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1544,9 +1307,7 @@ class _ProfilePageState extends State<ProfilePage>
                     Text(
                       timeSpent,
                       style: AppTextStyles.xsMedium.copyWith(
-                        color: isLight
-                            ? AppColors.lightTextSecondary
-                            : AppColors.textSecondary,
+                        color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1570,21 +1331,13 @@ class _ProfilePageState extends State<ProfilePage>
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.xs,
-        ),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
         child: Row(
           children: [
             Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: dotColor,
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
@@ -1603,20 +1356,13 @@ class _ProfilePageState extends State<ProfilePage>
                 color: dotColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(
-                '$count',
-                style: AppTextStyles.xsBold.copyWith(
-                  color: dotColor,
-                ),
-              ),
+              child: Text('$count', style: AppTextStyles.xsBold.copyWith(color: dotColor)),
             ),
             const Spacer(),
             Icon(
               Icons.chevron_right,
               size: 20,
-              color: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
             ),
           ],
         ),
@@ -1638,10 +1384,7 @@ class _ProfilePageState extends State<ProfilePage>
                   child: j < rowItems.length
                       ? Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 1.0),
-                          child: AspectRatio(
-                            aspectRatio: 2 / 3,
-                            child: _buildGridItem(rowItems[j]),
-                          ),
+                          child: AspectRatio(aspectRatio: 2 / 3, child: _buildGridItem(rowItems[j])),
                         )
                       : const SizedBox(),
                 ),
@@ -1666,10 +1409,7 @@ class _ProfilePageState extends State<ProfilePage>
     return 0;
   }
 
-  Widget _buildGroupedMoviesGrid(
-    List<HorizontalItem> items,
-    Widget emptyWidget,
-  ) {
+  Widget _buildGroupedMoviesGrid(List<HorizontalItem> items, Widget emptyWidget) {
     if (items.isEmpty) {
       return Center(
         child: Padding(
@@ -1679,46 +1419,24 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
-    final notWatched = items
-        .where((m) => !m.isWatched && !_isUpcomingMovie(m))
-        .toList();
-    final upcoming = items
-        .where((m) => !m.isWatched && _isUpcomingMovie(m))
-        .toList();
+    final notWatched = items.where((m) => !m.isWatched && !_isUpcomingMovie(m)).toList();
+    final upcoming = items.where((m) => !m.isWatched && _isUpcomingMovie(m)).toList();
     final watched = items.where((m) => m.isWatched).toList();
 
     final children = <Widget>[];
 
     if (notWatched.isNotEmpty) {
-      children.add(
-        _buildSectionHeader(
-          label: 'Not Watched',
-          dotColor: AppColors.primary,
-          count: notWatched.length,
-        ),
-      );
+      children.add(_buildSectionHeader(label: 'Not Watched', dotColor: AppColors.primary, count: notWatched.length));
       children.addAll(_buildGridRows(notWatched));
     }
 
     if (upcoming.isNotEmpty) {
-      children.add(
-        _buildSectionHeader(
-          label: 'Upcoming',
-          dotColor: AppColors.airing,
-          count: upcoming.length,
-        ),
-      );
+      children.add(_buildSectionHeader(label: 'Upcoming', dotColor: AppColors.airing, count: upcoming.length));
       children.addAll(_buildGridRows(upcoming));
     }
 
     if (watched.isNotEmpty) {
-      children.add(
-        _buildSectionHeader(
-          label: 'Watched',
-          dotColor: AppColors.success,
-          count: watched.length,
-        ),
-      );
+      children.add(_buildSectionHeader(label: 'Watched', dotColor: AppColors.success, count: watched.length));
       children.addAll(_buildGridRows(watched));
     }
 
@@ -1756,18 +1474,9 @@ class _ProfilePageState extends State<ProfilePage>
     'FINISHED': 'Finished',
   };
 
-  static const _categoryOrder = <String>[
-    'WATCH_NEXT',
-    'HAVENT_STARTED',
-    'UP_TO_DATE',
-    'STOPPED',
-    'FINISHED',
-  ];
+  static const _categoryOrder = <String>['WATCH_NEXT', 'HAVENT_STARTED', 'UP_TO_DATE', 'STOPPED', 'FINISHED'];
 
-  Widget _buildGroupedShowsGrid(
-    List<HorizontalItem> items,
-    Widget emptyWidget,
-  ) {
+  Widget _buildGroupedShowsGrid(List<HorizontalItem> items, Widget emptyWidget) {
     if (items.isEmpty) {
       return Center(
         child: Padding(
@@ -1792,23 +1501,14 @@ class _ProfilePageState extends State<ProfilePage>
       final label = _categoryLabels[category] ?? category;
 
       // Section header
-      children.add(
-        _buildSectionHeader(
-          label: label,
-          dotColor: _categoryDotColor(category),
-          count: group.length,
-        ),
-      );
+      children.add(_buildSectionHeader(label: label, dotColor: _categoryDotColor(category), count: group.length));
 
       // Lazily virtualized 3-item rows
       children.addAll(_buildGridRows(group));
     }
 
     // Handle items with unknown categories
-    final uncategorised = grouped.entries
-        .where((e) => !_categoryOrder.contains(e.key))
-        .expand((e) => e.value)
-        .toList();
+    final uncategorised = grouped.entries.where((e) => !_categoryOrder.contains(e.key)).expand((e) => e.value).toList();
     if (uncategorised.isNotEmpty) {
       children.addAll(_buildGridRows(uncategorised));
     }
@@ -1845,24 +1545,14 @@ class _ProfilePageState extends State<ProfilePage>
       onTap: () {
         if (item.movieId <= 0) return;
         if (item.isMovie) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MovieDetailsPage(movieId: item.movieId),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => MovieDetailsPage(movieId: item.movieId)));
         } else {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => BlocProvider<ShowDetailsCubit>(
-                create: (context) =>
-                    ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
-                child: ShowDetailsPage(
-                  mediaId: item.movieId,
-                  mediaType: 'tv',
-                  title: item.title,
-                ),
+                create: (context) => ShowDetailsCubit(tmdbClient: context.read<TmdbClient>()),
+                child: ShowDetailsPage(mediaId: item.movieId, mediaType: 'tv', title: item.title),
               ),
             ),
           );
@@ -1870,144 +1560,120 @@ class _ProfilePageState extends State<ProfilePage>
       },
       onLongPress: () {
         if (item.movieId <= 0) return;
-        showProfileQuickActions(
-          context,
-          item: item,
-        );
+        showProfileQuickActions(context, item: item);
       },
       child: SizedBox(
-          width: 150,
-          height: 225,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              item.imageUrl.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: item.imageUrl,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 360,
-                      placeholder: (context, url) => Container(
-                        color: Theme.of(context).brightness == Brightness.light
-                            ? AppColors.lightSurfaceElevated
-                            : AppColors.surface,
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Theme.of(context).brightness == Brightness.light
-                            ? AppColors.lightSurfaceElevated
-                            : AppColors.surface,
-                        child: Center(
-                          child: Icon(
-                            Icons.movie_outlined,
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                ? AppColors.lightTextTertiary
-                                : AppColors.textTertiary,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Container(
+        width: 150,
+        height: 225,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            item.imageUrl.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: item.imageUrl,
+                    fit: BoxFit.cover,
+                    memCacheWidth: 360,
+                    placeholder: (context, url) => Container(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? AppColors.lightSurfaceElevated
+                          : AppColors.surface,
+                    ),
+                    errorWidget: (context, url, error) => Container(
                       color: Theme.of(context).brightness == Brightness.light
                           ? AppColors.lightSurfaceElevated
                           : AppColors.surface,
                       child: Center(
                         child: Icon(
                           Icons.movie_outlined,
-                          color:
-                              Theme.of(context).brightness == Brightness.light
+                          color: Theme.of(context).brightness == Brightness.light
                               ? AppColors.lightTextTertiary
                               : AppColors.textTertiary,
                         ),
                       ),
                     ),
-              if (item.isFavorite)
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    padding: AppSpacing.allXXS,
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
+                  )
+                : Container(
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? AppColors.lightSurfaceElevated
+                        : AppColors.surface,
+                    child: Center(
+                      child: Icon(
+                        Icons.movie_outlined,
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? AppColors.lightTextTertiary
+                            : AppColors.textTertiary,
+                      ),
                     ),
-                    child: const Icon(Icons.favorite, color: AppColors.error, size: 16),
                   ),
+            if (item.isFavorite)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  padding: AppSpacing.allXXS,
+                  decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                  child: const Icon(Icons.favorite, color: AppColors.error, size: 16),
                 ),
+              ),
 
-              if (!item.isMovie && item.totalEpisodes > 0) ...[
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: LinearProgressIndicator(
-                    value: (item.watchedCount / item.totalEpisodes).clamp(
-                      0.0,
-                      1.0,
-                    ),
-                    minHeight: 6.0,
-                    backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primary,
-                    ),
+            if (!item.isMovie && item.totalEpisodes > 0) ...[
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: LinearProgressIndicator(
+                  value: (item.watchedCount / item.totalEpisodes).clamp(0.0, 1.0),
+                  minHeight: 6.0,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              ),
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: AppSpacing.micro),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${item.watchedCount.clamp(0, item.totalEpisodes)}/${item.totalEpisodes}',
+                    style: AppTextStyles.xsBold.copyWith(color: AppColors.textOnPrimary),
                   ),
                 ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: AppSpacing.micro,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${item.watchedCount.clamp(0, item.totalEpisodes)}/${item.totalEpisodes}',
-                      style: AppTextStyles.xsBold.copyWith(
-                        color: AppColors.textOnPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              if (item.isStopped)
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: AppSpacing.xxs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(4.0),
-                    ),
-                    child: Text(
-                      'STOPPED',
-                      style: AppTextStyles.xsBold.copyWith(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
+              ),
             ],
-          ),
+            if (item.isStopped)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  child: Text(
+                    'STOPPED',
+                    style: AppTextStyles.xsBold.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
-      );
+      ),
+    );
   }
 
   String _getImageUrl(String? path, {String size = 'w342'}) {
     return AppConstants.tmdbImageUrl(path ?? '', size: size);
   }
 
-  HorizontalItem _showToHorizontalItem(
-    Map<String, dynamic> s, {
-    String? watchedAt,
-  }) {
+  HorizontalItem _showToHorizontalItem(Map<String, dynamic> s, {String? watchedAt}) {
     return HorizontalItem(
       movieId: (s['id'] as num?)?.toInt() ?? 0,
       title: s['name'] as String? ?? '',
@@ -2040,18 +1706,13 @@ class _ProfilePageState extends State<ProfilePage>
       builder: (context, state) {
         if (state is ProfileHeatmapError) {
           return Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
             child: AppEmptyState(
               icon: Icons.error_outline_rounded,
               title: 'Could Not Load Activity',
               body: 'Failed to load your watch history heatmap.',
               primaryLabel: 'RETRY',
-              onPrimary: () => context
-                  .read<ProfileHeatmapCubit>()
-                  .loadMonthActivity(uid, _heatmapMonth),
+              onPrimary: () => context.read<ProfileHeatmapCubit>().loadMonthActivity(uid, _heatmapMonth),
               compact: true,
             ),
           );
@@ -2068,36 +1729,24 @@ class _ProfilePageState extends State<ProfilePage>
           movieCounts = state.movieCounts;
         }
 
-        final int daysInMonth = DateUtils.getDaysInMonth(
-          currentMonth.year,
-          currentMonth.month,
-        );
-        final DateTime firstDayOfMonth = DateTime(
-          currentMonth.year,
-          currentMonth.month,
-          1,
-        );
-        final int offset = firstDayOfMonth.weekday == 7
-            ? 0
-            : firstDayOfMonth.weekday;
+        final int daysInMonth = DateUtils.getDaysInMonth(currentMonth.year, currentMonth.month);
+        final DateTime firstDayOfMonth = DateTime(currentMonth.year, currentMonth.month, 1);
+        final int offset = firstDayOfMonth.weekday == 7 ? 0 : firstDayOfMonth.weekday;
         final int totalSlots = offset + daysInMonth;
 
-        final List<Color> activeLegendColors = _heatmapPageIndex == 0
-            ? [
-                AppColors.heatmapEmpty(context),
-                ...AppColors.heatmapGreen(context),
-              ]
-            : [
-                AppColors.heatmapEmpty(context),
-                ...AppColors.heatmapViolet(context),
-              ];
+        final List<Color> activeLegendColors = [
+          AppColors.heatmapEmpty(context),
+          ...AppColors.heatmapGreen(context),
+        ];
 
         final showShimmer = isLoading || _isLocalLoading;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
+          padding: const EdgeInsets.only(
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            top: AppSpacing.xs,
+            bottom: AppSpacing.xxs,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2120,16 +1769,11 @@ class _ProfilePageState extends State<ProfilePage>
                       _isSignUpMonthOrPast(currentMonth)
                           ? const SizedBox(width: 48, height: 48)
                           : IconButton(
-                              constraints: const BoxConstraints(
-                                minWidth: 48,
-                                minHeight: 48,
-                              ),
+                              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                               tooltip: 'Previous month',
                               icon: Icon(
                                 Icons.chevron_left,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.color,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                                 size: 20,
                               ),
                               onPressed: isLoading
@@ -2137,22 +1781,12 @@ class _ProfilePageState extends State<ProfilePage>
                                   : () {
                                       AppHaptics.lightImpact();
                                       final prevMonth = currentMonth.month == 1
-                                          ? DateTime(
-                                              currentMonth.year - 1,
-                                              12,
-                                              1,
-                                            )
-                                          : DateTime(
-                                              currentMonth.year,
-                                              currentMonth.month - 1,
-                                              1,
-                                            );
+                                          ? DateTime(currentMonth.year - 1, 12, 1)
+                                          : DateTime(currentMonth.year, currentMonth.month - 1, 1);
                                       setState(() {
                                         _heatmapMonth = prevMonth;
                                       });
-                                      context
-                                          .read<ProfileHeatmapCubit>()
-                                          .loadMonthActivity(uid, prevMonth);
+                                      context.read<ProfileHeatmapCubit>().loadMonthActivity(uid, prevMonth);
                                     },
                             ),
                       AppSpacing.gapW8,
@@ -2167,16 +1801,11 @@ class _ProfilePageState extends State<ProfilePage>
                       _isCurrentMonthOrFuture(currentMonth)
                           ? const SizedBox(width: 48, height: 48)
                           : IconButton(
-                              constraints: const BoxConstraints(
-                                minWidth: 48,
-                                minHeight: 48,
-                              ),
+                              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                               tooltip: 'Next month',
                               icon: Icon(
                                 Icons.chevron_right,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.color,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                                 size: 20,
                               ),
                               onPressed: isLoading
@@ -2184,22 +1813,12 @@ class _ProfilePageState extends State<ProfilePage>
                                   : () {
                                       AppHaptics.lightImpact();
                                       final nextMonth = currentMonth.month == 12
-                                          ? DateTime(
-                                              currentMonth.year + 1,
-                                              1,
-                                              1,
-                                            )
-                                          : DateTime(
-                                              currentMonth.year,
-                                              currentMonth.month + 1,
-                                              1,
-                                            );
+                                          ? DateTime(currentMonth.year + 1, 1, 1)
+                                          : DateTime(currentMonth.year, currentMonth.month + 1, 1);
                                       setState(() {
                                         _heatmapMonth = nextMonth;
                                       });
-                                      context
-                                          .read<ProfileHeatmapCubit>()
-                                          .loadMonthActivity(uid, nextMonth);
+                                      context.read<ProfileHeatmapCubit>().loadMonthActivity(uid, nextMonth);
                                     },
                             ),
                     ],
@@ -2207,120 +1826,46 @@ class _ProfilePageState extends State<ProfilePage>
                 ],
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                height: 245,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+              _buildHeatmapPage(
+                offset: offset,
+                totalSlots: totalSlots,
+                counts: _heatmapPageIndex == 0 ? tvCounts : movieCounts,
+                currentMonth: currentMonth,
+                isMovies: _heatmapPageIndex != 0,
+                showShimmer: showShimmer,
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    SizedBox(
-                      height: 220,
-                      child: PageView(
-                        controller: _heatmapPageController,
-                        onPageChanged: (index) {
-                          AppHaptics.selectionClick();
-                          setState(() {
-                            _heatmapPageIndex = index;
-                            _isLocalLoading = true;
-                          });
-                          _shimmerTimer?.cancel();
-                          _shimmerTimer = Timer(
-                            const Duration(milliseconds: 500),
-                            () {
-                              if (mounted) {
-                                setState(() {
-                                  _isLocalLoading = false;
-                                });
-                              }
-                            },
-                          );
-                        },
-                        children: [
-                          _buildHeatmapPage(
-                            offset: offset,
-                            totalSlots: totalSlots,
-                            counts: tvCounts,
-                            currentMonth: currentMonth,
-                            isMovies: false,
-                            showShimmer: showShimmer,
-                          ),
-                          _buildHeatmapPage(
-                            offset: offset,
-                            totalSlots: totalSlots,
-                            counts: movieCounts,
-                            currentMonth: currentMonth,
-                            isMovies: true,
-                            showShimmer: showShimmer,
-                          ),
-                        ],
+                    Text(
+                      'Less',
+                      style: AppTextStyles.xsBold.copyWith(
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? AppColors.lightTextSecondary
+                            : AppColors.textTertiary,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(2, (index) {
-                            final isActive = index == _heatmapPageIndex;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 4.0,
-                              ),
-                              width: isActive ? 8.0 : 6.0,
-                              height: isActive ? 8.0 : 6.0,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isActive
-                                    ? (Theme.of(
-                                            context,
-                                          ).textTheme.bodyLarge?.color ??
-                                          AppColors.textPrimary)
-                                    : (Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? AppColors.borderLight
-                                          : AppColors.borderDark),
-                              ),
-                            );
-                          }),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Less',
-                              style: AppTextStyles.xsBold.copyWith(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? AppColors.lightTextSecondary
-                                    : AppColors.textTertiary,
-                              ),
-                            ),
-                            AppSpacing.gapW4,
-                            _buildLegendSquare(activeLegendColors[0]),
-                            const SizedBox(width: 3),
-                            _buildLegendSquare(activeLegendColors[1]),
-                            const SizedBox(width: 3),
-                            _buildLegendSquare(activeLegendColors[2]),
-                            const SizedBox(width: 3),
-                            _buildLegendSquare(activeLegendColors[3]),
-                            const SizedBox(width: 3),
-                            _buildLegendSquare(activeLegendColors[4]),
-                            AppSpacing.gapW4,
-                            Text(
-                              'More',
-                              style: AppTextStyles.xsBold.copyWith(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? AppColors.lightTextSecondary
-                                    : AppColors.textTertiary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    AppSpacing.gapW4,
+                    _buildLegendSquare(activeLegendColors[0]),
+                    const SizedBox(width: 3),
+                    _buildLegendSquare(activeLegendColors[1]),
+                    const SizedBox(width: 3),
+                    _buildLegendSquare(activeLegendColors[2]),
+                    const SizedBox(width: 3),
+                    _buildLegendSquare(activeLegendColors[3]),
+                    const SizedBox(width: 3),
+                    _buildLegendSquare(activeLegendColors[4]),
+                    AppSpacing.gapW4,
+                    Text(
+                      'More',
+                      style: AppTextStyles.xsBold.copyWith(
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? AppColors.lightTextSecondary
+                            : AppColors.textTertiary,
+                      ),
                     ),
                   ],
                 ),
@@ -2341,9 +1886,10 @@ class _ProfilePageState extends State<ProfilePage>
     required bool showShimmer,
   }) {
     final bool isLight = Theme.of(context).brightness == Brightness.light;
-    final List<Color> colorScale = isMovies
-        ? [AppColors.heatmapEmpty(context), ...AppColors.heatmapViolet(context)]
-        : [AppColors.heatmapEmpty(context), ...AppColors.heatmapGreen(context)];
+    final List<Color> colorScale = [
+      AppColors.heatmapEmpty(context),
+      ...AppColors.heatmapGreen(context),
+    ];
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -2353,66 +1899,51 @@ class _ProfilePageState extends State<ProfilePage>
           child: Text(
             isMovies ? 'MOVIES WATCHED' : 'EPISODES WATCHED',
             style: AppTextStyles.xsBold.copyWith(
-              color: isLight
-                  ? AppColors.lightTextSecondary
-                  : AppColors.textTertiary,
+              color: isLight ? AppColors.lightTextSecondary : AppColors.textTertiary,
               letterSpacing: 1.1,
             ),
           ),
         ),
-        AppSpacing.gapH12,
+        AppSpacing.gapH8,
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
           child: Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
-                  (day) {
-                    return Expanded(
-                      child: Center(
-                        child: Text(
-                          day,
-                          style: AppTextStyles.xsBold.copyWith(
-                            color: isLight
-                                ? AppColors.lightTextSecondary
-                                : AppColors.textTertiary,
-                          ),
+                children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) {
+                  return Expanded(
+                    child: Center(
+                      child: Text(
+                        day,
+                        style: AppTextStyles.xsBold.copyWith(
+                          color: isLight ? AppColors.lightTextSecondary : AppColors.textTertiary,
                         ),
                       ),
-                    );
-                  },
-                ).toList(),
+                    ),
+                  );
+                }).toList(),
               ),
-              AppSpacing.gapH8,
+              const SizedBox(height: 6),
               showShimmer
                   ? _RippleShimmerGrid(totalSlots: totalSlots)
                   : GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 7,
-                            crossAxisSpacing: 6,
-                            mainAxisSpacing: 6,
-                            childAspectRatio: 1.7,
-                          ),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 7,
+                        crossAxisSpacing: 6,
+                        mainAxisSpacing: 6,
+                        childAspectRatio: 1.85,
+                      ),
                       itemCount: totalSlots,
                       itemBuilder: (context, index) {
                         if (index < offset || index >= totalSlots) {
-                          return Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.transparent,
-                            ),
-                          );
+                          return Container(decoration: const BoxDecoration(color: Colors.transparent));
                         }
 
                         final int day = index - offset + 1;
-                        final DateTime date = DateTime(
-                          currentMonth.year,
-                          currentMonth.month,
-                          day,
-                        );
+                        final DateTime date = DateTime(currentMonth.year, currentMonth.month, day);
                         final int count = counts[date] ?? 0;
 
                         Color cellColor;
@@ -2428,13 +1959,10 @@ class _ProfilePageState extends State<ProfilePage>
                           cellColor = colorScale[4];
                         }
 
-                        final double cellLuminance = cellColor
-                            .computeLuminance();
+                        final double cellLuminance = cellColor.computeLuminance();
                         final Color dayTextColor = cellLuminance < 0.45
                             ? AppColors.textOnPrimary
-                            : (isLight
-                                  ? AppColors.lightTextPrimary
-                                  : AppColors.textPrimary);
+                            : (isLight ? AppColors.lightTextPrimary : AppColors.textPrimary);
 
                         final itemText = isMovies ? 'movie' : 'episode';
                         final itemsText = isMovies ? 'movies' : 'episodes';
@@ -2448,21 +1976,10 @@ class _ProfilePageState extends State<ProfilePage>
                               AppHaptics.lightImpact();
                             },
                             child: Container(
-                              decoration: BoxDecoration(
-                                color: cellColor,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              padding: const EdgeInsets.only(
-                                bottom: AppSpacing.micro,
-                                right: AppSpacing.xxs,
-                              ),
+                              decoration: BoxDecoration(color: cellColor, borderRadius: BorderRadius.circular(4)),
+                              padding: const EdgeInsets.only(bottom: AppSpacing.micro, right: AppSpacing.xxs),
                               alignment: Alignment.bottomRight,
-                              child: Text(
-                                '$day',
-                                style: AppTextStyles.xsBold.copyWith(
-                                  color: dayTextColor,
-                                ),
-                              ),
+                              child: Text('$day', style: AppTextStyles.xsBold.copyWith(color: dayTextColor)),
                             ),
                           ),
                         );
@@ -2479,10 +1996,7 @@ class _ProfilePageState extends State<ProfilePage>
     return Container(
       width: 12,
       height: 12,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(1.5),
-      ),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(1.5)),
     );
   }
 
@@ -2512,10 +2026,7 @@ class _ProfilePageState extends State<ProfilePage>
         _shimmerTimer?.cancel();
       } else {
         _isHeatmapExpanded = true;
-        _isLocalLoading = true; // Trigger local shimmer
-        if (!wasExpanded) {
-          _heatmapPageController = PageController(initialPage: targetPage);
-        }
+        _isLocalLoading = true;
         _heatmapPageIndex = targetPage;
       }
     });
@@ -2531,13 +2042,6 @@ class _ProfilePageState extends State<ProfilePage>
       });
     }
 
-    if (wasExpanded && !isSamePage) {
-      _heatmapPageController.animateToPage(
-        targetPage,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
     AppHaptics.mediumImpact();
   }
 
@@ -2554,20 +2058,16 @@ class _ProfilePageState extends State<ProfilePage>
           return const Center(child: CircularProgressIndicator.adaptive());
         }
 
-        final lists =
-            state is CustomListsSuccess ? state.lists : <CustomListModel>[];
+        final lists = state is CustomListsSuccess ? state.lists : <CustomListModel>[];
 
         if (lists.isEmpty) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.only(
-                bottom: AppSpacing.bottomTabPadding,
-              ),
+              padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
               child: AppEmptyState(
                 icon: Icons.playlist_add_rounded,
                 title: 'No Custom Lists Yet',
-                body:
-                    'Create themed lists to organize your favorite movies and TV shows together.',
+                body: 'Create themed lists to organize your favorite movies and TV shows together.',
                 primaryLabel: 'Create First List',
                 onPrimary: () {
                   AppHaptics.lightImpact();
@@ -2580,12 +2080,7 @@ class _ProfilePageState extends State<ProfilePage>
         }
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.bottomTabPadding,
-          ),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.bottomTabPadding),
           children: [
             // Top "+ Create New List" banner card
             InkWell(
@@ -2595,10 +2090,7 @@ class _ProfilePageState extends State<ProfilePage>
                 CreateListBottomSheet.show(context);
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: isLight ? AppColors.lightSurface : AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
@@ -2613,37 +2105,23 @@ class _ProfilePageState extends State<ProfilePage>
                         color: context.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
-                        Icons.add_rounded,
-                        color: primaryColor,
-                        size: 24,
-                      ),
+                      child: Icon(Icons.add_rounded, color: primaryColor, size: 24),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Create New List',
-                            style: AppTextStyles.smBold.copyWith(
-                              color: context.textPrimary,
-                            ),
-                          ),
+                          Text('Create New List', style: AppTextStyles.smBold.copyWith(color: context.textPrimary)),
                           const SizedBox(height: 2),
                           Text(
                             'Start a new collection for movies & shows',
-                            style: AppTextStyles.xs.copyWith(
-                              color: context.textSecondary,
-                            ),
+                            style: AppTextStyles.xs.copyWith(color: context.textSecondary),
                           ),
                         ],
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: context.textTertiary,
-                    ),
+                    Icon(Icons.chevron_right_rounded, color: context.textTertiary),
                   ],
                 ),
               ),
@@ -2661,11 +2139,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildCustomListSection(
-    BuildContext context,
-    CustomListModel list,
-    String? uid,
-  ) {
+  Widget _buildCustomListSection(BuildContext context, CustomListModel list, String? uid) {
     final isLight = context.isLight;
     final primaryColor = context.primary;
     final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
@@ -2685,28 +2159,16 @@ class _ProfilePageState extends State<ProfilePage>
                       list.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.mdBold.copyWith(
-                        color: context.textPrimary,
-                      ),
+                      style: AppTextStyles.mdBold.copyWith(color: context.textPrimary),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: context.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(color: context.primaryContainer, borderRadius: BorderRadius.circular(10)),
                     child: Text(
                       '${list.itemCount}',
-                      style: AppTextStyles.xs.copyWith(
-                        color: primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
+                      style: AppTextStyles.xs.copyWith(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ),
                 ],
@@ -2717,10 +2179,7 @@ class _ProfilePageState extends State<ProfilePage>
                 AppHaptics.lightImpact();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        CustomListDetailsPage(listId: list.id),
-                  ),
+                  MaterialPageRoute(builder: (context) => CustomListDetailsPage(listId: list.id)),
                 );
               },
               style: TextButton.styleFrom(
@@ -2730,18 +2189,9 @@ class _ProfilePageState extends State<ProfilePage>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'View All',
-                    style: AppTextStyles.xsMedium.copyWith(
-                      color: primaryColor,
-                    ),
-                  ),
+                  Text('View All', style: AppTextStyles.xsMedium.copyWith(color: primaryColor)),
                   const SizedBox(width: 2),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 10,
-                    color: primaryColor,
-                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 10, color: primaryColor),
                 ],
               ),
             ),
@@ -2753,9 +2203,7 @@ class _ProfilePageState extends State<ProfilePage>
             list.description,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.xs.copyWith(
-              color: context.textSecondary,
-            ),
+            style: AppTextStyles.xs.copyWith(color: context.textSecondary),
           ),
         ],
         const SizedBox(height: AppSpacing.xs),
@@ -2773,27 +2221,16 @@ class _ProfilePageState extends State<ProfilePage>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.add_to_photos_outlined,
-                    size: 22,
-                    color: context.textTertiary,
-                  ),
+                  Icon(Icons.add_to_photos_outlined, size: 22, color: context.textTertiary),
                   const SizedBox(width: AppSpacing.sm),
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '0 items added yet',
-                        style: AppTextStyles.smMedium.copyWith(
-                          color: context.textPrimary,
-                        ),
-                      ),
+                      Text('0 items added yet', style: AppTextStyles.smMedium.copyWith(color: context.textPrimary)),
                       Text(
                         'Open any movie or show to add it here',
-                        style: AppTextStyles.xs.copyWith(
-                          color: context.textSecondary,
-                        ),
+                        style: AppTextStyles.xs.copyWith(color: context.textSecondary),
                       ),
                     ],
                   ),
@@ -2807,8 +2244,7 @@ class _ProfilePageState extends State<ProfilePage>
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: list.items.length,
-              separatorBuilder: (context, index) =>
-                  const SizedBox(width: AppSpacing.xs),
+              separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.xs),
               itemBuilder: (context, index) {
                 final item = list.items[index];
                 final posterUrl = _getImageUrl(item.posterPath, size: 'w342');
@@ -2819,20 +2255,14 @@ class _ProfilePageState extends State<ProfilePage>
                     if (item.isMovie) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              MovieDetailsPage(movieId: item.id),
-                        ),
+                        MaterialPageRoute(builder: (context) => MovieDetailsPage(movieId: item.id)),
                       );
                     } else {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ShowDetailsPage(
-                            mediaId: item.id,
-                            mediaType: item.mediaType,
-                            title: item.title,
-                          ),
+                          builder: (context) =>
+                              ShowDetailsPage(mediaId: item.id, mediaType: item.mediaType, title: item.title),
                         ),
                       );
                     }
@@ -2853,25 +2283,17 @@ class _ProfilePageState extends State<ProfilePage>
                                         imageUrl: posterUrl,
                                         fit: BoxFit.cover,
                                         errorWidget: (c, u, e) => Container(
-                                          color: isLight
-                                              ? AppColors.lightSurfaceElevated
-                                              : AppColors.surfaceElevated,
+                                          color: isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
                                           child: Icon(
-                                            item.isMovie
-                                                ? Icons.movie_outlined
-                                                : Icons.tv_outlined,
+                                            item.isMovie ? Icons.movie_outlined : Icons.tv_outlined,
                                             color: context.textTertiary,
                                           ),
                                         ),
                                       )
                                     : Container(
-                                        color: isLight
-                                            ? AppColors.lightSurfaceElevated
-                                            : AppColors.surfaceElevated,
+                                        color: isLight ? AppColors.lightSurfaceElevated : AppColors.surfaceElevated,
                                         child: Icon(
-                                          item.isMovie
-                                              ? Icons.movie_outlined
-                                              : Icons.tv_outlined,
+                                          item.isMovie ? Icons.movie_outlined : Icons.tv_outlined,
                                           color: context.textTertiary,
                                         ),
                                       ),
@@ -2879,13 +2301,9 @@ class _ProfilePageState extends State<ProfilePage>
                                   top: 3,
                                   left: 3,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                      vertical: 1.5,
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
                                     decoration: BoxDecoration(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.75),
+                                      color: Colors.black.withValues(alpha: 0.75),
                                       borderRadius: BorderRadius.circular(3),
                                     ),
                                     child: Text(
@@ -2935,15 +2353,9 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: Theme.of(
-        context,
-      ).scaffoldBackgroundColor, // Background color for TabBar
+      color: Theme.of(context).scaffoldBackgroundColor, // Background color for TabBar
       child: _tabBar,
     );
   }
@@ -2962,17 +2374,13 @@ class _RippleShimmerGrid extends StatefulWidget {
   State<_RippleShimmerGrid> createState() => _RippleShimmerGridState();
 }
 
-class _RippleShimmerGridState extends State<_RippleShimmerGrid>
-    with SingleTickerProviderStateMixin {
+class _RippleShimmerGridState extends State<_RippleShimmerGrid> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
   }
 
   @override
@@ -2992,7 +2400,7 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid>
         crossAxisCount: 7,
         mainAxisSpacing: 6,
         crossAxisSpacing: 6,
-        childAspectRatio: 1.7,
+        childAspectRatio: 1.85,
       ),
       itemCount: widget.totalSlots,
       itemBuilder: (context, index) {
@@ -3014,16 +2422,8 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid>
               ..multiply(Matrix4.diagonal3Values(scale, scale, 1.0));
 
             final Color cellColor = isLight
-                ? Color.lerp(
-                    AppColors.heatmapEmptyLight,
-                    AppColors.borderLight,
-                    wave,
-                  )!
-                : Color.lerp(
-                    AppColors.heatmapEmptyDark,
-                    AppColors.borderDark,
-                    wave,
-                  )!;
+                ? Color.lerp(AppColors.heatmapEmptyLight, AppColors.borderLight, wave)!
+                : Color.lerp(AppColors.heatmapEmptyDark, AppColors.borderDark, wave)!;
 
             return Transform(
               transform: transform,

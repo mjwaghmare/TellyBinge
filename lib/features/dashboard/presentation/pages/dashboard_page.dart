@@ -366,10 +366,8 @@ class DashboardPageState extends State<DashboardPage> {
       // We will handle this by returning the builder anyway.
     }
 
-    return Stack(
-      children: [
-        BlocBuilder<WatchHistoryCubit, WatchHistoryState>(
-          builder: (context, historyState) {
+    return BlocBuilder<WatchHistoryCubit, WatchHistoryState>(
+      builder: (context, historyState) {
             List<WatchHistoryItem> history = [];
             if (historyState is WatchHistoryLoaded) {
               history = List.of(historyState.history);
@@ -387,17 +385,19 @@ class DashboardPageState extends State<DashboardPage> {
               );
             }
 
-            return RefreshIndicator.adaptive(
-              onRefresh: () async {
-                unawaited(
-                  _enrichmentCubit.enrichShows(rawShows, uid, force: true),
-                );
-                await Future.delayed(const Duration(milliseconds: 600));
-              },
-              child: CustomScrollView(
-                controller: watchlistScrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
+            return Stack(
+              children: [
+                RefreshIndicator.adaptive(
+                  onRefresh: () async {
+                    unawaited(
+                      _enrichmentCubit.enrichShows(rawShows, uid, force: true),
+                    );
+                    await Future.delayed(const Duration(milliseconds: 600));
+                  },
+                  child: CustomScrollView(
+                    controller: watchlistScrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
                   if (watchNext.isNotEmpty)
                     SliverMainAxisGroup(
                       slivers: [
@@ -520,11 +520,11 @@ class DashboardPageState extends State<DashboardPage> {
                   ),
                 ],
               ),
-            );
-          },
-        ),
-        _buildGridToggle(),
-      ],
+            ),
+            _buildGridToggle(),
+          ],
+        );
+      },
     );
   }
 
