@@ -1833,7 +1833,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 isMovies: _heatmapPageIndex != 0,
                 showShimmer: showShimmer,
               ),
-              const SizedBox(height: 6),
+              AppSpacing.gapH4,
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
                 child: Row(
@@ -1928,6 +1928,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   ? _RippleShimmerGrid(totalSlots: totalSlots)
                   : GridView.builder(
                       shrinkWrap: true,
+                      padding: EdgeInsets.zero,
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 7,
@@ -2394,6 +2395,7 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid> with SingleTicke
 
     return GridView.builder(
       shrinkWrap: true,
+      padding: EdgeInsets.zero,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
