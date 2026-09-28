@@ -11,6 +11,8 @@ abstract class TvWatchlistRepository {
     required String? backdropPath,
     required String? firstAirDate,
     required double voteAverage,
+    dynamic originCountry,
+    String? originalLanguage,
   });
   Future<void> stopWatchingShow({required String uid, required int showId});
   Future<void> continueWatchingShow({required String uid, required int showId});

@@ -18,7 +18,30 @@ class FakeMovieWatchlistRepository implements MovieWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) => const Stream.empty();
 
   @override
-  Future<void> addMovie({required String uid, required int movieId, required String title, required String? posterPath, required String? backdropPath, required String? releaseDate, required int runtime, required double voteAverage, String? genres, bool isWatched = false, bool isFavorite = false}) async {}
+  Future<void> addMovie({
+    required String uid,
+    required int movieId,
+    required String title,
+    required String? posterPath,
+    required String? backdropPath,
+    required String? releaseDate,
+    required int runtime,
+    required double voteAverage,
+    String? genres,
+    dynamic originCountry,
+    String? originalLanguage,
+    bool isWatched = false,
+    bool isFavorite = false,
+  }) async {}
+
+  @override
+  Future<void> updateMovieMetadata({
+    required String uid,
+    required int movieId,
+    String? genres,
+    dynamic originCountry,
+    String? originalLanguage,
+  }) async {}
 
   @override
   Future<void> removeMovie({required String uid, required int movieId}) async {}
@@ -50,7 +73,17 @@ class FakeTvWatchlistRepository implements TvWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) => const Stream.empty();
 
   @override
-  Future<void> addShow({required String uid, required int showId, required String name, required String? posterPath, required String? backdropPath, required String? firstAirDate, required double voteAverage}) async {}
+  Future<void> addShow({
+    required String uid,
+    required int showId,
+    required String name,
+    required String? posterPath,
+    required String? backdropPath,
+    required String? firstAirDate,
+    required double voteAverage,
+    dynamic originCountry,
+    String? originalLanguage,
+  }) async {}
 
   @override
   Future<void> continueWatchingShow({required String uid, required int showId}) async {}

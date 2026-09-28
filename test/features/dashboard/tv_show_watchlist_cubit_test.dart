@@ -106,6 +106,8 @@ class MockTvWatchlistRepository implements TvWatchlistRepository {
     required String? backdropPath,
     required String? firstAirDate,
     required double voteAverage,
+    dynamic originCountry,
+    String? originalLanguage,
   }) async {}
 
   @override

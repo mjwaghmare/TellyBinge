@@ -77,7 +77,11 @@ class CinemaPassportService {
     final watchedMovies = movies.where((m) => m['isWatched'] == true);
     for (final m in watchedMovies) {
       final code = _resolveCountry(
-        countryField: m['origin_country'] ?? m['country'],
+        countryField: _firstUsableCountry(
+          m['origin_country'],
+          m['country'],
+          m['production_countries'],
+        ),
         languageField: m['original_language'] ?? m['language'],
         title: m['title']?.toString() ?? '',
       );
@@ -105,7 +109,11 @@ class CinemaPassportService {
 
     for (final s in watchedShows) {
       final code = _resolveCountry(
-        countryField: s['origin_country'] ?? s['country'],
+        countryField: _firstUsableCountry(
+          s['origin_country'],
+          s['country'],
+          s['production_countries'],
+        ),
         languageField: s['original_language'] ?? s['language'],
         title: s['name']?.toString() ?? '',
       );
@@ -353,14 +361,20 @@ class CinemaPassportService {
     dynamic languageField,
     required String title,
   }) {
-    // 1. Direct origin_country check
+    // 1. Direct origin_country / production_countries check
     if (countryField != null) {
       if (countryField is String && countryField.isNotEmpty) {
         final upper = countryField.trim().toUpperCase();
         if (RegExp(r'^[A-Z]{2}$').hasMatch(upper)) return upper;
       } else if (countryField is List && countryField.isNotEmpty) {
-        final first = countryField.first?.toString().trim().toUpperCase();
-        if (first != null && RegExp(r'^[A-Z]{2}$').hasMatch(first)) return first;
+        final first = countryField.first;
+        if (first is String) {
+          final upper = first.trim().toUpperCase();
+          if (RegExp(r'^[A-Z]{2}$').hasMatch(upper)) return upper;
+        } else if (first is Map) {
+          final code = first['iso_3166_1']?.toString().trim().toUpperCase();
+          if (code != null && RegExp(r'^[A-Z]{2}$').hasMatch(code)) return code;
+        }
       }
     }
 
@@ -371,7 +385,45 @@ class CinemaPassportService {
       if (mapped != null) return mapped;
     }
 
-    // 3. Fallback: Return null when no country is resolvable
+    // 3. Script-based heuristic on title (for non-Latin titles like K-dramas, Anime, Bollywood)
+    if (title.isNotEmpty) {
+      // Korean Hangul (\uAC00-\uD7AF, \u1100-\u11FF, \u3130-\u318F)
+      if (RegExp(r'[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]').hasMatch(title)) {
+        return 'KR';
+      }
+      // Japanese Hiragana & Katakana (\u3040-\u309F, \u30A0-\u30FF)
+      if (RegExp(r'[\u3040-\u309F\u30A0-\u30FF]').hasMatch(title)) {
+        return 'JP';
+      }
+      // Devanagari (\u0900-\u097F)
+      if (RegExp(r'[\u0900-\u097F]').hasMatch(title)) {
+        return 'IN';
+      }
+      // Thai (\u0E00-\u0E7F)
+      if (RegExp(r'[\u0E00-\u0E7F]').hasMatch(title)) {
+        return 'TH';
+      }
+      // Note: CJK Unified Ideographs (\u4E00-\u9FFF) are shared across
+      // Chinese, Japanese, and Korean — too ambiguous for country inference.
+      // Chinese titles are resolved via origin_country/language metadata.
+    }
+
+    // 4. Fallback: Return null when no country is resolvable
+    return null;
+  }
+
+  /// Returns the first non-null, non-empty country value from the candidates.
+  static dynamic _firstUsableCountry(
+    dynamic origin,
+    dynamic country,
+    dynamic productionCountries,
+  ) {
+    for (final v in [origin, country, productionCountries]) {
+      if (v == null) continue;
+      if (v is String && v.isEmpty) continue;
+      if (v is List && v.isEmpty) continue;
+      return v;
+    }
     return null;
   }
 

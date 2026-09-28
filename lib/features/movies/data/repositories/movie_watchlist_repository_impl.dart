@@ -41,6 +41,8 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
     required int runtime,
     required double voteAverage,
     String? genres,
+    dynamic originCountry,
+    String? originalLanguage,
     bool isWatched = false,
     bool isFavorite = false,
   }) async {
@@ -55,6 +57,8 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
           'runtime': runtime,
           'voteAverage': voteAverage,
           'genres': genres ?? '',
+          'origin_country': ?originCountry,
+          'original_language': ?originalLanguage,
           'isWatched': isWatched,
           'isFavorite': isFavorite,
           'addedAt': DateTime.now().toIso8601String(),
@@ -100,9 +104,30 @@ class MovieWatchlistRepositoryImpl implements MovieWatchlistRepository {
     required int movieId,
     required String genres,
   }) async {
-    await _moviesCollection(uid)
-        .doc(movieId.toString())
-        .update({'genres': genres});
+    await updateMovieMetadata(
+      uid: uid,
+      movieId: movieId,
+      genres: genres,
+    );
+  }
+
+  @override
+  Future<void> updateMovieMetadata({
+    required String uid,
+    required int movieId,
+    String? genres,
+    dynamic originCountry,
+    String? originalLanguage,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (genres != null && genres.isNotEmpty) updates['genres'] = genres;
+    if (originCountry != null) updates['origin_country'] = originCountry;
+    if (originalLanguage != null && originalLanguage.isNotEmpty) {
+      updates['original_language'] = originalLanguage;
+    }
+    if (updates.isNotEmpty) {
+      await _moviesCollection(uid).doc(movieId.toString()).update(updates);
+    }
   }
 
   @override

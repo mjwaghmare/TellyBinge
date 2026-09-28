@@ -269,6 +269,37 @@ void main() {
       expect(globeStamp.isUnlocked, isTrue);
       expect(globeStamp.unlockedDate, isNull);
     });
+
+    test('resolves country from production_countries list of maps', () {
+      final movies = [
+        {
+          'title': 'Le Fabuleux Destin d\'Amélie Poulain',
+          'isWatched': true,
+          'production_countries': [
+            {'iso_3166_1': 'FR', 'name': 'France'},
+            {'iso_3166_1': 'DE', 'name': 'Germany'},
+          ],
+        },
+      ];
+
+      final data = CinemaPassportService.evaluate(movies: movies, shows: []);
+      expect(data.totalCountries, 1);
+      expect(data.countries.first.code, 'FR');
+    });
+
+    test('resolves country from title script for non-Latin titles (Korean, Japanese, Indian, Thai)', () {
+      final titles = [
+        {'title': '기생충', 'isWatched': true}, // Korean Hangul -> KR
+        {'title': '千と千尋の神隠し', 'isWatched': true}, // Japanese Kana -> JP
+        {'title': 'दंगल', 'isWatched': true}, // Devanagari -> IN
+        {'title': 'ฉลาดเกมส์โกง', 'isWatched': true}, // Thai -> TH
+      ];
+
+      final data = CinemaPassportService.evaluate(movies: titles, shows: []);
+      expect(data.totalCountries, 4);
+      final codes = data.countries.map((c) => c.code).toSet();
+      expect(codes, containsAll(['KR', 'JP', 'IN', 'TH']));
+    });
   });
 
   group('PassportStampWidget', () {

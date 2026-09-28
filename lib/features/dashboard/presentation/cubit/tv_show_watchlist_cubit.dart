@@ -2,20 +2,26 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/network/tmdb_client.dart';
 import '../../domain/repositories/tv_watchlist_repository.dart';
 import 'tv_show_watchlist_state.dart';
 import '../../../../core/services/notification_service.dart';
 
 class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
   final TvWatchlistRepository tvWatchlistRepository;
+  final TmdbClient? tmdbClient;
   StreamSubscription? _watchlistSubscription;
   final Map<int, _PendingShowStop> _pendingShowStops = {};
+  final Set<int> _backfillingShowIds = {};
+  final Map<int, DateTime> _failedShowIds = {};
 
   final _failureController = StreamController<Failure>.broadcast();
   Stream<Failure> get failureStream => _failureController.stream;
 
-  TvShowWatchlistCubit({required this.tvWatchlistRepository})
-    : super(TvShowWatchlistInitial());
+  TvShowWatchlistCubit({
+    required this.tvWatchlistRepository,
+    this.tmdbClient,
+  }) : super(TvShowWatchlistInitial());
 
   void watchWatchlist(String uid) {
     emit(TvShowWatchlistLoading());
@@ -65,11 +71,101 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
                     );
                   }(),
             ]);
+
+            // Start backfilling in the background sequentially to avoid socket rate limiting
+            _backfillMissingMetadata(uid, mappedShows);
           },
           onError: (error) {
             emit(TvShowWatchlistError(error.toString()));
           },
         );
+  }
+
+  // Sequential backfiller that manages lock set and delays requests
+  Future<void> _backfillMissingMetadata(
+    String uid,
+    List<Map<String, dynamic>> shows,
+  ) async {
+    if (tmdbClient == null) return;
+
+    // Prioritize watched shows first so user's Cinema Passport updates quickly
+    final sortedShows = List<Map<String, dynamic>>.from(shows)
+      ..sort((a, b) {
+        final aWatched = ((a['watchedEpisodes'] as List?)?.isNotEmpty == true ||
+                a['category'] == 'FINISHED')
+            ? 1
+            : 0;
+        final bWatched = ((b['watchedEpisodes'] as List?)?.isNotEmpty == true ||
+                b['category'] == 'FINISHED')
+            ? 1
+            : 0;
+        return bWatched.compareTo(aWatched);
+      });
+
+    final now = DateTime.now();
+    for (final show in sortedShows) {
+      if (isClosed) break;
+      final country = show['origin_country'];
+      final lang = show['original_language'];
+      final missingCountry = country == null ||
+          (country is String && country.isEmpty) ||
+          (country is List && country.isEmpty);
+      final missingLang = lang == null ||
+          (lang is String && lang.isEmpty);
+
+      if (missingCountry || missingLang) {
+        final showId = (show['id'] as num?)?.toInt();
+        if (showId != null) {
+          if (_backfillingShowIds.contains(showId)) continue;
+          final failedAt = _failedShowIds[showId];
+          if (failedAt != null &&
+              now.difference(failedAt).inMinutes < 5) {
+            continue;
+          }
+
+          _backfillingShowIds.add(showId);
+          try {
+            await _fillMissingMetadata(uid, showId);
+            _failedShowIds.remove(showId);
+            // Throttle requests (250ms delay) to prevent TMDb API/Cloudflare connection resets
+            await Future.delayed(const Duration(milliseconds: 250));
+          } catch (_) {
+            _failedShowIds[showId] = DateTime.now();
+          } finally {
+            _backfillingShowIds.remove(showId);
+          }
+        }
+      }
+    }
+  }
+
+  Future<void> _fillMissingMetadata(String uid, int showId) async {
+    try {
+      if (tmdbClient == null) return;
+      final details = await tmdbClient!.getTvShowDetails(showId);
+      final originCountry = details['origin_country'] ??
+          (details['production_countries'] as List<dynamic>?)
+              ?.map((c) => (c as Map<String, dynamic>)['iso_3166_1']?.toString())
+              .whereType<String>()
+              .toList();
+      final originalLanguage = details['original_language'] as String?;
+
+      final enrichmentData = <String, dynamic>{
+        'origin_country': ?originCountry,
+        'original_language': ?originalLanguage,
+      };
+
+      if (enrichmentData.isNotEmpty) {
+        await tvWatchlistRepository.updateShowEnrichment(
+          uid: uid,
+          showId: showId,
+          enrichmentData: enrichmentData,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error filling missing metadata for show $showId: $e');
+      rethrow;
+    }
   }
 
   Future<void> addShow({
@@ -80,6 +176,8 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
     required String? backdropPath,
     required String? firstAirDate,
     required double voteAverage,
+    dynamic originCountry,
+    String? originalLanguage,
   }) async {
     try {
       await tvWatchlistRepository.addShow(
@@ -90,6 +188,8 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
         backdropPath: backdropPath,
         firstAirDate: firstAirDate,
         voteAverage: voteAverage,
+        originCountry: originCountry,
+        originalLanguage: originalLanguage,
       );
     } catch (e) {
       debugPrint('Error in TvShowWatchlistCubit.addShow: $e');
@@ -538,6 +638,8 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
     unawaited(flushPendingStopWatching());
     _watchlistSubscription?.cancel();
     _watchlistSubscription = null;
+    _backfillingShowIds.clear();
+    _failedShowIds.clear();
     emit(TvShowWatchlistInitial());
   }
 

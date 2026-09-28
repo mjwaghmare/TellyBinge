@@ -18,7 +18,7 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
 
   // Sets to manage concurrent requests and failure retry loops
   final Set<int> _backfillingMovieIds = {};
-  final Set<int> _failedMovieIds = {};
+  final Map<int, DateTime> _failedMovieIds = {};
   final Map<int, _PendingMovieRemoval> _pendingMovieRemovals = {};
   bool _isSyncing = false;
   Future<void>? _activeSyncFuture;
@@ -69,7 +69,7 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
             ]);
 
             // Start backfilling in the background sequentially to avoid socket rate limiting
-            _backfillMissingGenres(uid, movies);
+            _backfillMissingMetadata(uid, movies);
 
             // Check if upcoming/recent movie release dates need their once-a-day sync
             syncUpcomingMovies(uid, movies: movies);
@@ -81,29 +81,52 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   }
 
   // Sequential backfiller that manages lock set and delays requests
-  Future<void> _backfillMissingGenres(
+  Future<void> _backfillMissingMetadata(
     String uid,
     List<Map<String, dynamic>> movies,
   ) async {
     if (tmdbClient == null) return;
 
-    for (final movie in movies) {
+    // Prioritize watched movies first so user's Cinema Passport updates quickly
+    final sortedMovies = List<Map<String, dynamic>>.from(movies)
+      ..sort((a, b) {
+        final aWatched = a['isWatched'] == true ? 1 : 0;
+        final bWatched = b['isWatched'] == true ? 1 : 0;
+        return bWatched.compareTo(aWatched);
+      });
+
+    final now = DateTime.now();
+    for (final movie in sortedMovies) {
       if (isClosed) break;
-      if (!movie.containsKey('genres')) {
+      final genres = movie['genres'];
+      final country = movie['origin_country'];
+      final lang = movie['original_language'];
+      final missingGenres = genres == null ||
+          (genres is String && genres.isEmpty);
+      final missingCountry = country == null ||
+          (country is String && country.isEmpty) ||
+          (country is List && country.isEmpty);
+      final missingLang = lang == null ||
+          (lang is String && lang.isEmpty);
+
+      if (missingGenres || missingCountry || missingLang) {
         final movieId = (movie['id'] as num?)?.toInt();
         if (movieId != null) {
-          if (_backfillingMovieIds.contains(movieId) ||
-              _failedMovieIds.contains(movieId)) {
+          if (_backfillingMovieIds.contains(movieId)) continue;
+          final failedAt = _failedMovieIds[movieId];
+          if (failedAt != null &&
+              now.difference(failedAt).inMinutes < 5) {
             continue;
           }
 
           _backfillingMovieIds.add(movieId);
           try {
-            await _fillMissingGenres(uid, movieId);
+            await _fillMissingMetadata(uid, movieId);
+            _failedMovieIds.remove(movieId);
             // Throttle requests (250ms delay) to prevent TMDb API/Cloudflare connection resets
             await Future.delayed(const Duration(milliseconds: 250));
           } catch (_) {
-            _failedMovieIds.add(movieId);
+            _failedMovieIds[movieId] = DateTime.now();
           } finally {
             _backfillingMovieIds.remove(movieId);
           }
@@ -113,7 +136,7 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   }
 
   // Helper method rethrows error so backfill process can register the failure
-  Future<void> _fillMissingGenres(String uid, int movieId) async {
+  Future<void> _fillMissingMetadata(String uid, int movieId) async {
     try {
       if (tmdbClient == null) return;
       final details = await tmdbClient!.getMovieDetails(movieId);
@@ -121,13 +144,23 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
       final genresStr = (genresList != null && genresList.isNotEmpty)
           ? genresList.map((g) => g['name'] as String? ?? '').join(', ')
           : '';
-      await movieWatchlistRepository.updateMovieGenres(
+
+      final originCountry = details['origin_country'] ??
+          (details['production_countries'] as List<dynamic>?)
+              ?.map((c) => (c as Map<String, dynamic>)['iso_3166_1']?.toString())
+              .whereType<String>()
+              .toList();
+      final originalLanguage = details['original_language'] as String?;
+
+      await movieWatchlistRepository.updateMovieMetadata(
         uid: uid,
         movieId: movieId,
-        genres: genresStr,
+        genres: genresStr.isNotEmpty ? genresStr : null,
+        originCountry: originCountry,
+        originalLanguage: originalLanguage,
       );
     } catch (e) {
-      debugPrint('Error filling missing genres for movie $movieId: $e');
+      debugPrint('Error filling missing metadata for movie $movieId: $e');
       rethrow;
     }
   }
@@ -333,6 +366,8 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     required int runtime,
     required double voteAverage,
     String? genres,
+    dynamic originCountry,
+    String? originalLanguage,
     bool isWatched = false,
     bool isFavorite = false,
   }) async {
@@ -347,6 +382,8 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
         runtime: runtime,
         voteAverage: voteAverage,
         genres: genres,
+        originCountry: originCountry,
+        originalLanguage: originalLanguage,
         isWatched: isWatched,
         isFavorite: isFavorite,
       );

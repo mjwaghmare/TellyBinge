@@ -397,6 +397,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           BlocProvider<TvShowWatchlistCubit>(
             create: (context) => TvShowWatchlistCubit(
               tvWatchlistRepository: context.read<TvWatchlistRepository>(),
+              tmdbClient: context.read<TmdbClient>(),
             ),
           ),
           BlocProvider<AchievementsCubit>(

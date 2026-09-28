@@ -67,6 +67,8 @@ class MockMovieWatchlistRepository implements MovieWatchlistRepository {
     required int runtime,
     required double voteAverage,
     String? genres,
+    dynamic originCountry,
+    String? originalLanguage,
     bool isWatched = false,
     bool isFavorite = false,
   }) async {
@@ -74,6 +76,15 @@ class MockMovieWatchlistRepository implements MovieWatchlistRepository {
       throw Exception('Add failed');
     }
   }
+
+  @override
+  Future<void> updateMovieMetadata({
+    required String uid,
+    required int movieId,
+    String? genres,
+    dynamic originCountry,
+    String? originalLanguage,
+  }) async {}
 
   @override
   Future<void> updateMovieDetails({

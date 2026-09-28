@@ -46,6 +46,8 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
     required String? backdropPath,
     required String? firstAirDate,
     required double voteAverage,
+    dynamic originCountry,
+    String? originalLanguage,
   }) async {
     await _showsCollection(uid)
         .doc(showId.toString())
@@ -56,6 +58,8 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
           'backdropPath': backdropPath ?? '',
           'firstAirDate': firstAirDate ?? '',
           'voteAverage': voteAverage,
+          'origin_country': ?originCountry,
+          'original_language': ?originalLanguage,
           'watchedEpisodes': [],
           'episodeWatchedDates': {},
           'addedAt': DateTime.now().toIso8601String(),

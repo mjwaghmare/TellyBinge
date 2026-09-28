@@ -562,6 +562,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                             runtime: runtimeMinutes,
                             voteAverage: voteAverage,
                             genres: genres,
+                            originCountry: movie['origin_country'] ??
+                            (movie['production_countries'] as List<dynamic>?)
+                                ?.map((c) => (c as Map<String, dynamic>)['iso_3166_1']?.toString())
+                                .whereType<String>()
+                                .toList(),
+                            originalLanguage: movie['original_language'],
                           ).catchError((_) {});
                         } else {
                           AuthRequiredBottomSheet.show(
@@ -862,6 +868,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                                       runtime: runtimeMinutes,
                                                       voteAverage: voteAverage,
                                                       genres: genres,
+                                                      originCountry: movie['origin_country'] ??
+                            (movie['production_countries'] as List<dynamic>?)
+                                ?.map((c) => (c as Map<String, dynamic>)['iso_3166_1']?.toString())
+                                .whereType<String>()
+                                .toList(),
+                                                      originalLanguage: movie['original_language'],
                                                       isFavorite: true,
                                                     );
                                               }
@@ -932,6 +944,12 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                                                         voteAverage:
                                                             voteAverage,
                                                         genres: genres,
+                                                        originCountry: movie['origin_country'] ??
+                            (movie['production_countries'] as List<dynamic>?)
+                                ?.map((c) => (c as Map<String, dynamic>)['iso_3166_1']?.toString())
+                                .whereType<String>()
+                                .toList(),
+                                                        originalLanguage: movie['original_language'],
                                                         isWatched: true,
                                                       );
                                                 }

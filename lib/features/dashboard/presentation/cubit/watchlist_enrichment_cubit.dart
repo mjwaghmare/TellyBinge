@@ -66,6 +66,10 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     if (lastEnrichedStr == null || lastEnrichedStr.isEmpty) return false;
     try {
       if (showData['totalEpisodes'] == null) return false;
+      if (showData['origin_country'] == null &&
+          showData['original_language'] == null) {
+        return false;
+      }
 
       // Bypass 6-hour cache if show has an upcoming episode scheduled for today or earlier
       final upcomingAirDateStr = showData['upcomingAirDate'] as String?;
@@ -141,6 +145,19 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     }
 
     if (showsToEnrich.isEmpty) return;
+
+    // Prioritize watched shows so Cinema Passport updates quickly
+    showsToEnrich.sort((a, b) {
+      final aWatched = ((a['watchedEpisodes'] as List?)?.isNotEmpty == true ||
+              a['category'] == 'FINISHED')
+          ? 1
+          : 0;
+      final bWatched = ((b['watchedEpisodes'] as List?)?.isNotEmpty == true ||
+              b['category'] == 'FINISHED')
+          ? 1
+          : 0;
+      return bWatched.compareTo(aWatched);
+    });
 
     // Queue locks before starting requests
     for (final raw in showsToEnrich) {
@@ -486,6 +503,10 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         'upcomingIsNew': upcomingIsNew,
         'totalEpisodes': details['number_of_episodes'] ?? 0,
         'lastEnrichedAt': DateTime.now().toIso8601String(),
+        if (details['origin_country'] != null)
+          'origin_country': details['origin_country'],
+        if (details['original_language'] != null)
+          'original_language': details['original_language'],
       };
 
       await _repository.updateShowEnrichment(

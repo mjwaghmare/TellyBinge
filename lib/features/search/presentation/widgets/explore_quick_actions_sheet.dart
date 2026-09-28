@@ -37,6 +37,12 @@ Future<void> showExploreQuickActions(
   final String? dateStr =
       item['release_date'] ?? item['first_air_date'] as String?;
   final int runtime = (item['runtime'] as num?)?.toInt() ?? 0;
+  final originCountry = item['origin_country'] ??
+      (item['production_countries'] as List<dynamic>?)
+          ?.map((c) => (c as Map<String, dynamic>)['iso_3166_1']?.toString())
+          .whereType<String>()
+          .toList();
+  final originalLanguage = item['original_language'] as String?;
 
   final year = (dateStr != null && dateStr.length >= 4)
       ? dateStr.substring(0, 4)
@@ -121,6 +127,8 @@ Future<void> showExploreQuickActions(
               releaseDate: dateStr,
               runtime: runtime,
               voteAverage: voteAverage,
+              originCountry: originCountry,
+              originalLanguage: originalLanguage,
             );
             AppSnackbar.showSuccess(context, 'Added to Watchlist');
           }
@@ -161,6 +169,8 @@ Future<void> showExploreQuickActions(
               releaseDate: dateStr,
               runtime: runtime,
               voteAverage: voteAverage,
+              originCountry: originCountry,
+              originalLanguage: originalLanguage,
               isWatched: true,
             );
           }
@@ -206,6 +216,8 @@ Future<void> showExploreQuickActions(
               releaseDate: dateStr,
               runtime: runtime,
               voteAverage: voteAverage,
+              originCountry: originCountry,
+              originalLanguage: originalLanguage,
               isFavorite: true,
             );
           }
@@ -262,6 +274,8 @@ Future<void> showExploreQuickActions(
               backdropPath: backdropPath,
               firstAirDate: dateStr,
               voteAverage: voteAverage,
+              originCountry: originCountry,
+              originalLanguage: originalLanguage,
             );
             AppSnackbar.showSuccess(context, 'Added to Dashboard tracking');
           }

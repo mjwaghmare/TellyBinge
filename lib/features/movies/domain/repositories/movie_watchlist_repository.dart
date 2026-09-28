@@ -11,6 +11,8 @@ abstract class MovieWatchlistRepository {
     required int runtime,
     required double voteAverage,
     String? genres,
+    dynamic originCountry,
+    String? originalLanguage,
     bool isWatched = false,
     bool isFavorite = false,
   });
@@ -29,6 +31,13 @@ abstract class MovieWatchlistRepository {
     required String uid,
     required int movieId,
     required String genres,
+  });
+  Future<void> updateMovieMetadata({
+    required String uid,
+    required int movieId,
+    String? genres,
+    dynamic originCountry,
+    String? originalLanguage,
   });
   Future<void> updateMovieDetails({
     required String uid,

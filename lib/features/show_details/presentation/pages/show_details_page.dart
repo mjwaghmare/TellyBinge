@@ -1482,6 +1482,12 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
                       backdropPath: details['backdrop_path'],
                       firstAirDate: details['first_air_date'],
                       voteAverage: (details['vote_average'] ?? 0).toDouble(),
+                      originCountry: details['origin_country'] ??
+                          (details['production_countries'] as List<dynamic>?)
+                              ?.map((c) => (c as Map<String, dynamic>)['iso_3166_1']?.toString())
+                              .whereType<String>()
+                              .toList(),
+                      originalLanguage: details['original_language'],
                     );
                     Future.delayed(const Duration(milliseconds: 300), () {
                       if (context.mounted) {
