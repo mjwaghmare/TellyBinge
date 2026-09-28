@@ -43,7 +43,7 @@ class PassportStampWidget extends StatelessWidget {
             color: isUnlocked
                 ? stamp.inkColor.withValues(alpha: 0.04)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: isUnlocked
                 ? [
                     BoxShadow(
@@ -62,7 +62,7 @@ class PassportStampWidget extends StatelessWidget {
             ),
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -80,7 +80,7 @@ class PassportStampWidget extends StatelessWidget {
                               size: 6.0,
                               color: stamp.inkColor.withValues(alpha: 0.85),
                             ),
-                            const SizedBox(width: 3),
+                            AppSpacing.gapW4,
                             Text(
                               stamp.entryCode ?? 'ADMITTED',
                               style: AppTextStyles.xsBold.copyWith(
@@ -90,7 +90,7 @@ class PassportStampWidget extends StatelessWidget {
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(width: 3),
+                            AppSpacing.gapW4,
                             Icon(
                               Icons.star,
                               size: 6.0,
@@ -99,7 +99,7 @@ class PassportStampWidget extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      AppSpacing.gapH4,
                       // Main Stamp Title
                       FittedBox(
                         fit: BoxFit.scaleDown,
@@ -116,14 +116,14 @@ class PassportStampWidget extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      AppSpacing.gapH4,
                       // Middle Boxed Date Line (Official entry date)
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1.5,
+                            horizontal: AppSpacing.xs,
+                            vertical: AppSpacing.micro,
                           ),
                           decoration: BoxDecoration(
                             border: Border.all(
@@ -143,7 +143,7 @@ class PassportStampWidget extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      AppSpacing.gapH4,
                       // Subtitle / Authority Department
                       FittedBox(
                         fit: BoxFit.scaleDown,
@@ -167,9 +167,9 @@ class PassportStampWidget extends StatelessWidget {
                         size: 22,
                         color: isLight
                             ? AppColors.lightTextTertiary
-                            : Colors.white.withValues(alpha: 0.25),
+                            : AppColors.textTertiary,
                       ),
-                      const SizedBox(height: 4),
+                      AppSpacing.gapH4,
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
@@ -182,20 +182,22 @@ class PassportStampWidget extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: isLight
                                 ? AppColors.lightTextTertiary
-                                : Colors.white.withValues(alpha: 0.35),
+                                : AppColors.textTertiary,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      AppSpacing.gapH4,
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                            horizontal: AppSpacing.xs,
+                            vertical: AppSpacing.micro,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
+                            color: isLight
+                                ? AppColors.borderLight.withValues(alpha: 0.5)
+                                : AppColors.borderDark.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -204,7 +206,7 @@ class PassportStampWidget extends StatelessWidget {
                               fontSize: 7.5,
                               color: isLight
                                   ? AppColors.lightTextTertiary
-                                  : Colors.white.withValues(alpha: 0.45),
+                                  : AppColors.textTertiary,
                             ),
                           ),
                         ),
@@ -388,7 +390,7 @@ class _AuthenticStampPainter extends CustomPainter {
     final dashPaint = Paint()
       ..color = isLight
           ? AppColors.borderLight
-          : Colors.white.withValues(alpha: 0.18)
+          : AppColors.borderDark
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4;
 

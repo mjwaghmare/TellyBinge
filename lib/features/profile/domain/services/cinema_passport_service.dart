@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../models/cinema_passport.dart';
 
 /// Evaluates a user's movie and TV show diary into a rich Cinema Passport.
@@ -211,7 +211,7 @@ class CinemaPassportService {
         subtitle: 'K-DRAMA DIVISION',
         countryCode: 'KR',
         flagEmoji: '🇰🇷',
-        inkColor: const Color(0xFF0284C7), // Sky Cyan ink
+        inkColor: AppColors.skyBlue,
         rotationAngle: -0.07,
         requiredCount: 5,
         currentCount: krCount,
@@ -227,7 +227,7 @@ class CinemaPassportService {
         subtitle: 'NARITA IMMIGRATION',
         countryCode: 'JP',
         flagEmoji: '🇯🇵',
-        inkColor: const Color(0xFFDC2626), // Japanese Crimson Red ink
+        inkColor: AppColors.error,
         rotationAngle: 0.06,
         requiredCount: 5,
         currentCount: jpCount,
@@ -243,7 +243,7 @@ class CinemaPassportService {
         subtitle: 'LOS ANGELES • CBP ENTRY',
         countryCode: 'US',
         flagEmoji: '🇺🇸',
-        inkColor: const Color(0xFF2563EB), // US CBP Royal Blue ink
+        inkColor: AppColors.accentBlue,
         rotationAngle: -0.05,
         requiredCount: 15,
         currentCount: usCount,
@@ -259,7 +259,7 @@ class CinemaPassportService {
         subtitle: 'RIVIERA CINEMA PASS',
         countryCode: 'FR',
         flagEmoji: '🇫🇷',
-        inkColor: const Color(0xFFD97706), // Riviera Amber Gold ink
+        inkColor: AppColors.goldDark,
         rotationAngle: 0.08,
         requiredCount: 3,
         currentCount: frCount,
@@ -275,7 +275,7 @@ class CinemaPassportService {
         subtitle: 'BOLLYWOOD TERMINAL',
         countryCode: 'IN',
         flagEmoji: '🇮🇳',
-        inkColor: const Color(0xFFEA580C), // Saffron Orange ink
+        inkColor: AppColors.bronze,
         rotationAngle: -0.06,
         requiredCount: 5,
         currentCount: inCount,
@@ -291,7 +291,7 @@ class CinemaPassportService {
         subtitle: 'UK BORDER FORCE',
         countryCode: 'GB',
         flagEmoji: '🇬🇧',
-        inkColor: const Color(0xFF7C3AED), // Royal Purple ink
+        inkColor: AppColors.primary,
         rotationAngle: 0.05,
         requiredCount: 5,
         currentCount: gbCount,
@@ -307,7 +307,7 @@ class CinemaPassportService {
         subtitle: 'SCHENGEN CINEMA',
         countryCode: 'EU',
         flagEmoji: '🇪🇺',
-        inkColor: const Color(0xFF059669), // Schengen Emerald Green ink
+        inkColor: AppColors.success,
         rotationAngle: -0.08,
         requiredCount: 3,
         currentCount: euroVisited,
@@ -323,7 +323,7 @@ class CinemaPassportService {
         subtitle: 'WORLD CINEMA CITIZEN',
         countryCode: 'GLOBAL',
         flagEmoji: '🌍',
-        inkColor: const Color(0xFFB45309), // Diplomatic Gold ink
+        inkColor: AppColors.gold,
         rotationAngle: 0.07,
         requiredCount: 5,
         currentCount: totalUniqueCountries,

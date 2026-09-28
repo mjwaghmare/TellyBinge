@@ -414,7 +414,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: Text(
                             '${passport.totalCountries} ${passport.totalCountries == 1 ? 'Country' : 'Countries'}',
                             style: AppTextStyles.xsMedium.copyWith(
-                              color: isLight ? const Color(0xFFB45309) : AppColors.gold,
+                              color: isLight ? AppColors.goldDark : AppColors.gold,
                             ),
                           ),
                         ),

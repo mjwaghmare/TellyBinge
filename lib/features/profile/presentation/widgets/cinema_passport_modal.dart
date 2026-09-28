@@ -105,6 +105,8 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const AppSheetHandle(),
+              AppSpacing.gapH16,
               Center(
                 child: PassportStampWidget(
                   stamp: stamp,
@@ -150,7 +152,7 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
                       ? stamp.inkColor.withValues(alpha: 0.12)
                       : (isLight
                           ? AppColors.borderLight
-                          : Colors.white.withValues(alpha: 0.08)),
+                          : AppColors.borderDark),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -198,18 +200,9 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
           child: Column(
             children: [
               // Top drag bar handle
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 10, bottom: 8),
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isLight
-                        ? AppColors.borderLight
-                        : Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                child: AppSheetHandle(),
               ),
 
               // Passport Header Card
@@ -218,31 +211,17 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
                 child: Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: isLight
-                          ? [
-                              const Color(0xFFFAF5FF),
-                              const Color(0xFFF3E8FF),
-                            ]
-                          : [
-                              const Color(0xFF1E1736),
-                              const Color(0xFF140F26),
-                            ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
+                    color: isLight
+                        ? AppColors.lightSurface
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.35),
-                      width: 1.2,
+                      color: isLight
+                          ? AppColors.borderLight
+                          : AppColors.borderDark,
+                      width: 1.0,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: isLight ? AppColors.lightCardShadow : null,
                   ),
                   child: Column(
                     children: [
@@ -255,26 +234,18 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFFF59E0B),
-                                      Color(0xFFFBBF24),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFFF59E0B)
-                                          .withValues(alpha: 0.35),
-                                      blurRadius: 8,
-                                    ),
-                                  ],
+                                  color: isLight
+                                      ? AppColors.lightPrimaryContainer
+                                      : AppColors.primary.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Icon(
                                     Icons.public_rounded,
-                                    color: Colors.white,
-                                    size: 22,
+                                    color: isLight
+                                        ? AppColors.lightPrimary
+                                        : AppColors.primaryLight,
+                                    size: 20,
                                   ),
                                 ),
                               ),
@@ -285,7 +256,9 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
                                   Text(
                                     'WORLD CINEMA PASSPORT',
                                     style: AppTextStyles.xsBold.copyWith(
-                                      color: AppColors.gold,
+                                      color: isLight
+                                          ? AppColors.goldDark
+                                          : AppColors.gold,
                                       letterSpacing: 1.2,
                                       fontSize: 10.5,
                                     ),
@@ -305,22 +278,27 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
                           if (widget.rankTitle != null)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
+                                horizontal: AppSpacing.xs,
+                                vertical: AppSpacing.micro,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.15),
+                                color: isLight
+                                    ? AppColors.lightPrimaryContainer
+                                    : AppColors.primary.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color:
-                                      AppColors.primary.withValues(alpha: 0.3),
+                                  color: isLight
+                                      ? AppColors.lightPrimary.withValues(alpha: 0.3)
+                                      : AppColors.primary.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
                               child: Text(
                                 widget.rankTitle!,
                                 style: AppTextStyles.xsBold.copyWith(
-                                  color: AppColors.primaryLight,
+                                  color: isLight
+                                      ? AppColors.lightPrimary
+                                      : AppColors.primaryLight,
                                   fontSize: 8.5,
                                 ),
                               ),
@@ -401,8 +379,10 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF59E0B),
-                      foregroundColor: Colors.black87,
+                      backgroundColor: isLight
+                          ? AppColors.lightPrimary
+                          : AppColors.primary,
+                      foregroundColor: AppColors.textOnPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -417,7 +397,7 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
                         Text(
                           'SHARE MY PASSPORT',
                           style: AppTextStyles.smBold.copyWith(
-                            color: Colors.black87,
+                            color: AppColors.textOnPrimary,
                             letterSpacing: 0.8,
                           ),
                         ),
@@ -444,8 +424,8 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
       ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 16,
+        crossAxisSpacing: AppSpacing.sm,
+        mainAxisSpacing: AppSpacing.md,
         childAspectRatio: 0.95,
       ),
       itemCount: stamps.length,
@@ -500,7 +480,7 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
             color: isLight
                 ? AppColors.lightSurface
                 : AppColors.surface,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isLight
                   ? AppColors.borderLight
@@ -526,7 +506,7 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
                             : AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    AppSpacing.gapH4,
                     Text(
                       '${visit.movieCount} Movies • ${visit.showCount} Shows',
                       style: AppTextStyles.xsMedium.copyWith(
@@ -573,8 +553,12 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, size: 16, color: AppColors.gold),
-          const SizedBox(height: 3),
+          Icon(
+            icon,
+            size: 16,
+            color: isLight ? AppColors.goldDark : AppColors.gold,
+          ),
+          AppSpacing.gapH4,
           Text(
             value,
             style: AppTextStyles.smBold.copyWith(
@@ -603,7 +587,7 @@ class _CinemaPassportModalState extends State<CinemaPassportModal>
       height: 28,
       color: isLight
           ? AppColors.borderLight
-          : Colors.white.withValues(alpha: 0.12),
+          : AppColors.borderDark,
     );
   }
 }

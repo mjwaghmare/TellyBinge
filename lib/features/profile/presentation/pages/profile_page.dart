@@ -1196,7 +1196,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             Text(
               label,
               style: AppTextStyles.xsBold.copyWith(
-                color: isLight ? const Color(0xFFB45309) : AppColors.gold,
+                color: isLight ? AppColors.goldDark : AppColors.gold,
                 letterSpacing: 0.1,
                 height: 1.1,
               ),
@@ -1272,8 +1272,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       AppSpacing.gapW8,
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1.5,
+                          horizontal: AppSpacing.xs,
+                          vertical: AppSpacing.micro,
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.gold.withValues(alpha: 0.15),
@@ -1283,7 +1283,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           '${passport.unlockedStampsCount}/${passport.totalStampsCount} Stamps',
                           style: AppTextStyles.xsBold.copyWith(
                             color: isLight
-                                ? const Color(0xFFB45309)
+                                ? AppColors.goldDark
                                 : AppColors.gold,
                             fontSize: 8.5,
                           ),
@@ -1291,7 +1291,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  AppSpacing.gapH4,
                   Text(
                     passport.totalCountries > 0
                         ? '${passport.totalCountries} countries visited • Tap to open'
