@@ -18,6 +18,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/cubit/theme_cubit.dart';
+import '../../../../core/utils/username_helper.dart';
 import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -29,6 +30,8 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../domain/services/achievements_service.dart';
 import '../cubit/settings_cubit.dart';
 import 'achievements_page.dart';
+import '../../domain/services/cinema_passport_service.dart';
+import '../widgets/cinema_passport_modal.dart';
 import 'terms_and_conditions_page.dart';
 import 'privacy_policy_page.dart';
 import '../../../feedback/presentation/pages/feedback_board_page.dart';
@@ -330,8 +333,8 @@ class _SettingsPageState extends State<SettingsPage> {
             ],
           ),
 
-          // 3. ACHIEVEMENTS SECTION
-          _buildSectionHeader('ACHIEVEMENTS'),
+          // 3. ACHIEVEMENTS & PASSPORT SECTION
+          _buildSectionHeader('ACHIEVEMENTS & PASSPORT'),
           _buildSectionCard(
             children: [
               Builder(
@@ -377,6 +380,61 @@ class _SettingsPageState extends State<SettingsPage> {
                     onTap: () {
                       AppHaptics.lightImpact();
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const AchievementsPage()));
+                    },
+                  );
+                },
+              ),
+              _buildDivider(),
+              Builder(
+                builder: (context) {
+                  final movieState = context.watch<MovieWatchlistCubit>().state;
+                  final showState = context.watch<TvShowWatchlistCubit>().state;
+                  final movies = movieState is MovieWatchlistSuccess ? movieState.movies : <Map<String, dynamic>>[];
+                  final shows = showState is TvShowWatchlistSuccess ? showState.shows : <Map<String, dynamic>>[];
+                  final passport = CinemaPassportService.evaluate(movies: movies, shows: shows);
+                  final authState = context.watch<AuthCubit>().state;
+                  final user = authState is Authenticated ? authState.user : null;
+                  final username = generateUsername(user?.displayName, fallback: 'cinephile');
+
+                  return _SettingsTile(
+                    icon: Icons.public_rounded,
+                    iconColor: AppColors.gold,
+                    iconBgColor: AppColors.gold.withValues(alpha: 0.14),
+                    title: 'World Cinema Passport',
+                    subtitle: 'Your international film journey & stamps',
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
+                          decoration: BoxDecoration(
+                            color: AppColors.gold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${passport.totalCountries} ${passport.totalCountries == 1 ? 'Country' : 'Countries'}',
+                            style: AppTextStyles.xsMedium.copyWith(
+                              color: isLight ? const Color(0xFFB45309) : AppColors.gold,
+                            ),
+                          ),
+                        ),
+                        AppSpacing.gapW4,
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: isLight
+                              ? AppColors.lightTextTertiary
+                              : AppColors.textTertiary.withValues(alpha: 0.7),
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      AppHaptics.lightImpact();
+                      CinemaPassportModal.show(
+                        context,
+                        data: passport,
+                        username: username,
+                      );
                     },
                   );
                 },

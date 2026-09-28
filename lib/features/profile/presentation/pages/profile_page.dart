@@ -17,6 +17,7 @@ import '../../../../core/services/widget_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/username_helper.dart';
 import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../../core/widgets/app_confirm_sheet.dart';
 import '../../../../core/widgets/app_empty_state.dart';
@@ -42,6 +43,9 @@ import '../widgets/profile_quick_actions_sheet.dart';
 import '../widgets/shows_filter_bottom_sheet.dart';
 import 'notifications_page.dart';
 import 'settings_page.dart';
+import '../../domain/models/cinema_passport.dart';
+import '../../domain/services/cinema_passport_service.dart';
+import '../widgets/cinema_passport_modal.dart';
 
 class HorizontalItem {
   final int movieId;
@@ -357,18 +361,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       rawShows: rawShows,
     );
 
-    String generateUsername(String name) {
-      if (name.isEmpty || name == 'User') return 'user_popverse';
-      // Strip everything except letters and numbers, then lowercase
-      String cleanName = name.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase();
-
-      // If it ends with exactly one digit (like 'mjwaghmare5'), pad it to '05'
-      if (RegExp(r'[a-z]\d$').hasMatch(cleanName)) {
-        cleanName = '${cleanName.substring(0, cleanName.length - 1)}0${cleanName.substring(cleanName.length - 1)}';
-      }
-
-      return cleanName;
-    }
+    final passport = CinemaPassportService.evaluate(
+      movies: rawMovies,
+      shows: rawShows,
+    );
 
     final username = generateUsername(displayName);
 
@@ -420,7 +416,20 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  _buildProfileTag(profileTag),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      _buildProfileTag(profileTag),
+                      _buildPassportPill(
+                        context,
+                        passport: passport,
+                        username: username,
+                        rankTitle: profileTag.label,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -851,7 +860,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               duration: const Duration(milliseconds: 500),
                               curve: Curves.easeInOut,
                               child: _isHeatmapExpanded
-                                  ? _buildHeatmapSection(context, user?.uid ?? '')
+                                  ? _buildHeatmapSection(
+                                      context,
+                                      user?.uid ?? '',
+                                      passport: passport,
+                                      username: username,
+                                      rankTitle: profileTag.label,
+                                    )
                                   : const SizedBox(width: double.infinity, height: 0),
                             ),
                           ],
@@ -1133,6 +1148,172 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           AppSpacing.gapW4,
           Text(tag.label, style: AppTextStyles.xsBold.copyWith(color: accentColor, letterSpacing: 0.1, height: 1.1)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPassportPill(
+    BuildContext context, {
+    required CinemaPassportData passport,
+    required String username,
+    required String rankTitle,
+  }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final count = passport.totalCountries;
+    final label = count == 1 ? '1 Country' : '$count Countries';
+
+    return GestureDetector(
+      onTap: () {
+        AppHaptics.selectionClick();
+        CinemaPassportModal.show(
+          context,
+          data: passport,
+          username: username,
+          rankTitle: rankTitle,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(top: AppSpacing.xxs),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
+        decoration: BoxDecoration(
+          color: isLight
+              ? AppColors.gold.withValues(alpha: 0.12)
+              : AppColors.gold.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isLight
+                ? AppColors.gold.withValues(alpha: 0.35)
+                : AppColors.gold.withValues(alpha: 0.45),
+            width: 0.8,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text('🌍', style: TextStyle(fontSize: 10, height: 1.1)),
+            AppSpacing.gapW4,
+            Text(
+              label,
+              style: AppTextStyles.xsBold.copyWith(
+                color: isLight ? const Color(0xFFB45309) : AppColors.gold,
+                letterSpacing: 0.1,
+                height: 1.1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPassportBanner(
+    BuildContext context, {
+    required CinemaPassportData passport,
+    required String username,
+    required String rankTitle,
+  }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+
+    return InkWell(
+      onTap: () {
+        AppHaptics.selectionClick();
+        CinemaPassportModal.show(
+          context,
+          data: passport,
+          username: username,
+          rankTitle: rankTitle,
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: isLight ? AppColors.lightSurface : AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isLight
+                ? AppColors.gold.withValues(alpha: 0.35)
+                : AppColors.gold.withValues(alpha: 0.25),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Center(
+                child: Text('🌍', style: TextStyle(fontSize: 18)),
+              ),
+            ),
+            AppSpacing.gapW12,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Cinema Passport',
+                        style: AppTextStyles.smBold.copyWith(
+                          color: isLight
+                              ? AppColors.lightTextPrimary
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                      AppSpacing.gapW8,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${passport.unlockedStampsCount}/${passport.totalStampsCount} Stamps',
+                          style: AppTextStyles.xsBold.copyWith(
+                            color: isLight
+                                ? const Color(0xFFB45309)
+                                : AppColors.gold,
+                            fontSize: 8.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    passport.totalCountries > 0
+                        ? '${passport.totalCountries} countries visited • Tap to open'
+                        : 'Explore your international film diary',
+                    style: AppTextStyles.xsMedium.copyWith(
+                      color: isLight
+                          ? AppColors.lightTextSecondary
+                          : AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isLight
+                  ? AppColors.lightTextTertiary
+                  : AppColors.textTertiary,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1700,7 +1881,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     }
   }
 
-  Widget _buildHeatmapSection(BuildContext context, String uid) {
+  Widget _buildHeatmapSection(
+    BuildContext context,
+    String uid, {
+    required CinemaPassportData passport,
+    required String username,
+    required String rankTitle,
+  }) {
     return BlocBuilder<ProfileHeatmapCubit, ProfileHeatmapState>(
       builder: (context, state) {
         if (state is ProfileHeatmapError) {
@@ -1868,6 +2055,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     ),
                   ],
                 ),
+              ),
+              AppSpacing.gapH12,
+              _buildPassportBanner(
+                context,
+                passport: passport,
+                username: username,
+                rankTitle: rankTitle,
               ),
             ],
           ),
