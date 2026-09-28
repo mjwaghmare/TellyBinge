@@ -267,4 +267,43 @@ void main() {
       );
     });
   });
+
+  group('ExploreLanguageOption & kExploreLanguages', () {
+    test('contains expected language codes, names, and flags', () {
+      expect(kExploreLanguages, isNotEmpty);
+      expect(kExploreLanguages.map((l) => l.code).toList(), [
+        'hi',
+        'en',
+        'mr',
+        'ta',
+        'te',
+        'ml',
+        'ko',
+        'ja',
+        'es',
+        'fr',
+      ]);
+
+      for (final lang in kExploreLanguages) {
+        expect(lang.code, isNotEmpty);
+        expect(lang.label, isNotEmpty);
+        expect(lang.nativeName, isNotEmpty);
+        expect(lang.flag, isNotEmpty);
+        expect(exploreLanguageNames[lang.code], lang.label);
+      }
+    });
+
+    test('supports Hindi and Marathi native display', () {
+      final hi = kExploreLanguages.firstWhere((l) => l.code == 'hi');
+      expect(hi.label, 'Hindi');
+      expect(hi.nativeName, 'हिन्दी');
+      expect(hi.flag, '🇮🇳');
+
+      final mr = kExploreLanguages.firstWhere((l) => l.code == 'mr');
+      expect(mr.label, 'Marathi');
+      expect(mr.nativeName, 'मराठी');
+      expect(mr.flag, '🇮🇳');
+    });
+  });
 }
+

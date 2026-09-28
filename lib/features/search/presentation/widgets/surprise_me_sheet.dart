@@ -11,7 +11,6 @@ import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
 import 'rolling_dice_button.dart';
@@ -21,9 +20,12 @@ import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_empty_state.dart';
+import '../../data/explore_sources.dart';
+import 'explore_language_filter_button.dart';
 
 class SurpriseMeSheet extends StatefulWidget {
-  const SurpriseMeSheet({super.key});
+  final String? initialLanguage;
+  const SurpriseMeSheet({super.key, this.initialLanguage});
 
   @override
   State<SurpriseMeSheet> createState() => _SurpriseMeSheetState();
@@ -63,6 +65,8 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
   @override
   void initState() {
     super.initState();
+    final initial = widget.initialLanguage;
+    _language = (initial == null || initial == 'all') ? null : initial;
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabChange);
 
@@ -362,50 +366,16 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     }
   }
 
-  void _showLanguageBottomSheet() {
-    AppHaptics.lightImpact();
-    final currentLanguage = _language ?? 'all';
-
-    AppActionSheetAction buildOption(
-      String label,
-      String subtitle,
-      String value, {
-      String? flag,
-    }) {
-      final isSelected = value == currentLanguage;
-      return AppActionSheetAction(
-        label: label,
-        subtitle: subtitle,
-        iconWidget: flag != null
-            ? Text(
-                flag,
-                style: const TextStyle(fontSize: 20),
-              )
-            : null,
-        icon: flag == null ? Icons.translate_rounded : null,
-        trailing: isSelected
-            ? Icon(Icons.check_circle_rounded, color: context.primary, size: 22)
-            : const SizedBox.shrink(),
-        onTap: () {
-          if (isSelected) return;
-          AppHaptics.lightImpact();
-          _applyLanguage(value);
-        },
-      );
-    }
-
-    AppActionSheet.show(
-      context,
-      title: 'Language',
-      subtitle: 'Surprise picks in this language',
-      actions: [
-        buildOption('All', 'Every available language', 'all', flag: '🌐'),
-        buildOption('Hindi', 'हिन्दी', 'hi', flag: '🇮🇳'),
-        buildOption('Marathi', 'मराठी', 'mr', flag: '🇮🇳'),
-      ],
+  Widget _buildLanguageFilterButton() {
+    return ExploreLanguageFilterButton(
+      selectedLanguage: _language,
+      onLanguageChanged: (lang) => _applyLanguage(lang ?? 'all'),
+      height: 34.0,
+      sheetSubtitle: _tabController.index == 0
+          ? 'Discover surprise TV shows in your preferred language'
+          : 'Discover surprise movies in your preferred language',
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -444,41 +414,7 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
                         ),
                       ),
                       AppSpacing.gapW8,
-                      IconButton(
-                        onPressed: _showLanguageBottomSheet,
-                        icon: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Padding(
-                              padding: AppSpacing.allXXS,
-                              child: Text(
-                                '🇮🇳',
-                                style: AppTextStyles.lg,
-                              ),
-                            ),
-                            if (_language != null)
-                              Positioned(
-                                top: 6,
-                                right: 2,
-                                child: Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: context.adaptiveColor(
-                                        light: AppColors.lightSurface,
-                                        dark: AppColors.surface,
-                                      ),
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
+                      _buildLanguageFilterButton(),
                     ],
                   ),
                   IconButton(
@@ -601,14 +537,23 @@ class _SurpriseMeSheetState extends State<SurpriseMeSheet>
     }
 
     if (items.isEmpty) {
+      final selected = _language != null
+          ? kExploreLanguages.cast<ExploreLanguageOption?>().firstWhere(
+              (l) => l?.code == _language,
+              orElse: () => null,
+            )
+          : null;
       return Center(
         child: AppEmptyState(
           icon: Icons.casino_outlined,
           title: 'Nothing Found',
-          body:
-              'We couldn\'t find any random picks right now. Roll the dice again!',
+          body: selected != null
+              ? 'We couldn\'t find any random picks in ${selected.label}. Roll the dice again or switch languages.'
+              : 'We couldn\'t find any random picks right now. Roll the dice again!',
           primaryLabel: 'ROLL AGAIN',
           onPrimary: _shuffleCurrentTab,
+          secondaryLabel: _language != null ? 'RESET LANGUAGE' : null,
+          onSecondary: _language != null ? () => _applyLanguage('all') : null,
           compact: true,
         ),
       );

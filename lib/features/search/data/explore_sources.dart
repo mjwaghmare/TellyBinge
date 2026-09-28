@@ -58,6 +58,35 @@ enum ExploreSection {
   ExploreSection get source => this == topWeek ? trending : this;
 }
 
+/// A selectable language option for Explore and Surprise Me filters.
+class ExploreLanguageOption {
+  final String code;
+  final String label;
+  final String nativeName;
+  final String flag;
+
+  const ExploreLanguageOption({
+    required this.code,
+    required this.label,
+    required this.nativeName,
+    required this.flag,
+  });
+}
+
+/// Languages offered by the language filter, sorted for Indian audience preference.
+const List<ExploreLanguageOption> kExploreLanguages = [
+  ExploreLanguageOption(code: 'hi', label: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳'),
+  ExploreLanguageOption(code: 'en', label: 'English', nativeName: 'English', flag: '🇬🇧'),
+  ExploreLanguageOption(code: 'mr', label: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳'),
+  ExploreLanguageOption(code: 'ta', label: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳'),
+  ExploreLanguageOption(code: 'te', label: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳'),
+  ExploreLanguageOption(code: 'ml', label: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳'),
+  ExploreLanguageOption(code: 'ko', label: 'Korean', nativeName: '한국어', flag: '🇰🇷'),
+  ExploreLanguageOption(code: 'ja', label: 'Japanese', nativeName: '日本語', flag: '🇯🇵'),
+  ExploreLanguageOption(code: 'es', label: 'Spanish', nativeName: 'Español', flag: '🇪🇸'),
+  ExploreLanguageOption(code: 'fr', label: 'French', nativeName: 'Français', flag: '🇫🇷'),
+];
+
 /// Standard language names for Explore feed filters.
 const Map<String, String> exploreLanguageNames = {
   'hi': 'Hindi',
@@ -71,6 +100,7 @@ const Map<String, String> exploreLanguageNames = {
   'es': 'Spanish',
   'fr': 'French',
 };
+
 
 /// Fetches one page of an Explore section.
 ///

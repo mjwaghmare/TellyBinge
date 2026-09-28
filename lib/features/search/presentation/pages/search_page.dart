@@ -6,7 +6,6 @@ import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_action_sheet.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/app_empty_state.dart';
 import '../../data/explore_sources.dart';
@@ -19,21 +18,8 @@ import '../widgets/explore_section_row.dart';
 import '../widgets/watchlisted_ids_builder.dart';
 import '../../data/explore_genres.dart';
 import '../widgets/explore_genre_pills_row.dart';
+import '../widgets/explore_language_filter_button.dart';
 import 'explore_see_all_page.dart';
-
-class _LanguageOption {
-  final String code;
-  final String label;
-  final String nativeName;
-  final String flag;
-
-  const _LanguageOption({
-    required this.code,
-    required this.label,
-    required this.nativeName,
-    required this.flag,
-  });
-}
 
 class SearchPage extends StatefulWidget {
   final ValueNotifier<int>? subTabNotifier;
@@ -65,25 +51,7 @@ class _SearchPageState extends State<SearchPage>
 
   int _previousTabIndex = 0;
 
-  /// Languages offered by the language filter, sorted for Indian audience preference.
-  static const List<_LanguageOption> _languages = [
-    _LanguageOption(code: 'hi', label: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳'),
-    _LanguageOption(code: 'en', label: 'English', nativeName: 'English', flag: '🇬🇧'),
-    _LanguageOption(code: 'mr', label: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳'),
-    _LanguageOption(code: 'ta', label: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳'),
-    _LanguageOption(code: 'te', label: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳'),
-    _LanguageOption(code: 'ml', label: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳'),
-    _LanguageOption(code: 'ko', label: 'Korean', nativeName: '한국어', flag: '🇰🇷'),
-    _LanguageOption(code: 'ja', label: 'Japanese', nativeName: '日本語', flag: '🇯🇵'),
-    _LanguageOption(code: 'es', label: 'Spanish', nativeName: 'Español', flag: '🇪🇸'),
-    _LanguageOption(code: 'fr', label: 'French', nativeName: 'Français', flag: '🇫🇷'),
-  ];
-
-  static final Map<String, String> _languageNames = {
-    for (final l in _languages) l.code: l.label,
-  };
-
-
+  static const Map<String, String> _languageNames = exploreLanguageNames;
 
   static ExploreMediaType _typeOf(bool isTv) =>
       isTv ? ExploreMediaType.tv : ExploreMediaType.movie;
@@ -438,152 +406,17 @@ class _SearchPageState extends State<SearchPage>
           BlocSelector<ExploreFeedCubit, ExploreFeedState, String?>(
             selector: (state) => state.feedFor(_typeOf(isTv)).language,
             builder: (context, language) {
-              final selected = language != null
-                  ? _languages.cast<_LanguageOption?>().firstWhere(
-                      (l) => l?.code == language,
-                      orElse: () => null,
-                    )
-                  : null;
-              final isFiltered = selected != null;
-
-              return Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _showLanguageBottomSheet(isTv, language),
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: 44.0,
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    decoration: BoxDecoration(
-                      color: isFiltered
-                          ? (isLight
-                              ? AppColors.lightPrimaryContainer
-                              : AppColors.primaryDark.withValues(alpha: 0.35))
-                          : (isLight
-                              ? AppColors.lightSurfaceElevated
-                              : AppColors.surfaceElevated),
-                      borderRadius: BorderRadius.circular(12.0),
-                      border: Border.all(
-                        color: isFiltered
-                            ? (isLight
-                                ? AppColors.lightPrimary
-                                : AppColors.primary)
-                            : (isLight
-                                ? AppColors.borderLight
-                                : AppColors.borderDark),
-                        width: isFiltered ? 1.5 : 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isFiltered) ...[
-                          Text(selected.flag, style: const TextStyle(fontSize: 14)),
-                          AppSpacing.gapW4,
-                          Text(
-                            selected.code.toUpperCase(),
-                            style: AppTextStyles.xsBold.copyWith(
-                              color: isLight
-                                  ? AppColors.lightPrimary
-                                  : AppColors.primaryLight,
-                            ),
-                          ),
-                          AppSpacing.gapW4,
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: AppColors.success,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ] else ...[
-                          Icon(
-                            Icons.translate_rounded,
-                            size: 18,
-                            color: isLight
-                                ? AppColors.lightTextSecondary
-                                : AppColors.textSecondary,
-                          ),
-                          AppSpacing.gapW4,
-                          Text(
-                            'All',
-                            style: AppTextStyles.xsBold.copyWith(
-                              color: isLight
-                                  ? AppColors.lightTextSecondary
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_drop_down_rounded,
-                            size: 18,
-                            color: isLight
-                                ? AppColors.lightTextTertiary
-                                : AppColors.textTertiary,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
+              return ExploreLanguageFilterButton(
+                selectedLanguage: language,
+                onLanguageChanged: (lang) => _applyLanguage(isTv, lang),
+                sheetSubtitle: isTv
+                    ? 'Discover TV shows in your preferred language'
+                    : 'Discover movies in your preferred language',
               );
             },
           ),
         ],
       ),
-    );
-  }
-
-  void _showLanguageBottomSheet(bool isTv, String? language) {
-    AppHaptics.lightImpact();
-    final currentLanguage = language ?? 'all';
-
-    AppActionSheetAction buildOption(
-      String label,
-      String subtitle,
-      String value, {
-      String? flag,
-    }) {
-      final isSelected = value == currentLanguage;
-      return AppActionSheetAction(
-        label: label,
-        subtitle: subtitle,
-        iconWidget: flag != null
-            ? Text(
-                flag,
-                style: const TextStyle(fontSize: 20),
-              )
-            : null,
-        icon: flag == null
-            ? (value == 'all' ? Icons.public_rounded : Icons.translate_rounded)
-            : null,
-        trailing: isSelected
-            ? const Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.primary,
-                size: 22,
-              )
-            : const SizedBox.shrink(),
-        onTap: () {
-          if (isSelected) return;
-          AppHaptics.lightImpact();
-          _applyLanguage(isTv, value == 'all' ? null : value);
-        },
-      );
-    }
-
-    AppActionSheet.show(
-      context,
-      title: 'Filter by Language',
-      subtitle: isTv
-          ? 'Discover TV shows in your preferred language'
-          : 'Discover movies in your preferred language',
-      actions: [
-        buildOption('All', 'Every available language', 'all', flag: '🌐'),
-        for (final l in _languages)
-          buildOption(l.label, l.nativeName, l.code, flag: l.flag),
-      ],
     );
   }
 
