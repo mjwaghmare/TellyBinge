@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/firestore_collections.dart';
 import '../../domain/models/tv_show_watchlist_item.dart';
@@ -21,18 +22,129 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
           .doc(uid)
           .collection(FirestoreCollections.history);
 
+  /// Shared Firestore listener and controller that replays the latest snapshot
+  /// to new listeners without canceling the underlying Firestore subscription.
+  StreamController<QuerySnapshot<Map<String, dynamic>>>? _snapshotController;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _firestoreSub;
+  QuerySnapshot<Map<String, dynamic>>? _latestSnapshot;
+  String? _snapshotUid;
+  final Set<StreamController<QuerySnapshot<Map<String, dynamic>>>> _activeWrappers = {};
+
+  void _cleanupSharedListener() {
+    _firestoreSub?.cancel();
+    _firestoreSub = null;
+    if (_snapshotController != null && !_snapshotController!.isClosed) {
+      _snapshotController!.close();
+    }
+    _snapshotController = null;
+    _latestSnapshot = null;
+    _snapshotUid = null;
+  }
+
+  void _ensureSharedListener(String uid) {
+    if (_snapshotUid != uid) {
+      _cleanupSharedListener();
+      _snapshotUid = uid;
+      for (final wrapper in _activeWrappers.toList()) {
+        if (!wrapper.isClosed) {
+          wrapper.close();
+        }
+      }
+      _activeWrappers.clear();
+    }
+
+    if (_snapshotController == null || _snapshotController!.isClosed) {
+      _snapshotController =
+          StreamController<QuerySnapshot<Map<String, dynamic>>>.broadcast();
+
+      _firestoreSub = _showsCollection(uid)
+          .orderBy('addedAt', descending: true)
+          .snapshots(includeMetadataChanges: true)
+          .listen(
+            (snapshot) {
+              _latestSnapshot = snapshot;
+              if (_snapshotController != null && !_snapshotController!.isClosed) {
+                _snapshotController!.add(snapshot);
+              }
+            },
+            onError: (error, stack) {
+              if (_snapshotController != null && !_snapshotController!.isClosed) {
+                _snapshotController!.addError(error, stack);
+              }
+            },
+            onDone: () {
+              final controller = _snapshotController;
+              _cleanupSharedListener();
+              if (controller != null && !controller.isClosed) {
+                controller.close();
+              }
+            },
+          );
+    }
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> _snapshotStream(String uid) {
+    late final StreamController<QuerySnapshot<Map<String, dynamic>>> controller;
+    StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? broadcastSub;
+
+    controller = StreamController<QuerySnapshot<Map<String, dynamic>>>(
+      onListen: () {
+        if (_snapshotUid != null && _snapshotUid != uid) {
+          if (!controller.isClosed) {
+            controller.close();
+          }
+          return;
+        }
+
+        _ensureSharedListener(uid);
+        _activeWrappers.add(controller);
+
+        QuerySnapshot<Map<String, dynamic>>? lastEmitted;
+        final currentLatest = _latestSnapshot;
+        if (currentLatest != null) {
+          lastEmitted = currentLatest;
+          controller.add(currentLatest);
+        }
+        broadcastSub = _snapshotController?.stream.listen(
+          (snapshot) {
+            if (snapshot != lastEmitted) {
+              lastEmitted = snapshot;
+              controller.add(snapshot);
+            }
+          },
+          onError: controller.addError,
+          onDone: () {
+            _activeWrappers.remove(controller);
+            if (!controller.isClosed) {
+              controller.close();
+            }
+          },
+        );
+      },
+      onCancel: () {
+        broadcastSub?.cancel();
+        _activeWrappers.remove(controller);
+        if (!controller.isClosed) {
+          controller.close();
+        }
+        if (_activeWrappers.isEmpty) {
+          _cleanupSharedListener();
+        }
+      },
+    );
+
+    return controller.stream;
+  }
+
   @override
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) {
-    return _showsCollection(uid)
-        .orderBy('addedAt', descending: true)
-        .snapshots(includeMetadataChanges: true)
+    return _snapshotStream(uid)
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   @override
   Stream<bool> watchPendingWrites(String uid) {
-    return _showsCollection(uid)
-        .snapshots(includeMetadataChanges: true)
+    return _snapshotStream(uid)
         .map((snapshot) => snapshot.metadata.hasPendingWrites)
         .distinct();
   }

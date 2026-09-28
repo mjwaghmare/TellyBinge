@@ -37,11 +37,12 @@ class AppUpdateService {
       final docRef = db.collection(FirestoreCollections.appConfig).doc('version_info');
       DocumentSnapshot<Map<String, dynamic>> snapshot;
       try {
+        // Try normal get (served from cache first if fresh)
+        snapshot = await docRef.get().timeout(timeout);
+      } catch (_) {
         snapshot = await docRef
             .get(const GetOptions(source: Source.server))
             .timeout(const Duration(seconds: 4));
-      } catch (_) {
-        snapshot = await docRef.get().timeout(timeout);
       }
 
       if (snapshot.exists && snapshot.data() != null) {
@@ -52,11 +53,11 @@ class AppUpdateService {
       final fallbackRef = db.collection(FirestoreCollections.systemConfigs).doc('version');
       DocumentSnapshot<Map<String, dynamic>> fallbackSnapshot;
       try {
+        fallbackSnapshot = await fallbackRef.get().timeout(timeout);
+      } catch (_) {
         fallbackSnapshot = await fallbackRef
             .get(const GetOptions(source: Source.server))
             .timeout(const Duration(seconds: 4));
-      } catch (_) {
-        fallbackSnapshot = await fallbackRef.get().timeout(timeout);
       }
 
       if (fallbackSnapshot.exists && fallbackSnapshot.data() != null) {

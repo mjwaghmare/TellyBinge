@@ -8,9 +8,27 @@ class ProfileActivityRepositoryImpl implements ProfileActivityRepository {
   ProfileActivityRepositoryImpl({FirebaseFirestore? firestore})
     : _firestore = firestore ?? FirebaseFirestore.instance;
 
+  // In-memory cache for month activity with TTL to avoid staleness: "$uid-$year-$month" -> (timestamp, data)
+  final Map<String, (DateTime, ({Map<DateTime, int> tvCounts, Map<DateTime, int> movieCounts}))>
+      _cache = {};
+
+  static const Duration _cacheTtl = Duration(minutes: 5);
+
   @override
   Future<({Map<DateTime, int> tvCounts, Map<DateTime, int> movieCounts})>
   getMonthActivity({required String uid, required DateTime month}) async {
+    final cacheKey = '$uid-${month.year}-${month.month}';
+    final cached = _cache[cacheKey];
+    if (cached != null) {
+      final (cachedAt, data) = cached;
+      if (DateTime.now().difference(cachedAt) < _cacheTtl) {
+        return (
+          tvCounts: Map<DateTime, int>.unmodifiable(data.tvCounts),
+          movieCounts: Map<DateTime, int>.unmodifiable(data.movieCounts),
+        );
+      }
+    }
+
     final startOfMonth = DateTime(month.year, month.month, 1);
     final nextMonth = month.month == 12
         ? DateTime(month.year + 1, 1, 1)
@@ -74,6 +92,11 @@ class ProfileActivityRepositoryImpl implements ProfileActivityRepository {
       }
     }
 
-    return (tvCounts: tvCounts, movieCounts: movieCounts);
+    final result = (
+      tvCounts: Map<DateTime, int>.unmodifiable(tvCounts),
+      movieCounts: Map<DateTime, int>.unmodifiable(movieCounts),
+    );
+    _cache[cacheKey] = (DateTime.now(), result);
+    return result;
   }
 }

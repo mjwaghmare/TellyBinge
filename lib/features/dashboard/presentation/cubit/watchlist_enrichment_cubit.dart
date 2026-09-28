@@ -60,6 +60,18 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     return sorted.join(',').hashCode;
   }
 
+  /// Checks if lastEnrichedAt timestamp is valid and less than 6 hours old.
+  bool _isTimestampRecent(Map<String, dynamic> showData) {
+    final lastEnrichedStr = showData['lastEnrichedAt'] as String?;
+    if (lastEnrichedStr == null || lastEnrichedStr.isEmpty) return false;
+    try {
+      final lastEnriched = DateTime.parse(lastEnrichedStr);
+      return DateTime.now().difference(lastEnriched).inHours < 6;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Checks if a show was enriched recently enough to skip re-enrichment.
   bool _isRecentlyEnriched(Map<String, dynamic> showData) {
     final lastEnrichedStr = showData['lastEnrichedAt'] as String?;
@@ -484,8 +496,29 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         }
       }
 
-      // --- Write enrichment results back to Firestore ---
-      final enrichmentData = <String, dynamic>{
+      // --- Write enrichment results back to Firestore only if fields changed ---
+      final fieldsToCheck = [
+        'category',
+        'nextEpisodeCode',
+        'nextEpisodeTitle',
+        'targetSeason',
+        'targetEpisode',
+        'extraCount',
+        'isPremiere',
+        'isNewEpisode',
+        'upcomingEpisodeCode',
+        'upcomingEpisodeTitle',
+        'upcomingAirDate',
+        'upcomingNetworkName',
+        'hasUpcoming',
+        'upcomingIsPremiere',
+        'upcomingIsNew',
+        'totalEpisodes',
+        'origin_country',
+        'original_language',
+      ];
+
+      final candidateData = <String, dynamic>{
         'category': category,
         'nextEpisodeCode': episodeCode,
         'nextEpisodeTitle': episodeTitle,
@@ -502,18 +535,45 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         'upcomingIsPremiere': upcomingIsPremiere,
         'upcomingIsNew': upcomingIsNew,
         'totalEpisodes': details['number_of_episodes'] ?? 0,
-        'lastEnrichedAt': DateTime.now().toIso8601String(),
         if (details['origin_country'] != null)
           'origin_country': details['origin_country'],
         if (details['original_language'] != null)
           'original_language': details['original_language'],
       };
 
-      await _repository.updateShowEnrichment(
-        uid: uid,
-        showId: showId,
-        enrichmentData: enrichmentData,
-      );
+      bool hasChanges = false;
+      for (final key in fieldsToCheck) {
+        final currentVal = showData[key]?.toString();
+        final newVal = candidateData[key]?.toString();
+        if (currentVal != newVal) {
+          hasChanges = true;
+          break;
+        }
+      }
+
+      // If data changed, write back everything including fresh lastEnrichedAt.
+      // If fields are identical, only refresh lastEnrichedAt if it is missing or expired (>6 hrs),
+      // keeping the upcomingAirDate bypass for TMDB fetching but avoiding rewriting recent unchanged timestamps.
+      final hasRecentTimestamp = _isTimestampRecent(showData);
+      if (hasChanges) {
+        final enrichmentData = <String, dynamic>{
+          ...candidateData,
+          'lastEnrichedAt': DateTime.now().toIso8601String(),
+        };
+
+        await _repository.updateShowEnrichment(
+          uid: uid,
+          showId: showId,
+          enrichmentData: enrichmentData,
+        );
+      } else if (!hasRecentTimestamp) {
+        // Refresh timestamp only so next sessions don't repeatedly check
+        await _repository.updateShowEnrichment(
+          uid: uid,
+          showId: showId,
+          enrichmentData: {'lastEnrichedAt': DateTime.now().toIso8601String()},
+        );
+      }
 
       // Mark as enriched to prevent redundant fetches
       _enrichedShowIds.add(showId);
