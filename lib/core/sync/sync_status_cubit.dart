@@ -71,17 +71,17 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
       _settleTimer?.cancel();
       _settleTimer = null;
 
-      if (!state.hasPendingWrites) {
+      // The banner only starts while offline. Online, writes confirm within
+      // moments, and background upkeep (TMDB enrichment, backfills) would
+      // otherwise read as "Syncing". A sync that started offline still runs
+      // to 100% after reconnecting.
+      if (!state.hasPendingWrites && !_isOnline) {
         if (_offlineDebounceTimer == null || !_offlineDebounceTimer!.isActive) {
           if (pendingDebounceDuration == Duration.zero) {
-            _justSyncedTimer?.cancel();
-            emit(state.copyWith(hasPendingWrites: true, justSynced: false));
+            _startBanner();
           } else {
             _offlineDebounceTimer = Timer(pendingDebounceDuration, () {
-              if (!isClosed) {
-                _justSyncedTimer?.cancel();
-                emit(state.copyWith(hasPendingWrites: true, justSynced: false));
-              }
+              if (!isClosed && _pendingCount > 0 && !_isOnline) _startBanner();
             });
           }
         }
@@ -107,6 +107,13 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
         emit(state.copyWith(syncTotal: 0));
       }
     }
+  }
+
+  void _startBanner() {
+    _justSyncedTimer?.cancel();
+    // Count progress from what is queued now, not from background writes
+    // that confirmed while the banner was hidden.
+    emit(state.copyWith(hasPendingWrites: true, justSynced: false, syncTotal: _pendingCount));
   }
 
   void _emitJustSynced() {

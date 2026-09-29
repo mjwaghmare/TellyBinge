@@ -221,6 +221,7 @@ class _PersonDetailsBottomSheetState extends State<PersonDetailsBottomSheet> {
                 ? CachedNetworkImage(
                     imageUrl: imageUrl,
                     fit: BoxFit.cover,
+                    memCacheWidth: 228,
                     placeholder: (_, _) => Center(
                       child: Icon(
                         Icons.person_rounded,

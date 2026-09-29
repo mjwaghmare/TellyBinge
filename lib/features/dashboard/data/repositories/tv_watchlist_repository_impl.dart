@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/sync/pending_writes.dart';
 import '../../../../core/sync/pending_writes_firestore.dart';
+import '../../../../core/sync/snapshot_data_changes.dart';
 import '../../domain/models/tv_show_watchlist_item.dart';
 import '../../domain/repositories/tv_watchlist_repository.dart';
 
@@ -140,8 +141,7 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
 
   @override
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) {
-    return _snapshotStream(uid)
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    return _snapshotStream(uid).transform(dataChangesOnly());
   }
 
   @override

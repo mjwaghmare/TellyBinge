@@ -26,6 +26,11 @@ class AppStorageKeys {
       'reinstall_reminder_scheduled';
   static const String reinstallReminderBuildTs = 'reinstall_reminder_build_ts';
 
+  // Watchlist enrichment: "uid:showId" -> {at: last TMDB check (ISO-8601),
+  // hash: watched-episodes hash}, kept on device so unchanged shows cost no
+  // Firestore write or repeat TMDB request.
+  static const String enrichmentCheckedAt = 'enrichment_checked_at';
+
   // App Update Snooze
   static const String updateSnoozedAt = 'app_update_snoozed_at';
   static const String updateSnoozedVersion = 'app_update_snoozed_version';

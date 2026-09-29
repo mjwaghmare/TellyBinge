@@ -107,6 +107,7 @@ void main() {
     testWidgets('shows an animated percentage at the end while syncing', (tester) async {
       await tester.pumpWidget(buildTestWidget());
 
+      syncStatusCubit.updatePending('movies', offline(4));
       syncStatusCubit.updatePending('movies', online(4));
       await tester.pump();
       expect(find.text('Syncing'), findsOneWidget);

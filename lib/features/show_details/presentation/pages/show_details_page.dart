@@ -1119,6 +1119,7 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
                                                 posterPath,
                                               ),
                                               fit: BoxFit.cover,
+                                              memCacheWidth: 390,
                                               placeholder: (context, url) =>
                                                   Container(
                                                     color: context

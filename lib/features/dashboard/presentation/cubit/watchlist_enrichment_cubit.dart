@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/constants/app_storage_keys.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../data/repositories/tv_watchlist_repository_impl.dart';
 import '../../domain/repositories/tv_watchlist_repository.dart';
@@ -15,6 +18,9 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
   }) : _repository = repository ?? TvWatchlistRepositoryImpl(),
        super(WatchlistEnrichmentInitial());
 
+  /// Shows fetched from TMDB at once during enrichment.
+  static const int _concurrency = 3;
+
   /// Tracks which show IDs have already been enriched in this session
   /// to avoid redundant TMDB calls when Firestore re-fires after write-back.
   final Set<int> _enrichedShowIds = {};
@@ -24,6 +30,52 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
 
   /// Tracks the watchedEpisodes hash for each show to detect actual changes.
   final Map<int, int> _watchedEpisodesHash = {};
+
+  /// When each show was last checked against TMDB and the watched episodes
+  /// it was checked with, kept on device so it survives app restarts. A check
+  /// that finds nothing new updates only this, never Firestore. Keyed by
+  /// [_checkKey] so accounts sharing a device never share checks.
+  Map<String, ({DateTime at, int watchedHash})>? _checks;
+
+  static String _checkKey(String uid, int showId) => '$uid:$showId';
+
+  Future<void> _loadChecks() async {
+    if (_checks != null) return;
+    final map = <String, ({DateTime at, int watchedHash})>{};
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(AppStorageKeys.enrichmentCheckedAt);
+      if (raw != null) {
+        (jsonDecode(raw) as Map<String, dynamic>).forEach((key, value) {
+          // Entries without a uid come from an older format; drop them.
+          if (!key.contains(':') || value is! Map) return;
+          final at = DateTime.tryParse(value['at'] as String? ?? '');
+          final hash = value['hash'];
+          if (at != null && hash is int) map[key] = (at: at, watchedHash: hash);
+        });
+      }
+    } catch (e) {
+      debugPrint('WatchlistEnrichmentCubit: could not load check times: $e');
+    }
+    _checks = map;
+  }
+
+  Future<void> _saveChecks() async {
+    final map = _checks;
+    if (map == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        AppStorageKeys.enrichmentCheckedAt,
+        jsonEncode({
+          for (final e in map.entries)
+            e.key: {'at': e.value.at.toIso8601String(), 'hash': e.value.watchedHash},
+        }),
+      );
+    } catch (e) {
+      debugPrint('WatchlistEnrichmentCubit: could not save check times: $e');
+    }
+  }
 
   bool _isRecentlyAired(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return false;
@@ -60,22 +112,14 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     return sorted.join(',').hashCode;
   }
 
-  /// Checks if lastEnrichedAt timestamp is valid and less than 6 hours old.
-  bool _isTimestampRecent(Map<String, dynamic> showData) {
-    final lastEnrichedStr = showData['lastEnrichedAt'] as String?;
-    if (lastEnrichedStr == null || lastEnrichedStr.isEmpty) return false;
-    try {
-      final lastEnriched = DateTime.parse(lastEnrichedStr);
-      return DateTime.now().difference(lastEnriched).inHours < 6;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// Checks if a show was enriched recently enough to skip re-enrichment.
-  bool _isRecentlyEnriched(Map<String, dynamic> showData) {
-    final lastEnrichedStr = showData['lastEnrichedAt'] as String?;
-    if (lastEnrichedStr == null || lastEnrichedStr.isEmpty) return false;
+  /// Whether the show was checked recently with the same watched episodes,
+  /// so a TMDB re-check can be skipped. Uses the on-device record, which
+  /// (unlike the in-memory hashes) survives app restarts.
+  bool _isRecentlyEnriched(Map<String, dynamic> showData, String uid, int watchedHash) {
+    final showId = (showData['id'] as num?)?.toInt();
+    final check = showId == null ? null : _checks?[_checkKey(uid, showId)];
+    if (check == null || check.watchedHash != watchedHash) return false;
+    final lastEnriched = check.at;
     try {
       if (showData['totalEpisodes'] == null) return false;
       if (showData['origin_country'] == null &&
@@ -97,7 +141,6 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         }
       }
 
-      final lastEnriched = DateTime.parse(lastEnrichedStr);
       final age = DateTime.now().difference(lastEnriched);
       return age.inHours < 6;
     } catch (_) {
@@ -120,6 +163,8 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
     bool force = false,
   }) async {
     if (rawShows.isEmpty) return;
+    await _loadChecks();
+    if (isClosed) return;
 
     final showsToEnrich = <Map<String, dynamic>>[];
 
@@ -144,9 +189,9 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
           continue;
         }
 
-        // Skip if enriched recently AND watchedEpisodes hasn't changed
-        // (for cross-session staleness — first app open of the day)
-        if (_isRecentlyEnriched(raw) && previousHash == currentHash) {
+        // Skip if checked recently with the same watchedEpisodes, including
+        // in an earlier session.
+        if (_isRecentlyEnriched(raw, uid, currentHash)) {
           _enrichedShowIds.add(showId);
           _watchedEpisodesHash[showId] = currentHash;
           continue;
@@ -179,17 +224,21 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
       }
     }
 
-    // Process sequentially to avoid "Connection reset by peer" (errno 54) socket flooding
+    // A few shows at a time: fully sequential was slow, while unbounded
+    // parallelism caused "Connection reset by peer" (errno 54) socket floods.
     try {
-      for (final showData in showsToEnrich) {
+      for (var i = 0; i < showsToEnrich.length; i += _concurrency) {
         if (isClosed) break;
-        final showId = (showData['id'] as num?)?.toInt();
-        if (showId == null) continue;
-        try {
-          await _enrichAndWriteBack(showData, uid);
-        } finally {
-          _currentlyEnrichingShowIds.remove(showId);
-        }
+        final chunk = showsToEnrich.skip(i).take(_concurrency);
+        await Future.wait(chunk.map((showData) async {
+          final showId = (showData['id'] as num?)?.toInt();
+          if (showId == null) return;
+          try {
+            await _enrichAndWriteBack(showData, uid);
+          } finally {
+            _currentlyEnrichingShowIds.remove(showId);
+          }
+        }));
         await Future.delayed(
           const Duration(milliseconds: 250),
         ); // Be nice to TMDB API
@@ -204,6 +253,7 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
           _currentlyEnrichingShowIds.remove(showId);
         }
       }
+      await _saveChecks();
     }
   }
 
@@ -551,10 +601,9 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
         }
       }
 
-      // If data changed, write back everything including fresh lastEnrichedAt.
-      // If fields are identical, only refresh lastEnrichedAt if it is missing or expired (>6 hrs),
-      // keeping the upcomingAirDate bypass for TMDB fetching but avoiding rewriting recent unchanged timestamps.
-      final hasRecentTimestamp = _isTimestampRecent(showData);
+      // Only real changes are written to Firestore (with a fresh
+      // lastEnrichedAt). An unchanged show just records the check on device,
+      // so routine re-checks cost no writes and never show as syncing.
       if (hasChanges) {
         final enrichmentData = <String, dynamic>{
           ...candidateData,
@@ -566,14 +615,10 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
           showId: showId,
           enrichmentData: enrichmentData,
         );
-      } else if (!hasRecentTimestamp) {
-        // Refresh timestamp only so next sessions don't repeatedly check
-        await _repository.updateShowEnrichment(
-          uid: uid,
-          showId: showId,
-          enrichmentData: {'lastEnrichedAt': DateTime.now().toIso8601String()},
-        );
       }
+
+      // Recorded after any write succeeded, so a failed write is retried.
+      _checks?[_checkKey(uid, showId)] = (at: DateTime.now(), watchedHash: _computeWatchedHash(watchedEpisodes));
 
       // Mark as enriched to prevent redundant fetches
       _enrichedShowIds.add(showId);

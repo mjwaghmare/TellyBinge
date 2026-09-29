@@ -81,6 +81,14 @@ class HorizontalItem {
   });
 }
 
+typedef _ProfileStats = ({
+  int watchedMoviesCount,
+  int totalMovieMinutes,
+  int watchedShowsCount,
+  int totalEpisodesCount,
+  int totalShowMinutes,
+});
+
 class ProfilePage extends StatefulWidget {
   final ValueListenable<int>? tabNotifier;
   final VoidCallback? onNavigateToShowsExplore;
@@ -130,8 +138,40 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return parts.join(' ');
   }
 
-  ({int watchedMoviesCount, int totalMovieMinutes, int watchedShowsCount, int totalEpisodesCount, int totalShowMinutes})
-  _calculateProfileStats(MovieWatchlistState watchlistState, TvShowWatchlistState showWatchlistState) {
+  // Derived data is cached per cubit state: this page stays mounted in the
+  // shell's IndexedStack and rebuilds on every watchlist emission.
+  MovieWatchlistState? _statsMovieState;
+  TvShowWatchlistState? _statsShowState;
+  _ProfileStats? _stats;
+  List<Map<String, dynamic>>? _passportMovies;
+  List<Map<String, dynamic>>? _passportShows;
+  CinemaPassportData? _passport;
+  final Map<String, DateTime?> _parsedDates = {};
+
+  _ProfileStats _calculateProfileStats(MovieWatchlistState watchlistState, TvShowWatchlistState showWatchlistState) {
+    final cached = _stats;
+    if (cached != null && identical(watchlistState, _statsMovieState) && identical(showWatchlistState, _statsShowState)) {
+      return cached;
+    }
+    _statsMovieState = watchlistState;
+    _statsShowState = showWatchlistState;
+    // New watchlist data: drop dates parsed for the old lists so the cache
+    // only ever holds the current items' dates.
+    _parsedDates.clear();
+    return _stats = _computeProfileStats(watchlistState, showWatchlistState);
+  }
+
+  CinemaPassportData _evaluatePassport(List<Map<String, dynamic>> movies, List<Map<String, dynamic>> shows) {
+    final cached = _passport;
+    if (cached != null && identical(movies, _passportMovies) && identical(shows, _passportShows)) {
+      return cached;
+    }
+    _passportMovies = movies;
+    _passportShows = shows;
+    return _passport = CinemaPassportService.evaluate(movies: movies, shows: shows);
+  }
+
+  static _ProfileStats _computeProfileStats(MovieWatchlistState watchlistState, TvShowWatchlistState showWatchlistState) {
     int watchedMoviesCount = 0;
     int totalMovieMinutes = 0;
     if (watchlistState is MovieWatchlistSuccess) {
@@ -361,10 +401,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       rawShows: rawShows,
     );
 
-    final passport = CinemaPassportService.evaluate(
-      movies: rawMovies,
-      shows: rawShows,
-    );
+    final passport = _evaluatePassport(rawMovies, rawShows);
 
     final username = generateUsername(displayName);
 
@@ -1804,14 +1841,15 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
-  DateTime? _parseDate(String dateStr) {
-    if (dateStr.isEmpty || dateStr.toUpperCase() == 'TBA') return null;
-    try {
-      return DateTime.parse(dateStr);
-    } catch (_) {
-      return null;
-    }
-  }
+  // Cached: the sort comparators call this O(n log n) times per build.
+  DateTime? _parseDate(String dateStr) => _parsedDates.putIfAbsent(dateStr, () {
+        if (dateStr.isEmpty || dateStr.toUpperCase() == 'TBA') return null;
+        try {
+          return DateTime.parse(dateStr);
+        } catch (_) {
+          return null;
+        }
+      });
 
   Widget _buildHeatmapSection(
     BuildContext context,

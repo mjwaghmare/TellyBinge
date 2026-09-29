@@ -249,6 +249,8 @@ void main() {
 
     test('progress starts from zero again after a completed sync', () async {
       cubit.startMonitoring('test_uid');
+      movieRepo.pendingController.add(offline(5));
+      await pumpEventQueue();
       movieRepo.pendingController.add(online(5));
       await pumpEventQueue();
       movieRepo.pendingController.add(PendingWrites.none);
@@ -261,6 +263,29 @@ void main() {
 
       expect(cubit.state.syncTotal, 2);
       expect(cubit.state.progress, 0);
+    });
+
+    test('background writes while online never show the banner', () async {
+      cubit.startMonitoring('test_uid');
+      movieRepo.pendingController.add(online(8)); // e.g. TMDB enrichment
+      await pumpEventQueue();
+      expect(cubit.state.shouldShowBanner, isFalse);
+
+      movieRepo.pendingController.add(PendingWrites.none);
+      await pumpEventQueue();
+      expect(cubit.state.shouldShowBanner, isFalse);
+      expect(cubit.state.justSynced, isFalse);
+    });
+
+    test('progress counts only what was queued when the banner started', () async {
+      cubit.startMonitoring('test_uid');
+      movieRepo.pendingController.add(online(6)); // hidden background writes
+      await pumpEventQueue();
+      movieRepo.pendingController.add(offline(2));
+      await pumpEventQueue();
+
+      expect(cubit.state.shouldShowBanner, isTrue);
+      expect(cubit.state.syncTotal, 2);
     });
 
     test('resets to default state on stopMonitoring', () async {

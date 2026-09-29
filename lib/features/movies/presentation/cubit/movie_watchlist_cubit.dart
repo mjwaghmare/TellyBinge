@@ -18,6 +18,12 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
 
   // Sets to manage concurrent requests and failure retry loops
   final Set<int> _backfillingMovieIds = {};
+
+  /// Movies TMDB has no genres, country or language for, for [_watchedUid].
+  /// Retrying them on every watchlist emission used to fetch and rewrite them
+  /// forever.
+  final Set<int> _metadataUnavailableMovieIds = {};
+  String? _watchedUid;
   final Map<int, DateTime> _failedMovieIds = {};
   final Map<int, _PendingMovieRemoval> _pendingMovieRemovals = {};
   bool _isSyncing = false;
@@ -29,6 +35,10 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   void watchWatchlist(String uid) {
     emit(MovieWatchlistLoading());
     _watchlistSubscription?.cancel();
+    if (uid != _watchedUid) {
+      _metadataUnavailableMovieIds.clear();
+      _watchedUid = uid;
+    }
 
     _watchlistSubscription = movieWatchlistRepository
         .watchWatchlist(uid)
@@ -113,6 +123,7 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
         final movieId = (movie['id'] as num?)?.toInt();
         if (movieId != null) {
           if (_backfillingMovieIds.contains(movieId)) continue;
+          if (_metadataUnavailableMovieIds.contains(movieId)) continue;
           final failedAt = _failedMovieIds[movieId];
           if (failedAt != null &&
               now.difference(failedAt).inMinutes < 5) {
@@ -121,7 +132,7 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
 
           _backfillingMovieIds.add(movieId);
           try {
-            await _fillMissingMetadata(uid, movieId);
+            await _fillMissingMetadata(uid, movieId, movie);
             _failedMovieIds.remove(movieId);
             // Throttle requests (250ms delay) to prevent TMDb API/Cloudflare connection resets
             await Future.delayed(const Duration(milliseconds: 250));
@@ -136,7 +147,11 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
   }
 
   // Helper method rethrows error so backfill process can register the failure
-  Future<void> _fillMissingMetadata(String uid, int movieId) async {
+  Future<void> _fillMissingMetadata(
+    String uid,
+    int movieId,
+    Map<String, dynamic> movie,
+  ) async {
     try {
       if (tmdbClient == null) return;
       final details = await tmdbClient!.getMovieDetails(movieId);
@@ -145,20 +160,37 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
           ? genresList.map((g) => g['name'] as String? ?? '').join(', ')
           : '';
 
-      final originCountry = details['origin_country'] ??
-          (details['production_countries'] as List<dynamic>?)
+      final countries = details['origin_country'] as List<dynamic>?;
+      final originCountry = (countries != null && countries.isNotEmpty)
+          ? countries
+          : (details['production_countries'] as List<dynamic>?)
               ?.map((c) => (c as Map<String, dynamic>)['iso_3166_1']?.toString())
               .whereType<String>()
               .toList();
       final originalLanguage = details['original_language'] as String?;
 
+      final hasCountry = originCountry != null && originCountry.isNotEmpty;
+      final hasLang = originalLanguage != null && originalLanguage.isNotEmpty;
+
+      // Write only values that exist and differ from what's stored; an empty
+      // result would still read as "missing" and be fetched again.
       await movieWatchlistRepository.updateMovieMetadata(
         uid: uid,
         movieId: movieId,
-        genres: genresStr.isNotEmpty ? genresStr : null,
-        originCountry: originCountry,
-        originalLanguage: originalLanguage,
+        genres: genresStr.isNotEmpty && movie['genres'] != genresStr ? genresStr : null,
+        originCountry: hasCountry && movie['origin_country']?.toString() != originCountry.toString()
+            ? originCountry
+            : null,
+        originalLanguage: hasLang && movie['original_language'] != originalLanguage
+            ? originalLanguage
+            : null,
       );
+
+      // Recorded only after a successful write, so a failed update is retried,
+      // and only if this task's user is still the one being watched.
+      if (uid == _watchedUid && (genresStr.isEmpty || !hasCountry || !hasLang)) {
+        _metadataUnavailableMovieIds.add(movieId);
+      }
     } catch (e) {
       debugPrint('Error filling missing metadata for movie $movieId: $e');
       rethrow;
@@ -627,6 +659,8 @@ class MovieWatchlistCubit extends Cubit<MovieWatchlistState> {
     _watchlistSubscription = null;
     _backfillingMovieIds.clear();
     _failedMovieIds.clear();
+    _metadataUnavailableMovieIds.clear();
+    _watchedUid = null;
     _isSyncing = false;
     _activeSyncFuture = null;
     emit(MovieWatchlistInitial());

@@ -691,6 +691,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ? CachedNetworkImage(
                 imageUrl: posterUrl,
                 fit: BoxFit.cover,
+                memCacheWidth: 132,
                 placeholder: (context, url) => Container(
                   color: isLight
                       ? AppColors.borderLight

@@ -13,6 +13,11 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
   StreamSubscription? _watchlistSubscription;
   final Map<int, _PendingShowStop> _pendingShowStops = {};
   final Set<int> _backfillingShowIds = {};
+
+  /// Shows TMDB has no country or language for, for [_watchedUid]. Retrying
+  /// them on every watchlist emission used to fetch and rewrite them forever.
+  final Set<int> _metadataUnavailableShowIds = {};
+  String? _watchedUid;
   final Map<int, DateTime> _failedShowIds = {};
 
   final _failureController = StreamController<Failure>.broadcast();
@@ -26,6 +31,10 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
   void watchWatchlist(String uid) {
     emit(TvShowWatchlistLoading());
     _watchlistSubscription?.cancel();
+    if (uid != _watchedUid) {
+      _metadataUnavailableShowIds.clear();
+      _watchedUid = uid;
+    }
 
     _watchlistSubscription = tvWatchlistRepository
         .watchWatchlist(uid)
@@ -117,6 +126,7 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
         final showId = (show['id'] as num?)?.toInt();
         if (showId != null) {
           if (_backfillingShowIds.contains(showId)) continue;
+          if (_metadataUnavailableShowIds.contains(showId)) continue;
           final failedAt = _failedShowIds[showId];
           if (failedAt != null &&
               now.difference(failedAt).inMinutes < 5) {
@@ -125,7 +135,7 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
 
           _backfillingShowIds.add(showId);
           try {
-            await _fillMissingMetadata(uid, showId);
+            await _fillMissingMetadata(uid, showId, show);
             _failedShowIds.remove(showId);
             // Throttle requests (250ms delay) to prevent TMDb API/Cloudflare connection resets
             await Future.delayed(const Duration(milliseconds: 250));
@@ -139,20 +149,34 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
     }
   }
 
-  Future<void> _fillMissingMetadata(String uid, int showId) async {
+  Future<void> _fillMissingMetadata(
+    String uid,
+    int showId,
+    Map<String, dynamic> show,
+  ) async {
     try {
       if (tmdbClient == null) return;
       final details = await tmdbClient!.getTvShowDetails(showId);
-      final originCountry = details['origin_country'] ??
-          (details['production_countries'] as List<dynamic>?)
+      final countries = details['origin_country'] as List<dynamic>?;
+      final originCountry = (countries != null && countries.isNotEmpty)
+          ? countries
+          : (details['production_countries'] as List<dynamic>?)
               ?.map((c) => (c as Map<String, dynamic>)['iso_3166_1']?.toString())
               .whereType<String>()
               .toList();
       final originalLanguage = details['original_language'] as String?;
 
+      // Write only values that exist and differ from what's stored; an empty
+      // result would still read as "missing" and be fetched again.
       final enrichmentData = <String, dynamic>{
-        'origin_country': ?originCountry,
-        'original_language': ?originalLanguage,
+        if (originCountry != null &&
+            originCountry.isNotEmpty &&
+            show['origin_country']?.toString() != originCountry.toString())
+          'origin_country': originCountry,
+        if (originalLanguage != null &&
+            originalLanguage.isNotEmpty &&
+            show['original_language'] != originalLanguage)
+          'original_language': originalLanguage,
       };
 
       if (enrichmentData.isNotEmpty) {
@@ -161,6 +185,14 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
           showId: showId,
           enrichmentData: enrichmentData,
         );
+      }
+
+      // Recorded only after a successful write, so a failed update is retried,
+      // and only if this task's user is still the one being watched.
+      final stillMissingCountry = originCountry == null || originCountry.isEmpty;
+      final stillMissingLang = originalLanguage == null || originalLanguage.isEmpty;
+      if (uid == _watchedUid && (stillMissingCountry || stillMissingLang)) {
+        _metadataUnavailableShowIds.add(showId);
       }
     } catch (e) {
       debugPrint('Error filling missing metadata for show $showId: $e');
@@ -640,6 +672,8 @@ class TvShowWatchlistCubit extends Cubit<TvShowWatchlistState> {
     _watchlistSubscription = null;
     _backfillingShowIds.clear();
     _failedShowIds.clear();
+    _metadataUnavailableShowIds.clear();
+    _watchedUid = null;
     emit(TvShowWatchlistInitial());
   }
 

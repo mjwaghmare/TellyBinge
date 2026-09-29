@@ -16,6 +16,8 @@ import 'feedback_image_viewer.dart';
 /// Displays user avatar with network caching and initial fallback,
 /// OP (Author) badge, relative time, clean typography, and an actions sheet.
 class FeedbackCommentTile extends StatelessWidget {
+  static const double _maxImageWidth = 220.0;
+
   final Map<String, dynamic> comment;
   final bool isOp;
   final bool isOwner;
@@ -51,6 +53,7 @@ class FeedbackCommentTile extends StatelessWidget {
     if (avatarUrl.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: avatarUrl,
+        memCacheWidth: 108,
         imageBuilder: (context, imageProvider) => Container(
           width: 36,
           height: 36,
@@ -324,6 +327,8 @@ class FeedbackCommentTile extends StatelessWidget {
 
   Widget _buildCommentImage(BuildContext context, String path, bool isLight) {
     final isLocal = !path.startsWith('http://') && !path.startsWith('https://');
+    // Decode at the largest size the image can be drawn (220pt wide).
+    final decodeWidth = (_maxImageWidth * MediaQuery.devicePixelRatioOf(context)).round();
     return GestureDetector(
       onTap: () => FeedbackImageViewer.show(
         context,
@@ -334,7 +339,7 @@ class FeedbackCommentTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(10.0),
         child: Container(
           constraints: const BoxConstraints(
-            maxWidth: 220.0,
+            maxWidth: _maxImageWidth,
             maxHeight: 160.0,
           ),
           decoration: BoxDecoration(
@@ -350,10 +355,12 @@ class FeedbackCommentTile extends StatelessWidget {
               ? Image.file(
                   File(path),
                   fit: BoxFit.cover,
+                  cacheWidth: decodeWidth,
                 )
               : CachedNetworkImage(
                   imageUrl: path,
                   fit: BoxFit.cover,
+                  memCacheWidth: decodeWidth,
                   placeholder: (context, url) => Container(
                     width: 120.0,
                     height: 100.0,
