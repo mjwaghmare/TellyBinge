@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../features/custom_lists/domain/repositories/custom_lists_repository.dart';
 import '../../features/dashboard/domain/repositories/tv_watchlist_repository.dart';
 import '../../features/movies/domain/repositories/movie_watchlist_repository.dart';
+import 'pending_writes.dart';
 import 'sync_status_state.dart';
 
 class SyncStatusCubit extends Cubit<SyncStatusState> {
@@ -11,26 +12,27 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
   final CustomListsRepository customListsRepository;
 
   final Duration pendingDebounceDuration;
+
+  /// How long writes must stay confirmed before "All changes synced" shows.
+  /// Also leaves time for the banner's percentage to count up to 100%.
   final Duration settleDuration;
 
-  StreamSubscription<bool>? _moviesSub;
-  StreamSubscription<bool>? _tvSub;
-  StreamSubscription<bool>? _customListsSub;
+  StreamSubscription<PendingWrites>? _moviesSub;
+  StreamSubscription<PendingWrites>? _tvSub;
+  StreamSubscription<PendingWrites>? _customListsSub;
 
   Timer? _offlineDebounceTimer;
   Timer? _settleTimer;
   Timer? _justSyncedTimer;
 
-  bool _moviesPending = false;
-  bool _tvPending = false;
-  bool _listsPending = false;
+  final Map<String, PendingWrites> _sources = {};
 
   SyncStatusCubit({
     required this.movieWatchlistRepository,
     required this.tvWatchlistRepository,
     required this.customListsRepository,
     this.pendingDebounceDuration = const Duration(seconds: 2),
-    this.settleDuration = const Duration(milliseconds: 300),
+    this.settleDuration = const Duration(milliseconds: 800),
   }) : super(const SyncStatusState());
 
   void startMonitoring(String uid) {
@@ -49,14 +51,23 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
         .listen((pending) => updatePending('lists', pending));
   }
 
-  void updatePending(String source, bool pending) {
-    if (source == 'movies') _moviesPending = pending;
-    if (source == 'tv') _tvPending = pending;
-    if (source == 'lists') _listsPending = pending;
+  int get _pendingCount => _sources.values.fold(0, (sum, s) => sum + s.count);
 
-    final overallPending = _moviesPending || _tvPending || _listsPending;
+  // One Firestore connection serves every listener, so any server snapshot
+  // means the app is online.
+  bool get _isOnline => _sources.isEmpty || _sources.values.any((s) => s.isOnline);
 
-    if (overallPending) {
+  void updatePending(String source, PendingWrites pending) {
+    _sources[source] = pending;
+    final count = _pendingCount;
+
+    // Newly queued writes grow the total; confirmed ones leave it alone, so
+    // progress only moves back when more work arrives mid-sync.
+    final added = count - state.pendingCount;
+    final syncTotal = state.syncTotal + (added > 0 ? added : 0);
+    emit(state.copyWith(pendingCount: count, syncTotal: syncTotal, isOnline: _isOnline));
+
+    if (count > 0) {
       _settleTimer?.cancel();
       _settleTimer = null;
 
@@ -85,22 +96,22 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
         } else {
           _settleTimer?.cancel();
           _settleTimer = Timer(settleDuration, () {
-            if (!isClosed) {
-              final stillPending =
-                  _moviesPending || _tvPending || _listsPending;
-              if (!stillPending) {
-                _emitJustSynced();
-              }
+            if (!isClosed && _pendingCount == 0) {
+              _emitJustSynced();
             }
           });
         }
+      } else {
+        // Writes confirmed within the debounce window never showed the
+        // banner; start the next sync from zero.
+        emit(state.copyWith(syncTotal: 0));
       }
     }
   }
 
   void _emitJustSynced() {
     _justSyncedTimer?.cancel();
-    emit(state.copyWith(hasPendingWrites: false, justSynced: true));
+    emit(state.copyWith(hasPendingWrites: false, justSynced: true, syncTotal: 0));
     _justSyncedTimer = Timer(const Duration(seconds: 3), () {
       if (!isClosed) {
         emit(state.copyWith(justSynced: false));
@@ -115,9 +126,7 @@ class SyncStatusCubit extends Cubit<SyncStatusState> {
     _moviesSub = null;
     _tvSub = null;
     _customListsSub = null;
-    _moviesPending = false;
-    _tvPending = false;
-    _listsPending = false;
+    _sources.clear();
     _offlineDebounceTimer?.cancel();
     _settleTimer?.cancel();
     _justSyncedTimer?.cancel();

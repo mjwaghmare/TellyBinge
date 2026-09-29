@@ -5,6 +5,7 @@ import 'package:popverse/core/errors/failures.dart';
 import 'package:popverse/features/movies/domain/repositories/movie_watchlist_repository.dart';
 import 'package:popverse/features/movies/presentation/cubit/movie_watchlist_cubit.dart';
 import 'package:popverse/features/movies/presentation/cubit/movie_watchlist_state.dart';
+import 'package:popverse/core/sync/pending_writes.dart';
 
 class MockMovieWatchlistRepository implements MovieWatchlistRepository {
   final _streamController = StreamController<List<Map<String, dynamic>>>.broadcast();
@@ -18,7 +19,7 @@ class MockMovieWatchlistRepository implements MovieWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) => _streamController.stream;
 
   @override
-  Stream<bool> watchPendingWrites(String uid) => const Stream.empty();
+  Stream<PendingWrites> watchPendingWrites(String uid) => const Stream.empty();
 
   @override
   Future<void> toggleWatched({

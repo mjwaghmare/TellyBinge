@@ -6,6 +6,7 @@ import 'package:popverse/features/dashboard/domain/models/tv_show_watchlist_item
 import 'package:popverse/features/dashboard/domain/repositories/tv_watchlist_repository.dart';
 import 'package:popverse/features/dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import 'package:popverse/features/dashboard/presentation/cubit/tv_show_watchlist_state.dart';
+import 'package:popverse/core/sync/pending_writes.dart';
 
 class MockTvWatchlistRepository implements TvWatchlistRepository {
   final _streamController = StreamController<List<Map<String, dynamic>>>.broadcast();
@@ -19,7 +20,7 @@ class MockTvWatchlistRepository implements TvWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) => _streamController.stream;
 
   @override
-  Stream<bool> watchPendingWrites(String uid) => const Stream.empty();
+  Stream<PendingWrites> watchPendingWrites(String uid) => const Stream.empty();
 
   @override
   Future<void> toggleEpisodeWatched({

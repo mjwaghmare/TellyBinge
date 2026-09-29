@@ -23,7 +23,13 @@ class OfflineSyncBanner extends StatelessWidget {
         final isSynced = state.justSynced;
         final iconData = isSynced
             ? Icons.check_circle_rounded
-            : Icons.cloud_off_rounded;
+            : state.isSyncing
+                ? Icons.cloud_upload_rounded
+                : Icons.cloud_off_rounded;
+        final textStyle = AppTextStyles.xsBold.copyWith(
+          color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+          letterSpacing: 0.3,
+        );
         final iconColor = isSynced
             ? (isLight ? AppColors.lightOnSuccessContainer : AppColors.success)
             : (isLight ? AppColors.lightPrimary : AppColors.primary);
@@ -81,21 +87,50 @@ class OfflineSyncBanner extends StatelessWidget {
                         color: iconColor,
                       ),
                       AppSpacing.gapW8,
-                      Text(
-                        state.bannerText,
-                        style: AppTextStyles.xsBold.copyWith(
-                          color: isLight
-                              ? AppColors.lightTextPrimary
-                              : AppColors.textPrimary,
-                          letterSpacing: 0.3,
+                      Text(state.bannerText, style: textStyle),
+                      if (state.isSyncing)
+                        _SyncPercent(
+                          progress: state.progress,
+                          style: textStyle,
+                          animate: !isReduced,
                         ),
-                      ),
                     ],
                   ),
                 ),
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+/// " · 42%", counting smoothly toward [progress]. Firestore confirms writes
+/// in batches, so the real value jumps; animating it shows steady movement.
+class _SyncPercent extends StatelessWidget {
+  final double progress;
+  final TextStyle style;
+  final bool animate;
+
+  const _SyncPercent({
+    required this.progress,
+    required this.style,
+    required this.animate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: progress),
+      duration: animate ? const Duration(milliseconds: 600) : Duration.zero,
+      curve: Curves.easeOut,
+      builder: (context, value, _) {
+        // Starts at 1% so it reads as under way rather than stalled.
+        final percent = (value * 100).round().clamp(1, 100);
+        return Text(
+          ' · $percent%',
+          style: style.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
         );
       },
     );

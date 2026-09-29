@@ -1,6 +1,8 @@
+import '../../../../core/sync/pending_writes.dart';
+
 abstract class MovieWatchlistRepository {
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid);
-  Stream<bool> watchPendingWrites(String uid);
+  Stream<PendingWrites> watchPendingWrites(String uid);
   Future<void> addMovie({
     required String uid,
     required int movieId,

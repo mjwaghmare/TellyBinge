@@ -416,20 +416,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      _buildProfileTag(profileTag),
-                      _buildPassportPill(
-                        context,
-                        passport: passport,
-                        username: username,
-                        rankTitle: profileTag.label,
-                      ),
-                    ],
-                  ),
+                  _buildProfileTag(profileTag),
                 ],
               ),
             ),
@@ -1148,61 +1135,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           AppSpacing.gapW4,
           Text(tag.label, style: AppTextStyles.xsBold.copyWith(color: accentColor, letterSpacing: 0.1, height: 1.1)),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPassportPill(
-    BuildContext context, {
-    required CinemaPassportData passport,
-    required String username,
-    required String rankTitle,
-  }) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final count = passport.totalCountries;
-    final label = count == 1 ? '1 Country' : '$count Countries';
-
-    return GestureDetector(
-      onTap: () {
-        AppHaptics.selectionClick();
-        CinemaPassportModal.show(
-          context,
-          data: passport,
-          username: username,
-          rankTitle: rankTitle,
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(top: AppSpacing.xxs),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
-        decoration: BoxDecoration(
-          color: isLight
-              ? AppColors.gold.withValues(alpha: 0.12)
-              : AppColors.gold.withValues(alpha: 0.18),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isLight
-                ? AppColors.gold.withValues(alpha: 0.35)
-                : AppColors.gold.withValues(alpha: 0.45),
-            width: 0.8,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text('🌍', style: TextStyle(fontSize: 10, height: 1.1)),
-            AppSpacing.gapW4,
-            Text(
-              label,
-              style: AppTextStyles.xsBold.copyWith(
-                color: isLight ? AppColors.goldDark : AppColors.gold,
-                letterSpacing: 0.1,
-                height: 1.1,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

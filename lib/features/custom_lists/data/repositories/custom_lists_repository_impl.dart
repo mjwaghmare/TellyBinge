@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/firestore_collections.dart';
+import '../../../../core/sync/pending_writes.dart';
+import '../../../../core/sync/pending_writes_firestore.dart';
 import '../../domain/models/custom_list_item_model.dart';
 import '../../domain/models/custom_list_model.dart';
 import '../../domain/repositories/custom_lists_repository.dart';
@@ -141,10 +143,8 @@ class CustomListsRepositoryImpl implements CustomListsRepository {
   }
 
   @override
-  Stream<bool> watchPendingWrites(String uid) {
-    return _snapshotStream(uid)
-        .map((snapshot) => snapshot.metadata.hasPendingWrites)
-        .distinct();
+  Stream<PendingWrites> watchPendingWrites(String uid) {
+    return _snapshotStream(uid).map(pendingWritesFromSnapshot).distinct();
   }
 
   @override

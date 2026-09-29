@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:popverse/core/sync/pending_writes.dart';
 import 'package:popverse/core/sync/sync_status_cubit.dart';
 import 'package:popverse/features/custom_lists/domain/models/custom_list_item_model.dart';
 import 'package:popverse/features/custom_lists/domain/models/custom_list_model.dart';
@@ -9,10 +10,10 @@ import 'package:popverse/features/dashboard/domain/repositories/tv_watchlist_rep
 import 'package:popverse/features/movies/domain/repositories/movie_watchlist_repository.dart';
 
 class FakeMovieWatchlistRepository implements MovieWatchlistRepository {
-  final pendingController = StreamController<bool>.broadcast();
+  final pendingController = StreamController<PendingWrites>.broadcast();
 
   @override
-  Stream<bool> watchPendingWrites(String uid) => pendingController.stream;
+  Stream<PendingWrites> watchPendingWrites(String uid) => pendingController.stream;
 
   @override
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) => const Stream.empty();
@@ -62,12 +63,12 @@ class FakeMovieWatchlistRepository implements MovieWatchlistRepository {
 }
 
 class FakeTvWatchlistRepository implements TvWatchlistRepository {
-  final pendingController = StreamController<bool>.broadcast();
+  final pendingController = StreamController<PendingWrites>.broadcast();
 
   void dispose() => pendingController.close();
 
   @override
-  Stream<bool> watchPendingWrites(String uid) => pendingController.stream;
+  Stream<PendingWrites> watchPendingWrites(String uid) => pendingController.stream;
 
   @override
   Stream<List<Map<String, dynamic>>> watchWatchlist(String uid) => const Stream.empty();
@@ -117,12 +118,12 @@ class FakeTvWatchlistRepository implements TvWatchlistRepository {
 }
 
 class FakeCustomListsRepository implements CustomListsRepository {
-  final pendingController = StreamController<bool>.broadcast();
+  final pendingController = StreamController<PendingWrites>.broadcast();
 
   void dispose() => pendingController.close();
 
   @override
-  Stream<bool> watchPendingWrites(String uid) => pendingController.stream;
+  Stream<PendingWrites> watchPendingWrites(String uid) => pendingController.stream;
 
   @override
   Stream<List<CustomListModel>> watchCustomLists(String uid) => const Stream.empty();
@@ -142,6 +143,9 @@ class FakeCustomListsRepository implements CustomListsRepository {
   @override
   Future<void> updateList({required String uid, required String listId, required String name, String? description}) async {}
 }
+
+PendingWrites offline(int count) => PendingWrites(count: count, isOnline: false);
+PendingWrites online(int count) => PendingWrites(count: count);
 
 void main() {
   late FakeMovieWatchlistRepository movieRepo;
@@ -179,22 +183,22 @@ void main() {
     test('emits hasPendingWrites true when any repository emits true', () async {
       cubit.startMonitoring('test_uid');
 
-      movieRepo.pendingController.add(true);
+      movieRepo.pendingController.add(offline(1));
       await pumpEventQueue();
 
       expect(cubit.state.hasPendingWrites, isTrue);
       expect(cubit.state.shouldShowBanner, isTrue);
-      expect(cubit.state.bannerText, equals('Offline · will sync'));
+      expect(cubit.state.bannerText, equals('Offline · 1 change waiting'));
     });
 
     test('transitions to justSynced when all pending writes resolve to false', () async {
       cubit.startMonitoring('test_uid');
 
-      movieRepo.pendingController.add(true);
+      movieRepo.pendingController.add(offline(1));
       await pumpEventQueue();
       expect(cubit.state.hasPendingWrites, isTrue);
 
-      movieRepo.pendingController.add(false);
+      movieRepo.pendingController.add(PendingWrites.none);
       await pumpEventQueue();
 
       expect(cubit.state.hasPendingWrites, isFalse);
@@ -203,9 +207,65 @@ void main() {
       expect(cubit.state.bannerText, equals('All changes synced'));
     });
 
+    test('offline banner counts queued changes across sources', () async {
+      cubit.startMonitoring('test_uid');
+      movieRepo.pendingController.add(offline(2));
+      tvRepo.pendingController.add(offline(1));
+      await pumpEventQueue();
+
+      expect(cubit.state.pendingCount, 3);
+      expect(cubit.state.isSyncing, isFalse);
+      expect(cubit.state.bannerText, 'Offline · 3 changes waiting');
+    });
+
+    test('reports progress once back online', () async {
+      cubit.startMonitoring('test_uid');
+      movieRepo.pendingController.add(offline(4));
+      await pumpEventQueue();
+      expect(cubit.state.progress, 0);
+
+      movieRepo.pendingController.add(online(1));
+      await pumpEventQueue();
+
+      expect(cubit.state.isSyncing, isTrue);
+      expect(cubit.state.bannerText, 'Syncing');
+      expect(cubit.state.progress, 0.75);
+    });
+
+    test('writes queued mid-sync grow the total instead of resetting it', () async {
+      cubit.startMonitoring('test_uid');
+      movieRepo.pendingController.add(online(10));
+      await pumpEventQueue();
+      movieRepo.pendingController.add(online(6));
+      await pumpEventQueue();
+      expect(cubit.state.progress, closeTo(0.4, 1e-9));
+
+      tvRepo.pendingController.add(online(3));
+      await pumpEventQueue();
+
+      expect(cubit.state.syncTotal, 13);
+      expect(cubit.state.progress, closeTo(4 / 13, 1e-9));
+    });
+
+    test('progress starts from zero again after a completed sync', () async {
+      cubit.startMonitoring('test_uid');
+      movieRepo.pendingController.add(online(5));
+      await pumpEventQueue();
+      movieRepo.pendingController.add(PendingWrites.none);
+      await pumpEventQueue();
+      expect(cubit.state.justSynced, isTrue);
+      expect(cubit.state.syncTotal, 0);
+
+      movieRepo.pendingController.add(online(2));
+      await pumpEventQueue();
+
+      expect(cubit.state.syncTotal, 2);
+      expect(cubit.state.progress, 0);
+    });
+
     test('resets to default state on stopMonitoring', () async {
       cubit.startMonitoring('test_uid');
-      movieRepo.pendingController.add(true);
+      movieRepo.pendingController.add(offline(1));
       await pumpEventQueue();
       expect(cubit.state.hasPendingWrites, isTrue);
 
@@ -224,13 +284,13 @@ void main() {
         settleDuration: Duration.zero,
       );
 
-      debouncedCubit.updatePending('movies', true);
+      debouncedCubit.updatePending('movies', offline(1));
       // Immediately, hasPendingWrites should still be false
       expect(debouncedCubit.state.hasPendingWrites, isFalse);
 
       // Advance 500ms (write finishes well within 2s debounce)
       await tester.pump(const Duration(milliseconds: 500));
-      debouncedCubit.updatePending('movies', false);
+      debouncedCubit.updatePending('movies', PendingWrites.none);
 
       // Advance past the 2s mark
       await tester.pump(const Duration(seconds: 3));
@@ -249,7 +309,7 @@ void main() {
         settleDuration: Duration.zero,
       );
 
-      debouncedCubit.updatePending('movies', true);
+      debouncedCubit.updatePending('movies', offline(1));
       expect(debouncedCubit.state.hasPendingWrites, isFalse);
 
       // Advance 1 second - still within debounce window
@@ -262,7 +322,7 @@ void main() {
       expect(debouncedCubit.state.shouldShowBanner, isTrue);
 
       // Resolves now that user is reconnected
-      debouncedCubit.updatePending('movies', false);
+      debouncedCubit.updatePending('movies', PendingWrites.none);
       expect(debouncedCubit.state.justSynced, isTrue);
 
       await debouncedCubit.close();

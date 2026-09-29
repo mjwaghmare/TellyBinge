@@ -1,3 +1,4 @@
+import '../../../../core/sync/pending_writes.dart';
 import '../models/custom_list_item_model.dart';
 import '../models/custom_list_model.dart';
 
@@ -7,7 +8,7 @@ abstract class CustomListsRepository {
   static const int maxItemsPerList = 500;
 
   Stream<List<CustomListModel>> watchCustomLists(String uid);
-  Stream<bool> watchPendingWrites(String uid);
+  Stream<PendingWrites> watchPendingWrites(String uid);
 
   Future<String> createList({
     required String uid,

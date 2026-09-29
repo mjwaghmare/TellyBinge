@@ -92,6 +92,25 @@ void main() {
     });
   });
 
+  group('AppIconService Android aliases', () {
+    test('every option maps to a manifest alias and back', () {
+      for (final option in AppIconOption.values) {
+        final alias = AppIconService.androidAliasFor(option);
+        expect(alias, startsWith('MainActivity'));
+        expect(AppIconService.optionForAndroidAlias(alias), option);
+      }
+    });
+
+    test('default uses the MainActivityDefault alias', () {
+      expect(AppIconService.androidAliasFor(AppIconOption.defaultIcon), AppIconService.androidDefaultAlias);
+    });
+
+    test('unknown or missing alias falls back to default', () {
+      expect(AppIconService.optionForAndroidAlias(null), AppIconOption.defaultIcon);
+      expect(AppIconService.optionForAndroidAlias('Nope'), AppIconOption.defaultIcon);
+    });
+  });
+
   group('AppIconCubit', () {
     setUp(() {
       SharedPreferences.setMockInitialValues({});

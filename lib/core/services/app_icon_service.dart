@@ -1,16 +1,25 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dynamic_icon_plus/flutter_dynamic_icon_plus.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_storage_keys.dart';
 import '../models/app_icon_option.dart';
 
 /// Service responsible for managing dynamic launcher app icons.
+///
+/// iOS uses flutter_dynamic_icon_plus. Android uses AppIconSwitcher.kt over
+/// [_androidChannel], which applies the icon immediately; the plugin only
+/// switches on Android once the app is swiped away.
 class AppIconService {
   final SharedPreferences? _prefs;
 
   AppIconService([this._prefs]);
+
+  static const _androidChannel = MethodChannel('com.mwstudio.popverse/app_icon');
+
+  /// Manifest alias that carries the default launcher icon on Android.
+  static const androidDefaultAlias = 'MainActivityDefault';
 
   Future<SharedPreferences> _getPrefs() async {
     return _prefs ?? await SharedPreferences.getInstance();
@@ -20,6 +29,7 @@ class AppIconService {
   Future<bool> get supportsAlternateIcons async {
     try {
       if (kIsWeb) return false;
+      if (Platform.isAndroid) return true;
       return await FlutterDynamicIconPlus.supportsAlternateIcons;
     } catch (e) {
       debugPrint('[AppIconService] supportsAlternateIcons error: $e');
@@ -27,14 +37,18 @@ class AppIconService {
     }
   }
 
-  Future<String?> _resolveAndroidAlias(AppIconOption option) async {
-    if (option.androidAliasSuffix == null) return null;
-    try {
-      final info = await PackageInfo.fromPlatform();
-      return option.resolvedAndroidAlias(info.packageName);
-    } catch (_) {
-      return option.androidAliasName;
-    }
+  /// The manifest activity-alias (simple name) that shows [option] on Android.
+  @visibleForTesting
+  static String androidAliasFor(AppIconOption option) =>
+      option.androidAliasSuffix ?? androidDefaultAlias;
+
+  /// Maps an enabled Android alias back to its option.
+  @visibleForTesting
+  static AppIconOption optionForAndroidAlias(String? alias) {
+    return AppIconOption.values.firstWhere(
+      (opt) => alias != null && opt.androidAliasSuffix == alias,
+      orElse: () => AppIconOption.defaultIcon,
+    );
   }
 
   /// Retrieves the currently active [AppIconOption].
@@ -46,23 +60,13 @@ class AppIconService {
         return AppIconOption.fromId(savedId);
       }
 
-      if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
+      if (!kIsWeb && Platform.isAndroid) {
+        return optionForAndroidAlias(await _androidChannel.invokeMethod<String>('currentIcon'));
+      }
+      if (!kIsWeb && Platform.isIOS) {
         final platformName = await FlutterDynamicIconPlus.alternateIconName;
-        if (platformName == null || platformName.isEmpty) {
-          return AppIconOption.defaultIcon;
-        }
-
-        // Match against platform names
         for (final opt in AppIconOption.values) {
-          if (Platform.isIOS && opt.iosIconName == platformName) {
-            return opt;
-          } else if (Platform.isAndroid) {
-            if (opt.androidAliasName == platformName ||
-                (opt.androidAliasSuffix != null &&
-                    platformName.endsWith(opt.androidAliasSuffix!))) {
-              return opt;
-            }
-          }
+          if (platformName != null && opt.iosIconName == platformName) return opt;
         }
       }
     } catch (e) {
@@ -83,15 +87,15 @@ class AppIconService {
         return false;
       }
 
-      final targetName = Platform.isIOS
-          ? option.iosIconName
-          : await _resolveAndroidAlias(option);
-
-      await FlutterDynamicIconPlus.setAlternateIconName(
-        iconName: targetName,
-        blacklistBrands: const ['Redmi'],
-        blacklistManufactures: const ['Xiaomi'],
-      );
+      if (Platform.isAndroid) {
+        final applied = await _androidChannel.invokeMethod<bool>(
+          'setIcon',
+          {'alias': androidAliasFor(option)},
+        );
+        if (applied != true) return false;
+      } else {
+        await FlutterDynamicIconPlus.setAlternateIconName(iconName: option.iosIconName);
+      }
 
       final prefs = await _getPrefs();
       await prefs.setString(AppStorageKeys.selectedAppIcon, option.id);

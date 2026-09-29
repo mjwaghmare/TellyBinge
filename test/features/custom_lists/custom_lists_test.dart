@@ -5,6 +5,7 @@ import 'package:popverse/features/custom_lists/domain/models/custom_list_model.d
 import 'package:popverse/features/custom_lists/domain/repositories/custom_lists_repository.dart';
 import 'package:popverse/features/custom_lists/presentation/cubit/custom_lists_cubit.dart';
 import 'package:popverse/features/custom_lists/presentation/cubit/custom_lists_state.dart';
+import 'package:popverse/core/sync/pending_writes.dart';
 
 class MockCustomListsRepository implements CustomListsRepository {
   final _controller = StreamController<List<CustomListModel>>.broadcast();
@@ -14,7 +15,7 @@ class MockCustomListsRepository implements CustomListsRepository {
   Stream<List<CustomListModel>> watchCustomLists(String uid) => _controller.stream;
 
   @override
-  Stream<bool> watchPendingWrites(String uid) => const Stream.empty();
+  Stream<PendingWrites> watchPendingWrites(String uid) => const Stream.empty();
 
   @override
   Future<String> createList({
@@ -107,7 +108,7 @@ class _FailingCustomListsRepository implements CustomListsRepository {
   }
 
   @override
-  Stream<bool> watchPendingWrites(String uid) => const Stream.empty();
+  Stream<PendingWrites> watchPendingWrites(String uid) => const Stream.empty();
 
   @override
   Future<String> createList({required String uid, required String name, String? description}) async {

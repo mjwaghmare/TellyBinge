@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/firestore_collections.dart';
+import '../../../../core/sync/pending_writes.dart';
+import '../../../../core/sync/pending_writes_firestore.dart';
 import '../../domain/models/tv_show_watchlist_item.dart';
 import '../../domain/repositories/tv_watchlist_repository.dart';
 
@@ -143,10 +145,8 @@ class TvWatchlistRepositoryImpl implements TvWatchlistRepository {
   }
 
   @override
-  Stream<bool> watchPendingWrites(String uid) {
-    return _snapshotStream(uid)
-        .map((snapshot) => snapshot.metadata.hasPendingWrites)
-        .distinct();
+  Stream<PendingWrites> watchPendingWrites(String uid) {
+    return _snapshotStream(uid).map(pendingWritesFromSnapshot).distinct();
   }
 
   @override

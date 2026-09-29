@@ -60,6 +60,13 @@ final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Portrait only; matches the orientations declared in Info.plist and
+  // AndroidManifest.xml.
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   // Install in-app DoH HTTP overrides to bypass ISP-level DNS blocking
   HttpOverrides.global = AppHttpOverrides();
 
