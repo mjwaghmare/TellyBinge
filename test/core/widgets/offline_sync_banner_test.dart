@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:popverse/core/sync/pending_writes.dart';
@@ -64,7 +65,7 @@ void main() {
         find.byType(AnimatedOpacity),
       );
       expect(animatedOpacity.opacity, equals(0.0));
-      expect(find.textContaining('Offline'), findsNothing);
+      expect(find.text('Offline · will sync'), findsOneWidget);
     });
 
     testWidgets('displays the queued change count with cloud icon when offline', (tester) async {
@@ -145,24 +146,45 @@ void main() {
       });
     });
 
-    testWidgets('on Island iPhones the text sits below the Island', (tester) async {
+    test('Island position follows the model\'s top inset', () {
+      MediaQueryData withTop(double top) => MediaQueryData(padding: EdgeInsets.only(top: top));
+      expect(OfflineSyncBanner.islandTopFor(withTop(59)), 11); // iPhone 14 Pro to 16
+      expect(OfflineSyncBanner.islandTopFor(withTop(62)), 14); // iPhone 16 Pro and later
+    });
+
+    testWidgets('on Island iPhones the pill sits exactly on the Island', (tester) async {
+      final systemCalls = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        systemCalls.add(call);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
       await tester.pumpWidget(buildTestWidget(topInset: 59));
-      syncStatusCubit.updatePending('movies', offline(1));
+      syncStatusCubit.updatePending('movies', offline(3));
       await tester.pumpAndSettle();
 
-      final textTop = tester.getTopLeft(find.text('Offline · 1 change waiting')).dy;
-      expect(
-        textTop,
-        greaterThanOrEqualTo(OfflineSyncBanner.islandTop + OfflineSyncBanner.islandSize.height),
-      );
-      // Nothing wider than the Island may cover the status bar beside it.
-      final pillTop = tester
-          .getRect(find.ancestor(of: find.text('Offline · 1 change waiting'), matching: find.byType(AnimatedContainer)))
-          .top;
-      expect(
-        pillTop,
-        greaterThanOrEqualTo(OfflineSyncBanner.islandTop + OfflineSyncBanner.islandSize.height - 12),
-      );
+      final pill = tester.getRect(find.ancestor(of: find.text('Offline'), matching: find.byType(AnimatedContainer)));
+      expect(pill.top, 11);
+      expect(pill.height, OfflineSyncBanner.islandSize.height);
+      expect(pill.center.dx, closeTo(tester.view.physicalSize.width / tester.view.devicePixelRatio / 2, 0.5));
+
+      // Content sits either side of the camera, never over it.
+      final cameraLeft = pill.center.dx - OfflineSyncBanner.islandSize.width / 2;
+      final cameraRight = pill.center.dx + OfflineSyncBanner.islandSize.width / 2;
+      expect(tester.getRect(find.text('Offline')).right, lessThanOrEqualTo(cameraLeft));
+      expect(tester.getRect(find.text('3 waiting')).left, greaterThanOrEqualTo(cameraRight));
+
+      // The status bar hides while the pill shows, and returns after.
+      final hide = systemCalls.lastWhere((c) => c.method == 'SystemChrome.setEnabledSystemUIOverlays');
+      expect(hide.arguments, ['SystemUiOverlay.bottom']);
+
+      syncStatusCubit.updatePending('movies', PendingWrites.none);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      final restore = systemCalls.lastWhere((c) => c.method == 'SystemChrome.setEnabledSystemUIOverlays');
+      expect(restore.arguments, ['SystemUiOverlay.top', 'SystemUiOverlay.bottom']);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('elsewhere the pill sits just below the status bar', (tester) async {
