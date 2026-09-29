@@ -18,8 +18,9 @@ class AppIconService {
 
   static const _androidChannel = MethodChannel('com.mwstudio.popverse/app_icon');
 
-  /// Manifest alias that carries the default launcher icon on Android.
-  static const androidDefaultAlias = 'MainActivityDefault';
+  /// Name AppIconSwitcher.kt uses for the default icon, which MainActivity
+  /// itself carries on Android.
+  static const androidDefaultAlias = 'MainActivity';
 
   Future<SharedPreferences> _getPrefs() async {
     return _prefs ?? await SharedPreferences.getInstance();
@@ -37,7 +38,7 @@ class AppIconService {
     }
   }
 
-  /// The manifest activity-alias (simple name) that shows [option] on Android.
+  /// The launcher entry (simple name) that shows [option] on Android.
   @visibleForTesting
   static String androidAliasFor(AppIconOption option) =>
       option.androidAliasSuffix ?? androidDefaultAlias;
@@ -54,15 +55,23 @@ class AppIconService {
   /// Retrieves the currently active [AppIconOption].
   Future<AppIconOption> getCurrentIcon() async {
     try {
+      // On Android the enabled launcher entry is the truth: the saved choice
+      // can be stale if a launcher killed the app mid-switch, or after a
+      // backup restore (which restores prefs but not component state).
+      if (!kIsWeb && Platform.isAndroid) {
+        try {
+          return optionForAndroidAlias(await _androidChannel.invokeMethod<String>('currentIcon'));
+        } catch (e) {
+          debugPrint('[AppIconService] currentIcon channel error: $e');
+        }
+      }
+
       final prefs = await _getPrefs();
       final savedId = prefs.getString(AppStorageKeys.selectedAppIcon);
       if (savedId != null) {
         return AppIconOption.fromId(savedId);
       }
 
-      if (!kIsWeb && Platform.isAndroid) {
-        return optionForAndroidAlias(await _androidChannel.invokeMethod<String>('currentIcon'));
-      }
       if (!kIsWeb && Platform.isIOS) {
         final platformName = await FlutterDynamicIconPlus.alternateIconName;
         for (final opt in AppIconOption.values) {

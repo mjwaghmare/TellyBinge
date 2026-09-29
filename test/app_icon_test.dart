@@ -101,8 +101,9 @@ void main() {
       }
     });
 
-    test('default uses the MainActivityDefault alias', () {
-      expect(AppIconService.androidAliasFor(AppIconOption.defaultIcon), AppIconService.androidDefaultAlias);
+    test('default maps to MainActivity itself', () {
+      // Must match AppIconSwitcher.DEFAULT in AppIconSwitcher.kt.
+      expect(AppIconService.androidAliasFor(AppIconOption.defaultIcon), 'MainActivity');
     });
 
     test('unknown or missing alias falls back to default', () {

@@ -1,11 +1,15 @@
 package com.mwstudio.popverse
 
+import android.app.ActivityOptions
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
@@ -101,11 +105,7 @@ class UpNextWidgetProvider : HomeWidgetProvider() {
                         } else {
                             Uri.parse("tvtimeapp://")
                         }
-                        val launchPendingIntent = HomeWidgetLaunchIntent.getActivity(
-                            context,
-                            MainActivity::class.java,
-                            rootUri
-                        )
+                        val launchPendingIntent = launchPendingIntent(context, rootUri)
                         setOnClickPendingIntent(R.id.widget_root, launchPendingIntent)
                     }
 
@@ -148,5 +148,26 @@ class UpNextWidgetProvider : HomeWidgetProvider() {
             e.printStackTrace()
             null
         }
+    }
+
+    /**
+     * Same intent as HomeWidgetLaunchIntent.getActivity, but aimed at the
+     * enabled launcher entry: MainActivity is disabled while an alternate
+     * app icon is chosen, so it can't be started by class name.
+     */
+    private fun launchPendingIntent(context: Context, uri: Uri): PendingIntent {
+        val intent = Intent(HomeWidgetLaunchIntent.HOME_WIDGET_LAUNCH_ACTION, uri)
+            .setComponent(AppIconSwitcher.launchComponent(context))
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        if (Build.VERSION.SDK_INT < 34) {
+            return PendingIntent.getActivity(context, 0, intent, flags)
+        }
+        // Creator-side opt-in (API 34+): we create this PendingIntent and the
+        // launcher sends it, so the sender-side setting would not apply.
+        val options = ActivityOptions.makeBasic()
+            .setPendingIntentCreatorBackgroundActivityStartMode(
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            )
+        return PendingIntent.getActivity(context, 0, intent, flags, options.toBundle())
     }
 }

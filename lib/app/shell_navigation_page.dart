@@ -305,9 +305,7 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: SafeArea(
-                    child: OfflineSyncBanner(),
-                  ),
+                  child: OfflineSyncBanner(),
                 ),
               ],
             ),

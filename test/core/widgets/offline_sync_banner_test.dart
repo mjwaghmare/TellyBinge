@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,16 +33,23 @@ void main() {
     listsRepo.dispose();
   });
 
-  Widget buildTestWidget({ThemeMode themeMode = ThemeMode.dark}) {
+  Widget buildTestWidget({ThemeMode themeMode = ThemeMode.dark, double topInset = 0}) {
     return BlocProvider<SyncStatusCubit>.value(
       value: syncStatusCubit,
       child: MaterialApp(
         themeMode: themeMode,
         theme: ThemeData.light(),
         darkTheme: ThemeData.dark(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(padding: EdgeInsets.only(top: topInset)),
+          child: child!,
+        ),
+        // Mirrors ShellNavigationPage: pinned to the top with unbounded height.
         home: const Scaffold(
-          body: Center(
-            child: OfflineSyncBanner(),
+          body: Stack(
+            children: [
+              Positioned(top: 0, left: 0, right: 0, child: OfflineSyncBanner()),
+            ],
           ),
         ),
       ),
@@ -56,7 +64,7 @@ void main() {
         find.byType(AnimatedOpacity),
       );
       expect(animatedOpacity.opacity, equals(0.0));
-      expect(find.text('Offline · will sync'), findsOneWidget);
+      expect(find.textContaining('Offline'), findsNothing);
     });
 
     testWidgets('displays the queued change count with cloud icon when offline', (tester) async {
@@ -120,6 +128,49 @@ void main() {
 
       expect(find.text('Offline · 3 changes waiting'), findsOneWidget);
       expect(find.textContaining('%'), findsNothing);
+    });
+
+    group('Dynamic Island detection', () {
+      MediaQueryData withTop(double top) => MediaQueryData(padding: EdgeInsets.only(top: top));
+
+      test('Island iPhones (59pt+ inset) are detected on iOS only', () {
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        expect(OfflineSyncBanner.hasDynamicIsland(withTop(59)), isTrue);
+        expect(OfflineSyncBanner.hasDynamicIsland(withTop(62)), isTrue);
+        expect(OfflineSyncBanner.hasDynamicIsland(withTop(47)), isFalse);
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        expect(OfflineSyncBanner.hasDynamicIsland(withTop(59)), isFalse);
+      });
+    });
+
+    testWidgets('on Island iPhones the text sits below the Island', (tester) async {
+      await tester.pumpWidget(buildTestWidget(topInset: 59));
+      syncStatusCubit.updatePending('movies', offline(1));
+      await tester.pumpAndSettle();
+
+      final textTop = tester.getTopLeft(find.text('Offline · 1 change waiting')).dy;
+      expect(
+        textTop,
+        greaterThanOrEqualTo(OfflineSyncBanner.islandTop + OfflineSyncBanner.islandSize.height),
+      );
+      // Nothing wider than the Island may cover the status bar beside it.
+      final pillTop = tester
+          .getRect(find.ancestor(of: find.text('Offline · 1 change waiting'), matching: find.byType(AnimatedContainer)))
+          .top;
+      expect(
+        pillTop,
+        greaterThanOrEqualTo(OfflineSyncBanner.islandTop + OfflineSyncBanner.islandSize.height - 12),
+      );
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('elsewhere the pill sits just below the status bar', (tester) async {
+      await tester.pumpWidget(buildTestWidget(topInset: 24));
+      syncStatusCubit.updatePending('movies', offline(1));
+      await tester.pumpAndSettle();
+
+      final textTop = tester.getTopLeft(find.text('Offline · 1 change waiting')).dy;
+      expect(textTop, inInclusiveRange(24, 24 + 40));
     });
 
     testWidgets('renders cleanly in light mode', (tester) async {

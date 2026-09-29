@@ -27,10 +27,13 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-            <!-- No LAUNCHER filter here: each home-screen icon is an
-                 activity-alias below, and AppIconSwitcher enables exactly one.
-                 MainActivity itself is never disabled, so explicit intents
-                 (widget taps, notifications) always resolve. -->
+            <!-- The default launcher icon. While an alternate icon is chosen,
+                 AppIconSwitcher disables this activity to hide its launcher
+                 entry; launches then go through the enabled alias below. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
             <!-- Handle tvtimeapp:// deep links from the home screen widget.
                  HomeWidgetLaunchIntent sends these URIs via onNewIntent, which
                  home_widget routes to the HomeWidget.widgetClicked Dart stream. -->
@@ -42,20 +45,8 @@
             </intent-filter>
         </activity>
 
-        <!-- Launcher icon aliases. Exactly one is enabled at a time; see
-             AppIconSwitcher.kt. The default one ships enabled. -->
-        <activity-alias
-            android:name=".MainActivityDefault"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
+        <!-- Alternate launcher icons, all disabled by default. At most one
+             is enabled at a time; see AppIconSwitcher.kt. -->
         <activity-alias
             android:name=".MainActivityMidnight"
             android:enabled="false"
