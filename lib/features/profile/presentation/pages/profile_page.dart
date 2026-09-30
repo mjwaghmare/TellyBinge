@@ -35,11 +35,11 @@ import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
-import '../../domain/models/cinema_passport.dart';
-import '../../domain/services/cinema_passport_service.dart';
+// import '../../domain/models/cinema_passport.dart';
+// import '../../domain/services/cinema_passport_service.dart';
 import '../cubit/profile_heatmap_cubit.dart';
 import '../cubit/profile_heatmap_state.dart';
-import '../widgets/cinema_passport_modal.dart';
+// import '../widgets/cinema_passport_modal.dart';
 import '../widgets/movies_filter_bottom_sheet.dart';
 import '../widgets/profile_expiration_indicator.dart';
 import '../widgets/profile_quick_actions_sheet.dart';
@@ -143,9 +143,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   MovieWatchlistState? _statsMovieState;
   TvShowWatchlistState? _statsShowState;
   _ProfileStats? _stats;
-  List<Map<String, dynamic>>? _passportMovies;
-  List<Map<String, dynamic>>? _passportShows;
-  CinemaPassportData? _passport;
+  // List<Map<String, dynamic>>? _passportMovies;
+  // List<Map<String, dynamic>>? _passportShows;
+  // CinemaPassportData? _passport;
   final Map<String, DateTime?> _parsedDates = {};
 
   _ProfileStats _calculateProfileStats(MovieWatchlistState watchlistState, TvShowWatchlistState showWatchlistState) {
@@ -163,15 +163,15 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return _stats = _computeProfileStats(watchlistState, showWatchlistState);
   }
 
-  CinemaPassportData _evaluatePassport(List<Map<String, dynamic>> movies, List<Map<String, dynamic>> shows) {
-    final cached = _passport;
-    if (cached != null && identical(movies, _passportMovies) && identical(shows, _passportShows)) {
-      return cached;
-    }
-    _passportMovies = movies;
-    _passportShows = shows;
-    return _passport = CinemaPassportService.evaluate(movies: movies, shows: shows);
-  }
+  // CinemaPassportData _evaluatePassport(List<Map<String, dynamic>> movies, List<Map<String, dynamic>> shows) {
+  //   final cached = _passport;
+  //   if (cached != null && identical(movies, _passportMovies) && identical(shows, _passportShows)) {
+  //     return cached;
+  //   }
+  //   _passportMovies = movies;
+  //   _passportShows = shows;
+  //   return _passport = CinemaPassportService.evaluate(movies: movies, shows: shows);
+  // }
 
   static _ProfileStats _computeProfileStats(
     MovieWatchlistState watchlistState,
@@ -247,6 +247,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   // Local FAB visibility — driven by NotificationListener inside NestedScrollView body
   final ValueNotifier<bool> _isFabVisible = ValueNotifier<bool>(true);
   Timer? _fabTimer;
+  final ScrollController _showsScrollController = ScrollController();
+  final ScrollController _moviesScrollController = ScrollController();
 
   @override
   void initState() {
@@ -330,6 +332,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     _isFabVisible.dispose();
     widget.tabNotifier?.removeListener(_onAppTabChanged);
     _tabController.dispose();
+    _showsScrollController.dispose();
+    _moviesScrollController.dispose();
 
     super.dispose();
   }
@@ -404,8 +408,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       rawMovies: rawMovies,
       rawShows: rawShows,
     );
-
-    final passport = _evaluatePassport(rawMovies, rawShows);
+    // final passport = _evaluatePassport(rawMovies, rawShows);
 
     final username = generateUsername(displayName);
 
@@ -891,7 +894,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   ? _buildHeatmapSection(
                                       context,
                                       user?.uid ?? '',
-                                      passport: passport,
+                                      // passport: passport,
                                       username: username,
                                       rankTitle: profileTag.label,
                                     )
@@ -960,9 +963,11 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           backgroundColor: Colors.transparent,
                           body: Skeletonizer(
                             enabled: isLoadingShows || _isFilteringShows,
-                            child: _showProgressOption == 'All'
-                                ? _buildGroupedShowsGrid(displayedShows, showsEmptyWidget)
-                                : _buildGrid(displayedShows, showsEmptyWidget),
+                            child: _buildGroupedShowsGrid(
+                              displayedShows,
+                              showsEmptyWidget,
+                              controller: _showsScrollController,
+                            ),
                           ),
                           floatingActionButton: (hasNoShows || isLoadingShows)
                               ? null
@@ -1003,13 +1008,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                               _showProgressOption = result['progress'] ?? 'All';
                                               _isFilteringShows = true;
                                             });
-                                            final scrollController = PrimaryScrollController.of(context);
-                                            if (scrollController.hasClients) {
-                                              scrollController.animateTo(
-                                                0,
-                                                duration: const Duration(milliseconds: 300),
-                                                curve: Curves.easeOut,
-                                              );
+                                            if (_showsScrollController.hasClients) {
+                                              _showsScrollController.jumpTo(0);
                                             }
                                             await Future.delayed(const Duration(milliseconds: 300));
                                             if (mounted) {
@@ -1052,9 +1052,11 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           backgroundColor: Colors.transparent,
                           body: Skeletonizer(
                             enabled: isLoadingMovies || _isFilteringMovies,
-                            child: _movieProgressOption == 'All'
-                                ? _buildGroupedMoviesGrid(displayedMovies, moviesEmptyWidget)
-                                : _buildGrid(displayedMovies, moviesEmptyWidget),
+                            child: _buildGroupedMoviesGrid(
+                              displayedMovies,
+                              moviesEmptyWidget,
+                              controller: _moviesScrollController,
+                            ),
                           ),
                           floatingActionButton: (hasNoMovies || isLoadingMovies)
                               ? null
@@ -1095,13 +1097,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                               _movieProgressOption = result['progress'] ?? 'All';
                                               _isFilteringMovies = true;
                                             });
-                                            final scrollController = PrimaryScrollController.of(context);
-                                            if (scrollController.hasClients) {
-                                              scrollController.animateTo(
-                                                0,
-                                                duration: const Duration(milliseconds: 300),
-                                                curve: Curves.easeOut,
-                                              );
+                                            if (_moviesScrollController.hasClients) {
+                                              _moviesScrollController.jumpTo(0);
                                             }
                                             await Future.delayed(const Duration(milliseconds: 300));
                                             if (mounted) {
@@ -1180,93 +1177,93 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildPassportBanner(
-    BuildContext context, {
-    required CinemaPassportData passport,
-    required String username,
-    required String rankTitle,
-  }) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-
-    return InkWell(
-      onTap: () {
-        AppHaptics.selectionClick();
-        CinemaPassportModal.show(context, data: passport, username: username, rankTitle: rankTitle);
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: isLight ? AppColors.lightSurface : AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isLight ? AppColors.gold.withValues(alpha: 0.35) : AppColors.gold.withValues(alpha: 0.25),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: AppColors.gold.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(child: Text('🌍', style: TextStyle(fontSize: 18))),
-            ),
-            AppSpacing.gapW12,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Cinema Passport',
-                        style: AppTextStyles.smBold.copyWith(
-                          color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                        ),
-                      ),
-                      AppSpacing.gapW8,
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
-                        decoration: BoxDecoration(
-                          color: AppColors.gold.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${passport.unlockedStampsCount}/${passport.totalStampsCount} Stamps',
-                          style: AppTextStyles.xsBold.copyWith(
-                            color: isLight ? AppColors.goldDark : AppColors.gold,
-                            fontSize: 8.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  AppSpacing.gapH4,
-                  Text(
-                    passport.totalCountries > 0
-                        ? '${passport.totalCountries} countries visited • Tap to open'
-                        : 'Explore your international film diary',
-                    style: AppTextStyles.xsMedium.copyWith(
-                      color: isLight ? AppColors.lightTextSecondary : AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildPassportBanner(
+  //   BuildContext context, {
+  //   required CinemaPassportData passport,
+  //   required String username,
+  //   required String rankTitle,
+  // }) {
+  //   final isLight = Theme.of(context).brightness == Brightness.light;
+  //
+  //   return InkWell(
+  //     onTap: () {
+  //       AppHaptics.selectionClick();
+  //       CinemaPassportModal.show(context, data: passport, username: username, rankTitle: rankTitle);
+  //     },
+  //     borderRadius: BorderRadius.circular(12),
+  //     child: Container(
+  //       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+  //       decoration: BoxDecoration(
+  //         color: isLight ? AppColors.lightSurface : AppColors.surface,
+  //         borderRadius: BorderRadius.circular(12),
+  //         border: Border.all(
+  //           color: isLight ? AppColors.gold.withValues(alpha: 0.35) : AppColors.gold.withValues(alpha: 0.25),
+  //           width: 1,
+  //         ),
+  //       ),
+  //       child: Row(
+  //         children: [
+  //           Container(
+  //             width: 34,
+  //             height: 34,
+  //             decoration: BoxDecoration(
+  //               color: AppColors.gold.withValues(alpha: 0.15),
+  //               borderRadius: BorderRadius.circular(8),
+  //             ),
+  //             child: const Center(child: Text('🌍', style: TextStyle(fontSize: 18))),
+  //           ),
+  //           AppSpacing.gapW12,
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Row(
+  //                   children: [
+  //                     Text(
+  //                       'Cinema Passport',
+  //                       style: AppTextStyles.smBold.copyWith(
+  //                         color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+  //                       ),
+  //                     ),
+  //                     AppSpacing.gapW8,
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
+  // decoration: BoxDecoration(
+  // color: AppColors.gold.withValues(alpha: 0.15),
+  // borderRadius: BorderRadius.circular(10),
+  // ),
+  // child: Text(
+  // '${passport.unlockedStampsCount}/${passport.totalStampsCount} Stamps',
+  // style: AppTextStyles.xsBold.copyWith(
+  // color: isLight ? AppColors.goldDark : AppColors.gold,
+  // fontSize: 8.5,
+  // ),
+  // ),
+  // ),
+  // ],
+  // ),
+  // AppSpacing.gapH4,
+  // Text(
+  // passport.totalCountries > 0
+  // ? '${passport.totalCountries} countries visited • Tap to open'
+  // : 'Explore your international film diary',
+  // style: AppTextStyles.xsMedium.copyWith(
+  // color: isLight ? AppColors.lightTextSecondary : AppColors.textTertiary,
+  // ),
+  // ),
+  // ],
+  // ),
+  // ),
+  // Icon(
+  // Icons.chevron_right_rounded,
+  // color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
+  // size: 20,
+  // ),
+  // ],
+  // ),
+  // ),
+  // );
+  // }
 
   ProfileTag _calculateProfileTag({
     required int watchedMoviesCount,
@@ -1538,7 +1535,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return 0;
   }
 
-  Widget _buildGroupedMoviesGrid(List<HorizontalItem> items, Widget emptyWidget) {
+  Widget _buildGroupedMoviesGrid(List<HorizontalItem> items, Widget emptyWidget, {ScrollController? controller}) {
     if (items.isEmpty) {
       return Center(
         child: Padding(
@@ -1554,24 +1551,31 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
     final children = <Widget>[];
 
-    if (notWatched.isNotEmpty) {
-      children.add(_buildSectionHeader(label: 'Not Watched', dotColor: AppColors.primary, count: notWatched.length));
-      children.addAll(_buildGridRows(notWatched));
-    }
+    if (_movieProgressOption == 'Favorites') {
+      children.add(_buildSectionHeader(label: 'Favorites', dotColor: AppColors.errorSoft, count: items.length));
+      children.addAll(_buildGridRows(items));
+    } else {
+      if (notWatched.isNotEmpty) {
+        children.add(_buildSectionHeader(label: 'Not Watched', dotColor: AppColors.primary, count: notWatched.length));
+        children.addAll(_buildGridRows(notWatched));
+      }
 
-    if (upcoming.isNotEmpty) {
-      children.add(_buildSectionHeader(label: 'Upcoming', dotColor: AppColors.airing, count: upcoming.length));
-      children.addAll(_buildGridRows(upcoming));
-    }
+      if (upcoming.isNotEmpty) {
+        children.add(_buildSectionHeader(label: 'Upcoming', dotColor: AppColors.airing, count: upcoming.length));
+        children.addAll(_buildGridRows(upcoming));
+      }
 
-    if (watched.isNotEmpty) {
-      children.add(_buildSectionHeader(label: 'Watched', dotColor: AppColors.success, count: watched.length));
-      children.addAll(_buildGridRows(watched));
+      if (watched.isNotEmpty) {
+        children.add(_buildSectionHeader(label: 'Watched', dotColor: AppColors.success, count: watched.length));
+        children.addAll(_buildGridRows(watched));
+      }
     }
 
     children.add(const SizedBox(height: 160));
 
     return ListView.builder(
+      controller: controller,
+      primary: false,
       padding: const EdgeInsets.only(top: AppSpacing.micro),
       itemCount: children.length,
       itemBuilder: (context, index) => children[index],
@@ -1605,7 +1609,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   static const _categoryOrder = <String>['WATCH_NEXT', 'HAVENT_STARTED', 'UP_TO_DATE', 'STOPPED', 'FINISHED'];
 
-  Widget _buildGroupedShowsGrid(List<HorizontalItem> items, Widget emptyWidget) {
+  Widget _buildGroupedShowsGrid(List<HorizontalItem> items, Widget emptyWidget, {ScrollController? controller}) {
     if (items.isEmpty) {
       return Center(
         child: Padding(
@@ -1623,51 +1627,42 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     }
 
     final children = <Widget>[];
-    for (final category in _categoryOrder) {
-      final group = grouped[category];
-      if (group == null || group.isEmpty) continue;
 
-      final label = _categoryLabels[category] ?? category;
+    if (_showProgressOption == 'Favorites') {
+      children.add(_buildSectionHeader(label: 'Favorites', dotColor: AppColors.errorSoft, count: items.length));
+      children.addAll(_buildGridRows(items));
+    } else {
+      for (final category in _categoryOrder) {
+        final group = grouped[category];
+        if (group == null || group.isEmpty) continue;
 
-      // Section header
-      children.add(_buildSectionHeader(label: label, dotColor: _categoryDotColor(category), count: group.length));
+        final label = _categoryLabels[category] ?? category;
 
-      // Lazily virtualized 3-item rows
-      children.addAll(_buildGridRows(group));
-    }
+        // Section header
+        children.add(_buildSectionHeader(label: label, dotColor: _categoryDotColor(category), count: group.length));
 
-    // Handle items with unknown categories
-    final uncategorised = grouped.entries.where((e) => !_categoryOrder.contains(e.key)).expand((e) => e.value).toList();
-    if (uncategorised.isNotEmpty) {
-      children.addAll(_buildGridRows(uncategorised));
+        // Lazily virtualized 3-item rows
+        children.addAll(_buildGridRows(group));
+      }
+
+      // Handle items with unknown categories
+      final uncategorised = grouped.entries.where((e) => !_categoryOrder.contains(e.key)).expand((e) => e.value).toList();
+      if (uncategorised.isNotEmpty) {
+        children.addAll(_buildGridRows(uncategorised));
+      }
     }
 
     children.add(const SizedBox(height: 160));
 
     return ListView.builder(
+      controller: controller,
+      primary: false,
       padding: const EdgeInsets.only(top: AppSpacing.micro),
       itemCount: children.length,
       itemBuilder: (context, index) => children[index],
     );
   }
 
-  Widget _buildGrid(List<HorizontalItem> items, Widget emptyWidget) {
-    if (items.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
-          child: emptyWidget,
-        ),
-      );
-    }
-    final rows = _buildGridRows(items);
-    rows.add(const SizedBox(height: 160));
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: AppSpacing.micro),
-      itemCount: rows.length,
-      itemBuilder: (context, index) => rows[index],
-    );
-  }
 
   Widget _buildGridItem(HorizontalItem item) {
     return GestureDetector(
@@ -1734,7 +1729,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             if (item.isFavorite)
               Positioned(
                 top: 4,
-                right: 4,
+                left: !item.isMovie ? 4 : null,
+                right: item.isMovie ? 4 : null,
                 child: Container(
                   padding: AppSpacing.allXXS,
                   decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
@@ -1831,7 +1827,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   Widget _buildHeatmapSection(
     BuildContext context,
     String uid, {
-    required CinemaPassportData passport,
+    // required CinemaPassportData passport,
     required String username,
     required String rankTitle,
   }) {
@@ -2000,8 +1996,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   ],
                 ),
               ),
-              AppSpacing.gapH12,
-              _buildPassportBanner(context, passport: passport, username: username, rankTitle: rankTitle),
+              // AppSpacing.gapH12,
+              // _buildPassportBanner(context, passport: passport, username: username, rankTitle: rankTitle),
             ],
           ),
         );
