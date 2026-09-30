@@ -35,17 +35,17 @@ import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
+import '../../domain/models/cinema_passport.dart';
+import '../../domain/services/cinema_passport_service.dart';
 import '../cubit/profile_heatmap_cubit.dart';
 import '../cubit/profile_heatmap_state.dart';
+import '../widgets/cinema_passport_modal.dart';
 import '../widgets/movies_filter_bottom_sheet.dart';
 import '../widgets/profile_expiration_indicator.dart';
 import '../widgets/profile_quick_actions_sheet.dart';
 import '../widgets/shows_filter_bottom_sheet.dart';
 import 'notifications_page.dart';
 import 'settings_page.dart';
-import '../../domain/models/cinema_passport.dart';
-import '../../domain/services/cinema_passport_service.dart';
-import '../widgets/cinema_passport_modal.dart';
 
 class HorizontalItem {
   final int movieId;
@@ -150,7 +150,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   _ProfileStats _calculateProfileStats(MovieWatchlistState watchlistState, TvShowWatchlistState showWatchlistState) {
     final cached = _stats;
-    if (cached != null && identical(watchlistState, _statsMovieState) && identical(showWatchlistState, _statsShowState)) {
+    if (cached != null &&
+        identical(watchlistState, _statsMovieState) &&
+        identical(showWatchlistState, _statsShowState)) {
       return cached;
     }
     _statsMovieState = watchlistState;
@@ -171,7 +173,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return _passport = CinemaPassportService.evaluate(movies: movies, shows: shows);
   }
 
-  static _ProfileStats _computeProfileStats(MovieWatchlistState watchlistState, TvShowWatchlistState showWatchlistState) {
+  static _ProfileStats _computeProfileStats(
+    MovieWatchlistState watchlistState,
+    TvShowWatchlistState showWatchlistState,
+  ) {
     int watchedMoviesCount = 0;
     int totalMovieMinutes = 0;
     if (watchlistState is MovieWatchlistSuccess) {
@@ -263,7 +268,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       }
     });
     widget.tabNotifier?.addListener(_onAppTabChanged);
-
 
     // Fetch heatmap watch history for current month
     final authState = context.read<AuthCubit>().state;
@@ -1187,26 +1191,16 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return InkWell(
       onTap: () {
         AppHaptics.selectionClick();
-        CinemaPassportModal.show(
-          context,
-          data: passport,
-          username: username,
-          rankTitle: rankTitle,
-        );
+        CinemaPassportModal.show(context, data: passport, username: username, rankTitle: rankTitle);
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: isLight ? AppColors.lightSurface : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isLight
-                ? AppColors.gold.withValues(alpha: 0.35)
-                : AppColors.gold.withValues(alpha: 0.25),
+            color: isLight ? AppColors.gold.withValues(alpha: 0.35) : AppColors.gold.withValues(alpha: 0.25),
             width: 1,
           ),
         ),
@@ -1219,9 +1213,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 color: AppColors.gold.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Center(
-                child: Text('🌍', style: TextStyle(fontSize: 18)),
-              ),
+              child: const Center(child: Text('🌍', style: TextStyle(fontSize: 18))),
             ),
             AppSpacing.gapW12,
             Expanded(
@@ -1233,17 +1225,12 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       Text(
                         'Cinema Passport',
                         style: AppTextStyles.smBold.copyWith(
-                          color: isLight
-                              ? AppColors.lightTextPrimary
-                              : AppColors.textPrimary,
+                          color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
                         ),
                       ),
                       AppSpacing.gapW8,
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xs,
-                          vertical: AppSpacing.micro,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
                         decoration: BoxDecoration(
                           color: AppColors.gold.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
@@ -1251,9 +1238,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                         child: Text(
                           '${passport.unlockedStampsCount}/${passport.totalStampsCount} Stamps',
                           style: AppTextStyles.xsBold.copyWith(
-                            color: isLight
-                                ? AppColors.goldDark
-                                : AppColors.gold,
+                            color: isLight ? AppColors.goldDark : AppColors.gold,
                             fontSize: 8.5,
                           ),
                         ),
@@ -1266,9 +1251,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                         ? '${passport.totalCountries} countries visited • Tap to open'
                         : 'Explore your international film diary',
                     style: AppTextStyles.xsMedium.copyWith(
-                      color: isLight
-                          ? AppColors.lightTextSecondary
-                          : AppColors.textTertiary,
+                      color: isLight ? AppColors.lightTextSecondary : AppColors.textTertiary,
                     ),
                   ),
                 ],
@@ -1276,9 +1259,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             ),
             Icon(
               Icons.chevron_right_rounded,
-              color: isLight
-                  ? AppColors.lightTextTertiary
-                  : AppColors.textTertiary,
+              color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
               size: 20,
             ),
           ],
@@ -1698,11 +1679,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ShowDetailsPage(
-                mediaId: item.movieId,
-                mediaType: 'tv',
-                title: item.title,
-              ),
+              builder: (context) => ShowDetailsPage(mediaId: item.movieId, mediaType: 'tv', title: item.title),
             ),
           );
         }
@@ -1843,13 +1820,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   // Cached: the sort comparators call this O(n log n) times per build.
   DateTime? _parseDate(String dateStr) => _parsedDates.putIfAbsent(dateStr, () {
-        if (dateStr.isEmpty || dateStr.toUpperCase() == 'TBA') return null;
-        try {
-          return DateTime.parse(dateStr);
-        } catch (_) {
-          return null;
-        }
-      });
+    if (dateStr.isEmpty || dateStr.toUpperCase() == 'TBA') return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (_) {
+      return null;
+    }
+  });
 
   Widget _buildHeatmapSection(
     BuildContext context,
@@ -1890,10 +1867,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         final int offset = firstDayOfMonth.weekday == 7 ? 0 : firstDayOfMonth.weekday;
         final int totalSlots = offset + daysInMonth;
 
-        final List<Color> activeLegendColors = [
-          AppColors.heatmapEmpty(context),
-          ...AppColors.heatmapGreen(context),
-        ];
+        final List<Color> activeLegendColors = [AppColors.heatmapEmpty(context), ...AppColors.heatmapGreen(context)];
 
         final showShimmer = isLoading || _isLocalLoading;
 
@@ -2027,12 +2001,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 ),
               ),
               AppSpacing.gapH12,
-              _buildPassportBanner(
-                context,
-                passport: passport,
-                username: username,
-                rankTitle: rankTitle,
-              ),
+              _buildPassportBanner(context, passport: passport, username: username, rankTitle: rankTitle),
             ],
           ),
         );
@@ -2049,10 +2018,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     required bool showShimmer,
   }) {
     final bool isLight = Theme.of(context).brightness == Brightness.light;
-    final List<Color> colorScale = [
-      AppColors.heatmapEmpty(context),
-      ...AppColors.heatmapGreen(context),
-    ];
+    final List<Color> colorScale = [AppColors.heatmapEmpty(context), ...AppColors.heatmapGreen(context)];
 
     return Column(
       mainAxisSize: MainAxisSize.min,

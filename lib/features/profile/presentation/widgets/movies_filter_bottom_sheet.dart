@@ -30,11 +30,6 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
     _selectedProgress = widget.initialProgress;
   }
 
-  final List<String> _sortOptions = [
-    'Last Added',
-    'Last Watched',
-    'Alphabetical',
-  ];
   final List<String> _progressOptions = [
     'All',
     'Not watched',
@@ -46,7 +41,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return FractionallySizedBox(
-      heightFactor: 0.6,
+      heightFactor: 0.52,
       child: Material(
         color: AppBottomSheet.backgroundColor(context),
         borderRadius: AppBottomSheet.borderRadius,
@@ -57,79 +52,10 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
             const SizedBox(height: AppSpacing.sm),
             const AppSheetHandle(),
             const SizedBox(height: AppSpacing.md),
-            // Sort by Section
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Text(
-                'Sort by',
-                style: AppTextStyles.mdBold.copyWith(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Row(
-                children: _sortOptions.map((option) {
-                  final isSelected = _selectedSort == option;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedSort = option;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary
-                              : context.adaptiveColor(
-                                  light: AppColors.lightSurfaceElevated,
-                                  dark: AppColors.surfaceElevated,
-                                ),
-                          borderRadius: BorderRadius.circular(AppSpacing.xl),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.chipBorder(context),
-                          ),
-                        ),
-                        child: Text(
-                          option,
-                          style:
-                              (isSelected
-                                      ? AppTextStyles.smBold
-                                      : AppTextStyles.smMedium)
-                                  .withColor(
-                                    isSelected
-                                        ? AppColors.textOnPrimary
-                                        : (Theme.of(
-                                                context,
-                                              ).textTheme.bodyMedium?.color ??
-                                              AppColors.textPrimary),
-                                  ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.md),
-            Divider(color: Theme.of(context).dividerColor, height: 1),
-            const SizedBox(height: AppSpacing.md),
 
             // Progress Section
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Text(
                 'Progress',
                 style: AppTextStyles.mdBold.copyWith(
