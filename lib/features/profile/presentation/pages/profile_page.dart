@@ -109,6 +109,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   bool _isFilteringMovies = false;
   bool _isFilteringShows = false;
 
+  final Set<String> _expandedMovieSections = {'Not Watched'};
+  final Set<String> _expandedShowSections = {'WATCH_NEXT'};
+
   late TabController _tabController;
   int _previousTabIndex = 0;
   DateTime _heatmapMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
@@ -388,7 +391,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     final authState = context.watch<AuthCubit>().state;
     final user = authState is Authenticated ? authState.user : null;
     final displayName = (user?.displayName.isNotEmpty == true) ? user!.displayName : 'User';
-    final photoURL = user?.photoUrl;
 
     final movieWatchlistState = context.watch<MovieWatchlistCubit>().state;
     final showWatchlistState = context.watch<TvShowWatchlistCubit>().state;
@@ -420,50 +422,21 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         scrolledUnderElevation: 0,
         toolbarHeight: 68,
         titleSpacing: AppSpacing.md,
-        title: Row(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Avatar with ring
-            Container(
-              padding: AppSpacing.allMicro,
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.primary),
-              child: Container(
-                padding: AppSpacing.allMicro,
-                decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, shape: BoxShape.circle),
-                child: CircleAvatar(
-                  radius: 22,
-                  backgroundColor: AppColors.brandGreen,
-                  backgroundImage: (photoURL != null && photoURL.isNotEmpty)
-                      ? CachedNetworkImageProvider(photoURL)
-                      : null,
-                  child: (photoURL == null || photoURL.isEmpty)
-                      ? Text(
-                          displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                          style: AppTextStyles.lg.copyWith(color: AppColors.textOnPrimary, fontWeight: FontWeight.bold),
-                        )
-                      : null,
-                ),
+            Text(
+              username,
+              style: AppTextStyles.lg.copyWith(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.2,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    username,
-                    style: AppTextStyles.lg.copyWith(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  _buildProfileTag(profileTag),
-                ],
-              ),
-            ),
+            _buildProfileTag(profileTag),
           ],
         ),
         actions: [
@@ -609,7 +582,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 }
 
                 if (showWatchlistState is TvShowWatchlistSuccess) {
-                  var filteredShows = showWatchlistState.shows;
+                  // Normalize legacy COMPLETED categories to FINISHED before filtering, sorting, and grouping
+                  var filteredShows = showWatchlistState.shows.map((s) {
+                    if (s['category'] == 'COMPLETED') {
+                      return Map<String, dynamic>.from(s)..['category'] = 'FINISHED';
+                    }
+                    return s;
+                  }).toList();
 
                   // 1. Progress Filter
                   if (_showProgressOption == 'Favorites') {
@@ -767,6 +746,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                 setState(() {
                                   _showSortOption = 'Last added';
                                   _showProgressOption = 'All';
+                                  _expandedShowSections.add('WATCH_NEXT');
                                 });
                               },
                               compact: true,
@@ -797,6 +777,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               onPrimary: () {
                                 setState(() {
                                   _movieProgressOption = 'All';
+                                  _expandedMovieSections.add('Not Watched');
                                 });
                               },
                               compact: true,
@@ -808,6 +789,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                 setState(() {
                                   _movieSortOption = 'Last Added';
                                   _movieProgressOption = 'All';
+                                  _expandedMovieSections.add('Not Watched');
                                 });
                               },
                               compact: true,
@@ -827,7 +809,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                 children: [
                                   Expanded(
                                     child: _buildStatColumn(
-                                      icon: const Icon(Icons.tv_rounded, color: AppColors.primary, size: 24),
+                                      icon: const Icon(Icons.tv_rounded, color: AppColors.primary, size: 18),
                                       count: '${stats.totalEpisodesCount}',
                                       label: 'Episodes watched',
                                       timeSpent: _formatTime(totalShowMinutes),
@@ -847,7 +829,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   ),
                                   Expanded(
                                     child: _buildStatColumn(
-                                      icon: const Icon(Icons.movie_filter_outlined, color: AppColors.primary, size: 24),
+                                      icon: const Icon(Icons.movie_filter_outlined, color: AppColors.primary, size: 18),
                                       count: '${watchedMovies.length}',
                                       label: 'Movies watched',
                                       timeSpent: _formatTime(totalMinutes),
@@ -967,6 +949,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               displayedShows,
                               showsEmptyWidget,
                               controller: _showsScrollController,
+                              isLoading: isLoadingShows || _isFilteringShows,
                             ),
                           ),
                           floatingActionButton: (hasNoShows || isLoadingShows)
@@ -1003,10 +986,32 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                           );
                                           if (result != null) {
                                             if (!context.mounted) return;
+                                            final newProgress = result['progress'] ?? 'All';
                                             setState(() {
                                               _showSortOption = result['sort'] ?? 'Last added';
-                                              _showProgressOption = result['progress'] ?? 'All';
+                                              _showProgressOption = newProgress;
                                               _isFilteringShows = true;
+
+                                              switch (newProgress) {
+                                                case 'Watching':
+                                                  _expandedShowSections.add('WATCH_NEXT');
+                                                  break;
+                                                case "Haven't started":
+                                                  _expandedShowSections.add('HAVENT_STARTED');
+                                                  break;
+                                                case 'Up to date':
+                                                  _expandedShowSections.add('UP_TO_DATE');
+                                                  break;
+                                                case 'Finished':
+                                                  _expandedShowSections.add('FINISHED');
+                                                  break;
+                                                case 'Stopped':
+                                                  _expandedShowSections.add('STOPPED');
+                                                  break;
+                                                case 'All':
+                                                  _expandedShowSections.add('WATCH_NEXT');
+                                                  break;
+                                              }
                                             });
                                             if (_showsScrollController.hasClients) {
                                               _showsScrollController.jumpTo(0);
@@ -1056,6 +1061,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               displayedMovies,
                               moviesEmptyWidget,
                               controller: _moviesScrollController,
+                              isLoading: isLoadingMovies || _isFilteringMovies,
                             ),
                           ),
                           floatingActionButton: (hasNoMovies || isLoadingMovies)
@@ -1092,10 +1098,26 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                           );
                                           if (result != null) {
                                             if (!context.mounted) return;
+                                            final newProgress = result['progress'] ?? 'All';
                                             setState(() {
                                               _movieSortOption = result['sort'] ?? 'Last Added';
-                                              _movieProgressOption = result['progress'] ?? 'All';
+                                              _movieProgressOption = newProgress;
                                               _isFilteringMovies = true;
+
+                                              switch (newProgress) {
+                                                case 'Not watched':
+                                                  _expandedMovieSections.add('Not Watched');
+                                                  break;
+                                                case 'Upcoming':
+                                                  _expandedMovieSections.add('Upcoming');
+                                                  break;
+                                                case 'Watched':
+                                                  _expandedMovieSections.add('Watched');
+                                                  break;
+                                                case 'All':
+                                                  _expandedMovieSections.add('Not Watched');
+                                                  break;
+                                              }
                                             });
                                             if (_moviesScrollController.hasClients) {
                                               _moviesScrollController.jumpTo(0);
@@ -1370,78 +1392,77 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? (isLight
-                          ? AppColors.primaryLight.withValues(alpha: 0.3)
-                          : AppColors.primary.withValues(alpha: 0.25))
-                    : (isLight
-                          ? AppColors.primaryLight.withValues(alpha: 0.2)
-                          : AppColors.primary.withValues(alpha: 0.15)),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? (isLight ? AppColors.lightPrimary : AppColors.primary) : Colors.transparent,
-                  width: 2.0,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: icon,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (int.tryParse(count) != null)
-                    RollingDigitText(
-                      value: int.parse(count),
-                      animationTrigger: _profileVisitCount,
-                      animateInitial: _profileVisitCount > 0,
-                      style: AppTextStyles.posterStat.withTabularFigures().copyWith(
-                        fontSize: 22.0,
-                        color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                      ),
-                    )
-                  else
-                    Text(
-                      count,
-                      style: AppTextStyles.posterStat.withTabularFigures().copyWith(
-                        fontSize: 22.0,
-                        color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-                      ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? (isLight
+                              ? AppColors.primaryLight.withValues(alpha: 0.3)
+                              : AppColors.primary.withValues(alpha: 0.25))
+                        : (isLight
+                              ? AppColors.primaryLight.withValues(alpha: 0.2)
+                              : AppColors.primary.withValues(alpha: 0.15)),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? (isLight ? AppColors.lightPrimary : AppColors.primary) : Colors.transparent,
+                      width: 1.5,
                     ),
-                  const SizedBox(height: 1),
-                  Text(
-                    label,
-                    style: AppTextStyles.xsMedium.copyWith(
+                  ),
+                  alignment: Alignment.center,
+                  child: icon,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                if (int.tryParse(count) != null)
+                  RollingDigitText(
+                    value: int.parse(count),
+                    animationTrigger: _profileVisitCount,
+                    animateInitial: _profileVisitCount > 0,
+                    style: AppTextStyles.posterStat.withTabularFigures().copyWith(
+                      fontSize: 22.0,
                       color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (timeSpent.isNotEmpty && timeSpent != '0m') ...[
-                    const SizedBox(height: 1),
-                    Text(
-                      timeSpent,
-                      style: AppTextStyles.xsMedium.copyWith(
-                        color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  )
+                else
+                  Text(
+                    count,
+                    style: AppTextStyles.posterStat.withTabularFigures().copyWith(
+                      fontSize: 22.0,
+                      color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
                     ),
-                  ],
-                ],
-              ),
+                  ),
+              ],
             ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: AppTextStyles.xsMedium.copyWith(
+                color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (timeSpent.isNotEmpty && timeSpent != '0m') ...[
+              const SizedBox(height: 2),
+              Text(
+                timeSpent,
+                style: AppTextStyles.xsMedium.copyWith(
+                  color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ],
         ),
       ),
@@ -1452,45 +1473,57 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     required String label,
     required Color dotColor,
     required int count,
+    bool? isExpanded,
     VoidCallback? onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
-        child: Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              label,
-              style: AppTextStyles.smBold.copyWith(
-                color: Theme.of(context).brightness == Brightness.light
-                    ? AppColors.lightTextPrimary
-                    : AppColors.textPrimary,
-                letterSpacing: 0.2,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
               ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
-              decoration: BoxDecoration(
-                color: dotColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                label,
+                style: AppTextStyles.smBold.copyWith(
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? AppColors.lightTextPrimary
+                      : AppColors.textPrimary,
+                  letterSpacing: 0.2,
+                ),
               ),
-              child: Text('$count', style: AppTextStyles.xsBold.copyWith(color: dotColor)),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
+                decoration: BoxDecoration(
+                  color: dotColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('$count', style: AppTextStyles.xsBold.copyWith(color: dotColor)),
+              ),
+              if (isExpanded != null && onTap != null) ...[
+                const Spacer(),
+                AnimatedRotation(
+                  turns: isExpanded ? 0.25 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -1535,7 +1568,12 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return 0;
   }
 
-  Widget _buildGroupedMoviesGrid(List<HorizontalItem> items, Widget emptyWidget, {ScrollController? controller}) {
+  Widget _buildGroupedMoviesGrid(
+    List<HorizontalItem> items,
+    Widget emptyWidget, {
+    ScrollController? controller,
+    bool isLoading = false,
+  }) {
     if (items.isEmpty) {
       return Center(
         child: Padding(
@@ -1556,18 +1594,78 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       children.addAll(_buildGridRows(items));
     } else {
       if (notWatched.isNotEmpty) {
-        children.add(_buildSectionHeader(label: 'Not Watched', dotColor: AppColors.primary, count: notWatched.length));
-        children.addAll(_buildGridRows(notWatched));
+        final isExpanded = _expandedMovieSections.contains('Not Watched');
+        children.add(
+          _buildSectionHeader(
+            label: 'Not Watched',
+            dotColor: AppColors.primary,
+            count: notWatched.length,
+            isExpanded: isExpanded,
+            onTap: () {
+              AppHaptics.selectionClick();
+              setState(() {
+                if (isExpanded) {
+                  _expandedMovieSections.remove('Not Watched');
+                } else {
+                  _expandedMovieSections.add('Not Watched');
+                }
+              });
+            },
+          ),
+        );
+        if (isExpanded || isLoading) {
+          children.addAll(_buildGridRows(notWatched));
+        }
       }
 
       if (upcoming.isNotEmpty) {
-        children.add(_buildSectionHeader(label: 'Upcoming', dotColor: AppColors.airing, count: upcoming.length));
-        children.addAll(_buildGridRows(upcoming));
+        final isExpanded = _expandedMovieSections.contains('Upcoming');
+        children.add(
+          _buildSectionHeader(
+            label: 'Upcoming',
+            dotColor: AppColors.airing,
+            count: upcoming.length,
+            isExpanded: isExpanded,
+            onTap: () {
+              AppHaptics.selectionClick();
+              setState(() {
+                if (isExpanded) {
+                  _expandedMovieSections.remove('Upcoming');
+                } else {
+                  _expandedMovieSections.add('Upcoming');
+                }
+              });
+            },
+          ),
+        );
+        if (isExpanded || isLoading) {
+          children.addAll(_buildGridRows(upcoming));
+        }
       }
 
       if (watched.isNotEmpty) {
-        children.add(_buildSectionHeader(label: 'Watched', dotColor: AppColors.success, count: watched.length));
-        children.addAll(_buildGridRows(watched));
+        final isExpanded = _expandedMovieSections.contains('Watched');
+        children.add(
+          _buildSectionHeader(
+            label: 'Watched',
+            dotColor: AppColors.success,
+            count: watched.length,
+            isExpanded: isExpanded,
+            onTap: () {
+              AppHaptics.selectionClick();
+              setState(() {
+                if (isExpanded) {
+                  _expandedMovieSections.remove('Watched');
+                } else {
+                  _expandedMovieSections.add('Watched');
+                }
+              });
+            },
+          ),
+        );
+        if (isExpanded || isLoading) {
+          children.addAll(_buildGridRows(watched));
+        }
       }
     }
 
@@ -1609,7 +1707,12 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   static const _categoryOrder = <String>['WATCH_NEXT', 'HAVENT_STARTED', 'UP_TO_DATE', 'STOPPED', 'FINISHED'];
 
-  Widget _buildGroupedShowsGrid(List<HorizontalItem> items, Widget emptyWidget, {ScrollController? controller}) {
+  Widget _buildGroupedShowsGrid(
+    List<HorizontalItem> items,
+    Widget emptyWidget, {
+    ScrollController? controller,
+    bool isLoading = false,
+  }) {
     if (items.isEmpty) {
       return Center(
         child: Padding(
@@ -1619,10 +1722,16 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       );
     }
 
-    // Group items by category (stopped shows override to STOPPED)
+    // Group items by category (stopped shows override to STOPPED, legacy COMPLETED -> FINISHED)
     final grouped = <String, List<HorizontalItem>>{};
     for (final item in items) {
-      final key = item.isStopped ? 'STOPPED' : (item.category ?? '');
+      String key;
+      if (item.isStopped) {
+        key = 'STOPPED';
+      } else {
+        final cat = item.category ?? '';
+        key = (cat == 'COMPLETED') ? 'FINISHED' : cat;
+      }
       (grouped[key] ??= []).add(item);
     }
 
@@ -1637,18 +1746,59 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         if (group == null || group.isEmpty) continue;
 
         final label = _categoryLabels[category] ?? category;
+        final isExpanded = _expandedShowSections.contains(category);
 
         // Section header
-        children.add(_buildSectionHeader(label: label, dotColor: _categoryDotColor(category), count: group.length));
+        children.add(
+          _buildSectionHeader(
+            label: label,
+            dotColor: _categoryDotColor(category),
+            count: group.length,
+            isExpanded: isExpanded,
+            onTap: () {
+              AppHaptics.selectionClick();
+              setState(() {
+                if (isExpanded) {
+                  _expandedShowSections.remove(category);
+                } else {
+                  _expandedShowSections.add(category);
+                }
+              });
+            },
+          ),
+        );
 
-        // Lazily virtualized 3-item rows
-        children.addAll(_buildGridRows(group));
+        // Lazily virtualized 3-item rows if expanded or loading
+        if (isExpanded || isLoading) {
+          children.addAll(_buildGridRows(group));
+        }
       }
 
-      // Handle items with unknown categories
+      // Handle items with unknown categories under Other/Uncategorised accordion (default closed)
       final uncategorised = grouped.entries.where((e) => !_categoryOrder.contains(e.key)).expand((e) => e.value).toList();
       if (uncategorised.isNotEmpty) {
-        children.addAll(_buildGridRows(uncategorised));
+        final isExpanded = _expandedShowSections.contains('OTHER');
+        children.add(
+          _buildSectionHeader(
+            label: 'Other',
+            dotColor: AppColors.textTertiary,
+            count: uncategorised.length,
+            isExpanded: isExpanded,
+            onTap: () {
+              AppHaptics.selectionClick();
+              setState(() {
+                if (isExpanded) {
+                  _expandedShowSections.remove('OTHER');
+                } else {
+                  _expandedShowSections.add('OTHER');
+                }
+              });
+            },
+          ),
+        );
+        if (isExpanded || isLoading) {
+          children.addAll(_buildGridRows(uncategorised));
+        }
       }
     }
 

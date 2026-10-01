@@ -333,8 +333,8 @@ class _SettingsPageState extends State<SettingsPage> {
             ],
           ),
 
-          // 3. ACHIEVEMENTS & PASSPORT SECTION
-          _buildSectionHeader('ACHIEVEMENTS & PASSPORT'),
+          // 3. ACHIEVEMENTS SECTION
+          _buildSectionHeader('ACHIEVEMENTS'),
           _buildSectionCard(
             children: [
               Builder(
