@@ -35,6 +35,8 @@ import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
+import '../../domain/services/achievements_service.dart';
+import 'achievements_page.dart';
 // import '../../domain/models/cinema_passport.dart';
 // import '../../domain/services/cinema_passport_service.dart';
 import '../cubit/profile_heatmap_cubit.dart';
@@ -708,6 +710,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 final stats = _calculateProfileStats(watchlistState, showWatchlistState);
                 final totalMinutes = stats.totalMovieMinutes;
                 final totalShowMinutes = stats.totalShowMinutes;
+                final achievements = AchievementsService.evaluate(movies: rawMovies, shows: rawShows);
+                final unlockedAchievements = achievements.where((a) => a.isUnlocked).length;
+                final totalAchievements = achievements.length;
 
                 final hasNoShows = showWatchlistState is TvShowWatchlistSuccess && showWatchlistState.shows.isEmpty;
                 final Widget showsEmptyWidget = hasNoShows
@@ -829,13 +834,38 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   ),
                                   Expanded(
                                     child: _buildStatColumn(
-                                      icon: const Icon(Icons.movie_filter_outlined, color: AppColors.primary, size: 18),
+                                      icon: const Icon(Icons.movie_rounded, color: AppColors.primary, size: 18),
                                       count: '${watchedMovies.length}',
                                       label: 'Movies watched',
                                       timeSpent: _formatTime(totalMinutes),
                                       isSelected: _isHeatmapExpanded && _heatmapPageIndex == 1,
                                       onTap: () {
                                         _toggleHeatmap(1);
+                                      },
+                                    ),
+                                  ),
+                                  Container(
+                                    height: 40,
+                                    width: 1,
+                                    margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                                    color: Theme.of(context).brightness == Brightness.light
+                                        ? AppColors.borderLight
+                                        : AppColors.borderDark,
+                                  ),
+                                  Expanded(
+                                    child: _buildStatColumn(
+                                      icon: const Icon(Icons.emoji_events_rounded, color: AppColors.gold, size: 18),
+                                      count: '$unlockedAchievements',
+                                      label: 'Achievements',
+                                      timeSpent: '$unlockedAchievements of $totalAchievements',
+                                      accentColor: AppColors.gold,
+                                      isSelected: false,
+                                      onTap: () {
+                                        AppHaptics.lightImpact();
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => const AchievementsPage()),
+                                        );
                                       },
                                     ),
                                   ),
@@ -1386,8 +1416,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     required String timeSpent,
     required VoidCallback onTap,
     bool isSelected = false,
+    Color? accentColor,
   }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
+    final Color effectiveAccent = accentColor ?? AppColors.primary;
+    final Color effectiveAccentLight = accentColor != null ? accentColor.withValues(alpha: 0.8) : AppColors.primaryLight;
+    final Color effectiveAccentDark = accentColor ?? AppColors.lightPrimary;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -1408,14 +1443,14 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   decoration: BoxDecoration(
                     color: isSelected
                         ? (isLight
-                              ? AppColors.primaryLight.withValues(alpha: 0.3)
-                              : AppColors.primary.withValues(alpha: 0.25))
+                              ? effectiveAccentLight.withValues(alpha: 0.3)
+                              : effectiveAccent.withValues(alpha: 0.25))
                         : (isLight
-                              ? AppColors.primaryLight.withValues(alpha: 0.2)
-                              : AppColors.primary.withValues(alpha: 0.15)),
+                              ? effectiveAccentLight.withValues(alpha: 0.2)
+                              : effectiveAccent.withValues(alpha: 0.15)),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isSelected ? (isLight ? AppColors.lightPrimary : AppColors.primary) : Colors.transparent,
+                      color: isSelected ? (isLight ? effectiveAccentDark : effectiveAccent) : Colors.transparent,
                       width: 1.5,
                     ),
                   ),
