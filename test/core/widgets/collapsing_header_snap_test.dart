@@ -33,6 +33,31 @@ Widget _customScrollPage(ScrollController controller, {required int items}) {
   );
 }
 
+/// Wraps [child] (the scroll view) so it counts the ScrollEndNotifications
+/// reaching the snap. Past a cap it swallows them, so a snap that keeps
+/// re-triggering itself fails the test instead of hanging it.
+class _ScrollEndCounter {
+  static const cap = 200;
+  int count = 0;
+
+  Widget wrap(Widget child) => NotificationListener<ScrollEndNotification>(
+        onNotification: (_) => ++count > cap,
+        child: child,
+      );
+}
+
+/// Drags by [dy] in small steps, then holds still before lifting, so the
+/// release has no fling velocity and the scroll comes to rest exactly there.
+Future<void> _slowDragAndRelease(WidgetTester tester, double dy) async {
+  final gesture = await tester.startGesture(const Offset(200, 400));
+  for (var i = 0; i < 10; i++) {
+    await gesture.moveBy(Offset(0, dy / 10));
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+  await tester.pump(const Duration(milliseconds: 300));
+  await gesture.up();
+}
+
 void main() {
   testWidgets('snaps back open when released near the top', (tester) async {
     final controller = ScrollController();
@@ -112,4 +137,96 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.offset, 0);
   });
+
+  // Regression: the snap animates the inner list too, which is already at its
+  // target and ends instantly; that scroll end used to restart the snap in an
+  // endless microtask loop, freezing the app on the show details page.
+  testWidgets(
+    'NestedScrollView snap does not loop when released at rest mid-header',
+    (tester) async {
+      final controller = ScrollController();
+      final counter = _ScrollEndCounter();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CollapsingHeaderSnap(
+              controller: controller,
+              expandedHeight: _expanded,
+              child: counter.wrap(
+                NestedScrollView(
+                  controller: controller,
+                  headerSliverBuilder: (_, _) => const [
+                    SliverAppBar(
+                      pinned: true,
+                      expandedHeight: _expanded,
+                      flexibleSpace: FlexibleSpaceBar(),
+                    ),
+                  ],
+                  body: ListView.builder(
+                    itemCount: 40,
+                    itemBuilder: (_, i) =>
+                        SizedBox(height: 50, child: Text('$i')),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await _slowDragAndRelease(tester, -150);
+      await tester.pumpAndSettle();
+
+      expect(counter.count, lessThan(10));
+      expect(controller.offset, closeTo(_collapseExtent, 0.01));
+    },
+    variant: TargetPlatformVariant.mobile(),
+  );
+
+  // Without the filler, short content can't reach the collapsed offset; the
+  // snap must not keep retrying a target it can never reach.
+  testWidgets(
+    'does not keep re-snapping when content is too short to collapse',
+    (tester) async {
+      final controller = ScrollController();
+      final counter = _ScrollEndCounter();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CollapsingHeaderSnap(
+              controller: controller,
+              expandedHeight: _expanded,
+              child: counter.wrap(
+                CustomScrollView(
+                  controller: controller,
+                  slivers: [
+                    const SliverAppBar(
+                      pinned: true,
+                      expandedHeight: _expanded,
+                      flexibleSpace: FlexibleSpaceBar(),
+                    ),
+                    SliverList.builder(
+                      itemCount: 9,
+                      itemBuilder: (_, i) =>
+                          SizedBox(height: 50, child: Text('$i')),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final maxExtent = controller.position.maxScrollExtent;
+      expect(maxExtent, lessThan(_collapseExtent - 1));
+      expect(maxExtent, greaterThan(_collapseExtent / 2));
+
+      await _slowDragAndRelease(tester, -300);
+      await tester.pumpAndSettle();
+
+      expect(counter.count, lessThan(10));
+      expect(controller.offset, closeTo(maxExtent, 0.01));
+    },
+    variant: TargetPlatformVariant.mobile(),
+  );
 }

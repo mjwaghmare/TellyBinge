@@ -539,12 +539,16 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
       ...rawCastList,
     ];
 
-    Widget buildSliverAppBar() {
+    // [bottom] is pinned under the collapsed toolbar. The header grows by its
+    // height and the hero keeps clear of it, so the artwork stays the same.
+    Widget buildSliverAppBar({PreferredSizeWidget? bottom}) {
+      final bottomHeight = bottom?.preferredSize.height ?? 0;
       return SliverAppBar(
         automaticallyImplyLeading: false,
         leading: const SizedBox.shrink(),
-        expandedHeight: _heroExpandedHeight,
+        expandedHeight: _heroExpandedHeight + bottomHeight,
         pinned: true,
+        bottom: bottom,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: ValueListenableBuilder<bool>(
           valueListenable: _isCollapsed,
@@ -663,7 +667,9 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
           ),
         ],
         flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
+          background: Padding(
+           padding: EdgeInsets.only(bottom: bottomHeight),
+           child: Stack(
             fit: StackFit.expand,
             children: [
               MediaHeroImage(
@@ -799,6 +805,7 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
                 ),
               ),
             ],
+           ),
           ),
         ),
       );
@@ -1329,16 +1336,27 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
          child: NestedScrollView(
           controller: _scrollController,
           headerSliverBuilder: (context, innerBoxIsScrolled) {
+            const tabBar = TabBar(
+              tabs: [
+                Tab(text: 'ABOUT'),
+                Tab(text: 'EPISODES'),
+              ],
+            );
+            // The absorber records how much of the tabs' top the pinned header
+            // covers; each tab's injector pads by exactly that, so content
+            // stops at the tab bar instead of sliding under it.
             return [
-              buildSliverAppBar(),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _SliverAppBarDelegate(
-                  const TabBar(
-                    tabs: [
-                      Tab(text: 'ABOUT'),
-                      Tab(text: 'EPISODES'),
-                    ],
+              SliverOverlapAbsorber(
+                handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                  context,
+                ),
+                sliver: buildSliverAppBar(
+                  bottom: PreferredSize(
+                    preferredSize: tabBar.preferredSize,
+                    child: ColoredBox(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      child: tabBar,
+                    ),
                   ),
                 ),
               ),
@@ -1346,13 +1364,13 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
           },
           body: TabBarView(
             children: [
-              CustomScrollView(
-                key: const PageStorageKey('about_tab'),
-                slivers: [SliverToBoxAdapter(child: buildAboutSection())],
+              _OverlapInjectedTab(
+                storageKey: 'about_tab',
+                child: buildAboutSection(),
               ),
-              CustomScrollView(
-                key: const PageStorageKey('episodes_tab'),
-                slivers: [SliverToBoxAdapter(child: buildEpisodesSection())],
+              _OverlapInjectedTab(
+                storageKey: 'episodes_tab',
+                child: buildEpisodesSection(),
               ),
             ],
           ),
@@ -2586,29 +2604,25 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
   }
 }
 
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar _tabBar;
-  _SliverAppBarDelegate(this._tabBar);
+/// A tab of the details [NestedScrollView], padded at the top by the pinned
+/// header's overlap so its content never scrolls under the tab bar.
+class _OverlapInjectedTab extends StatelessWidget {
+  final String storageKey;
+  final Widget child;
+
+  const _OverlapInjectedTab({required this.storageKey, required this.child});
 
   @override
-  double get minExtent => _tabBar.preferredSize.height;
-  @override
-  double get maxExtent => _tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: _tabBar,
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      key: PageStorageKey(storageKey),
+      slivers: [
+        // Needs a context below the NestedScrollView to find its handle.
+        SliverOverlapInjector(
+          handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+        ),
+        SliverToBoxAdapter(child: child),
+      ],
     );
-  }
-
-  @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
   }
 }

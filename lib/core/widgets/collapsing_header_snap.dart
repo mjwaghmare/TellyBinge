@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 /// position [controller] drives. Pair it with [fullCollapseFiller] in a plain
 /// [CustomScrollView] so short pages can still collapse fully. (A
 /// [NestedScrollView] header can always collapse fully, so it needs none.)
-class CollapsingHeaderSnap extends StatelessWidget {
+class CollapsingHeaderSnap extends StatefulWidget {
   final ScrollController controller;
   final double expandedHeight;
   final Widget child;
@@ -47,30 +47,60 @@ class CollapsingHeaderSnap extends StatelessWidget {
     );
   }
 
-  bool _onScrollEnd(BuildContext context, ScrollEndNotification notification) {
+  @override
+  State<CollapsingHeaderSnap> createState() => _CollapsingHeaderSnapState();
+}
+
+class _CollapsingHeaderSnapState extends State<CollapsingHeaderSnap> {
+  /// True from scheduling a snap until its animation finishes or is
+  /// interrupted. The snap's own animation ends scrolls too — in a
+  /// [NestedScrollView] the inner lists, already at their target, end
+  /// instantly — and reacting to those would restart the snap before it ever
+  /// moves, in an endless microtask loop that freezes the app.
+  bool _snapping = false;
+
+  bool _onScrollEnd(ScrollEndNotification notification) {
     // Horizontal rails (cast, tabs' PageView) end scrolls too; only vertical
     // scrolling moves the header. In a NestedScrollView the gesture ends on the
     // inner tab list, so any depth is accepted and the outer offset is read
     // from [controller].
+    if (_snapping) return false;
     if (notification.metrics.axis != Axis.vertical) return false;
+    final controller = widget.controller;
     if (!controller.hasClients) return false;
 
-    final collapseExtent = collapseExtentOf(context, expandedHeight);
-    final offset = controller.offset;
+    final collapseExtent = CollapsingHeaderSnap.collapseExtentOf(
+      context,
+      widget.expandedHeight,
+    );
+    final position = controller.position;
+    final offset = position.pixels;
     const tolerance = 0.5;
     if (offset <= tolerance || offset >= collapseExtent - tolerance) {
       return false;
     }
 
-    final target = offset < collapseExtent / 2 ? 0.0 : collapseExtent;
+    // Content too short to collapse fully (no filler) can't reach the
+    // collapsed offset; aim for where it can go, and stay put if already there.
+    final target = (offset < collapseExtent / 2 ? 0.0 : collapseExtent)
+        .clamp(position.minScrollExtent, position.maxScrollExtent);
+    if ((target - offset).abs() <= tolerance) return false;
+
+    _snapping = true;
     // Start after the ending activity has fully settled.
     scheduleMicrotask(() {
-      if (!controller.hasClients) return;
-      controller.animateTo(
-        target,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-      );
+      if (!mounted || !controller.hasClients) {
+        _snapping = false;
+        return;
+      }
+      // Completes when the animation finishes or a touch interrupts it.
+      controller
+          .animateTo(
+            target,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+          )
+          .whenComplete(() => _snapping = false);
     });
     return false;
   }
@@ -78,8 +108,8 @@ class CollapsingHeaderSnap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NotificationListener<ScrollEndNotification>(
-      onNotification: (notification) => _onScrollEnd(context, notification),
-      child: child,
+      onNotification: _onScrollEnd,
+      child: widget.child,
     );
   }
 }
