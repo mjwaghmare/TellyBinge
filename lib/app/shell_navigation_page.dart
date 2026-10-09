@@ -71,7 +71,14 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
   @override
   void initState() {
     super.initState();
-    _tabNotifier = ValueNotifier<int>(widget.initialIndex);
+    final authState = context.read<AuthCubit>().state;
+    final int startingTab;
+    if (widget.initialIndex == 0 && authState is! Authenticated) {
+      startingTab = 2; // Default unauthenticated sessions to Explore feed
+    } else {
+      startingTab = widget.initialIndex;
+    }
+    _tabNotifier = ValueNotifier<int>(startingTab);
 
     _movieFailureSub = context.read<MovieWatchlistCubit>().failureStream.listen((failure) {
       if (mounted) {
@@ -108,7 +115,6 @@ class _ShellNavigationPageState extends State<ShellNavigationPage> {
       }
     };
 
-    final authState = context.read<AuthCubit>().state;
     if (authState is Authenticated) {
       _startWatchers(authState.user.uid);
     }
