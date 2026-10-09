@@ -19,6 +19,7 @@ class ExploreSeeAllPage extends StatefulWidget {
     required this.section,
     this.language,
     this.genre,
+    this.personalizedGenre,
     this.excludedIds = const {},
   });
 
@@ -26,6 +27,7 @@ class ExploreSeeAllPage extends StatefulWidget {
   final ExploreSection section;
   final String? language;
   final GenreOption? genre;
+  final GenreOption? personalizedGenre;
 
   /// Ids hidden on top of the watchlist, e.g. Trending Now leaves out the
   /// titles already shown in Top 5.
@@ -134,6 +136,7 @@ class _ExploreSeeAllPageState extends State<ExploreSeeAllPage> {
         page: nextPage,
         language: widget.language,
         genre: widget.genre,
+        personalizedGenre: widget.personalizedGenre,
         forceRefresh: forceRefresh,
       );
     } catch (_) {
@@ -175,6 +178,7 @@ class _ExploreSeeAllPageState extends State<ExploreSeeAllPage> {
     final title = widget.section.titleWithGenre(
       widget.genre,
       languageName: langName,
+      personalizedGenre: widget.personalizedGenre,
     );
 
     return Scaffold(

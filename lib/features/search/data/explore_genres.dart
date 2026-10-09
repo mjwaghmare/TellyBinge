@@ -20,9 +20,10 @@ class GenreOption {
 
   /// True when this option represents the unfiltered Explore feed.
   bool get isAll =>
-      movieGenreId == null &&
-      tvGenreId == null &&
-      (requiredLanguage == null || requiredLanguage!.isEmpty);
+      label == 'All' ||
+      (movieGenreId == null &&
+          tvGenreId == null &&
+          (requiredLanguage == null || requiredLanguage!.isEmpty));
 
   /// Resolves the specific TMDB genre ID based on media type.
   int? genreIdFor(ExploreMediaType type) =>
@@ -71,3 +72,100 @@ const kExploreGenres = <GenreOption>[
     tvGenreId: 10766,
   ),
 ];
+
+/// Determines the user's most frequent genre from their saved watchlist items.
+///
+/// Inspects both TV and Movie watchlist schemas (supporting comma-delimited
+/// genre names, genre maps, and genre ID lists). Returns null if no matching
+/// curated genre from [kExploreGenres] is found.
+GenreOption? resolveTopWatchlistGenre({
+  List<Map<String, dynamic>>? tvShows,
+  List<Map<String, dynamic>>? movies,
+}) {
+  final counts = <GenreOption, int>{};
+
+  final activeGenres = kExploreGenres.where((g) => !g.isAll).toList();
+
+  void recordMatch(GenreOption genre) {
+    counts[genre] = (counts[genre] ?? 0) + 1;
+  }
+
+  void processItem(Map<String, dynamic> item) {
+    final itemMatches = <GenreOption>{};
+
+    // 1. Check rawGenreIds / genre_ids
+    final rawGenreIds = item['genre_ids'] ?? item['genreIds'];
+    if (rawGenreIds is List) {
+      for (final id in rawGenreIds) {
+        final intId = (id as num?)?.toInt();
+        if (intId == null) continue;
+        for (final g in activeGenres) {
+          if (g.movieGenreId == intId || g.tvGenreId == intId) {
+            itemMatches.add(g);
+          }
+        }
+      }
+    }
+
+    // 2. Check genres string or list
+    final rawGenres = item['genres'];
+    if (rawGenres is String && rawGenres.trim().isNotEmpty) {
+      for (final part in rawGenres.split(',')) {
+        final name = part.trim().toLowerCase();
+        if (name.isEmpty) continue;
+        for (final g in activeGenres) {
+          final labelLower = g.label.toLowerCase();
+          if (name == labelLower ||
+              (labelLower == 'sci-fi' && (name.contains('sci-fi') || name.contains('science fiction')))) {
+            itemMatches.add(g);
+          }
+        }
+      }
+    } else if (rawGenres is List) {
+      for (final g in rawGenres) {
+        String? name;
+        if (g is Map) {
+          name = (g['name'] as String?)?.trim().toLowerCase();
+        } else if (g is String) {
+          name = g.trim().toLowerCase();
+        }
+        if (name != null && name.isNotEmpty) {
+          for (final opt in activeGenres) {
+            final labelLower = opt.label.toLowerCase();
+            if (name == labelLower ||
+                (labelLower == 'sci-fi' && (name.contains('sci-fi') || name.contains('science fiction')))) {
+              itemMatches.add(opt);
+            }
+          }
+        }
+      }
+    }
+
+    for (final matched in itemMatches) {
+      recordMatch(matched);
+    }
+  }
+
+  if (tvShows != null) {
+    for (final show in tvShows) {
+      processItem(show);
+    }
+  }
+  if (movies != null) {
+    for (final movie in movies) {
+      processItem(movie);
+    }
+  }
+
+  if (counts.isEmpty) return null;
+
+  var topCount = 0;
+  GenreOption? topGenre;
+  for (final entry in counts.entries) {
+    if (entry.value > topCount) {
+      topCount = entry.value;
+      topGenre = entry.key;
+    }
+  }
+  return topGenre;
+}

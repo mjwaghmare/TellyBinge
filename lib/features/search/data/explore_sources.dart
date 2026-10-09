@@ -25,16 +25,41 @@ enum ExploreSection {
     comingSoon => 'Coming Soon',
   };
 
-  /// Returns a display title that respects active genre and language filters.
+  /// Returns a display title that respects active genre and language filters,
+  /// or personalized watchlist recommendations for [forYou].
   /// When discovery sorting is used for [topWeek] due to a genre or language
   /// filter, the title drops "This Week" since discovery sort reflects overall
   /// popularity rather than a weekly-constrained selection.
   /// Similarly, [trending] results use "Popular Now" when filtered since discovery
   /// sort reflects overall popularity rather than TMDB's unfiltered trending window.
-  String titleWithGenre(GenreOption? genre, {String? languageName}) {
+  String titleWithGenre(
+    GenreOption? genre, {
+    String? languageName,
+    GenreOption? personalizedGenre,
+  }) {
     final hasGenre = genre != null && !genre.isAll;
     final hasLang = languageName != null && languageName.trim().isNotEmpty;
     final hasFilter = hasGenre || hasLang;
+
+    if (this == ExploreSection.forYou && !hasGenre) {
+      if (personalizedGenre != null && !personalizedGenre.isAll) {
+        // If the personalized genre dictates a specific language (e.g. ja for Anime),
+        // resolve conflicts consistently with fetchExploreSectionPage.
+        final effectiveLang = (personalizedGenre.requiredLanguage != null &&
+                personalizedGenre.requiredLanguage!.isNotEmpty)
+            ? (exploreLanguageNames[personalizedGenre.requiredLanguage] ?? personalizedGenre.requiredLanguage)
+            : languageName;
+        final hasEffectiveLang =
+            effectiveLang != null && effectiveLang.trim().isNotEmpty;
+
+        if (hasEffectiveLang) {
+          return 'Because you watch ${personalizedGenre.label} in $effectiveLang';
+        }
+        return 'Because you watch ${personalizedGenre.label}';
+      }
+      if (hasLang) return 'Top Rated in $languageName';
+      return 'Top Rated For You';
+    }
 
     final baseTitle = (this == trending && hasFilter) ? 'Popular Now' : title;
 
@@ -122,16 +147,24 @@ Future<List<dynamic>> fetchExploreSectionPage(
   required int page,
   String? language,
   GenreOption? genre,
+  GenreOption? personalizedGenre,
   bool forceRefresh = false,
 }) {
   final isTv = type == ExploreMediaType.tv;
-  final genreId =
-      (genre != null && !genre.isAll) ? genre.genreIdFor(type) : null;
+  final effectiveGenreForSection =
+      (section.source == ExploreSection.forYou && (genre == null || genre.isAll))
+          ? personalizedGenre
+          : genre;
+
+  final genreId = (effectiveGenreForSection != null &&
+          !effectiveGenreForSection.isAll)
+      ? effectiveGenreForSection.genreIdFor(type)
+      : null;
   final genreIds = genreId != null ? [genreId] : null;
-  final effectiveLanguage = (genre != null &&
-          genre.requiredLanguage != null &&
-          genre.requiredLanguage!.isNotEmpty)
-      ? genre.requiredLanguage
+  final effectiveLanguage = (effectiveGenreForSection != null &&
+          effectiveGenreForSection.requiredLanguage != null &&
+          effectiveGenreForSection.requiredLanguage!.isNotEmpty)
+      ? effectiveGenreForSection.requiredLanguage
       : language;
   final hasGenreFilter = genreIds != null && genreIds.isNotEmpty;
 
@@ -172,7 +205,8 @@ Future<List<dynamic>> fetchExploreSectionPage(
               throwOnError: true,
             );
 
-    // Placeholder source until onboarding collects genres; see ExploreFeedCubit.
+    // Queries personalized recommendations when a watchlist genre is present;
+    // falls back to top-rated catalog when unpersonalized or unfiltered.
     case ExploreSection.forYou:
       if (effectiveLanguage == null && !hasGenreFilter) {
         return isTv

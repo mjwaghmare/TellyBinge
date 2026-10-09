@@ -155,15 +155,18 @@ void main() {
     },
   );
 
-  test('ensureLoaded refreshes a feed older than staleAfter', () async {
-    cubit.ensureLoaded(tv);
+  test('ensureLoaded refreshes a feed older than staleAfter, preserving stored genre when omitted', () async {
+    final sciFi = kExploreGenres.firstWhere((g) => g.label == 'Sci-Fi');
+    cubit.ensureLoaded(tv, personalizedGenre: sciFi);
     await settle();
+    expect(cubit.state.feedFor(tv).personalizedGenre, equals(sciFi));
     client.calls.clear();
 
     now = now.add(const Duration(hours: 1));
     cubit.ensureLoaded(tv);
     await settle();
     expect(client.calls, isEmpty);
+    expect(cubit.state.feedFor(tv).personalizedGenre, equals(sciFi));
 
     now = now.add(ExploreFeedCubit.staleAfter);
     cubit.ensureLoaded(tv);
@@ -173,6 +176,7 @@ void main() {
       client.calls,
       everyElement(predicate<ExploreCall>((c) => c.forceRefresh)),
     );
+    expect(cubit.state.feedFor(tv).personalizedGenre, equals(sciFi));
   });
 
   group('appendUniqueById', () {
@@ -190,6 +194,84 @@ void main() {
       final existing = titles(1, 3);
       expect(appendUniqueById(existing, titles(1, 2)), same(existing));
       expect(appendUniqueById(existing, const []), same(existing));
+    });
+  });
+
+  group('Personalized For You feed', () {
+    test('resolveTopWatchlistGenre extracts top matching genre from watchlist', () {
+      final sciFi = kExploreGenres.firstWhere((g) => g.label == 'Sci-Fi');
+
+      final top = resolveTopWatchlistGenre(
+        tvShows: [
+          {'genres': 'Sci-Fi, Drama'},
+          {'genres': 'Sci-Fi & Fantasy'},
+        ],
+        movies: [
+          {'genres': 'Drama'},
+        ],
+      );
+
+      expect(top, equals(sciFi));
+    });
+
+    test('ExploreSection.forYou title reflects top personalized genre', () {
+      final sciFi = kExploreGenres.firstWhere((g) => g.label == 'Sci-Fi');
+      expect(
+        ExploreSection.forYou.titleWithGenre(null, personalizedGenre: sciFi),
+        equals('Because you watch Sci-Fi'),
+      );
+      expect(
+        ExploreSection.forYou.titleWithGenre(null, languageName: 'Hindi', personalizedGenre: sciFi),
+        equals('Because you watch Sci-Fi in Hindi'),
+      );
+      expect(
+        ExploreSection.forYou.titleWithGenre(null),
+        equals('Top Rated For You'),
+      );
+    });
+
+    test('ensureLoaded distinguishes omitted argument from explicitly supplied null', () async {
+      final sciFi = kExploreGenres.firstWhere((g) => g.label == 'Sci-Fi');
+
+      // 1. Initial load with sci-fi
+      cubit.ensureLoaded(tv, personalizedGenre: sciFi);
+      await settle();
+      expect(cubit.state.feedFor(tv).personalizedGenre, equals(sciFi));
+
+      // 2. Omitted argument does not clear or reload
+      client.calls.clear();
+      cubit.ensureLoaded(tv);
+      await settle();
+      expect(cubit.state.feedFor(tv).personalizedGenre, equals(sciFi));
+      expect(client.calls, isEmpty);
+
+      // 3. Explicit null clears stored genre and reloads
+      client.calls.clear();
+      cubit.ensureLoaded(tv, personalizedGenre: null);
+      await settle();
+      expect(cubit.state.feedFor(tv).personalizedGenre, isNull);
+      expect(client.calls, isNotEmpty);
+    });
+
+    test('refresh stores newly supplied personalizedGenre and preserves rows', () async {
+      final sciFi = kExploreGenres.firstWhere((g) => g.label == 'Sci-Fi');
+      final drama = kExploreGenres.firstWhere((g) => g.label == 'Drama');
+
+      // Initial load
+      cubit.ensureLoaded(tv, personalizedGenre: sciFi);
+      await settle();
+      expect(cubit.state.feedFor(tv).personalizedGenre, equals(sciFi));
+      final initialItems = cubit.state.feedFor(tv).rowFor(ExploreSection.trending).items;
+      expect(initialItems, isNotEmpty);
+
+      // Refresh with drama genre
+      unawaited(cubit.refresh(tv, personalizedGenre: drama));
+      // Immediately, feed stores drama while keeping existing rows
+      expect(cubit.state.feedFor(tv).personalizedGenre, equals(drama));
+      expect(cubit.state.feedFor(tv).rowFor(ExploreSection.trending).items, equals(initialItems));
+
+      await settle();
+      expect(cubit.state.feedFor(tv).personalizedGenre, equals(drama));
     });
   });
 }

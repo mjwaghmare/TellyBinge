@@ -19,6 +19,10 @@ import '../widgets/watchlisted_ids_builder.dart';
 import '../../data/explore_genres.dart';
 import '../widgets/explore_genre_pills_row.dart';
 import '../widgets/explore_language_filter_button.dart';
+import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
+import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
+import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import 'explore_see_all_page.dart';
 
 class SearchPage extends StatefulWidget {
@@ -75,12 +79,21 @@ class _SearchPageState extends State<SearchPage>
   }
 
 
+  GenreOption? _topPersonalizedGenre() {
+    final tvState = context.read<TvShowWatchlistCubit>().state;
+    final movieState = context.read<MovieWatchlistCubit>().state;
+    final tvShows = tvState is TvShowWatchlistSuccess ? tvState.shows : null;
+    final movies = movieState is MovieWatchlistSuccess ? movieState.movies : null;
+    return resolveTopWatchlistGenre(tvShows: tvShows, movies: movies);
+  }
+
   void _handleMainTabChange() {
     if (widget.mainTabNotifier == null) return;
     if (widget.mainTabNotifier!.value == 2) {
       // Coming back to Explore: reload the visible feed if it has gone stale.
       context.read<ExploreFeedCubit>().ensureLoaded(
         _typeOf(_tabController.index == 0),
+        personalizedGenre: _topPersonalizedGenre(),
       );
     } else {
       // Dismiss keyboard when navigating away to other tabs without losing search/filter state.
@@ -114,6 +127,7 @@ class _SearchPageState extends State<SearchPage>
         // 2. Load (or refresh, if stale) the feed for the tab now showing
         context.read<ExploreFeedCubit>().ensureLoaded(
           _typeOf(_tabController.index == 0),
+          personalizedGenre: _topPersonalizedGenre(),
         );
       }
     });
@@ -122,6 +136,7 @@ class _SearchPageState extends State<SearchPage>
       if (!mounted) return;
       context.read<ExploreFeedCubit>().ensureLoaded(
         _typeOf(_tabController.index == 0),
+        personalizedGenre: _topPersonalizedGenre(),
       );
     });
 
@@ -164,33 +179,54 @@ class _SearchPageState extends State<SearchPage>
     super.dispose();
   }
 
+  void _syncPersonalizedGenreOnWatchlistChange() {
+    final newGenre = _topPersonalizedGenre();
+    final feedCubit = context.read<ExploreFeedCubit>();
+    final activeType = _typeOf(_tabController.index == 0);
+    final currentGenre = feedCubit.state.feedFor(activeType).personalizedGenre;
+
+    if (currentGenre != newGenre) {
+      feedCubit.ensureLoaded(activeType, personalizedGenre: newGenre);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        toolbarHeight:
-            0, // Hide main toolbar for clean view, matching dashboard
-        bottom: TabBar(
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<TvShowWatchlistCubit, TvShowWatchlistState>(
+          listener: (context, _) => _syncPersonalizedGenreOnWatchlistChange(),
+        ),
+        BlocListener<MovieWatchlistCubit, MovieWatchlistState>(
+          listener: (context, _) => _syncPersonalizedGenreOnWatchlistChange(),
+        ),
+      ],
+      child: Scaffold(
+        appBar: AppBar(
+          elevation: 0,
+          toolbarHeight:
+              0, // Hide main toolbar for clean view, matching dashboard
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'SHOWS'),
+              Tab(text: 'MOVIES'),
+            ],
+          ),
+        ),
+        body: TabBarView(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'SHOWS'),
-            Tab(text: 'MOVIES'),
+          children: [
+            _KeepAliveTab(
+              key: const PageStorageKey('explore_shows_tab'),
+              child: _buildTab(isTv: true),
+            ),
+            _KeepAliveTab(
+              key: const PageStorageKey('explore_movies_tab'),
+              child: _buildTab(isTv: false),
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _KeepAliveTab(
-            key: const PageStorageKey('explore_shows_tab'),
-            child: _buildTab(isTv: true),
-          ),
-          _KeepAliveTab(
-            key: const PageStorageKey('explore_movies_tab'),
-            child: _buildTab(isTv: false),
-          ),
-        ],
       ),
     );
   }
@@ -412,6 +448,7 @@ class _SearchPageState extends State<SearchPage>
 
   Widget _buildFeed({required bool isTv}) {
     final type = _typeOf(isTv);
+
     return BlocBuilder<ExploreFeedCubit, ExploreFeedState>(
       buildWhen: (previous, current) =>
           previous.feedFor(type) != current.feedFor(type),
@@ -472,6 +509,11 @@ class _SearchPageState extends State<SearchPage>
       final row = feed.rowFor(section);
       anyLoading |= row.isLoading;
       final isBackdropRow = section == ExploreSection.comingSoon;
+      final String sectionTitle = section.titleWithGenre(
+        feed.genre,
+        languageName: _languageNames[feed.language],
+        personalizedGenre: feed.personalizedGenre,
+      );
 
       if (row.isLoading) {
         rows.add(
@@ -479,7 +521,7 @@ class _SearchPageState extends State<SearchPage>
               ? ExploreBackdropSectionRow(
                   key: ValueKey(section),
                   storageId: section.name,
-                  title: section.title,
+                  title: sectionTitle,
                   items: const [],
                   defaultType: defaultType,
                   isLoading: true,
@@ -487,7 +529,7 @@ class _SearchPageState extends State<SearchPage>
               : ExploreSectionRow(
                   key: ValueKey(section),
                   storageId: section.name,
-                  title: section.title,
+                  title: sectionTitle,
                   items: const [],
                   defaultType: defaultType,
                   isLoading: true,
@@ -556,6 +598,7 @@ class _SearchPageState extends State<SearchPage>
                 section: section,
                 language: feed.language,
                 genre: feed.genre,
+                personalizedGenre: feed.personalizedGenre,
                 excludedIds: section == ExploreSection.trending
                     ? topWeekIds
                     : const {},
@@ -568,7 +611,7 @@ class _SearchPageState extends State<SearchPage>
             ? ExploreBackdropSectionRow(
                 key: ValueKey(section),
                 storageId: section.name,
-                title: section.title,
+                title: sectionTitle,
                 items: items,
                 isLoadingMore: row.isLoadingMore,
                 defaultType: defaultType,
@@ -577,7 +620,7 @@ class _SearchPageState extends State<SearchPage>
             : ExploreSectionRow(
                 key: ValueKey(section),
                 storageId: section.name,
-                title: section.title,
+                title: sectionTitle,
                 items: items,
                 isLoadingMore: row.isLoadingMore,
                 defaultType: defaultType,

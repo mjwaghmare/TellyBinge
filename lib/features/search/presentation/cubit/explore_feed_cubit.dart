@@ -43,16 +43,50 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
   /// ones.
   final Map<ExploreMediaType, int> _generation = {};
 
+  static const _unspecifiedGenre = GenreOption(label: '__unspecified_genre__');
+
   /// Loads the feed for [type] if it hasn't been, or quietly refreshes it
   /// (rows stay on screen) once it is older than [staleAfter].
-  void ensureLoaded(ExploreMediaType type) {
-    if (!state.feeds.containsKey(type)) {
-      _load(type, keepItems: false);
+  /// [personalizedGenre] is derived from the user's watchlist history.
+  void ensureLoaded(
+    ExploreMediaType type, {
+    Object? personalizedGenre = _unspecifiedGenre,
+  }) {
+    final currentFeed = state.feedFor(type);
+    final isExplicitlySupplied = !identical(personalizedGenre, _unspecifiedGenre);
+    final GenreOption? targetGenre = isExplicitlySupplied
+        ? personalizedGenre as GenreOption?
+        : currentFeed.personalizedGenre;
+
+    final hasGenreChanged =
+        isExplicitlySupplied && currentFeed.personalizedGenre != targetGenre;
+
+    if (!state.feeds.containsKey(type) || hasGenreChanged) {
+      if (hasGenreChanged) {
+        emit(
+          state.withFeed(
+            type,
+            targetGenre == null
+                ? currentFeed.copyWith(clearPersonalizedGenre: true)
+                : currentFeed.copyWith(personalizedGenre: targetGenre),
+          ),
+        );
+      }
+      _load(
+        type,
+        keepItems: false,
+        personalizedGenre: targetGenre,
+        explicitPersonalizedGenre: isExplicitlySupplied,
+      );
       return;
     }
     final loadedAt = _loadedAt[type];
     if (loadedAt != null && _now().difference(loadedAt) > staleAfter) {
-      refresh(type);
+      if (isExplicitlySupplied) {
+        refresh(type, personalizedGenre: targetGenre);
+      } else {
+        refresh(type);
+      }
     }
   }
 
@@ -61,16 +95,18 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         state.feeds.containsKey(type)) {
       return;
     }
+    final feed = state.feedFor(type);
     emit(
       state.withFeed(
         type,
         ExploreFeed(
           language: language,
-          genre: state.feedFor(type).genre,
+          genre: feed.genre,
+          personalizedGenre: feed.personalizedGenre,
         ),
       ),
     );
-    _load(type, keepItems: false);
+    _load(type, keepItems: false, personalizedGenre: feed.personalizedGenre);
   }
 
   void setGenre(ExploreMediaType type, GenreOption? genre) {
@@ -79,24 +115,43 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         state.feeds.containsKey(type)) {
       return;
     }
+    final feed = state.feedFor(type);
     emit(
       state.withFeed(
         type,
         ExploreFeed(
-          language: state.feedFor(type).language,
+          language: feed.language,
           genre: effectiveGenre,
+          personalizedGenre: feed.personalizedGenre,
         ),
       ),
     );
-    _load(type, keepItems: false);
+    _load(type, keepItems: false, personalizedGenre: feed.personalizedGenre);
   }
 
   /// Pull-to-refresh: refetches past the cache, leaving the current rows on
   /// screen until their replacements arrive.
-  Future<void> refresh(ExploreMediaType type) => _load(type, keepItems: true);
+  Future<void> refresh(
+    ExploreMediaType type, {
+    Object? personalizedGenre = _unspecifiedGenre,
+  }) {
+    final isExplicit = !identical(personalizedGenre, _unspecifiedGenre);
+    return _load(
+      type,
+      keepItems: true,
+      personalizedGenre: isExplicit
+          ? personalizedGenre as GenreOption?
+          : state.feedFor(type).personalizedGenre,
+      explicitPersonalizedGenre: isExplicit,
+    );
+  }
 
   /// Reloads from scratch with skeletons, for the empty-feed Retry.
-  Future<void> retry(ExploreMediaType type) => _load(type, keepItems: false);
+  Future<void> retry(ExploreMediaType type) => _load(
+        type,
+        keepItems: false,
+        personalizedGenre: state.feedFor(type).personalizedGenre,
+      );
 
   /// Fetches one more page for a row whose visible count dropped too low
   /// after watchlist filtering. Only ever tops up once (page 1 -> 2).
@@ -117,6 +172,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         page: 2,
         language: feed.language,
         genre: feed.genre,
+        personalizedGenre: feed.personalizedGenre,
       );
     } catch (_) {
       more = const [];
@@ -135,29 +191,53 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     );
   }
 
-  Future<void> _load(ExploreMediaType type, {required bool keepItems}) {
+  Future<void> _load(
+    ExploreMediaType type, {
+    required bool keepItems,
+    GenreOption? personalizedGenre,
+    bool explicitPersonalizedGenre = false,
+  }) {
     final generation = (_generation[type] ?? 0) + 1;
     _generation[type] = generation;
     _loadedAt[type] = _now();
 
+    final feed = state.feedFor(type);
+    final effectivePersonalized = explicitPersonalizedGenre
+        ? personalizedGenre
+        : (personalizedGenre ?? feed.personalizedGenre);
+
     if (!keepItems) {
-      final feed = state.feedFor(type);
       emit(
         state.withFeed(
           type,
           ExploreFeed(
             language: feed.language,
             genre: feed.genre,
+            personalizedGenre: effectivePersonalized,
             rows: {for (final s in _sources) s: ExploreRow.loading},
           ),
+        ),
+      );
+    } else if (feed.personalizedGenre != effectivePersonalized) {
+      emit(
+        state.withFeed(
+          type,
+          effectivePersonalized == null
+              ? feed.copyWith(clearPersonalizedGenre: true)
+              : feed.copyWith(personalizedGenre: effectivePersonalized),
         ),
       );
     }
 
     return Future.wait(
       _sources.map(
-        (section) =>
-            _loadSection(type, section, generation, isRefresh: keepItems),
+        (section) => _loadSection(
+          type,
+          section,
+          generation,
+          isRefresh: keepItems,
+          personalizedGenre: effectivePersonalized,
+        ),
       ),
     );
   }
@@ -167,6 +247,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     ExploreSection section,
     int generation, {
     required bool isRefresh,
+    GenreOption? personalizedGenre,
   }) async {
     final feed = state.feedFor(type);
     List<dynamic> items;
@@ -178,6 +259,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         page: 1,
         language: feed.language,
         genre: feed.genre,
+        personalizedGenre: personalizedGenre ?? feed.personalizedGenre,
         forceRefresh: isRefresh,
       );
     } catch (_) {
