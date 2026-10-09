@@ -74,35 +74,6 @@ class _SearchPageState extends State<SearchPage>
     }
   }
 
-  /// Leaving the Explore tab resets search, genres, and the language filter.
-  void _resetAllFiltersAndSearch() {
-    FocusManager.instance.primaryFocus?.unfocus();
-
-    for (final controller in [
-      _showsFeedScrollController,
-      _moviesFeedScrollController,
-      _showsSearchScrollController,
-      _moviesSearchScrollController,
-    ]) {
-      if (controller.hasClients) controller.jumpTo(0);
-    }
-
-    final feedCubit = context.read<ExploreFeedCubit>();
-    for (final isTv in const [true, false]) {
-      if (_searchControllerFor(isTv).text.isNotEmpty) {
-        _searchControllerFor(isTv).clear();
-        _searchCubitFor(isTv).clear();
-      }
-      final type = _typeOf(isTv);
-      if (feedCubit.state.feedFor(type).language != null) {
-        feedCubit.setLanguage(type, null);
-        _searchCubitFor(isTv).setLanguage(null);
-      }
-      if (feedCubit.state.feedFor(type).genre != null) {
-        feedCubit.setGenre(type, null);
-      }
-    }
-  }
 
   void _handleMainTabChange() {
     if (widget.mainTabNotifier == null) return;
@@ -112,7 +83,8 @@ class _SearchPageState extends State<SearchPage>
         _typeOf(_tabController.index == 0),
       );
     } else {
-      _resetAllFiltersAndSearch();
+      // Dismiss keyboard when navigating away to other tabs without losing search/filter state.
+      FocusManager.instance.primaryFocus?.unfocus();
     }
   }
 
