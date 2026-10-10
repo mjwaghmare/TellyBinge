@@ -426,15 +426,21 @@ class WatchlistEnrichmentCubit extends Cubit<WatchlistEnrichmentState> {
 
       if (!foundNext || airedUnwatchedCount == 0) {
         if (watchedEpisodes.isEmpty) {
-          category = 'UPCOMING_ONLY';
+          final isEnded =
+              details['status'] == 'Ended' || details['status'] == 'Canceled';
+          category = isEnded ? 'HAVENT_STARTED' : 'UPCOMING_ONLY';
+          episodeCode = nextCode.isNotEmpty ? nextCode : 'TBA';
+          episodeTitle = nextTitle.isNotEmpty
+              ? nextTitle
+              : (isEnded ? "Haven't started" : 'Waiting for premiere');
         } else {
           category =
               (details['status'] == 'Ended' || details['status'] == 'Canceled')
               ? 'FINISHED'
               : 'UP_TO_DATE';
+          episodeCode = 'Up to date';
+          episodeTitle = 'Waiting for new episodes';
         }
-        episodeCode = 'Up to date';
-        episodeTitle = 'Waiting for new episodes';
       } else {
         episodeCode = nextCode;
         episodeTitle = nextTitle;

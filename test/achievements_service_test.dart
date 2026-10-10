@@ -107,5 +107,79 @@ void main() {
       expect(marathon.isUnlocked, true);
       expect(marathon.currentValue, 5);
     });
+
+    test('series_finisher does not count show as complete when category is WATCH_NEXT with aired next episode', () {
+      final results = AchievementsService.evaluate(
+        movies: [],
+        shows: [
+          {
+            'category': 'WATCH_NEXT',
+            'nextEpisodeCode': 'S02 | E01',
+            'watchedEpisodes': ['1-1', '1-2', '1-3', '1-4', '1-5'],
+            'totalEpisodes': 5,
+            'hasUpcoming': false,
+          },
+        ],
+      );
+      final finisher = results.firstWhere((a) => a.id == 'series_finisher');
+      expect(finisher.currentValue, 0);
+      expect(finisher.isUnlocked, false);
+    });
+
+    test('series_finisher counts show as complete when watchedCount matches and no aired next episode', () {
+      final results = AchievementsService.evaluate(
+        movies: [],
+        shows: [
+          {
+            'category': 'UP_TO_DATE',
+            'nextEpisodeCode': 'Up to date',
+            'watchedEpisodes': ['1-1', '1-2', '1-3', '1-4', '1-5'],
+            'totalEpisodes': 5,
+            'hasUpcoming': false,
+          },
+        ],
+      );
+      final finisher = results.firstWhere((a) => a.id == 'series_finisher');
+      expect(finisher.currentValue, 1);
+      expect(finisher.isUnlocked, true);
+    });
+
+    test('series_finisher determines unwatched next episode from watched keys even when category is not WATCH_NEXT', () {
+      final results = AchievementsService.evaluate(
+        movies: [],
+        shows: [
+          {
+            'category': 'IN_PROGRESS', // Not WATCH_NEXT
+            'nextEpisodeCode': 'S02 | E01',
+            'watchedEpisodes': ['1-1', '1-2', '1-3', '1-4', '1-5'],
+            'totalEpisodes': 5,
+            'hasUpcoming': false,
+          },
+        ],
+      );
+      final finisher = results.firstWhere((a) => a.id == 'series_finisher');
+      // S02E01 has aired and is not in watchedEpisodes, so show cannot be counted complete
+      expect(finisher.currentValue, 0);
+      expect(finisher.isUnlocked, false);
+    });
+
+    test('series_finisher counts complete when nextEpisodeCode is already in watchedEpisodes even if non-empty', () {
+      final results = AchievementsService.evaluate(
+        movies: [],
+        shows: [
+          {
+            'category': 'UP_TO_DATE',
+            'nextEpisodeCode': 'S01 | E05', // Already in watchedEpisodes (stale)
+            'watchedEpisodes': ['1-1', '1-2', '1-3', '1-4', '1-5'],
+            'totalEpisodes': 5,
+            'hasUpcoming': false,
+          },
+        ],
+      );
+      final finisher = results.firstWhere((a) => a.id == 'series_finisher');
+      // S01E05 is already watched, so no aired unwatched episode exists
+      expect(finisher.currentValue, 1);
+      expect(finisher.isUnlocked, true);
+    });
   });
 }

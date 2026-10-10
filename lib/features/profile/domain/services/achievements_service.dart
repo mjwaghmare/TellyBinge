@@ -672,13 +672,67 @@ class AchievementsService {
     int count = 0;
     for (final s in shows) {
       final watchedEpisodes = Set<dynamic>.from(s['watchedEpisodes'] ?? []);
+      if (watchedEpisodes.isEmpty) continue;
       final totalEpisodes =
           (s['totalEpisodes'] as num?)?.toInt() ??
           int.tryParse(s['totalEpisodes']?.toString() ?? '') ??
           0;
       final isMarkedCompleted = s['category'] == 'COMPLETED';
-      if (isMarkedCompleted ||
-          (totalEpisodes > 0 && watchedEpisodes.length >= totalEpisodes)) {
+      final isFinished = s['category'] == 'FINISHED';
+
+      final nextCode = s['nextEpisodeCode'] as String? ?? '';
+      final bool hasNextCode = nextCode.isNotEmpty &&
+          nextCode != 'Up to date' &&
+          nextCode != 'TBA';
+
+      final hasUpcoming = s['hasUpcoming'] as bool? ?? false;
+      final upcomingCode = s['upcomingEpisodeCode'] as String? ?? '';
+      int? upcomingDaysLeft;
+      final String? upcomingAirDateStr = s['upcomingAirDate'] as String?;
+      if (upcomingAirDateStr != null && upcomingAirDateStr.isNotEmpty) {
+        try {
+          final parsed = DateTime.parse(upcomingAirDateStr);
+          final upcomingAirDate = parsed.toLocal();
+          final now = DateTime.now();
+          final today = DateTime.utc(now.year, now.month, now.day);
+          final targetDate = DateTime.utc(
+            upcomingAirDate.year,
+            upcomingAirDate.month,
+            upcomingAirDate.day,
+          );
+          upcomingDaysLeft = targetDate.difference(today).inDays;
+        } catch (_) {}
+      }
+
+      final nextParsed = _parseSeasonEpisode(nextCode);
+      final upcomingParsed = _parseSeasonEpisode(upcomingCode);
+      final bool codesMatch = (nextParsed != null &&
+              upcomingParsed != null &&
+              nextParsed.$1 == upcomingParsed.$1 &&
+              nextParsed.$2 == upcomingParsed.$2) ||
+          (upcomingCode.isNotEmpty && upcomingCode == nextCode);
+
+      final bool isNextUpcoming = hasUpcoming &&
+          upcomingDaysLeft != null &&
+          upcomingDaysLeft > 0 &&
+          codesMatch;
+
+      final bool hasAiredNextEpisode = hasNextCode && !isNextUpcoming;
+      final bool isNextWatched = (nextParsed != null &&
+              watchedEpisodes.contains('${nextParsed.$1}-${nextParsed.$2}')) ||
+          watchedEpisodes.contains(nextCode);
+      final bool hasAiredUnwatchedNext = hasAiredNextEpisode && !isNextWatched;
+
+      final bool isComplete;
+      if (totalEpisodes > 0) {
+        final bool watchedCountMatches =
+            (watchedEpisodes.length >= totalEpisodes) && !hasAiredUnwatchedNext;
+        isComplete = watchedCountMatches || isMarkedCompleted;
+      } else {
+        isComplete = isFinished || isMarkedCompleted;
+      }
+
+      if (isComplete) {
         count++;
       }
     }
@@ -857,5 +911,18 @@ class AchievementsService {
 
   static String _dayKey(DateTime dt) {
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  static (int, int)? _parseSeasonEpisode(String? code) {
+    if (code == null || code.isEmpty) return null;
+    final match = RegExp(
+      r'S(\d+)\s*(?:\|\s*)?E?(\d+)',
+      caseSensitive: false,
+    ).firstMatch(code);
+    if (match == null) return null;
+    final s = int.tryParse(match.group(1) ?? '');
+    final e = int.tryParse(match.group(2) ?? '');
+    if (s == null || e == null) return null;
+    return (s, e);
   }
 }

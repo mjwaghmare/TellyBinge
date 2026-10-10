@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/tmdb_client.dart';
@@ -102,12 +103,16 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
           );
           final firstSeasonNum =
               (firstActualSeason['season_number'] as num?)?.toInt() ?? 1;
-          final totalSeasons =
-              (details['number_of_seasons'] as num?)?.toInt() ?? 0;
+          // Find latest actual season with episodes rather than raw number_of_seasons which can be empty placeholders
+          final latestSeasonNum = computeLatestSeasonNum(
+            seasonsList: seasonsList,
+            firstSeasonNum: firstSeasonNum,
+            numberOfSeasons: (details['number_of_seasons'] as num?)?.toInt(),
+          );
 
           final futures = <Future>[loadSeasonEpisodes(id, firstSeasonNum)];
-          if (totalSeasons > firstSeasonNum) {
-            futures.add(loadSeasonEpisodes(id, totalSeasons));
+          if (latestSeasonNum > firstSeasonNum) {
+            futures.add(loadSeasonEpisodes(id, latestSeasonNum));
           }
           try {
             await Future.wait(futures);
@@ -164,5 +169,24 @@ class ShowDetailsCubit extends Cubit<ShowDetailsState> {
       updatedSeasonsData[seasonNumber] = [];
       emit(latestState.copyWith(seasonsData: updatedSeasonsData));
     }
+  }
+
+  @visibleForTesting
+  static int computeLatestSeasonNum({
+    required List<dynamic> seasonsList,
+    required int firstSeasonNum,
+    int? numberOfSeasons,
+  }) {
+    final validSeasons = seasonsList.where((s) {
+      if (s is! Map) return false;
+      final sNum = (s['season_number'] as num?)?.toInt() ?? 0;
+      final epCount = (s['episode_count'] as num?)?.toInt() ?? 0;
+      return sNum > 0 && epCount > 0;
+    }).toList();
+    return validSeasons.isNotEmpty
+        ? validSeasons
+            .map((s) => (s['season_number'] as num?)?.toInt() ?? 0)
+            .reduce((a, b) => a > b ? a : b)
+        : numberOfSeasons ?? firstSeasonNum;
   }
 }

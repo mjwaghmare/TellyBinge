@@ -62,6 +62,55 @@ void main() {
         'PLANNED',
       );
     });
+
+    test('labels upcoming show as UPCOMING when first air date is in future', () {
+      final futureDate = DateTime.now().add(const Duration(days: 30)).toIso8601String();
+      expect(
+        TvStatusBadge.parseStatus(
+          'Returning Series',
+          numberOfSeasons: 1,
+          firstAirDate: futureDate,
+        ),
+        TvShowStatusType.upcoming,
+      );
+      expect(
+        TvStatusBadge.getLabel('Returning Series', TvShowStatusType.upcoming),
+        'UPCOMING',
+      );
+    });
+
+    test('labels 1-season show as NEW SERIES instead of RETURNING SERIES', () {
+      expect(
+        TvStatusBadge.parseStatus(
+          'Returning Series',
+          numberOfSeasons: 1,
+          firstAirDate: '2024-01-01',
+        ),
+        TvShowStatusType.newSeries,
+      );
+      expect(
+        TvStatusBadge.getLabel('Returning Series', TvShowStatusType.newSeries),
+        'NEW SERIES',
+      );
+    });
+
+    test('labels zero or absent season counts as RETURNING SERIES', () {
+      expect(
+        TvStatusBadge.parseStatus(
+          'Returning Series',
+          numberOfSeasons: 0,
+          firstAirDate: '2022-01-01',
+        ),
+        TvShowStatusType.returning,
+      );
+      expect(
+        TvStatusBadge.parseStatus(
+          'Returning Series',
+          firstAirDate: '2022-01-01',
+        ),
+        TvShowStatusType.returning,
+      );
+    });
   });
 
   group('TvStatusBadge Widget Rendering', () {

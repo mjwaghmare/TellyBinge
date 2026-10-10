@@ -98,6 +98,10 @@ class ProfilePage extends StatefulWidget {
 
   const ProfilePage({super.key, this.tabNotifier, this.onNavigateToShowsExplore, this.onNavigateToMoviesExplore});
 
+  @visibleForTesting
+  static String normalizeShowCategory(Map<String, dynamic> s) =>
+      _ProfilePageState._normalizeShowCategory(s);
+
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
@@ -584,12 +588,11 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 }
 
                 if (showWatchlistState is TvShowWatchlistSuccess) {
-                  // Normalize legacy COMPLETED categories to FINISHED before filtering, sorting, and grouping
+                  // Normalize categories (0 episodes watched can never be FINISHED or UP_TO_DATE)
+                  // before filtering, sorting, and grouping.
                   var filteredShows = showWatchlistState.shows.map((s) {
-                    if (s['category'] == 'COMPLETED') {
-                      return Map<String, dynamic>.from(s)..['category'] = 'FINISHED';
-                    }
-                    return s;
+                    final normalized = _normalizeShowCategory(s);
+                    return Map<String, dynamic>.from(s)..['category'] = normalized;
                   }).toList();
 
                   // 1. Progress Filter
@@ -1978,6 +1981,108 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   String _getImageUrl(String? path, {String size = 'w342'}) {
     return AppConstants.tmdbImageUrl(path ?? '', size: size);
+  }
+
+  static (int, int)? _parseSeasonEpisode(String? code) {
+    if (code == null || code.isEmpty) return null;
+    final match = RegExp(
+      r'S(\d+)\s*(?:\|\s*)?E?(\d+)',
+      caseSensitive: false,
+    ).firstMatch(code);
+    if (match == null) return null;
+    final s = int.tryParse(match.group(1) ?? '');
+    final e = int.tryParse(match.group(2) ?? '');
+    if (s == null || e == null) return null;
+    return (s, e);
+  }
+
+  static String _normalizeShowCategory(Map<String, dynamic> s) {
+    if ((s['status'] as String?) == 'STOPPED') return 'STOPPED';
+
+    final watchedEps = (s['watchedEpisodes'] as List?) ?? [];
+    final watchedCount = watchedEps.length;
+    var rawCategory = (s['category'] as String? ?? '').trim();
+    if (rawCategory == 'COMPLETED') rawCategory = 'FINISHED';
+
+    if (watchedCount == 0) {
+      // Shows with 0 watched episodes are unstarted / unreleased, never Finished or Up to date
+      return 'HAVENT_STARTED';
+    }
+
+    // Check if an aired unwatched episode is established
+    final nextCode = s['nextEpisodeCode'] as String? ?? '';
+    final hasUpcoming = s['hasUpcoming'] as bool? ?? false;
+    final upcomingCode = s['upcomingEpisodeCode'] as String? ?? '';
+
+    int? upcomingDaysLeft;
+    final String? upcomingAirDateStr = s['upcomingAirDate'] as String?;
+    if (upcomingAirDateStr != null && upcomingAirDateStr.isNotEmpty) {
+      try {
+        final parsed = DateTime.parse(upcomingAirDateStr);
+        final upcomingAirDate = parsed.toLocal();
+        final now = DateTime.now();
+        final today = DateTime.utc(now.year, now.month, now.day);
+        final targetDate = DateTime.utc(
+          upcomingAirDate.year,
+          upcomingAirDate.month,
+          upcomingAirDate.day,
+        );
+        upcomingDaysLeft = targetDate.difference(today).inDays;
+      } catch (_) {}
+    }
+
+    final nextParsed = _parseSeasonEpisode(nextCode);
+    final upcomingParsed = _parseSeasonEpisode(upcomingCode);
+    final bool codesMatch = (nextParsed != null &&
+            upcomingParsed != null &&
+            nextParsed.$1 == upcomingParsed.$1 &&
+            nextParsed.$2 == upcomingParsed.$2) ||
+        (upcomingCode.isNotEmpty && upcomingCode == nextCode);
+
+    final bool isNextUpcoming = hasUpcoming &&
+        upcomingDaysLeft != null &&
+        upcomingDaysLeft > 0 &&
+        codesMatch;
+
+    final bool isAlreadyWatched = nextParsed != null &&
+        (watchedEps.contains('${nextParsed.$1}-${nextParsed.$2}') ||
+            watchedEps.contains(nextCode));
+
+    final String nextCodeNormalized = nextCode.trim().toUpperCase();
+    final bool hasAiredUnwatched = nextCode.isNotEmpty &&
+        nextCodeNormalized != 'UP TO DATE' &&
+        nextCodeNormalized != 'TBA' &&
+        nextParsed != null &&
+        !isAlreadyWatched &&
+        !isNextUpcoming;
+
+    // User has watched at least 1 episode:
+    if (rawCategory == 'FINISHED') {
+      if (hasAiredUnwatched) {
+        return 'WATCH_NEXT';
+      }
+      return 'FINISHED';
+    }
+
+    if (rawCategory == 'UP_TO_DATE' && !hasAiredUnwatched) {
+      return 'UP_TO_DATE';
+    }
+
+    if (rawCategory == 'UPCOMING_ONLY' ||
+        rawCategory == 'HAVENT_STARTED' ||
+        rawCategory.isEmpty) {
+      if (hasAiredUnwatched) {
+        return 'WATCH_NEXT';
+      }
+      final totalEpisodes = (s['totalEpisodes'] as num?)?.toInt() ?? 0;
+      if (isNextUpcoming ||
+          (totalEpisodes > 0 && watchedCount >= totalEpisodes)) {
+        return 'UP_TO_DATE';
+      }
+      return 'WATCH_NEXT';
+    }
+
+    return rawCategory;
   }
 
   HorizontalItem _showToHorizontalItem(Map<String, dynamic> s, {String? watchedAt}) {

@@ -7,6 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 /// Semantic classification for TV show lifecycle states.
 enum TvShowStatusType {
   returning,
+  newSeries,
   ended,
   cancelled,
   upcoming,
@@ -14,7 +15,7 @@ enum TvShowStatusType {
 }
 
 /// A prominent, token-compliant status badge/chip indicating the TV show lifecycle
-/// (e.g. "RETURNING SERIES", "ENDED", "CANCELLED", "IN PRODUCTION").
+/// (e.g. "RETURNING SERIES", "NEW SERIES", "ENDED", "CANCELLED", "IN PRODUCTION").
 ///
 /// Designed to provide industry-standard visual parity with TV Time & Serializd
 /// with full dark/light theme awareness and high-contrast hero overlay support.
@@ -22,18 +23,46 @@ class TvStatusBadge extends StatelessWidget {
   const TvStatusBadge({
     super.key,
     required this.status,
+    this.numberOfSeasons,
+    this.firstAirDate,
     this.isHero = true,
   });
 
   /// The raw status string from TMDB (e.g. "Returning Series", "Ended", "Canceled").
   final String status;
 
+  /// Total number of seasons for the TV show (if available).
+  final int? numberOfSeasons;
+
+  /// The first air date (e.g. "2026-10-15") to detect if the show is upcoming.
+  final String? firstAirDate;
+
   /// Whether this badge is rendered on a dark media backdrop/hero overlay.
   final bool isHero;
 
-  static TvShowStatusType parseStatus(String status) {
+  static TvShowStatusType parseStatus(
+    String status, {
+    int? numberOfSeasons,
+    String? firstAirDate,
+  }) {
     final s = status.trim().toLowerCase();
     if (s == 'returning series' || s == 'returning') {
+      if (firstAirDate != null && firstAirDate.isNotEmpty) {
+        try {
+          final airDate = DateTime.parse(firstAirDate);
+          final now = DateTime.now();
+          final today = DateTime.utc(now.year, now.month, now.day);
+          final airDay = DateTime.utc(airDate.year, airDate.month, airDate.day);
+          if (airDay.isAfter(today)) {
+            return TvShowStatusType.upcoming;
+          }
+        } catch (_) {}
+      }
+
+      if (numberOfSeasons == 1) {
+        return TvShowStatusType.newSeries;
+      }
+
       return TvShowStatusType.returning;
     }
     if (s == 'ended') {
@@ -55,6 +84,8 @@ class TvStatusBadge extends StatelessWidget {
     switch (type) {
       case TvShowStatusType.returning:
         return 'RETURNING SERIES';
+      case TvShowStatusType.newSeries:
+        return 'NEW SERIES';
       case TvShowStatusType.ended:
         return 'ENDED';
       case TvShowStatusType.cancelled:
@@ -74,7 +105,11 @@ class TvStatusBadge extends StatelessWidget {
     final trimmed = status.trim();
     if (trimmed.isEmpty) return const SizedBox.shrink();
 
-    final statusType = parseStatus(trimmed);
+    final statusType = parseStatus(
+      trimmed,
+      numberOfSeasons: numberOfSeasons,
+      firstAirDate: firstAirDate,
+    );
     final label = getLabel(trimmed, statusType);
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
@@ -92,6 +127,13 @@ class TvStatusBadge extends StatelessWidget {
           textColor = AppColors.success;
           dotColor = AppColors.success;
           break;
+        case TvShowStatusType.newSeries:
+        case TvShowStatusType.upcoming:
+          backgroundColor = AppColors.airing.withValues(alpha: 0.20);
+          borderColor = AppColors.airing.withValues(alpha: 0.45);
+          textColor = AppColors.skyBlue;
+          dotColor = AppColors.airing;
+          break;
         case TvShowStatusType.ended:
           backgroundColor = AppColors.surfaceElevated.withValues(alpha: 0.75);
           borderColor = AppColors.borderDark;
@@ -103,12 +145,6 @@ class TvStatusBadge extends StatelessWidget {
           borderColor = AppColors.error.withValues(alpha: 0.45);
           textColor = AppColors.errorSoft;
           dotColor = AppColors.error;
-          break;
-        case TvShowStatusType.upcoming:
-          backgroundColor = AppColors.airing.withValues(alpha: 0.20);
-          borderColor = AppColors.airing.withValues(alpha: 0.45);
-          textColor = AppColors.skyBlue;
-          dotColor = AppColors.airing;
           break;
         case TvShowStatusType.unknown:
           backgroundColor = AppColors.surfaceElevated.withValues(alpha: 0.75);
@@ -127,6 +163,13 @@ class TvStatusBadge extends StatelessWidget {
           textColor = AppColors.lightOnSuccessContainer;
           dotColor = AppColors.lightOnSuccessContainer;
           break;
+        case TvShowStatusType.newSeries:
+        case TvShowStatusType.upcoming:
+          backgroundColor = AppColors.lightAiringContainer;
+          borderColor = AppColors.lightOnAiringContainer.withValues(alpha: 0.25);
+          textColor = AppColors.lightOnAiringContainer;
+          dotColor = AppColors.lightOnAiringContainer;
+          break;
         case TvShowStatusType.ended:
           backgroundColor = AppColors.lightEndedContainer;
           borderColor = AppColors.lightOnEndedContainer.withValues(alpha: 0.25);
@@ -138,12 +181,6 @@ class TvStatusBadge extends StatelessWidget {
           borderColor = AppColors.lightOnErrorContainer.withValues(alpha: 0.25);
           textColor = AppColors.lightOnErrorContainer;
           dotColor = AppColors.lightOnErrorContainer;
-          break;
-        case TvShowStatusType.upcoming:
-          backgroundColor = AppColors.lightAiringContainer;
-          borderColor = AppColors.lightOnAiringContainer.withValues(alpha: 0.25);
-          textColor = AppColors.lightOnAiringContainer;
-          dotColor = AppColors.lightOnAiringContainer;
           break;
         case TvShowStatusType.unknown:
           backgroundColor = AppColors.lightEndedContainer;

@@ -84,6 +84,21 @@ class ShowDetailsPage extends StatelessWidget {
       return null;
     }
   }
+
+  @visibleForTesting
+  static int computeLatestSeasonNumber(
+    List<dynamic> seasons,
+    Map<int, List<dynamic>> seasonsData,
+  ) {
+    return seasons.where((s) {
+      if (s is! Map) return false;
+      final sNum = (s['season_number'] as num?)?.toInt() ?? 0;
+      final epCount = (s['episode_count'] as num?)?.toInt() ?? 0;
+      final hasLoadedEpisodes = seasonsData[sNum]?.isNotEmpty ?? false;
+      return sNum > 0 && (epCount > 0 || hasLoadedEpisodes);
+    }).map((s) => (s['season_number'] as num?)?.toInt() ?? 0)
+      .fold<int>(0, (a, b) => b > a ? b : a);
+  }
 }
 
 class ShowDetailsView extends StatefulWidget {
@@ -455,7 +470,34 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
     final int voteCount = (details['vote_count'] as num?)?.toInt() ?? 0;
 
     // TV show specific metadata
-    final int numberOfSeasons = details['number_of_seasons'] ?? 0;
+    final rawSeasons = details['seasons'] as List<dynamic>? ?? [];
+    // Filter out specials (season_number <= 0) and unconfirmed empty placeholder seasons
+    // with 0 episodes and no announced air date.
+    final validSeasons = rawSeasons.where((s) {
+      if (s is! Map) return false;
+      final sNum = (s['season_number'] as num?)?.toInt() ?? 0;
+      if (sNum <= 0) return false;
+      final epCount = (s['episode_count'] as num?)?.toInt() ?? 0;
+      final hasLoadedEpisodes = seasonsData[sNum]?.isNotEmpty ?? false;
+      final airDate = s['air_date'] as String?;
+      final hasAirDate = airDate != null && airDate.isNotEmpty;
+      return epCount > 0 || hasLoadedEpisodes || hasAirDate;
+    }).toList();
+
+    // Fall back to all non-specials only if every season had epCount == 0 and no air date
+    // (e.g. brand-new show with only Season 1 announced)
+    final displayedSeasons = validSeasons.isNotEmpty
+        ? validSeasons
+        : rawSeasons
+            .where((s) =>
+                s is Map && ((s['season_number'] as num?)?.toInt() ?? 0) > 0)
+            .toList();
+
+    final int rawNumberOfSeasons =
+        (details['number_of_seasons'] as num?)?.toInt() ?? 0;
+    final int numberOfSeasons = displayedSeasons.isNotEmpty
+        ? displayedSeasons.length
+        : rawNumberOfSeasons;
     final String status = details['status'] ?? '';
     final List<dynamic> networks = details['networks'] ?? [];
     final String networkName = networks.isNotEmpty
@@ -740,7 +782,12 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
                           if (widget.mediaType == 'tv' &&
                               status.trim().isNotEmpty) ...[
                             const SizedBox(height: 8.0),
-                            TvStatusBadge(status: status, isHero: true),
+                            TvStatusBadge(
+                              status: status,
+                              numberOfSeasons: numberOfSeasons,
+                              firstAirDate: firstAirDate,
+                              isHero: true,
+                            ),
                           ],
                         ],
                       ),
@@ -1301,7 +1348,7 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
           children: [
             AppSpacing.gapH24,
             _buildSeasonsAccordion(
-              details['seasons'] as List<dynamic>? ?? [],
+              displayedSeasons,
               seasonsData,
               details,
             ),
@@ -1550,6 +1597,9 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
     Map<int, List<dynamic>> seasonsData,
     Map<String, dynamic> showDetails,
   ) {
+    final int latestSeasonNumber =
+        ShowDetailsPage.computeLatestSeasonNumber(seasons, seasonsData);
+
     return PageStorage(
       bucket: PageStorageBucket(),
       child: Column(
@@ -1563,6 +1613,11 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
 
           // Skip specials season entirely (season_number 0 is always Specials in TMDB)
           if (seasonNumber == 0) return const SizedBox.shrink();
+          final hasLoadedEpisodes =
+              seasonsData[seasonNumber]?.isNotEmpty ?? false;
+          if (epCount == 0 && !hasLoadedEpisodes) {
+            return const SizedBox.shrink();
+          }
 
           return BlocBuilder<AuthCubit, AuthState>(
             builder: (context, authState) {
@@ -1594,10 +1649,7 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
 
                   List<String> releasedEpisodesKeys = [];
                   if (epCount > 0) {
-                    final totalSeasons =
-                        (showDetails['number_of_seasons'] as num?)?.toInt() ??
-                        0;
-                    if (seasonNumber < totalSeasons) {
+                    if (seasonNumber < latestSeasonNumber) {
                       for (int i = 1; i <= epCount; i++) {
                         releasedEpisodesKeys.add('$seasonNumber-$i');
                       }

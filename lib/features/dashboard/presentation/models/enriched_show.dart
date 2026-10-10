@@ -99,12 +99,31 @@ class EnrichedShow {
       } catch (_) {}
     }
 
-    // Check if the next unwatched episode is actually an unreleased upcoming episode
+    final String? storedNextCode = data['nextEpisodeCode'] as String?;
+
+    // Check if the next unwatched episode is actually an unreleased upcoming episode.
+    // Compare upcoming episode with targetSeason and targetEpisode so differently padded
+    // codes match without being misled by a potentially stale storedNextCode.
+    final upcomingParsed = _parseSeasonEpisode(upcomingEpisodeCode);
+    final storedParsed = _parseSeasonEpisode(storedNextCode);
+    final bool storedMatchesTarget = storedParsed != null &&
+        storedParsed.$1 == targetSeason &&
+        storedParsed.$2 == targetEpisode;
+
+    final bool codesMatch = (upcomingParsed != null &&
+            upcomingParsed.$1 == targetSeason &&
+            upcomingParsed.$2 == targetEpisode) ||
+        (upcomingEpisodeCode.isNotEmpty &&
+            upcomingEpisodeCode != 'TBA' &&
+            (upcomingEpisodeCode == derivedCode ||
+                (storedMatchesTarget &&
+                    upcomingEpisodeCode == storedNextCode)));
+
     final bool isNextUpcoming =
         hasUpcoming &&
         upcomingDaysLeft != null &&
         upcomingDaysLeft > 0 &&
-        upcomingEpisodeCode == derivedCode;
+        codesMatch;
 
     // Derive category:
     // If watchedEpisodes is not empty, the user has started watching this show.
@@ -119,9 +138,25 @@ class EnrichedShow {
         category = 'HAVENT_STARTED';
       }
     } else {
-      if (isNextUpcoming ||
-          storedCategory == 'UP_TO_DATE' ||
+      final storedParsed = _parseSeasonEpisode(storedNextCode);
+      final bool isStoredCodeValid = storedParsed != null &&
+          !watchedEpisodes.contains('${storedParsed.$1}-${storedParsed.$2}') &&
+          !watchedEpisodes.contains(storedNextCode) &&
+          storedParsed.$1 == targetSeason &&
+          storedParsed.$2 == targetEpisode;
+
+      final bool hasAiredUnwatched = storedNextCode != null &&
+          storedNextCode.isNotEmpty &&
+          storedNextCode != 'Up to date' &&
+          storedNextCode != 'TBA' &&
+          isStoredCodeValid &&
+          !isNextUpcoming;
+
+      if (hasAiredUnwatched) {
+        category = 'WATCH_NEXT';
+      } else if (storedCategory == 'UP_TO_DATE' ||
           storedCategory == 'FINISHED' ||
+          isNextUpcoming ||
           (totalEpisodes > 0 && watchedEpisodes.length >= totalEpisodes)) {
         category = (storedCategory == 'FINISHED' && !isNextUpcoming)
             ? 'FINISHED'
@@ -137,20 +172,16 @@ class EnrichedShow {
     String episodeCode;
     if (isUpToDate) {
       episodeCode = 'Up to date';
+    } else if (storedNextCode != null &&
+        storedNextCode.trim().toUpperCase() == 'TBA') {
+      episodeCode = storedNextCode;
     } else {
-      final String? storedNextCode = data['nextEpisodeCode'] as String?;
       if (storedNextCode != null && storedNextCode.isNotEmpty) {
-        final match = RegExp(
-          r'S(\d+)\s*\|\s*E(\d+)',
-        ).firstMatch(storedNextCode);
-        if (match != null) {
-          final s = int.tryParse(match.group(1) ?? '');
-          final e = int.tryParse(match.group(2) ?? '');
-          if (s == targetSeason && e == targetEpisode) {
-            episodeCode = storedNextCode;
-          } else {
-            episodeCode = derivedCode;
-          }
+        final parsed = _parseSeasonEpisode(storedNextCode);
+        if (parsed != null &&
+            parsed.$1 == targetSeason &&
+            parsed.$2 == targetEpisode) {
+          episodeCode = storedNextCode;
         } else {
           episodeCode = derivedCode;
         }
@@ -170,6 +201,10 @@ class EnrichedShow {
       } else {
         episodeTitle = '';
       }
+    } else if (episodeCode.trim().toUpperCase() == 'TBA') {
+      final status = data['status']?.toString().toLowerCase();
+      final isEnded = status == 'ended' || status == 'canceled';
+      episodeTitle = isEnded ? "Haven't started" : 'Waiting for premiere';
     } else {
       episodeTitle = '';
     }
@@ -249,7 +284,22 @@ class EnrichedShow {
     if (!isShowEnded) return false;
 
     final numSeasons = (rawShowData['number_of_seasons'] as num?)?.toInt();
-    if (numSeasons != null && numSeasons > 0 && targetSeason == numSeasons) {
+    int effectiveNumSeasons = numSeasons ?? 0;
+    final seasons = rawShowData['seasons'] as List<dynamic>?;
+    if (seasons != null && seasons.isNotEmpty) {
+      final validSeasonNums = seasons.where((s) {
+        if (s is! Map) return false;
+        final sNum = (s['season_number'] as num?)?.toInt() ?? 0;
+        final count = (s['episode_count'] as num?)?.toInt() ?? 0;
+        return sNum > 0 && count > 0;
+      }).map((s) => (s['season_number'] as num?)?.toInt() ?? 0);
+      if (validSeasonNums.isNotEmpty) {
+        effectiveNumSeasons =
+            validSeasonNums.fold<int>(0, (a, b) => b > a ? b : a);
+      }
+    }
+
+    if (effectiveNumSeasons > 0 && targetSeason == effectiveNumSeasons) {
       if (totalEpisodes > 0) {
         final watched = rawShowData['watchedEpisodes'];
         final watchedCount = watched is List ? watched.length : 0;
@@ -265,5 +315,19 @@ class EnrichedShow {
     }
 
     return false;
+  }
+
+  /// Parses season and episode numbers from formatted strings like `S01 | E02`, `S1E2`, etc.
+  static (int, int)? _parseSeasonEpisode(String? code) {
+    if (code == null || code.isEmpty) return null;
+    final match = RegExp(
+      r'S(\d+)\s*(?:\|\s*)?E?(\d+)',
+      caseSensitive: false,
+    ).firstMatch(code);
+    if (match == null) return null;
+    final s = int.tryParse(match.group(1) ?? '');
+    final e = int.tryParse(match.group(2) ?? '');
+    if (s == null || e == null) return null;
+    return (s, e);
   }
 }
