@@ -48,10 +48,82 @@
         <!-- Alternate launcher icons, all disabled by default. At most one
              is enabled at a time; see AppIconSwitcher.kt. -->
         <activity-alias
+            android:name=".MainActivityCinemaGold"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_cinema_gold"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityNeon"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_neon"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityPurplePortal"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_purple_portal"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
             android:name=".MainActivityMidnight"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_midnight"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityRetroFilm"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_retro_film"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivitySilverScreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_silver_screen"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityPopArt"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_pop_art"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -72,10 +144,10 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".MainActivityNeonPink"
+            android:name=".MainActivityRainbow"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_neon_pink"
+            android:icon="@mipmap/ic_launcher_rainbow"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -84,10 +156,10 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".MainActivityGoldenLuxe"
+            android:name=".MainActivityCrimson"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_golden_luxe"
+            android:icon="@mipmap/ic_launcher_crimson"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -96,46 +168,10 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".MainActivityOceanBlue"
+            android:name=".MainActivityCosmic"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_ocean_blue"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".MainActivitySunset"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_sunset"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".MainActivityHolographic"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_holographic"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".MainActivitySnowWhite"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_snow_white"
+            android:icon="@mipmap/ic_launcher_cosmic"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

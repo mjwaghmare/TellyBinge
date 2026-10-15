@@ -10,36 +10,41 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AppIconOption', () {
-    test('has exactly 9 icon variants', () {
-      expect(AppIconOption.values.length, 9);
+    test('has exactly 12 icon variants', () {
+      expect(AppIconOption.values.length, 12);
     });
 
-    test('has exactly 3 free and 6 premium variants', () {
+    test('has exactly 4 free and 8 premium variants', () {
       final freeIcons = AppIconOption.values.where((o) => !o.isPremium).toList();
       final premiumIcons = AppIconOption.values.where((o) => o.isPremium).toList();
 
-      expect(freeIcons.length, 3);
-      expect(premiumIcons.length, 6);
+      expect(freeIcons.length, 4);
+      expect(premiumIcons.length, 8);
 
       expect(freeIcons.map((i) => i.id).toSet(), {
         'default',
         'midnight',
+        'silver_screen',
         'minimal',
       });
 
       expect(premiumIcons.map((i) => i.id).toSet(), {
-        'neon_pink',
-        'golden_luxe',
-        'ocean_blue',
-        'sunset',
-        'holographic',
-        'snow_white',
+        'cinema_gold',
+        'neon',
+        'purple_portal',
+        'retro_film',
+        'pop_art',
+        'rainbow',
+        'crimson',
+        'cosmic',
       });
     });
 
-    test('resolves fromId properly with fallback to default', () {
+    test('resolves fromId properly with fallback to default and legacy aliases', () {
       expect(AppIconOption.fromId('midnight'), AppIconOption.midnight);
-      expect(AppIconOption.fromId('golden_luxe'), AppIconOption.goldenLuxe);
+      expect(AppIconOption.fromId('cinema_gold'), AppIconOption.cinemaGold);
+      expect(AppIconOption.fromId('golden_luxe'), AppIconOption.cinemaGold);
+      expect(AppIconOption.fromId('neon_pink'), AppIconOption.neon);
       expect(AppIconOption.fromId('unknown_id'), AppIconOption.defaultIcon);
       expect(AppIconOption.fromId(null), AppIconOption.defaultIcon);
     });
@@ -124,7 +129,7 @@ void main() {
 
     test('blocks non-pro users from selecting premium icons', () async {
       final cubit = AppIconCubit(isProUser: false);
-      final result = await cubit.selectIcon(AppIconOption.goldenLuxe);
+      final result = await cubit.selectIcon(AppIconOption.cinemaGold);
 
       expect(result, isFalse);
       expect(cubit.state.errorMessage, contains('reserved for Popverse Pro users'));

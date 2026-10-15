@@ -2,93 +2,123 @@
 enum AppIconOption {
   defaultIcon(
     id: 'default',
-    title: 'Default',
+    title: 'Original',
     subtitle: 'Classic Popverse',
     isPremium: false,
     iosIconName: null,
     androidAliasSuffix: null,
     androidAliasName: null,
-    previewAsset: 'assets/images/app_icons/preview_default.png',
+    previewAsset: 'assets/images/app_icons/preview_original.png',
+  ),
+  cinemaGold(
+    id: 'cinema_gold',
+    title: 'Cinema Gold',
+    subtitle: 'Warm Golden Spotlight',
+    isPremium: true,
+    iosIconName: 'cinema_gold',
+    androidAliasSuffix: 'MainActivityCinemaGold',
+    androidAliasName: 'com.mwstudio.popverse.MainActivityCinemaGold',
+    previewAsset: 'assets/images/app_icons/preview_cinema_gold.png',
+  ),
+  neon(
+    id: 'neon',
+    title: 'Neon',
+    subtitle: 'Electric Light Rings',
+    isPremium: true,
+    iosIconName: 'neon',
+    androidAliasSuffix: 'MainActivityNeon',
+    androidAliasName: 'com.mwstudio.popverse.MainActivityNeon',
+    previewAsset: 'assets/images/app_icons/preview_neon.png',
+  ),
+  purplePortal(
+    id: 'purple_portal',
+    title: 'Purple Portal',
+    subtitle: 'Cosmic Energy Vortex',
+    isPremium: true,
+    iosIconName: 'purple_portal',
+    androidAliasSuffix: 'MainActivityPurplePortal',
+    androidAliasName: 'com.mwstudio.popverse.MainActivityPurplePortal',
+    previewAsset: 'assets/images/app_icons/preview_purple_portal.png',
   ),
   midnight(
     id: 'midnight',
     title: 'Midnight',
-    subtitle: 'Dark & Platinum',
+    subtitle: 'Starry Deep Space',
     isPremium: false,
     iosIconName: 'midnight',
     androidAliasSuffix: 'MainActivityMidnight',
     androidAliasName: 'com.mwstudio.popverse.MainActivityMidnight',
     previewAsset: 'assets/images/app_icons/preview_midnight.png',
   ),
+  retroFilm(
+    id: 'retro_film',
+    title: 'Retro Film',
+    subtitle: 'Vintage 35mm Roll',
+    isPremium: true,
+    iosIconName: 'retro_film',
+    androidAliasSuffix: 'MainActivityRetroFilm',
+    androidAliasName: 'com.mwstudio.popverse.MainActivityRetroFilm',
+    previewAsset: 'assets/images/app_icons/preview_retro_film.png',
+  ),
+  silverScreen(
+    id: 'silver_screen',
+    title: 'Silver Screen',
+    subtitle: 'Classic Monochrome',
+    isPremium: false,
+    iosIconName: 'silver_screen',
+    androidAliasSuffix: 'MainActivitySilverScreen',
+    androidAliasName: 'com.mwstudio.popverse.MainActivitySilverScreen',
+    previewAsset: 'assets/images/app_icons/preview_silver_screen.png',
+  ),
+  popArt(
+    id: 'pop_art',
+    title: 'Pop Art',
+    subtitle: 'Halftone Comic Style',
+    isPremium: true,
+    iosIconName: 'pop_art',
+    androidAliasSuffix: 'MainActivityPopArt',
+    androidAliasName: 'com.mwstudio.popverse.MainActivityPopArt',
+    previewAsset: 'assets/images/app_icons/preview_pop_art.png',
+  ),
   minimal(
     id: 'minimal',
     title: 'Minimal',
-    subtitle: 'Clean Monochrome',
+    subtitle: 'Clean Studio Aesthetic',
     isPremium: false,
     iosIconName: 'minimal',
     androidAliasSuffix: 'MainActivityMinimal',
     androidAliasName: 'com.mwstudio.popverse.MainActivityMinimal',
     previewAsset: 'assets/images/app_icons/preview_minimal.png',
   ),
-  neonPink(
-    id: 'neon_pink',
-    title: 'Neon Pink',
-    subtitle: 'Vibrant Magenta Glow',
+  rainbow(
+    id: 'rainbow',
+    title: 'Rainbow',
+    subtitle: 'Prismatic Spectrum',
     isPremium: true,
-    iosIconName: 'neon_pink',
-    androidAliasSuffix: 'MainActivityNeonPink',
-    androidAliasName: 'com.mwstudio.popverse.MainActivityNeonPink',
-    previewAsset: 'assets/images/app_icons/preview_neon_pink.png',
+    iosIconName: 'rainbow',
+    androidAliasSuffix: 'MainActivityRainbow',
+    androidAliasName: 'com.mwstudio.popverse.MainActivityRainbow',
+    previewAsset: 'assets/images/app_icons/preview_rainbow.png',
   ),
-  goldenLuxe(
-    id: 'golden_luxe',
-    title: 'Golden Luxe',
-    subtitle: 'Black & Pure Gold',
+  crimson(
+    id: 'crimson',
+    title: 'Crimson',
+    subtitle: 'Deep Ruby Glow',
     isPremium: true,
-    iosIconName: 'golden_luxe',
-    androidAliasSuffix: 'MainActivityGoldenLuxe',
-    androidAliasName: 'com.mwstudio.popverse.MainActivityGoldenLuxe',
-    previewAsset: 'assets/images/app_icons/preview_golden_luxe.png',
+    iosIconName: 'crimson',
+    androidAliasSuffix: 'MainActivityCrimson',
+    androidAliasName: 'com.mwstudio.popverse.MainActivityCrimson',
+    previewAsset: 'assets/images/app_icons/preview_crimson.png',
   ),
-  oceanBlue(
-    id: 'ocean_blue',
-    title: 'Ocean Blue',
-    subtitle: 'Deep Aqua & Cyan',
+  cosmic(
+    id: 'cosmic',
+    title: 'Cosmic',
+    subtitle: 'Galactic Starlight Spiral',
     isPremium: true,
-    iosIconName: 'ocean_blue',
-    androidAliasSuffix: 'MainActivityOceanBlue',
-    androidAliasName: 'com.mwstudio.popverse.MainActivityOceanBlue',
-    previewAsset: 'assets/images/app_icons/preview_ocean_blue.png',
-  ),
-  sunset(
-    id: 'sunset',
-    title: 'Sunset',
-    subtitle: 'Warm Coral Glow',
-    isPremium: true,
-    iosIconName: 'sunset',
-    androidAliasSuffix: 'MainActivitySunset',
-    androidAliasName: 'com.mwstudio.popverse.MainActivitySunset',
-    previewAsset: 'assets/images/app_icons/preview_sunset.png',
-  ),
-  holographic(
-    id: 'holographic',
-    title: 'Holographic',
-    subtitle: 'Prismatic Rainbow',
-    isPremium: true,
-    iosIconName: 'holographic',
-    androidAliasSuffix: 'MainActivityHolographic',
-    androidAliasName: 'com.mwstudio.popverse.MainActivityHolographic',
-    previewAsset: 'assets/images/app_icons/preview_holographic.png',
-  ),
-  snowWhite(
-    id: 'snow_white',
-    title: 'Snow White',
-    subtitle: 'Crisp Silver Light',
-    isPremium: true,
-    iosIconName: 'snow_white',
-    androidAliasSuffix: 'MainActivitySnowWhite',
-    androidAliasName: 'com.mwstudio.popverse.MainActivitySnowWhite',
-    previewAsset: 'assets/images/app_icons/preview_snow_white.png',
+    iosIconName: 'cosmic',
+    androidAliasSuffix: 'MainActivityCosmic',
+    androidAliasName: 'com.mwstudio.popverse.MainActivityCosmic',
+    previewAsset: 'assets/images/app_icons/preview_cosmic.png',
   );
 
   static const String defaultApplicationId = 'com.mwstudio.popverse';
@@ -122,9 +152,25 @@ enum AppIconOption {
     return '$baseAppId.$androidAliasSuffix';
   }
 
-  /// Resolves an [AppIconOption] from a stored [id].
+  /// Resolves an [AppIconOption] from a stored [id], with backward-compatible aliases for previously retired icons.
   static AppIconOption fromId(String? id) {
     if (id == null) return AppIconOption.defaultIcon;
+    switch (id) {
+      case 'original':
+        return AppIconOption.defaultIcon;
+      case 'golden_luxe':
+        return AppIconOption.cinemaGold;
+      case 'neon_pink':
+        return AppIconOption.neon;
+      case 'ocean_blue':
+        return AppIconOption.cosmic;
+      case 'sunset':
+        return AppIconOption.crimson;
+      case 'holographic':
+        return AppIconOption.rainbow;
+      case 'snow_white':
+        return AppIconOption.silverScreen;
+    }
     return AppIconOption.values.firstWhere(
       (opt) => opt.id == id,
       orElse: () => AppIconOption.defaultIcon,

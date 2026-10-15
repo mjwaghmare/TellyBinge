@@ -74,13 +74,15 @@ void main() {
     // Bottom sheet is visible
     expect(find.text('Application Icon'), findsOneWidget);
 
-    // Tap on a different icon (e.g. Midnight)
-    await tester.tap(find.text(AppIconOption.midnight.title));
+    // Tap on a different icon (e.g. Cinema Gold)
+    final cinemaGoldFinder = find.text(AppIconOption.cinemaGold.title);
+    await tester.ensureVisible(cinemaGoldFinder);
+    await tester.tap(cinemaGoldFinder);
     await tester.pumpAndSettle();
 
     // The bottom sheet should be closed!
     expect(find.text('Application Icon'), findsNothing);
-    expect(cubit.state.currentIcon, AppIconOption.midnight);
+    expect(cubit.state.currentIcon, AppIconOption.cinemaGold);
 
     await cubit.close();
   });
@@ -122,7 +124,9 @@ void main() {
     expect(find.text('Application Icon'), findsOneWidget);
 
     // Tap a new icon, but service returns false
-    await tester.tap(find.text(AppIconOption.midnight.title));
+    final cinemaGoldFinder = find.text(AppIconOption.cinemaGold.title);
+    await tester.ensureVisible(cinemaGoldFinder);
+    await tester.tap(cinemaGoldFinder);
     await tester.pumpAndSettle();
 
     // Sheet remains open, error snackbar is shown
