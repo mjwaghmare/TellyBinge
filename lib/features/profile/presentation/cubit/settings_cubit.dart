@@ -20,7 +20,7 @@ class SettingsState extends Equatable {
     this.allowAdultContent = false,
     this.notificationsEnabled = false,
     this.notify1HourBefore = false,
-    this.notify1DayBefore = true,
+    this.notify1DayBefore = false,
     this.resetOnboarding = false,
     this.hapticsEnabled = true,
     this.reducedMotion = false,
@@ -83,7 +83,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final notificationsEnabled =
         prefs.getBool(_notificationsEnabledKey) ?? false;
     final notify1HourBefore = prefs.getBool(_notify1HourBeforeKey) ?? false;
-    final notify1DayBefore = prefs.getBool(_notify1DayBeforeKey) ?? true;
+    final notify1DayBefore = prefs.getBool(_notify1DayBeforeKey) ?? false;
     final hasSeenOnboarding = prefs.getBool(OnboardingStorage.seenKey) ?? false;
     final hapticsEnabled = prefs.getBool(_hapticsEnabledKey) ?? true;
     final reducedMotion = prefs.getBool(_reducedMotionKey) ?? false;

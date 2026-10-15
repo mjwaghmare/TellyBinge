@@ -59,4 +59,24 @@ void main() {
       expect(AppHaptics.isEnabled, isTrue);
     });
   });
+
+  group('SettingsCubit - Notification Settings', () {
+    test('SettingsState defaults notify1DayBefore to false', () {
+      const state = SettingsState();
+      expect(state.notify1DayBefore, isFalse);
+    });
+
+    test('defaults to notify1DayBefore = false when no value in prefs', () {
+      final cubit = SettingsCubit(prefs: prefs, tmdbClient: tmdbClient);
+
+      expect(cubit.state.notify1DayBefore, isFalse);
+    });
+
+    test('loads existing notify1DayBefore = true from prefs', () async {
+      await prefs.setBool(AppStorageKeys.notify1DayBefore, true);
+      final cubit = SettingsCubit(prefs: prefs, tmdbClient: tmdbClient);
+
+      expect(cubit.state.notify1DayBefore, isTrue);
+    });
+  });
 }

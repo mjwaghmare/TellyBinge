@@ -978,7 +978,7 @@ class NotificationService {
 
     // 2. Supplement with desired notifications from watchlists
     final prefs = await SharedPreferences.getInstance();
-    final notify1DayBefore = prefs.getBool(_prefNotify1DayBefore) ?? true;
+    final notify1DayBefore = prefs.getBool(_prefNotify1DayBefore) ?? false;
     final now = DateTime.now();
     for (final entry in _desired.entries) {
       final media = entry.key;
@@ -1194,7 +1194,7 @@ class NotificationService {
     // Preserve any alert that just reached or passed its fire time before rebuilding
     await _promoteFiredNotificationsDirect();
 
-    final notify1DayBefore = prefs.getBool(_prefNotify1DayBefore) ?? true;
+    final notify1DayBefore = prefs.getBool(_prefNotify1DayBefore) ?? false;
     final now = DateTime.now();
 
     // Expand every title into its alerts, dropping anything already past.
