@@ -135,4 +135,24 @@ void main() {
 
     await cubit.close();
   });
+
+  testWidgets('tapping close button dismisses the sheet', (tester) async {
+    final service = FakeAppIconService();
+    final cubit = AppIconCubit(service: service, isProUser: true);
+
+    await tester.pumpWidget(buildTestApp(cubit: cubit));
+    await tester.tap(find.text('Open App Icon Sheet'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Application Icon'), findsOneWidget);
+    final closeButtonFinder = find.byTooltip('Close');
+    expect(closeButtonFinder, findsOneWidget);
+
+    await tester.tap(closeButtonFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Application Icon'), findsNothing);
+
+    await cubit.close();
+  });
 }

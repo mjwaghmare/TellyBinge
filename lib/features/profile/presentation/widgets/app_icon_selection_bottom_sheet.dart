@@ -15,7 +15,7 @@ import '../cubit/app_icon_state.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 
 /// Modal bottom sheet for selecting the application launcher icon.
-/// Displays a 3x3 grid of 9 icon variants (3 free, 6 premium) with live selection.
+/// Displays a 3x4 grid of 12 icon variants (4 free, 8 premium) with live selection.
 class AppIconSelectionBottomSheet extends StatelessWidget {
   const AppIconSelectionBottomSheet({super.key});
 
@@ -35,6 +35,8 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
       context: context,
       shape: AppBottomSheet.shape,
       isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider(
         create: (_) => AppIconCubit(isProUser: isPro),
         child: const AppIconSelectionBottomSheet(),
@@ -45,6 +47,7 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = !context.isLight;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.88;
 
     return BlocConsumer<AppIconCubit, AppIconState>(
       listenWhen: (previous, current) {
@@ -72,6 +75,7 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
       },
       builder: (context, state) {
         return Container(
+          constraints: BoxConstraints(maxHeight: maxHeight),
           decoration: BoxDecoration(
             color: isDark
                 ? AppColors.surfaceElevated
@@ -79,68 +83,97 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
             borderRadius: AppBottomSheet.borderRadius,
           ),
           child: SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.lg,
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Top drag handle
+                const Padding(
+                  padding: EdgeInsets.only(top: AppSpacing.sm),
+                  child: AppSheetHandle(),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top drag handle
-                    Center(
-                      child: Container(
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                          borderRadius: BorderRadius.circular(2),
+
+                // Sheet Header with Title and Close Button
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                    AppSpacing.xs,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Application Icon',
+                              style: AppTextStyles.lg.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isDark
+                                    ? AppColors.textPrimary
+                                    : AppColors.lightTextPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Choose your preferred Popverse home icon',
+                              style: AppTextStyles.sm.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Sheet Header
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Application Icon',
-                                style: AppTextStyles.lg.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Choose your preferred Popverse home icon',
-                                style: AppTextStyles.sm.copyWith(
-                                  color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (state.isApplying)
-                          const SizedBox(
+                      if (state.isApplying)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                          child: SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
                             ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
+                        ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.lightTextSecondary,
+                          size: 22,
+                        ),
+                        tooltip: 'Close',
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
 
-                    // 3x3 Grid of Icons
+                // Scrollable Grid of Icons & Info Footnote
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.xs,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+
+                    // 3x4 Grid of Icons
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -205,8 +238,10 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        );
+          ],
+        ),
+      ),
+    );
       },
     );
   }

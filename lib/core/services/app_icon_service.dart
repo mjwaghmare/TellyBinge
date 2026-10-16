@@ -66,17 +66,25 @@ class AppIconService {
         }
       }
 
+      // On iOS the active alternate icon name reported by the system is the truth.
+      if (!kIsWeb && Platform.isIOS) {
+        try {
+          final platformName = await FlutterDynamicIconPlus.alternateIconName;
+          if (platformName == null) {
+            return AppIconOption.defaultIcon;
+          }
+          for (final opt in AppIconOption.values) {
+            if (opt.iosIconName == platformName) return opt;
+          }
+        } catch (e) {
+          debugPrint('[AppIconService] iOS alternateIconName error: $e');
+        }
+      }
+
       final prefs = await _getPrefs();
       final savedId = prefs.getString(AppStorageKeys.selectedAppIcon);
       if (savedId != null) {
         return AppIconOption.fromId(savedId);
-      }
-
-      if (!kIsWeb && Platform.isIOS) {
-        final platformName = await FlutterDynamicIconPlus.alternateIconName;
-        for (final opt in AppIconOption.values) {
-          if (platformName != null && opt.iosIconName == platformName) return opt;
-        }
       }
     } catch (e) {
       debugPrint('[AppIconService] getCurrentIcon error: $e');
