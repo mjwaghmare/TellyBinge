@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_storage_keys.dart';
 import '../../../../core/constants/firestore_collections.dart';
 import '../../domain/models/user_model.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -10,11 +12,13 @@ class AuthRepositoryImpl implements AuthRepository {
   final FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
   final FirebaseFirestore _firestore;
+  final SharedPreferences? prefs;
 
   AuthRepositoryImpl({
     FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn,
     FirebaseFirestore? firestore,
+    this.prefs,
   }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
        _googleSignIn = googleSignIn ?? GoogleSignIn.instance,
        _firestore = firestore ?? FirebaseFirestore.instance;
@@ -191,7 +195,11 @@ class AuthRepositoryImpl implements AuthRepository {
           .doc(uid)
           .get(const GetOptions(source: Source.cache));
       if (doc.exists && doc.data() != null) {
-        return UserModel.fromMap(doc.data()!, hasAdminClaim: hasAdminClaim);
+        final user = UserModel.fromMap(doc.data()!, hasAdminClaim: hasAdminClaim);
+        if (user.preferredGenres.isNotEmpty) {
+          await prefs?.setStringList(AppStorageKeys.preferredGenres, user.preferredGenres);
+        }
+        return user;
       }
     } catch (_) {
       // Cache miss or local database not yet populated
@@ -201,7 +209,11 @@ class AuthRepositoryImpl implements AuthRepository {
       // 2. Fallback to server if cache doesn't exist
       final doc = await _firestore.collection(FirestoreCollections.users).doc(uid).get();
       if (doc.exists && doc.data() != null) {
-        return UserModel.fromMap(doc.data()!, hasAdminClaim: hasAdminClaim);
+        final user = UserModel.fromMap(doc.data()!, hasAdminClaim: hasAdminClaim);
+        if (user.preferredGenres.isNotEmpty) {
+          await prefs?.setStringList(AppStorageKeys.preferredGenres, user.preferredGenres);
+        }
+        return user;
       }
       return null;
     } catch (e) {
@@ -223,8 +235,14 @@ class AuthRepositoryImpl implements AuthRepository {
     final isFallbackAdmin = fallbackAdmin.isNotEmpty && userEmail == fallbackAdmin;
     final isAdminUser = hasAdminClaim || isFallbackAdmin;
 
+    final hasPendingSync =
+        prefs?.getBool(AppStorageKeys.pendingOnboardingGenresSync) ?? false;
+    final localGenres = hasPendingSync
+        ? (prefs?.getStringList(AppStorageKeys.preferredGenres) ?? const [])
+        : const <String>[];
+
     if (!doc.exists) {
-      // New user
+      // New user: persist preferred genres selected during onboarding
       final newUser = UserModel(
         uid: firebaseUser.uid,
         email: firebaseUser.email ?? '',
@@ -232,27 +250,48 @@ class AuthRepositoryImpl implements AuthRepository {
         photoUrl: firebaseUser.photoURL ?? '',
         role: isAdminUser ? 'admin' : 'user',
         hasAdminClaim: hasAdminClaim,
+        preferredGenres: localGenres,
       );
       await docRef.set(newUser.toMap());
+      if (hasPendingSync) {
+        await prefs?.remove(AppStorageKeys.pendingOnboardingGenresSync);
+      }
       return newUser;
     } else {
-      // Existing user: check if we should update display name or photo
+      // Existing user: check if we should update display name, photo, or genres
       final existingUser = UserModel.fromMap(
         doc.data()!,
         hasAdminClaim: hasAdminClaim,
       );
       final assignedRole = isAdminUser ? 'admin' : existingUser.role;
+
+      // Sync preferred genres:
+      // If Firestore already has genres, hydrate local cache for this device.
+      // If Firestore does NOT have genres, but user just completed onboarding on this device, push to Firestore.
+      List<String> effectiveGenres = existingUser.preferredGenres;
+      if (existingUser.preferredGenres.isNotEmpty) {
+        await prefs?.setStringList(AppStorageKeys.preferredGenres, existingUser.preferredGenres);
+      } else if (hasPendingSync && localGenres.isNotEmpty) {
+        effectiveGenres = localGenres;
+      }
+
       final updatedUser = existingUser.copyWith(
         displayName: firebaseUser.displayName ?? existingUser.displayName,
         photoUrl: firebaseUser.photoURL ?? existingUser.photoUrl,
         role: assignedRole,
         hasAdminClaim: hasAdminClaim,
+        preferredGenres: effectiveGenres,
       );
       await docRef.update({
         'displayName': updatedUser.displayName,
         'photoUrl': updatedUser.photoUrl,
         if (isAdminUser && existingUser.role != 'admin') 'role': 'admin',
+        if (existingUser.preferredGenres.isEmpty && hasPendingSync && localGenres.isNotEmpty)
+          'preferredGenres': localGenres,
       });
+      if (hasPendingSync) {
+        await prefs?.remove(AppStorageKeys.pendingOnboardingGenresSync);
+      }
       return updatedUser;
     }
   }

@@ -11,6 +11,7 @@ class UserModel extends Equatable {
   final int moviesWatched;
   final String role;
   final bool hasAdminClaim;
+  final List<String> preferredGenres;
 
   const UserModel({
     required this.uid,
@@ -22,6 +23,7 @@ class UserModel extends Equatable {
     this.moviesWatched = 0,
     this.role = 'user',
     this.hasAdminClaim = false,
+    this.preferredGenres = const [],
   });
 
   bool get isAdmin {
@@ -48,6 +50,7 @@ class UserModel extends Equatable {
     int? moviesWatched,
     String? role,
     bool? hasAdminClaim,
+    List<String>? preferredGenres,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -59,6 +62,7 @@ class UserModel extends Equatable {
       moviesWatched: moviesWatched ?? this.moviesWatched,
       role: role ?? this.role,
       hasAdminClaim: hasAdminClaim ?? this.hasAdminClaim,
+      preferredGenres: preferredGenres ?? this.preferredGenres,
     );
   }
 
@@ -69,6 +73,7 @@ class UserModel extends Equatable {
       'displayName': displayName,
       'photoUrl': photoUrl,
       'role': role,
+      'preferredGenres': preferredGenres,
       'stats': {
         'tvTimeSpentMinutes': tvTimeSpentMinutes,
         'episodesWatched': episodesWatched,
@@ -89,6 +94,11 @@ class UserModel extends Equatable {
     final defaultRole = (hasAdminClaim || isFallbackAdmin) ? 'admin' : 'user';
     final role = map['role'] as String? ?? defaultRole;
 
+    final rawGenres = map['preferredGenres'];
+    final preferredGenres = rawGenres is List
+        ? rawGenres.map((e) => e.toString()).toList()
+        : const <String>[];
+
     return UserModel(
       uid: map['uid'] as String? ?? '',
       email: email,
@@ -99,6 +109,7 @@ class UserModel extends Equatable {
       moviesWatched: (stats['moviesWatched'] as num?)?.toInt() ?? 0,
       role: role,
       hasAdminClaim: hasAdminClaim,
+      preferredGenres: preferredGenres,
     );
   }
 
@@ -113,5 +124,6 @@ class UserModel extends Equatable {
     moviesWatched,
     role,
     hasAdminClaim,
+    preferredGenres,
   ];
 }

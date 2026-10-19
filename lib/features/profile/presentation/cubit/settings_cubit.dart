@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/constants/app_storage_keys.dart';
+import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/services/notification_service.dart';
@@ -79,9 +83,15 @@ class SettingsCubit extends Cubit<SettingsState> {
       AppStorageKeys.reducedMotionEnabled;
   static const String _preferredGenresKey =
       AppStorageKeys.preferredGenres;
+  final FirebaseFirestore? firestore;
+  final FirebaseAuth? firebaseAuth;
 
-  SettingsCubit({required this.prefs, required this.tmdbClient})
-    : super(const SettingsState()) {
+  SettingsCubit({
+    required this.prefs,
+    required this.tmdbClient,
+    this.firestore,
+    this.firebaseAuth,
+  }) : super(const SettingsState()) {
     _loadSettings();
   }
 
@@ -171,8 +181,30 @@ class SettingsCubit extends Cubit<SettingsState> {
     emit(state.copyWith(resetOnboarding: value));
   }
 
-  Future<void> setPreferredGenres(List<String> genres) async {
+  Future<void> setPreferredGenres(
+    List<String> genres, {
+    bool syncToFirestore = true,
+  }) async {
     await prefs.setStringList(_preferredGenresKey, genres);
     emit(state.copyWith(preferredGenres: genres));
+
+    if (syncToFirestore) {
+      try {
+        final auth = firebaseAuth ?? FirebaseAuth.instance;
+        final uid = auth.currentUser?.uid;
+        if (uid != null && uid.isNotEmpty) {
+          final db = firestore ?? FirebaseFirestore.instance;
+          unawaited(
+            db
+                .collection(FirestoreCollections.users)
+                .doc(uid)
+                .set({'preferredGenres': genres}, SetOptions(merge: true))
+                .catchError((_) {}),
+          );
+        }
+      } catch (_) {
+        // Safe offline / network failure handling
+      }
+    }
   }
 }

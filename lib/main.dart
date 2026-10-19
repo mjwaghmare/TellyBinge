@@ -351,7 +351,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           value: widget.settingsStorage,
         ),
         RepositoryProvider<AuthRepository>(
-          create: (context) => AuthRepositoryImpl(),
+          create: (context) => AuthRepositoryImpl(prefs: widget.prefs),
         ),
         RepositoryProvider<TmdbClient>(create: (context) => TmdbClient()),
         RepositoryProvider<MovieWatchlistRepository>(
@@ -558,6 +558,12 @@ class _AuthGateState extends State<AuthGate> {
         ));
         if (state is Authenticated) {
           syncWidget(state.user.uid);
+          if (state.user.preferredGenres.isNotEmpty) {
+            unawaited(context.read<SettingsCubit>().setPreferredGenres(
+              state.user.preferredGenres,
+              syncToFirestore: false,
+            ));
+          }
         } else if (state is Unauthenticated || state is AuthGuest) {
           context.read<MovieWatchlistCubit>().clearWatchlist();
           context.read<TvShowWatchlistCubit>().clearWatchlist();

@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/constants/app_storage_keys.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -20,6 +22,21 @@ class _MatchingPosterItem {
     required this.assetPath,
     required this.title,
     required this.genre,
+  });
+}
+
+/// Placement spec for an overlapping poster card within the 432 × 509 reference canvas.
+class _PosterPlacement {
+  final int index;
+  final double cx;
+  final double cy;
+  final double rotation; // in radians
+
+  const _PosterPlacement({
+    required this.index,
+    required this.cx,
+    required this.cy,
+    required this.rotation,
   });
 }
 
@@ -92,16 +109,66 @@ const List<_MatchingPosterItem> _kMatchingPosters = [
   ),
 ];
 
-/// Onboarding matching screen matching the reference screenshot 1:1.
+/// Card placement specifications in the 432 × 509 reference space.
+const List<_PosterPlacement> _kPosterPlacements = [
+  // Row 0
+  _PosterPlacement(index: 0, cx: 58.0, cy: 88.0, rotation: -0.052),
+  _PosterPlacement(index: 1, cx: 155.0, cy: 82.0, rotation: -0.014),
+  _PosterPlacement(index: 2, cx: 256.0, cy: 82.0, rotation: 0.014),
+  _PosterPlacement(index: 3, cx: 355.0, cy: 88.0, rotation: 0.052),
+
+  // Row 1
+  _PosterPlacement(index: 4, cx: 52.0, cy: 225.0, rotation: -0.052),
+  _PosterPlacement(index: 5, cx: 150.0, cy: 222.0, rotation: -0.014),
+  _PosterPlacement(index: 6, cx: 254.0, cy: 222.0, rotation: 0.014),
+  _PosterPlacement(index: 7, cx: 358.0, cy: 225.0, rotation: 0.052),
+
+  // Row 2
+  _PosterPlacement(index: 8, cx: 56.0, cy: 375.0, rotation: -0.052),
+  _PosterPlacement(index: 9, cx: 152.0, cy: 380.0, rotation: -0.014),
+  _PosterPlacement(index: 10, cx: 258.0, cy: 378.0, rotation: 0.014),
+  _PosterPlacement(index: 11, cx: 358.0, cy: 372.0, rotation: 0.052),
+];
+
+/// Natural bottom-to-top painting order matching the reference screenshot collage:
+/// - Berlin (under Vincenzo and Tangerines)
+/// - Vincenzo (under Friends and From)
+/// - Friends (under Off Campus)
+/// - My Name (under Reacher and Stranger Things)
+/// - Stranger Things (under Dancer and Tangerines)
+/// - Dancer (under Sex Ed and From)
+/// - Off Campus (under Sex Ed)
+/// - Sex Education (under Chernobyl)
+/// - Reacher (under Chernobyl)
+/// - Chernobyl
+/// - Tangerines (front layer in row 2)
+/// - From (front layer in center)
+const List<int> _kBasePaintOrder = [
+  8,  // Berlin
+  4,  // Vincenzo
+  0,  // Friends
+  11, // My Name
+  10, // Stranger Things
+  6,  // India's Best Dancer
+  1,  // Off Campus
+  2,  // Sex Education
+  7,  // Reacher
+  3,  // Chernobyl
+  9,  // Tangerines
+  5,  // From
+];
+
+/// Onboarding genre selection screen matching the reference collage screenshot.
 ///
 /// Features:
 /// - Pure black background (#000000)
-/// - Top-left translucent circular (X) close button
-/// - 12 non-overlapping poster cards arranged in 3 rows × 4 columns
-///   with subtle organic barrel curvature and interactive genre toggle
-/// - "Finding Matches" bold title
-/// - Rolling animated counter ("188 of 1,255 items matched")
-/// - Sleek horizontal progress bar filling over ~2.3 seconds
+/// - Top-left translucent circular (X) close/skip button
+/// - 12 overlapping poster cards arranged in an organic collage with depth shadows
+/// - Interactive genre toggle: selected cards display Electric Violet border, glow,
+///   checkmark badge, and are elevated to ensure full visibility
+/// - Clear headline: "What do you love to watch?"
+/// - Real-time subtitle: count of selected genres
+/// - Sleek full-width "Continue" primary button to advance only on user action
 class OnboardingMatchingPage extends StatefulWidget {
   const OnboardingMatchingPage({super.key, required this.onFinished});
 
@@ -111,59 +178,14 @@ class OnboardingMatchingPage extends StatefulWidget {
   State<OnboardingMatchingPage> createState() => _OnboardingMatchingPageState();
 }
 
-class _OnboardingMatchingPageState extends State<OnboardingMatchingPage>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _animController;
-  late final Animation<double> _progressAnimation;
-  late final Animation<int> _counterAnimation;
-  Timer? _completionTimer;
-
+class _OnboardingMatchingPageState extends State<OnboardingMatchingPage> {
   final Set<String> _selectedGenres = {'Action', 'Sci-Fi', 'Drama', 'Comedy'};
   final Set<int> _selectedPosterIndices = {0, 3, 7, 10}; // Friends, Chernobyl, Reacher, Stranger Things
   bool _hasFinished = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2300),
-    );
-
-    _progressAnimation = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeInOutCubic,
-    );
-
-    _counterAnimation = IntTween(begin: 0, end: 188).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
-
-    _animController.forward();
-    _animController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _completionTimer = Timer(const Duration(milliseconds: 200), () {
-          if (mounted) unawaited(_finish());
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _completionTimer?.cancel();
-    _animController.dispose();
-    super.dispose();
-  }
-
   Future<void> _finish() async {
     if (_hasFinished) return;
     _hasFinished = true;
-    _completionTimer?.cancel();
-    _animController.stop();
 
     final genresList = _selectedGenres.toList();
     final genresToSave = genresList.isNotEmpty
@@ -175,13 +197,14 @@ class _OnboardingMatchingPageState extends State<OnboardingMatchingPage>
       if (!mounted) return;
       final prefs = context.read<SharedPreferences>();
       await OnboardingStorage(prefs).savePreferredGenres(genresToSave);
+      await prefs.setBool(AppStorageKeys.pendingOnboardingGenresSync, true);
     }
 
     widget.onFinished();
   }
 
   void _togglePoster(int index) {
-    AppHaptics.selectionClick();
+    unawaited(AppHaptics.selectionClick());
     final item = _kMatchingPosters[index];
     setState(() {
       if (_selectedPosterIndices.contains(index)) {
@@ -213,224 +236,164 @@ class _OnboardingMatchingPageState extends State<OnboardingMatchingPage>
       child: Scaffold(
         backgroundColor: Colors.black,
         body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final availableWidth = constraints.maxWidth;
-              final availableHeight = constraints.maxHeight;
-              final isCompact = availableHeight < 680;
-
-              const columnSpacing = 6.0;
-              const rowSpacing = 6.0;
-              final totalHorizontalSpacing = columnSpacing * 3;
-
-              final availablePosterHeight =
-                  (availableHeight - (isCompact ? 180.0 : 230.0)).clamp(180.0, 500.0);
-              final maxCardHeight = (availablePosterHeight - (rowSpacing * 2)) / 3.0;
-              final cardWidthFromHeight = maxCardHeight / 1.42;
-              final cardWidthFromWidth =
-                  (availableWidth - 32.0 - totalHorizontalSpacing) / 4.0;
-
-              final cardWidth = cardWidthFromWidth < cardWidthFromHeight
-                  ? cardWidthFromWidth.clamp(56.0, 92.0)
-                  : cardWidthFromHeight.clamp(56.0, 92.0);
-              final cardHeight = cardWidth * 1.42;
-
-              return Column(
-                children: [
-                  // Top Bar with Close (X) button
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            AppHaptics.lightImpact();
-                            _finish();
-                          },
-                          behavior: HitTestBehavior.opaque,
-                          child: Container(
-                            width: 42.0,
-                            height: 42.0,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0x26FFFFFF),
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: Colors.white,
-                                size: 22.0,
-                              ),
-                            ),
+          child: Column(
+            children: [
+              // Top Bar with Close/Skip (X) button
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        unawaited(AppHaptics.lightImpact());
+                        _finish();
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        width: 42.0,
+                        height: 42.0,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0x26FFFFFF),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 22.0,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-
-                  if (!isCompact) const Spacer(flex: 1) else const SizedBox(height: 6.0),
-
-                  // 12 Poster Cards (3 Rows × 4 Columns, NON-OVERLAPPING)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: _buildPosterCluster(
-                        cardWidth: cardWidth,
-                        cardHeight: cardHeight,
-                        columnSpacing: columnSpacing,
-                        rowSpacing: rowSpacing,
                       ),
                     ),
+                  ],
+                ),
+              ),
+
+              // 12 Overlapping Poster Cards Collage inside Expanded
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: LayoutBuilder(
+                      builder: (context, box) {
+                        final scaleX = box.maxWidth / 432.0;
+                        final scaleY = box.maxHeight / 509.0;
+                        final scale = math.min(scaleX, scaleY).clamp(0.4, 1.15);
+                        final collageWidth = 432.0 * scale;
+                        final collageHeight = 509.0 * scale;
+
+                        return _buildOverlappingCluster(
+                          collageWidth: collageWidth,
+                          collageHeight: collageHeight,
+                          scale: scale,
+                        );
+                      },
+                    ),
                   ),
+                ),
+              ),
 
-                  if (!isCompact) const Spacer(flex: 2) else const SizedBox(height: 12.0),
-
-                  // Bottom Matching Section
-                  _buildBottomMatchingSection(isCompact: isCompact),
-
-                  SizedBox(height: isCompact ? 14.0 : 28.0),
-                ],
-              );
-            },
+              // Bottom Action Section (Headline, Subtitle, Continue Button)
+              const SizedBox(height: 8.0),
+              _buildBottomSection(),
+              const SizedBox(height: 18.0),
+            ],
           ),
         ),
       ),
     );
   }
 
-  /// Builds the 12 posters in 4 columns of 3 rows.
-  ///
-  /// Designed with deliberate spacing so cards NEVER overlap,
-  /// while applying subtle perspective rotation and vertical offset
-  /// to capture the organic curved aesthetic from the reference screenshot.
-  Widget _buildPosterCluster({
-    required double cardWidth,
-    required double cardHeight,
-    required double columnSpacing,
-    required double rowSpacing,
+  /// Builds the 12 overlapping posters in the calculated canvas area.
+  Widget _buildOverlappingCluster({
+    required double collageWidth,
+    required double collageHeight,
+    required double scale,
   }) {
-    // Group posters by column (4 columns of 3 posters each)
-    // Col 0: index 0 (Friends), 4 (Vincenzo), 8 (Berlin)
-    // Col 1: index 1 (Off Campus), 5 (From), 9 (Tangerines)
-    // Col 2: index 2 (Sex Ed), 6 (Dancer), 10 (Stranger Things)
-    // Col 3: index 3 (Chernobyl), 7 (Reacher), 11 (My Name)
-    final columns = <List<int>>[
-      [0, 4, 8],
-      [1, 5, 9],
-      [2, 6, 10],
-      [3, 7, 11],
-    ];
+    final cardWidth = 118.0 * scale;
+    final cardHeight = cardWidth * 1.42;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        for (var colIdx = 0; colIdx < 4; colIdx++) ...[
-          if (colIdx > 0) SizedBox(width: columnSpacing),
-          _buildColumn(
-            columnIndices: columns[colIdx],
-            colIdx: colIdx,
-            cardWidth: cardWidth,
-            cardHeight: cardHeight,
-            rowSpacing: rowSpacing,
-          ),
-        ],
-      ],
-    );
-  }
+    // Sort render order so selected cards appear on top of unselected cards,
+    // ensuring their Electric Violet selection border and checkmark are crisp and visible.
+    final sortedIndices = List<int>.from(_kBasePaintOrder)
+      ..sort((a, b) {
+        final aSel = _selectedPosterIndices.contains(a);
+        final bSel = _selectedPosterIndices.contains(b);
+        if (aSel == bSel) {
+          return _kBasePaintOrder.indexOf(a).compareTo(_kBasePaintOrder.indexOf(b));
+        }
+        return aSel ? 1 : -1;
+      });
 
-  Widget _buildColumn({
-    required List<int> columnIndices,
-    required int colIdx,
-    required double cardWidth,
-    required double cardHeight,
-    required double rowSpacing,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var rowIdx = 0; rowIdx < columnIndices.length; rowIdx++) ...[
-          if (rowIdx > 0) SizedBox(height: rowSpacing),
-          _buildPosterCard(
-            index: columnIndices[rowIdx],
-            colIdx: colIdx,
-            rowIdx: rowIdx,
-            width: cardWidth,
-            height: cardHeight,
-          ),
+    return SizedBox(
+      width: collageWidth,
+      height: collageHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          for (final index in sortedIndices)
+            _buildPosterCard(
+              placement: _kPosterPlacements[index],
+              cardWidth: cardWidth,
+              cardHeight: cardHeight,
+              scale: scale,
+            ),
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildPosterCard({
-    required int index,
-    required int colIdx,
-    required int rowIdx,
-    required double width,
-    required double height,
+    required _PosterPlacement placement,
+    required double cardWidth,
+    required double cardHeight,
+    required double scale,
   }) {
+    final index = placement.index;
     final item = _kMatchingPosters[index];
     final isSelected = _selectedPosterIndices.contains(index);
 
-    // Subtle perspective rotation angles & offsets per position to match screenshot
-    // Col 0 tilts slightly counter-clockwise, Col 3 tilts clockwise.
-    // Center rows arch gently. Spacing guarantees NO overlapping.
-    double rotation = 0.0;
-    double dy = 0.0;
+    final left = (placement.cx * scale) - (cardWidth / 2.0);
+    final top = (placement.cy * scale) - (cardHeight / 2.0);
 
-    switch (colIdx) {
-      case 0:
-        rotation = rowIdx == 0 ? -0.045 : (rowIdx == 1 ? -0.03 : -0.035);
-        dy = rowIdx == 0 ? 3.0 : (rowIdx == 1 ? 0.0 : -3.0);
-        break;
-      case 1:
-        rotation = rowIdx == 0 ? -0.012 : (rowIdx == 1 ? 0.0 : -0.01);
-        dy = rowIdx == 0 ? -2.0 : (rowIdx == 1 ? 0.0 : 4.0);
-        break;
-      case 2:
-        rotation = rowIdx == 0 ? 0.012 : (rowIdx == 1 ? 0.0 : 0.01);
-        dy = rowIdx == 0 ? -2.0 : (rowIdx == 1 ? 0.0 : 4.0);
-        break;
-      case 3:
-        rotation = rowIdx == 0 ? 0.045 : (rowIdx == 1 ? 0.03 : 0.035);
-        dy = rowIdx == 0 ? 3.0 : (rowIdx == 1 ? 0.0 : -3.0);
-        break;
-    }
-
-    return Transform.translate(
-      offset: Offset(0, dy),
+    return Positioned(
+      left: left,
+      top: top,
+      width: cardWidth,
+      height: cardHeight,
       child: Transform.rotate(
-        angle: rotation,
+        angle: placement.rotation,
         child: GestureDetector(
           onTap: () => _togglePoster(index),
           behavior: HitTestBehavior.opaque,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOutCubic,
-            width: width,
-            height: height,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14.0),
+              borderRadius: BorderRadius.circular(16.0 * scale),
               border: Border.all(
                 color: isSelected ? AppColors.primary : Colors.transparent,
-                width: 2.2,
+                width: 2.5,
               ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.45),
-                        blurRadius: 10.0,
-                        spreadRadius: 1.0,
-                      ),
-                    ]
-                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  blurRadius: 10.0 * scale,
+                  offset: Offset(0, 3.0 * scale),
+                ),
+                if (isSelected)
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.55),
+                    blurRadius: 12.0 * scale,
+                    spreadRadius: 2.0 * scale,
+                  ),
+              ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(11.8),
+              borderRadius: BorderRadius.circular(13.5 * scale),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -440,20 +403,20 @@ class _OnboardingMatchingPageState extends State<OnboardingMatchingPage>
                   ),
                   if (isSelected)
                     Positioned(
-                      top: 5.0,
-                      right: 5.0,
+                      top: 6.0 * scale,
+                      right: 6.0 * scale,
                       child: Container(
-                        width: 18.0,
-                        height: 18.0,
+                        width: 20.0 * scale,
+                        height: 20.0 * scale,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColors.primary,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.check_rounded,
                             color: Colors.white,
-                            size: 13.0,
+                            size: 14.0 * scale,
                           ),
                         ),
                       ),
@@ -467,77 +430,74 @@ class _OnboardingMatchingPageState extends State<OnboardingMatchingPage>
     );
   }
 
-  Widget _buildBottomMatchingSection({bool isCompact = false}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Title: "Finding Matches"
-        Text(
-          'Finding Matches',
-          style: AppTextStyles.xl.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: isCompact ? 22.0 : 24.0,
-            letterSpacing: -0.4,
+  Widget _buildBottomSection() {
+    final count = _selectedGenres.length;
+    final subtitle = count == 0
+        ? 'Select shows to personalize your recommendations'
+        : '$count ${count == 1 ? 'genre' : 'genres'} selected • Tap to adjust';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Headline: "What do you love to watch?"
+          Text(
+            'What do you love to watch?',
+            style: AppTextStyles.xl.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 22.0,
+              letterSpacing: -0.4,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
 
-        const SizedBox(height: 6.0),
+          const SizedBox(height: 6.0),
 
-        // Rolling Counter Subtitle: "188 of 1,255 items matched"
-        AnimatedBuilder(
-          animation: _counterAnimation,
-          builder: (context, _) {
-            final count = _counterAnimation.value;
-            return Text(
-              '$count of 1,255 items matched',
-              style: AppTextStyles.smMedium.copyWith(
-                color: const Color(0xFF9E9E9E),
-                fontSize: isCompact ? 14.0 : 15.0,
-                letterSpacing: 0.1,
+          // Subtitle showing selected genre count
+          Text(
+            subtitle,
+            style: AppTextStyles.smMedium.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 14.0,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 18.0),
+
+          // Prominent "Continue" Button
+          SizedBox(
+            width: double.infinity,
+            height: 52.0,
+            child: ElevatedButton(
+              onPressed: () {
+                unawaited(AppHaptics.lightImpact());
+                _finish();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
               ),
-              textAlign: TextAlign.center,
-            );
-          },
-        ),
-
-        SizedBox(height: isCompact ? 16.0 : 26.0),
-
-        // Sleek horizontal progress bar
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28.0),
-          child: AnimatedBuilder(
-            animation: _progressAnimation,
-            builder: (context, _) {
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final totalWidth = constraints.maxWidth;
-                  final fillWidth = totalWidth * _progressAnimation.value;
-
-                  return Container(
-                    height: 3.5,
-                    width: totalWidth,
-                    decoration: BoxDecoration(
-                      color: const Color(0x33FFFFFF),
-                      borderRadius: BorderRadius.circular(2.0),
-                    ),
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      height: 3.5,
-                      width: fillWidth,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(2.0),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+              child: Text(
+                'Continue',
+                style: AppTextStyles.mdMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16.0,
+                ),
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
+

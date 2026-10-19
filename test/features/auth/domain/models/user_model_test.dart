@@ -102,5 +102,54 @@ void main() {
       expect(user.role, 'user');
       expect(user.isAdmin, isFalse);
     });
+
+    test('serializes and deserializes preferredGenres correctly', () {
+      const user = UserModel(
+        uid: 'user-genres',
+        email: 'user@example.com',
+        displayName: 'User',
+        photoUrl: '',
+        preferredGenres: ['Action', 'Sci-Fi', 'Horror'],
+      );
+
+      final map = user.toMap();
+      expect(map['preferredGenres'], ['Action', 'Sci-Fi', 'Horror']);
+
+      final restored = UserModel.fromMap(map);
+      expect(restored.preferredGenres, ['Action', 'Sci-Fi', 'Horror']);
+    });
+
+    test('fromMap defaults preferredGenres to empty list when missing or invalid', () {
+      final user1 = UserModel.fromMap({
+        'uid': 'user-no-genres',
+        'email': 'user@example.com',
+        'displayName': 'User',
+        'photoUrl': '',
+      });
+      expect(user1.preferredGenres, isEmpty);
+
+      final user2 = UserModel.fromMap({
+        'uid': 'user-null-genres',
+        'email': 'user@example.com',
+        'displayName': 'User',
+        'photoUrl': '',
+        'preferredGenres': null,
+      });
+      expect(user2.preferredGenres, isEmpty);
+    });
+
+    test('copyWith updates preferredGenres correctly', () {
+      const user = UserModel(
+        uid: 'user-copy',
+        email: 'user@example.com',
+        displayName: 'User',
+        photoUrl: '',
+        preferredGenres: ['Comedy'],
+      );
+
+      final updated = user.copyWith(preferredGenres: ['Drama', 'Thriller']);
+      expect(updated.preferredGenres, ['Drama', 'Thriller']);
+      expect(user.preferredGenres, ['Comedy']);
+    });
   });
 }

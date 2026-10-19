@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:popverse/core/constants/app_constants.dart';
+import 'package:popverse/core/constants/app_storage_keys.dart';
 import 'package:popverse/core/network/tmdb_client.dart';
 import 'package:popverse/features/onboarding/data/onboarding_storage.dart';
 import 'package:popverse/features/onboarding/presentation/pages/onboarding_gate.dart';
@@ -111,7 +112,7 @@ void main() {
   });
 
   testWidgets(
-      'OnboardingMatchingPage renders 12 posters, title, rolling counter, and completes on X tap',
+      'OnboardingMatchingPage renders 12 overlapping posters, genre selection, and completes on Continue tap',
       (tester) async {
     bool finished = false;
 
@@ -127,21 +128,48 @@ void main() {
     await tester.pump();
 
     // Verify Title & Subtitle presence
-    expect(find.text('Finding Matches'), findsOneWidget);
-    expect(find.textContaining('items matched'), findsOneWidget);
+    expect(find.text('What do you love to watch?'), findsOneWidget);
+    expect(find.textContaining('genres selected'), findsOneWidget);
 
     // Verify exactly 12 posters are rendered
     expect(find.byType(Image), findsNWidgets(12));
 
-    // Tap Close (X) button
+    // Verify Continue button is present
+    final continueButton = find.widgetWithText(ElevatedButton, 'Continue');
+    expect(continueButton, findsOneWidget);
+
+    // Tap Continue button
+    await tester.tap(continueButton);
+    await tester.pumpAndSettle();
+
+    expect(finished, isTrue);
+    final storage = OnboardingStorage(prefs);
+    expect(storage.preferredGenres, isNotEmpty);
+    expect(prefs.getBool(AppStorageKeys.pendingOnboardingGenresSync), isTrue);
+  });
+
+  testWidgets(
+      'OnboardingMatchingPage completes on X close button tap',
+      (tester) async {
+    bool finished = false;
+
+    await tester.pumpWidget(
+      buildTestApp(
+        OnboardingMatchingPage(
+          onFinished: () {
+            finished = true;
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+
     final closeButtonFinder = find.byIcon(Icons.close_rounded);
     expect(closeButtonFinder, findsOneWidget);
     await tester.tap(closeButtonFinder);
     await tester.pumpAndSettle();
 
     expect(finished, isTrue);
-    final storage = OnboardingStorage(prefs);
-    expect(storage.preferredGenres, isNotEmpty);
   });
 
   testWidgets('OnboardingGate transitions from carousel to matching screen',
@@ -163,6 +191,7 @@ void main() {
 
     // Now transitions to OnboardingMatchingPage
     expect(find.byType(OnboardingMatchingPage), findsOneWidget);
-    expect(find.text('Finding Matches'), findsOneWidget);
+    expect(find.text('What do you love to watch?'), findsOneWidget);
   });
 }
+
