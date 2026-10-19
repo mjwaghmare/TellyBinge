@@ -53,23 +53,28 @@ class GenreOption {
 const kExploreGenres = <GenreOption>[
   GenreOption(label: 'All'),
   GenreOption(label: 'Action', emoji: '💥', movieGenreId: 28, tvGenreId: 10759),
-  GenreOption(label: 'Sci-Fi', emoji: '🚀', movieGenreId: 878, tvGenreId: 10765),
-  GenreOption(label: 'Drama', emoji: '🎭', movieGenreId: 18, tvGenreId: 18),
+  GenreOption(label: 'Adventure', emoji: '🗺️', movieGenreId: 12, tvGenreId: 10759),
   GenreOption(label: 'Comedy', emoji: '😂', movieGenreId: 35, tvGenreId: 35),
+  GenreOption(label: 'Crime', emoji: '🕵️', movieGenreId: 80, tvGenreId: 80),
+  GenreOption(label: 'Drama', emoji: '🎭', movieGenreId: 18, tvGenreId: 18),
+  GenreOption(label: 'Family', emoji: '👨‍👩‍👧', movieGenreId: 10751, tvGenreId: 10751),
+  GenreOption(label: 'History', emoji: '📜', movieGenreId: 36, tvGenreId: 10768),
   GenreOption(label: 'Horror', emoji: '👻', movieGenreId: 27, tvGenreId: 9648),
+  GenreOption(label: 'Reality', emoji: '🌟', movieGenreId: 10764, tvGenreId: 10764),
+  GenreOption(
+    label: 'Romance',
+    emoji: '❤️',
+    movieGenreId: 10749,
+    tvGenreId: 10766,
+  ),
+  GenreOption(label: 'Sci-Fi', emoji: '🚀', movieGenreId: 878, tvGenreId: 10765),
+  GenreOption(label: 'Thriller', emoji: '🔪', movieGenreId: 53, tvGenreId: 80),
   GenreOption(
     label: 'Anime',
     emoji: '🌸',
     movieGenreId: 16,
     tvGenreId: 16,
     requiredLanguage: 'ja',
-  ),
-  GenreOption(label: 'Thriller', emoji: '🔪', movieGenreId: 53, tvGenreId: 80),
-  GenreOption(
-    label: 'Romance',
-    emoji: '❤️',
-    movieGenreId: 10749,
-    tvGenreId: 10766,
   ),
 ];
 

@@ -56,19 +56,19 @@ const List<_MatchingPosterItem> _kMatchingPosters = [
   _MatchingPosterItem(
     assetPath: 'assets/images/posters/sex_education.webp',
     title: 'Sex Education',
-    genre: 'Comedy',
+    genre: 'Drama',
   ),
   _MatchingPosterItem(
     assetPath: 'assets/images/posters/chernobyl.webp',
     title: 'Chernobyl',
-    genre: 'Drama',
+    genre: 'History',
   ),
 
   // Row 2
   _MatchingPosterItem(
     assetPath: 'assets/images/posters/vincenzo.webp',
     title: 'Vincenzo',
-    genre: 'Thriller',
+    genre: 'Crime',
   ),
   _MatchingPosterItem(
     assetPath: 'assets/images/posters/from.webp',
@@ -78,7 +78,7 @@ const List<_MatchingPosterItem> _kMatchingPosters = [
   _MatchingPosterItem(
     assetPath: 'assets/images/posters/indias_best_dancer.webp',
     title: "India's Best Dancer",
-    genre: 'Drama',
+    genre: 'Reality',
   ),
   _MatchingPosterItem(
     assetPath: 'assets/images/posters/reacher.webp',
@@ -90,12 +90,12 @@ const List<_MatchingPosterItem> _kMatchingPosters = [
   _MatchingPosterItem(
     assetPath: 'assets/images/posters/money_heist_berlin.webp',
     title: 'Money Heist: Berlin',
-    genre: 'Action',
+    genre: 'Adventure',
   ),
   _MatchingPosterItem(
     assetPath: 'assets/images/posters/when_life_gives_you_tangerines.webp',
     title: 'When Life Gives You Tangerines',
-    genre: 'Romance',
+    genre: 'Family',
   ),
   _MatchingPosterItem(
     assetPath: 'assets/images/posters/stranger_things.webp',
@@ -179,8 +179,8 @@ class OnboardingMatchingPage extends StatefulWidget {
 }
 
 class _OnboardingMatchingPageState extends State<OnboardingMatchingPage> {
-  final Set<String> _selectedGenres = {'Action', 'Sci-Fi', 'Drama', 'Comedy'};
-  final Set<int> _selectedPosterIndices = {0, 3, 7, 10}; // Friends, Chernobyl, Reacher, Stranger Things
+  final Set<String> _selectedGenres = {'Comedy', 'Drama', 'Action', 'Sci-Fi'};
+  final Set<int> _selectedPosterIndices = {0, 2, 7, 10}; // Friends, Sex Education, Reacher, Stranger Things
   bool _hasFinished = false;
 
   Future<void> _finish() async {
@@ -209,13 +209,7 @@ class _OnboardingMatchingPageState extends State<OnboardingMatchingPage> {
     setState(() {
       if (_selectedPosterIndices.contains(index)) {
         _selectedPosterIndices.remove(index);
-        // Only remove genre if no other selected poster shares it
-        final hasOtherWithGenre = _selectedPosterIndices.any(
-          (i) => _kMatchingPosters[i].genre == item.genre,
-        );
-        if (!hasOtherWithGenre) {
-          _selectedGenres.remove(item.genre);
-        }
+        _selectedGenres.remove(item.genre);
       } else {
         _selectedPosterIndices.add(index);
         _selectedGenres.add(item.genre);
@@ -360,6 +354,7 @@ class _OnboardingMatchingPageState extends State<OnboardingMatchingPage> {
     final top = (placement.cy * scale) - (cardHeight / 2.0);
 
     return Positioned(
+      key: ValueKey(placement.index),
       left: left,
       top: top,
       width: cardWidth,
