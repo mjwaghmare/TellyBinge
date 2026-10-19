@@ -4,6 +4,7 @@ class AppStorageKeys {
 
   // Onboarding
   static const String hasSeenOnboarding = 'has_seen_onboarding';
+  static const String preferredGenres = 'preferred_genres';
 
   // Settings & Preferences
   static const String allowAdultContent = 'allow_adult_content';

@@ -36,6 +36,7 @@ enum ExploreSection {
     GenreOption? genre, {
     String? languageName,
     GenreOption? personalizedGenre,
+    List<GenreOption>? preferredGenres,
   }) {
     final hasGenre = genre != null && !genre.isAll;
     final hasLang = languageName != null && languageName.trim().isNotEmpty;
@@ -56,6 +57,12 @@ enum ExploreSection {
           return 'Because you watch ${personalizedGenre.label} in $effectiveLang';
         }
         return 'Because you watch ${personalizedGenre.label}';
+      }
+      if (preferredGenres != null && preferredGenres.isNotEmpty) {
+        if (preferredGenres.length == 1) {
+          return 'Because you like ${preferredGenres.first.label}';
+        }
+        return 'Top Picks For You';
       }
       if (hasLang) return 'Top Rated in $languageName';
       return 'Top Rated For You';
@@ -148,6 +155,7 @@ Future<List<dynamic>> fetchExploreSectionPage(
   String? language,
   GenreOption? genre,
   GenreOption? personalizedGenre,
+  List<GenreOption>? preferredGenres,
   bool forceRefresh = false,
 }) {
   final isTv = type == ExploreMediaType.tv;
@@ -156,11 +164,21 @@ Future<List<dynamic>> fetchExploreSectionPage(
           ? personalizedGenre
           : genre;
 
-  final genreId = (effectiveGenreForSection != null &&
-          !effectiveGenreForSection.isAll)
-      ? effectiveGenreForSection.genreIdFor(type)
-      : null;
-  final genreIds = genreId != null ? [genreId] : null;
+  List<int>? genreIds;
+  if (effectiveGenreForSection != null && !effectiveGenreForSection.isAll) {
+    final id = effectiveGenreForSection.genreIdFor(type);
+    if (id != null) genreIds = [id];
+  } else if (section.source == ExploreSection.forYou &&
+      (genre == null || genre.isAll) &&
+      preferredGenres != null &&
+      preferredGenres.isNotEmpty) {
+    final ids = <int>[
+      for (final g in preferredGenres)
+        if (g.genreIdFor(type) case final id? when !g.isAll) id,
+    ];
+    if (ids.isNotEmpty) genreIds = ids;
+  }
+
   final effectiveLanguage = (effectiveGenreForSection != null &&
           effectiveGenreForSection.requiredLanguage != null &&
           effectiveGenreForSection.requiredLanguage!.isNotEmpty)

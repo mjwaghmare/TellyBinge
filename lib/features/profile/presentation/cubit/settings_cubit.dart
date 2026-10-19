@@ -15,6 +15,7 @@ class SettingsState extends Equatable {
   final bool resetOnboarding;
   final bool hapticsEnabled;
   final bool reducedMotion;
+  final List<String> preferredGenres;
 
   const SettingsState({
     this.allowAdultContent = false,
@@ -24,6 +25,7 @@ class SettingsState extends Equatable {
     this.resetOnboarding = false,
     this.hapticsEnabled = true,
     this.reducedMotion = false,
+    this.preferredGenres = const [],
   });
 
   SettingsState copyWith({
@@ -34,6 +36,7 @@ class SettingsState extends Equatable {
     bool? resetOnboarding,
     bool? hapticsEnabled,
     bool? reducedMotion,
+    List<String>? preferredGenres,
   }) {
     return SettingsState(
       allowAdultContent: allowAdultContent ?? this.allowAdultContent,
@@ -43,6 +46,7 @@ class SettingsState extends Equatable {
       resetOnboarding: resetOnboarding ?? this.resetOnboarding,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
       reducedMotion: reducedMotion ?? this.reducedMotion,
+      preferredGenres: preferredGenres ?? this.preferredGenres,
     );
   }
 
@@ -55,6 +59,7 @@ class SettingsState extends Equatable {
     resetOnboarding,
     hapticsEnabled,
     reducedMotion,
+    preferredGenres,
   ];
 }
 
@@ -72,6 +77,8 @@ class SettingsCubit extends Cubit<SettingsState> {
       AppStorageKeys.hapticsEnabled;
   static const String _reducedMotionKey =
       AppStorageKeys.reducedMotionEnabled;
+  static const String _preferredGenresKey =
+      AppStorageKeys.preferredGenres;
 
   SettingsCubit({required this.prefs, required this.tmdbClient})
     : super(const SettingsState()) {
@@ -87,6 +94,8 @@ class SettingsCubit extends Cubit<SettingsState> {
     final hasSeenOnboarding = prefs.getBool(OnboardingStorage.seenKey) ?? false;
     final hapticsEnabled = prefs.getBool(_hapticsEnabledKey) ?? true;
     final reducedMotion = prefs.getBool(_reducedMotionKey) ?? false;
+    final preferredGenres =
+        prefs.getStringList(_preferredGenresKey) ?? const [];
 
     tmdbClient.allowAdultContent = allowAdult;
     AppHaptics.isEnabled = hapticsEnabled;
@@ -99,6 +108,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         resetOnboarding: !hasSeenOnboarding,
         hapticsEnabled: hapticsEnabled,
         reducedMotion: reducedMotion,
+        preferredGenres: preferredGenres,
       ),
     );
   }
@@ -159,5 +169,10 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> toggleResetOnboarding(bool value) async {
     await prefs.setBool(OnboardingStorage.seenKey, !value);
     emit(state.copyWith(resetOnboarding: value));
+  }
+
+  Future<void> setPreferredGenres(List<String> genres) async {
+    await prefs.setStringList(_preferredGenresKey, genres);
+    emit(state.copyWith(preferredGenres: genres));
   }
 }

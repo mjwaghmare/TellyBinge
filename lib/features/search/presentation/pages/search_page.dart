@@ -23,6 +23,7 @@ import '../../../dashboard/presentation/cubit/tv_show_watchlist_cubit.dart';
 import '../../../dashboard/presentation/cubit/tv_show_watchlist_state.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_cubit.dart';
 import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
+import '../../../profile/presentation/cubit/settings_cubit.dart';
 import 'explore_see_all_page.dart';
 
 class SearchPage extends StatefulWidget {
@@ -87,6 +88,11 @@ class _SearchPageState extends State<SearchPage>
     return resolveTopWatchlistGenre(tvShows: tvShows, movies: movies);
   }
 
+  List<GenreOption> _preferredGenres() {
+    final labels = context.read<SettingsCubit>().state.preferredGenres;
+    return resolvePreferredGenres(labels);
+  }
+
   void _handleMainTabChange() {
     if (widget.mainTabNotifier == null) return;
     if (widget.mainTabNotifier!.value == 2) {
@@ -94,6 +100,7 @@ class _SearchPageState extends State<SearchPage>
       context.read<ExploreFeedCubit>().ensureLoaded(
         _typeOf(_tabController.index == 0),
         personalizedGenre: _topPersonalizedGenre(),
+        preferredGenres: _preferredGenres(),
       );
     } else {
       // Dismiss keyboard when navigating away to other tabs without losing search/filter state.
@@ -128,6 +135,7 @@ class _SearchPageState extends State<SearchPage>
         context.read<ExploreFeedCubit>().ensureLoaded(
           _typeOf(_tabController.index == 0),
           personalizedGenre: _topPersonalizedGenre(),
+          preferredGenres: _preferredGenres(),
         );
       }
     });
@@ -137,6 +145,7 @@ class _SearchPageState extends State<SearchPage>
       context.read<ExploreFeedCubit>().ensureLoaded(
         _typeOf(_tabController.index == 0),
         personalizedGenre: _topPersonalizedGenre(),
+        preferredGenres: _preferredGenres(),
       );
     });
 
@@ -186,7 +195,27 @@ class _SearchPageState extends State<SearchPage>
     final currentGenre = feedCubit.state.feedFor(activeType).personalizedGenre;
 
     if (currentGenre != newGenre) {
-      feedCubit.ensureLoaded(activeType, personalizedGenre: newGenre);
+      feedCubit.ensureLoaded(
+        activeType,
+        personalizedGenre: newGenre,
+        preferredGenres: _preferredGenres(),
+      );
+    }
+  }
+
+  void _syncPreferredGenresChange() {
+    final newPreferred = _preferredGenres();
+    final feedCubit = context.read<ExploreFeedCubit>();
+    final activeType = _typeOf(_tabController.index == 0);
+    final currentPreferred =
+        feedCubit.state.feedFor(activeType).preferredGenres;
+
+    if (currentPreferred != newPreferred) {
+      feedCubit.ensureLoaded(
+        activeType,
+        personalizedGenre: _topPersonalizedGenre(),
+        preferredGenres: newPreferred,
+      );
     }
   }
 
@@ -199,6 +228,11 @@ class _SearchPageState extends State<SearchPage>
         ),
         BlocListener<MovieWatchlistCubit, MovieWatchlistState>(
           listener: (context, _) => _syncPersonalizedGenreOnWatchlistChange(),
+        ),
+        BlocListener<SettingsCubit, SettingsState>(
+          listenWhen: (prev, current) =>
+              prev.preferredGenres != current.preferredGenres,
+          listener: (context, _) => _syncPreferredGenresChange(),
         ),
       ],
       child: Scaffold(
@@ -513,6 +547,7 @@ class _SearchPageState extends State<SearchPage>
         feed.genre,
         languageName: _languageNames[feed.language],
         personalizedGenre: feed.personalizedGenre,
+        preferredGenres: feed.preferredGenres,
       );
 
       if (row.isLoading) {
@@ -599,6 +634,7 @@ class _SearchPageState extends State<SearchPage>
                 language: feed.language,
                 genre: feed.genre,
                 personalizedGenre: feed.personalizedGenre,
+                preferredGenres: feed.preferredGenres,
                 excludedIds: section == ExploreSection.trending
                     ? topWeekIds
                     : const {},

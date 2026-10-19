@@ -79,4 +79,34 @@ void main() {
       expect(cubit.state.notify1DayBefore, isTrue);
     });
   });
+
+  group('SettingsCubit - Preferred Genres', () {
+    test('defaults to empty preferred genres when no value in prefs', () {
+      final cubit = SettingsCubit(prefs: prefs, tmdbClient: tmdbClient);
+
+      expect(cubit.state.preferredGenres, const []);
+    });
+
+    test('loads existing preferredGenres from prefs', () async {
+      await prefs.setStringList(
+        AppStorageKeys.preferredGenres,
+        ['Thriller', 'Horror'],
+      );
+      final cubit = SettingsCubit(prefs: prefs, tmdbClient: tmdbClient);
+
+      expect(cubit.state.preferredGenres, ['Thriller', 'Horror']);
+    });
+
+    test('setPreferredGenres updates state and saves to prefs', () async {
+      final cubit = SettingsCubit(prefs: prefs, tmdbClient: tmdbClient);
+
+      await cubit.setPreferredGenres(['Anime', 'Romance']);
+
+      expect(cubit.state.preferredGenres, ['Anime', 'Romance']);
+      expect(
+        prefs.getStringList(AppStorageKeys.preferredGenres),
+        ['Anime', 'Romance'],
+      );
+    });
+  });
 }

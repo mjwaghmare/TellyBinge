@@ -48,27 +48,33 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
   /// Loads the feed for [type] if it hasn't been, or quietly refreshes it
   /// (rows stay on screen) once it is older than [staleAfter].
   /// [personalizedGenre] is derived from the user's watchlist history.
+  /// [preferredGenres] is derived from onboarding/settings selections.
   void ensureLoaded(
     ExploreMediaType type, {
     Object? personalizedGenre = _unspecifiedGenre,
+    List<GenreOption>? preferredGenres,
   }) {
     final currentFeed = state.feedFor(type);
     final isExplicitlySupplied = !identical(personalizedGenre, _unspecifiedGenre);
     final GenreOption? targetGenre = isExplicitlySupplied
         ? personalizedGenre as GenreOption?
         : currentFeed.personalizedGenre;
+    final targetPreferred = preferredGenres ?? currentFeed.preferredGenres;
 
     final hasGenreChanged =
         isExplicitlySupplied && currentFeed.personalizedGenre != targetGenre;
+    final hasPreferredChanged =
+        preferredGenres != null && currentFeed.preferredGenres != targetPreferred;
 
-    if (!state.feeds.containsKey(type) || hasGenreChanged) {
-      if (hasGenreChanged) {
+    if (!state.feeds.containsKey(type) || hasGenreChanged || hasPreferredChanged) {
+      if (hasGenreChanged || hasPreferredChanged) {
         emit(
           state.withFeed(
             type,
-            targetGenre == null
-                ? currentFeed.copyWith(clearPersonalizedGenre: true)
-                : currentFeed.copyWith(personalizedGenre: targetGenre),
+            (targetGenre == null
+                    ? currentFeed.copyWith(clearPersonalizedGenre: true)
+                    : currentFeed.copyWith(personalizedGenre: targetGenre))
+                .copyWith(preferredGenres: targetPreferred),
           ),
         );
       }
@@ -76,6 +82,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         type,
         keepItems: false,
         personalizedGenre: targetGenre,
+        preferredGenres: targetPreferred,
         explicitPersonalizedGenre: isExplicitlySupplied,
       );
       return;
@@ -83,9 +90,9 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     final loadedAt = _loadedAt[type];
     if (loadedAt != null && _now().difference(loadedAt) > staleAfter) {
       if (isExplicitlySupplied) {
-        refresh(type, personalizedGenre: targetGenre);
+        refresh(type, personalizedGenre: targetGenre, preferredGenres: targetPreferred);
       } else {
-        refresh(type);
+        refresh(type, preferredGenres: targetPreferred);
       }
     }
   }
@@ -103,10 +110,16 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
           language: language,
           genre: feed.genre,
           personalizedGenre: feed.personalizedGenre,
+          preferredGenres: feed.preferredGenres,
         ),
       ),
     );
-    _load(type, keepItems: false, personalizedGenre: feed.personalizedGenre);
+    _load(
+      type,
+      keepItems: false,
+      personalizedGenre: feed.personalizedGenre,
+      preferredGenres: feed.preferredGenres,
+    );
   }
 
   void setGenre(ExploreMediaType type, GenreOption? genre) {
@@ -123,10 +136,16 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
           language: feed.language,
           genre: effectiveGenre,
           personalizedGenre: feed.personalizedGenre,
+          preferredGenres: feed.preferredGenres,
         ),
       ),
     );
-    _load(type, keepItems: false, personalizedGenre: feed.personalizedGenre);
+    _load(
+      type,
+      keepItems: false,
+      personalizedGenre: feed.personalizedGenre,
+      preferredGenres: feed.preferredGenres,
+    );
   }
 
   /// Pull-to-refresh: refetches past the cache, leaving the current rows on
@@ -134,6 +153,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
   Future<void> refresh(
     ExploreMediaType type, {
     Object? personalizedGenre = _unspecifiedGenre,
+    List<GenreOption>? preferredGenres,
   }) {
     final isExplicit = !identical(personalizedGenre, _unspecifiedGenre);
     return _load(
@@ -142,6 +162,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
       personalizedGenre: isExplicit
           ? personalizedGenre as GenreOption?
           : state.feedFor(type).personalizedGenre,
+      preferredGenres: preferredGenres ?? state.feedFor(type).preferredGenres,
       explicitPersonalizedGenre: isExplicit,
     );
   }
@@ -151,6 +172,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         type,
         keepItems: false,
         personalizedGenre: state.feedFor(type).personalizedGenre,
+        preferredGenres: state.feedFor(type).preferredGenres,
       );
 
   /// Fetches one more page for a row whose visible count dropped too low
@@ -173,6 +195,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         language: feed.language,
         genre: feed.genre,
         personalizedGenre: feed.personalizedGenre,
+        preferredGenres: feed.preferredGenres,
       );
     } catch (_) {
       more = const [];
@@ -195,6 +218,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     ExploreMediaType type, {
     required bool keepItems,
     GenreOption? personalizedGenre,
+    List<GenreOption>? preferredGenres,
     bool explicitPersonalizedGenre = false,
   }) {
     final generation = (_generation[type] ?? 0) + 1;
@@ -205,6 +229,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     final effectivePersonalized = explicitPersonalizedGenre
         ? personalizedGenre
         : (personalizedGenre ?? feed.personalizedGenre);
+    final effectivePreferred = preferredGenres ?? feed.preferredGenres;
 
     if (!keepItems) {
       emit(
@@ -214,17 +239,20 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
             language: feed.language,
             genre: feed.genre,
             personalizedGenre: effectivePersonalized,
+            preferredGenres: effectivePreferred,
             rows: {for (final s in _sources) s: ExploreRow.loading},
           ),
         ),
       );
-    } else if (feed.personalizedGenre != effectivePersonalized) {
+    } else if (feed.personalizedGenre != effectivePersonalized ||
+        feed.preferredGenres != effectivePreferred) {
       emit(
         state.withFeed(
           type,
-          effectivePersonalized == null
-              ? feed.copyWith(clearPersonalizedGenre: true)
-              : feed.copyWith(personalizedGenre: effectivePersonalized),
+          (effectivePersonalized == null
+                  ? feed.copyWith(clearPersonalizedGenre: true)
+                  : feed.copyWith(personalizedGenre: effectivePersonalized))
+              .copyWith(preferredGenres: effectivePreferred),
         ),
       );
     }
@@ -237,6 +265,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
           generation,
           isRefresh: keepItems,
           personalizedGenre: effectivePersonalized,
+          preferredGenres: effectivePreferred,
         ),
       ),
     );
@@ -248,6 +277,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
     int generation, {
     required bool isRefresh,
     GenreOption? personalizedGenre,
+    List<GenreOption>? preferredGenres,
   }) async {
     final feed = state.feedFor(type);
     List<dynamic> items;
@@ -260,6 +290,7 @@ class ExploreFeedCubit extends Cubit<ExploreFeedState> {
         language: feed.language,
         genre: feed.genre,
         personalizedGenre: personalizedGenre ?? feed.personalizedGenre,
+        preferredGenres: preferredGenres ?? feed.preferredGenres,
         forceRefresh: isRefresh,
       );
     } catch (_) {

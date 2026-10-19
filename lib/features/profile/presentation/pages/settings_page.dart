@@ -37,6 +37,7 @@ import 'privacy_policy_page.dart';
 import '../../../feedback/presentation/pages/feedback_board_page.dart';
 import '../widgets/app_icon_selection_bottom_sheet.dart';
 import '../widgets/mw_studio_footer.dart';
+import '../widgets/preferred_genres_bottom_sheet.dart';
 import '../widgets/theme_selection_bottom_sheet.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 
@@ -239,6 +240,43 @@ class _SettingsPageState extends State<SettingsPage> {
                 onTap: () async {
                   await AppIconSelectionBottomSheet.show(context);
                   await _loadAppIcon();
+                },
+              ),
+              _buildDivider(),
+              BlocBuilder<SettingsCubit, SettingsState>(
+                buildWhen: (previous, current) =>
+                    previous.preferredGenres != current.preferredGenres,
+                builder: (context, settingsState) {
+                  final count = settingsState.preferredGenres.length;
+                  final text = count == 0
+                      ? 'None'
+                      : (count == 1
+                          ? settingsState.preferredGenres.first
+                          : '$count selected');
+
+                  return _SettingsTile(
+                    icon: Icons.movie_filter_outlined,
+                    title: 'Preferred Genres',
+                    subtitle: 'Personalize your "FOR YOU" feed',
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          text,
+                          style: AppTextStyles.smMedium.copyWith(
+                            color: AppColors.primaryLight,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.primaryLight,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                    onTap: () => PreferredGenresBottomSheet.show(context),
+                  );
                 },
               ),
               _buildDivider(),

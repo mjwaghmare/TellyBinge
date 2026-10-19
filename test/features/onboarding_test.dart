@@ -1,10 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:popverse/core/constants/app_constants.dart';
+import 'package:popverse/core/network/tmdb_client.dart';
+import 'package:popverse/features/onboarding/data/onboarding_storage.dart';
+import 'package:popverse/features/onboarding/presentation/pages/onboarding_gate.dart';
+import 'package:popverse/features/onboarding/presentation/pages/onboarding_matching_page.dart';
 import 'package:popverse/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:popverse/features/onboarding/presentation/widgets/onboarding_slides.dart';
+import 'package:popverse/features/profile/presentation/cubit/settings_cubit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late SharedPreferences prefs;
+  late TmdbClient tmdbClient;
+
+  setUp(() async {
+    await dotenv.load(mergeWith: {});
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+    tmdbClient = TmdbClient();
+  });
+
+  Widget buildTestApp(Widget child) {
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<SharedPreferences>.value(value: prefs),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<SettingsCubit>(
+            create: (_) => SettingsCubit(prefs: prefs, tmdbClient: tmdbClient),
+          ),
+        ],
+        child: MaterialApp(
+          home: child,
+        ),
+      ),
+    );
+  }
+
   testWidgets('OnboardingPage displays 4 slides and completes on finish',
       (tester) async {
     bool finished = false;
@@ -70,5 +108,61 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(finished, isTrue);
+  });
+
+  testWidgets(
+      'OnboardingMatchingPage renders 12 posters, title, rolling counter, and completes on X tap',
+      (tester) async {
+    bool finished = false;
+
+    await tester.pumpWidget(
+      buildTestApp(
+        OnboardingMatchingPage(
+          onFinished: () {
+            finished = true;
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Verify Title & Subtitle presence
+    expect(find.text('Finding Matches'), findsOneWidget);
+    expect(find.textContaining('items matched'), findsOneWidget);
+
+    // Verify exactly 12 posters are rendered
+    expect(find.byType(Image), findsNWidgets(12));
+
+    // Tap Close (X) button
+    final closeButtonFinder = find.byIcon(Icons.close_rounded);
+    expect(closeButtonFinder, findsOneWidget);
+    await tester.tap(closeButtonFinder);
+    await tester.pumpAndSettle();
+
+    expect(finished, isTrue);
+    final storage = OnboardingStorage(prefs);
+    expect(storage.preferredGenres, isNotEmpty);
+  });
+
+  testWidgets('OnboardingGate transitions from carousel to matching screen',
+      (tester) async {
+    await tester.pumpWidget(
+      buildTestApp(const OnboardingGate()),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Initially shows OnboardingPage
+    expect(find.byType(OnboardingPage), findsOneWidget);
+    expect(find.byType(OnboardingMatchingPage), findsNothing);
+
+    // Tap Skip on intro carousel
+    await tester.tap(find.text(AppConstants.onboardingSkipButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Now transitions to OnboardingMatchingPage
+    expect(find.byType(OnboardingMatchingPage), findsOneWidget);
+    expect(find.text('Finding Matches'), findsOneWidget);
   });
 }

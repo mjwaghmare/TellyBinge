@@ -24,6 +24,17 @@ class OnboardingStorage {
     }
   }
 
+  List<String> get preferredGenres =>
+      _prefs.getStringList(AppStorageKeys.preferredGenres) ?? const [];
+
+  Future<void> savePreferredGenres(List<String> genres) async {
+    try {
+      await _prefs.setStringList(AppStorageKeys.preferredGenres, genres);
+    } catch (e) {
+      debugPrint('OnboardingStorage: failed to persist preferredGenres: $e');
+    }
+  }
+
   Future<void> reset() async {
     try {
       await _prefs.setBool(seenKey, false);

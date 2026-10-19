@@ -169,3 +169,20 @@ GenreOption? resolveTopWatchlistGenre({
   }
   return topGenre;
 }
+
+/// Resolves a list of stored genre label strings into curated [GenreOption]s.
+List<GenreOption> resolvePreferredGenres(List<String> labels) {
+  if (labels.isEmpty) return const [];
+  final activeGenres = kExploreGenres.where((g) => !g.isAll).toList();
+  final result = <GenreOption>[];
+  for (final label in labels) {
+    final clean = label.trim().toLowerCase();
+    for (final genre in activeGenres) {
+      if (genre.label.toLowerCase() == clean && !result.contains(genre)) {
+        result.add(genre);
+        break;
+      }
+    }
+  }
+  return result;
+}

@@ -111,6 +111,9 @@ class AppConstants {
       'Track your total watch time across shows and movies, build your '
       'streak, and see your habits grow automatically.';
 
+  static const String onboardingFindingMatchesTitle = 'Finding Matches';
+  static const String preferredGenresTitle = 'Preferred Genres';
+
   // --- App Update Strings ---
   static const String updateAvailableTitle = 'New Update Available';
   static const String forceUpdateMessage =

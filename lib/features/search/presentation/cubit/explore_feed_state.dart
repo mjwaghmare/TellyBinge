@@ -45,12 +45,14 @@ class ExploreFeed extends Equatable {
   final String? language;
   final GenreOption? genre;
   final GenreOption? personalizedGenre;
+  final List<GenreOption> preferredGenres;
 
   const ExploreFeed({
     this.rows = const {},
     this.language,
     this.genre,
     this.personalizedGenre,
+    this.preferredGenres = const [],
   });
 
   ExploreRow rowFor(ExploreSection section) =>
@@ -62,6 +64,7 @@ class ExploreFeed extends Equatable {
         language: language,
         genre: genre,
         personalizedGenre: personalizedGenre,
+        preferredGenres: preferredGenres,
       );
 
   ExploreFeed copyWith({
@@ -69,6 +72,7 @@ class ExploreFeed extends Equatable {
     String? language,
     GenreOption? genre,
     GenreOption? personalizedGenre,
+    List<GenreOption>? preferredGenres,
     bool clearPersonalizedGenre = false,
   }) {
     return ExploreFeed(
@@ -78,11 +82,12 @@ class ExploreFeed extends Equatable {
       personalizedGenre: clearPersonalizedGenre
           ? null
           : (personalizedGenre ?? this.personalizedGenre),
+      preferredGenres: preferredGenres ?? this.preferredGenres,
     );
   }
 
   @override
-  List<Object?> get props => [rows, language, genre, personalizedGenre];
+  List<Object?> get props => [rows, language, genre, personalizedGenre, preferredGenres];
 }
 
 class ExploreFeedState extends Equatable {

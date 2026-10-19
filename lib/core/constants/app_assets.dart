@@ -25,4 +25,20 @@ class AppAssets {
     'assets/images/posters/top_gun_maverick.webp',
     'assets/images/posters/the_matrix.webp',
   ];
+
+  /// 12 distinct bundled poster assets for the onboarding matching screen.
+  static const List<String> matchingPosters = [
+    'assets/images/posters/friends.webp',
+    'assets/images/posters/off_campus.webp',
+    'assets/images/posters/sex_education.webp',
+    'assets/images/posters/chernobyl.webp',
+    'assets/images/posters/vincenzo.webp',
+    'assets/images/posters/from.webp',
+    'assets/images/posters/indias_best_dancer.webp',
+    'assets/images/posters/reacher.webp',
+    'assets/images/posters/money_heist_berlin.webp',
+    'assets/images/posters/when_life_gives_you_tangerines.webp',
+    'assets/images/posters/stranger_things.webp',
+    'assets/images/posters/my_name.webp',
+  ];
 }

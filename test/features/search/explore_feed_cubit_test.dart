@@ -273,5 +273,30 @@ void main() {
       await settle();
       expect(cubit.state.feedFor(tv).personalizedGenre, equals(drama));
     });
+
+    test('ensureLoaded stores preferredGenres and updates For You section title', () async {
+      final preferred = resolvePreferredGenres(['Action', 'Comedy']);
+      expect(preferred, hasLength(2));
+
+      cubit.ensureLoaded(tv, preferredGenres: preferred);
+      await settle();
+
+      final feed = cubit.state.feedFor(tv);
+      expect(feed.preferredGenres, equals(preferred));
+
+      // With no personalizedGenre, title reflects preferredGenres
+      final title = ExploreSection.forYou.titleWithGenre(
+        null,
+        preferredGenres: feed.preferredGenres,
+      );
+      expect(title, 'Top Picks For You');
+
+      // For a single preferred genre:
+      final singleTitle = ExploreSection.forYou.titleWithGenre(
+        null,
+        preferredGenres: [preferred.first],
+      );
+      expect(singleTitle, 'Because you like Action');
+    });
   });
 }
