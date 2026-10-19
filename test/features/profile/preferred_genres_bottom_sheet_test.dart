@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:popverse/core/constants/app_constants.dart';
 import 'package:popverse/core/constants/app_storage_keys.dart';
 import 'package:popverse/core/network/tmdb_client.dart';
 import 'package:popverse/features/profile/presentation/cubit/settings_cubit.dart';
@@ -49,10 +50,11 @@ void main() {
     await tester.pumpWidget(buildTestApp());
     await tester.pump();
 
-    // Verify Title & Subtitle
+    // Verify Eyebrow Badge, Title & dynamic Subtitle
+    expect(find.text(AppConstants.onboardingSlide5Badge.toUpperCase()), findsOneWidget);
     expect(find.text('Preferred Genres'), findsOneWidget);
     expect(
-      find.textContaining('personalize your "FOR YOU" feed recommendations'),
+      find.textContaining('selected • Tap to adjust'),
       findsOneWidget,
     );
 
@@ -63,10 +65,12 @@ void main() {
     expect(find.text('Sci-Fi'), findsOneWidget);
 
     // Tap 'Sci-Fi' to add it to selection
+    await tester.ensureVisible(find.text('Sci-Fi'));
     await tester.tap(find.text('Sci-Fi'));
     await tester.pump();
 
     // Tap Save Preferences button
+    await tester.ensureVisible(find.text('Save Preferences'));
     await tester.tap(find.text('Save Preferences'));
     await tester.pumpAndSettle();
 
@@ -89,6 +93,7 @@ void main() {
     expect(find.text('Anime'), findsOneWidget);
 
     // Save preferences directly
+    await tester.ensureVisible(find.text('Save Preferences'));
     await tester.tap(find.text('Save Preferences'));
     await tester.pumpAndSettle();
 
@@ -116,6 +121,7 @@ void main() {
     expect(find.text('Anime'), findsNothing);
 
     // Save preferences
+    await tester.ensureVisible(find.text('Save Preferences'));
     await tester.tap(find.text('Save Preferences'));
     await tester.pumpAndSettle();
 

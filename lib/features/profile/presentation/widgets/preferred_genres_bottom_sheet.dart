@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -10,6 +11,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../onboarding/data/onboarding_storage.dart';
 import '../../../onboarding/presentation/widgets/genre_poster_collage.dart';
+import '../../../onboarding/presentation/widgets/onboarding_slide.dart';
 import '../../../search/data/explore_genres.dart';
 import '../cubit/settings_cubit.dart';
 
@@ -128,6 +130,11 @@ class _PreferredGenresBottomSheetState
         .where((g) => !posterGenres.contains(g))
         .toList();
 
+    final count = _selectedGenres.length;
+    final subtitle = count == 0
+        ? AppConstants.onboardingSlide5Body
+        : '$count ${count == 1 ? 'genre' : 'genres'} selected • Tap to adjust';
+
     return Container(
       constraints: BoxConstraints(
         maxHeight: screenHeight * 0.90,
@@ -139,92 +146,96 @@ class _PreferredGenresBottomSheetState
         borderRadius: AppBottomSheet.borderRadius,
       ),
       padding: const EdgeInsets.only(
-        top: AppSpacing.md,
+        top: AppSpacing.sm,
         left: AppSpacing.md,
         right: AppSpacing.md,
-        bottom: AppSpacing.lg,
+        bottom: AppSpacing.md,
       ),
       child: SafeArea(
         top: false,
-        child: Column(
-          children: [
-            const AppSheetHandle(),
-            const SizedBox(height: AppSpacing.sm),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AppSheetHandle(),
+              AppSpacing.gapH8,
 
-            // Header Title
-            Text(
-              'Preferred Genres',
-              style: AppTextStyles.lg.copyWith(
-                color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 2.0),
+              // FOR YOU Eyebrow Badge matching OBS Screen
+              const OnboardingBadge(label: AppConstants.onboardingSlide5Badge),
+              AppSpacing.gapH4,
 
-            // Subtitle
-            Text(
-              'Select genres to personalize your "FOR YOU" feed recommendations • ${_selectedGenres.length} selected',
-              style: AppTextStyles.xs.copyWith(
-                color: isDark
-                    ? AppColors.textSecondary
-                    : AppColors.lightTextSecondary,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-
-            // Removable chips for selected feed genres not represented on posters
-            if (unsupportedGenres.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                child: Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    for (final genre in unsupportedGenres)
-                      _buildUnsupportedGenreChip(genre, isDark),
-                  ],
+              // Header Title
+              Text(
+                AppConstants.preferredGenresTitle,
+                style: AppTextStyles.lg.copyWith(
+                  color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary,
+                  fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: AppSpacing.xs),
-            ],
+              AppSpacing.gapH4,
 
-            // 12-Poster Collage matching OBS Screen
-            Expanded(
-              child: GenrePosterCollage(
+              // Dynamic Subtitle matching OBS Screen
+              Text(
+                subtitle,
+                style: AppTextStyles.xs.copyWith(
+                  color: isDark
+                      ? AppColors.textSecondary
+                      : AppColors.lightTextSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              AppSpacing.gapH8,
+
+              // Removable chips for selected feed genres not represented on posters
+              if (unsupportedGenres.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                  child: Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      for (final genre in unsupportedGenres)
+                        _buildUnsupportedGenreChip(genre, isDark),
+                    ],
+                  ),
+                ),
+                AppSpacing.gapH8,
+              ],
+
+              // 12-Poster Collage matching OBS Screen
+              GenrePosterCollage(
                 selectedIndices: _selectedPosterIndices,
                 onToggle: _togglePoster,
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
+              AppSpacing.gapH12,
 
-            // Save Preferences Button
-            SizedBox(
-              width: double.infinity,
-              height: 50.0,
-              child: ElevatedButton(
-                onPressed: _saveAndClose,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14.0),
+              // Save Preferences Button
+              SizedBox(
+                width: double.infinity,
+                height: 48.0,
+                child: ElevatedButton(
+                  onPressed: _saveAndClose,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.0),
+                    ),
+                    elevation: 0,
                   ),
-                ),
-                child: Text(
-                  'Save Preferences',
-                  style: AppTextStyles.mdMedium.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                  child: Text(
+                    'Save Preferences',
+                    style: AppTextStyles.mdMedium.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
