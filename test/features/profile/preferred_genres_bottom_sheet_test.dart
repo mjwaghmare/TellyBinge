@@ -77,4 +77,49 @@ void main() {
       contains('Sci-Fi'),
     );
   });
+
+  testWidgets(
+      'PreferredGenresBottomSheet preserves valid feed genres absent from posters on save',
+      (tester) async {
+    await settingsCubit.setPreferredGenres(['Anime', 'Action']);
+    await tester.pumpWidget(buildTestApp());
+    await tester.pump();
+
+    // Verify 'Anime' chip is rendered
+    expect(find.text('Anime'), findsOneWidget);
+
+    // Save preferences directly
+    await tester.tap(find.text('Save Preferences'));
+    await tester.pumpAndSettle();
+
+    expect(settingsCubit.state.preferredGenres, contains('Anime'));
+    expect(settingsCubit.state.preferredGenres, contains('Action'));
+  });
+
+  testWidgets(
+      'PreferredGenresBottomSheet allows explicit removal of unsupported feed genres',
+      (tester) async {
+    await settingsCubit.setPreferredGenres(['Anime', 'Action']);
+    await tester.pumpWidget(buildTestApp());
+    await tester.pump();
+
+    // Verify 'Anime' chip is rendered
+    expect(find.text('Anime'), findsOneWidget);
+
+    // Tap remove close icon on the Anime chip
+    final closeFinder = find.byIcon(Icons.close_rounded);
+    expect(closeFinder, findsOneWidget);
+    await tester.tap(closeFinder);
+    await tester.pump();
+
+    // Verify Anime is removed
+    expect(find.text('Anime'), findsNothing);
+
+    // Save preferences
+    await tester.tap(find.text('Save Preferences'));
+    await tester.pumpAndSettle();
+
+    expect(settingsCubit.state.preferredGenres, isNot(contains('Anime')));
+    expect(settingsCubit.state.preferredGenres, contains('Action'));
+  });
 }

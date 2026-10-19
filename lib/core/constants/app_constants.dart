@@ -112,6 +112,10 @@ class AppConstants {
       'streak, and see your habits grow automatically.';
 
   static const String onboardingFindingMatchesTitle = 'Finding Matches';
+  static const String onboardingSlide5Badge = 'For You';
+  static const String onboardingSlide5Title = 'What do you love to watch?';
+  static const String onboardingSlide5Body =
+      'Pick shows you like to customize your feed';
   static const String preferredGenresTitle = 'Preferred Genres';
 
   // --- App Update Strings ---

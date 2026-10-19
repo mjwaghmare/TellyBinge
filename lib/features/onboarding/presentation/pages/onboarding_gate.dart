@@ -4,11 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../data/onboarding_storage.dart';
-import 'onboarding_matching_page.dart';
 import 'onboarding_page.dart';
 
-/// What an unauthenticated user sees: the intro carousel on a first run, followed
-/// by the genre matching screen, and the login screen every time after.
+/// What an unauthenticated user sees: the 5-slide intro carousel (including genre matching)
+/// on a first run, and the login screen every time after.
 ///
 /// The flag is read synchronously from the already-loaded [SharedPreferences]
 /// instance, so a returning user never sees a frame of onboarding before it
@@ -23,7 +22,6 @@ class OnboardingGate extends StatefulWidget {
 class _OnboardingGateState extends State<OnboardingGate> {
   late final OnboardingStorage _storage;
   late bool _showOnboarding;
-  bool _showMatching = false;
 
   @override
   void initState() {
@@ -32,27 +30,17 @@ class _OnboardingGateState extends State<OnboardingGate> {
     _showOnboarding = !_storage.hasSeenOnboarding;
   }
 
-  void _onCarouselFinished() {
-    setState(() {
-      _showOnboarding = false;
-      _showMatching = true;
-    });
-  }
-
-  void _onMatchingFinished() {
+  void _onOnboardingFinished() {
     _storage.markSeen();
     setState(() {
-      _showMatching = false;
+      _showOnboarding = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     if (_showOnboarding) {
-      return OnboardingPage(onFinished: _onCarouselFinished);
-    }
-    if (_showMatching) {
-      return OnboardingMatchingPage(onFinished: _onMatchingFinished);
+      return OnboardingPage(onFinished: _onOnboardingFinished);
     }
     return const LoginPage();
   }

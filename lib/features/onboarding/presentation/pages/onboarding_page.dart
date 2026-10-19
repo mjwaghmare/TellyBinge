@@ -1,15 +1,19 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../widgets/genre_poster_collage.dart';
 import '../widgets/onboarding_poster_wall.dart';
 import '../widgets/onboarding_slides.dart';
 
-/// Four-slide intro carousel shown once per install, ahead of the login
-/// screen. Calls [onFinished] when the user reaches the end or skips.
+/// Five-slide intro carousel shown once per install ahead of the login screen.
+/// Slide 5 includes the interactive 12-poster genre matching experience.
+/// Calls [onFinished] when the user completes the flow or skips.
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key, required this.onFinished});
 
@@ -20,15 +24,6 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  static const List<Widget> _slides = [
-    TrackingSlide(),
-    ReleasesSlide(),
-    DiscoverSlide(),
-    StatsSlide(),
-  ];
-
-  /// Fades the poster wall into the canvas so the top half reveals the poster grid
-  /// while the lower half sits on solid background color, matching the login screen.
   static final LinearGradient _scrim = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
@@ -44,7 +39,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _controller = PageController();
   int _index = 0;
 
-  bool get _isLastSlide => _index == _slides.length - 1;
+  final Set<int> _selectedPosterIndices = {};
+  final Set<String> _selectedGenres = {};
+
+  static const int _totalSlideCount = 5;
+  bool get _isLastSlide => _index == _totalSlideCount - 1;
+
 
   @override
   void dispose() {
@@ -52,9 +52,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
     super.dispose();
   }
 
-  void _next() {
+  void _togglePoster(int index) {
+    setState(() {
+      togglePosterSelection(
+        index: index,
+        selectedIndices: _selectedPosterIndices,
+        selectedGenres: _selectedGenres,
+      );
+    });
+  }
+
+  Future<void> _next() async {
+    unawaited(AppHaptics.selectionClick());
     if (_isLastSlide) {
-      widget.onFinished();
+      await _finish();
       return;
     }
     _controller.nextPage(
@@ -63,8 +74,36 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
+  Future<void> _skip() async {
+    unawaited(AppHaptics.lightImpact());
+    await _finish();
+  }
+
+  Future<void> _finish() async {
+    if (mounted) {
+      await saveOnboardingGenres(
+        context: context,
+        selectedGenres: _selectedGenres,
+      );
+    }
+    if (mounted) {
+      widget.onFinished();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final slides = [
+      const TrackingSlide(),
+      const ReleasesSlide(),
+      const DiscoverSlide(),
+      const StatsSlide(),
+      MatchingSlide(
+        selectedIndices: _selectedPosterIndices,
+        onToggle: _togglePoster,
+      ),
+    ];
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -89,15 +128,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.sm,
                       ),
-                      // Kept in the tree on the last slide so the slides below
-                      // don't shift up when it goes away.
                       child: Visibility(
                         visible: !_isLastSlide,
                         maintainSize: true,
                         maintainAnimation: true,
                         maintainState: true,
                         child: TextButton(
-                          onPressed: widget.onFinished,
+                          onPressed: _skip,
                           style: TextButton.styleFrom(
                             minimumSize: const Size(
                               AppSpacing.huge,
@@ -119,12 +156,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     child: PageView(
                       controller: _controller,
                       onPageChanged: (index) => setState(() => _index = index),
-                      children: _slides,
+                      children: slides,
                     ),
                   ),
-                  AppSpacing.gapH20,
-                  _PageDots(count: _slides.length, activeIndex: _index),
-                  AppSpacing.gapH20,
+                  AppSpacing.gapH16,
+                  _PageDots(count: _totalSlideCount, activeIndex: _index),
+                  AppSpacing.gapH16,
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.xl,

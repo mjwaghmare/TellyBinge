@@ -535,10 +535,10 @@ class _SearchPageState extends State<SearchPage>
     }
 
     for (final section in const [
+      ExploreSection.forYou,
       ExploreSection.trending,
       ExploreSection.comingSoon,
       ExploreSection.newlyAdded,
-      ExploreSection.forYou,
     ]) {
       final row = feed.rowFor(section);
       anyLoading |= row.isLoading;

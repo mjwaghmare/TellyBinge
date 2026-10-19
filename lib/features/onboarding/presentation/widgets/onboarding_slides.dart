@@ -5,6 +5,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import 'genre_poster_collage.dart';
 import 'onboarding_slide.dart';
 
 // =============================================================================
@@ -541,5 +542,75 @@ class _StatTile extends StatelessWidget {
     );
   }
 }
+
+// =============================================================================
+// SLIDE 5: GENRE & SHOW RECOMMENDATION MATCHING
+// =============================================================================
+
+/// Slide 5 — selecting favorite shows and genres for personalized recommendations.
+class MatchingSlide extends StatelessWidget {
+  const MatchingSlide({
+    super.key,
+    required this.selectedIndices,
+    required this.onToggle,
+  });
+
+  final Set<int> selectedIndices;
+  final ValueChanged<int> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = selectedIndices.length;
+    final subtitle = count == 0
+        ? AppConstants.onboardingSlide5Body
+        : '$count ${count == 1 ? 'genre' : 'genres'} selected • Tap to adjust';
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const OnboardingBadge(label: AppConstants.onboardingSlide5Badge),
+                      AppSpacing.gapH12,
+                      Text(
+                        AppConstants.onboardingSlide5Title,
+                        style: AppTextStyles.xl.copyWith(height: 1.2),
+                      ),
+                      AppSpacing.gapH8,
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.sm
+                            .withColor(AppColors.textSecondary)
+                            .copyWith(height: 1.45),
+                      ),
+                    ],
+                  ),
+                ),
+                AppSpacing.gapH12,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                  child: GenrePosterCollage(
+                    selectedIndices: selectedIndices,
+                    onToggle: onToggle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 
 
