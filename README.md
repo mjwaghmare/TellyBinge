@@ -18,6 +18,31 @@
 
 ---
 
+## 📸 Screenshots
+
+<table align="center">
+  <tr>
+    <th align="center">Shows</th>
+    <th align="center">Movies</th>
+    <th align="center">Explore</th>
+    <th align="center">Profile</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/shows.png" alt="Shows watchlist" width="200" /></td>
+    <td align="center"><img src="docs/screenshots/movies.png" alt="Movies watchlist" width="200" /></td>
+    <td align="center"><img src="docs/screenshots/explore.png" alt="Explore and discovery" width="200" /></td>
+    <td align="center"><img src="docs/screenshots/profile.png" alt="Profile and stats" width="200" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Watch Next list with episode progress</sub></td>
+    <td align="center"><sub>Movie watchlist in grid view</sub></td>
+    <td align="center"><sub>Top 5 this week & personalized picks</sub></td>
+    <td align="center"><sub>Watch stats, badges & in-progress shows</sub></td>
+  </tr>
+</table>
+
+---
+
 ## ✨ Features
 
 ### 📺 Track TV Shows & Movies
