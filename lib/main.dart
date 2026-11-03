@@ -101,7 +101,7 @@ void main() async {
     debugPrint('Warning: Could not initialize Google Sign-In: $e');
   }
 
-  // Load environment variables (TMDb key)
+  // Load environment variables
   try {
     await dotenv.load(fileName: '.env');
   } catch (e) {

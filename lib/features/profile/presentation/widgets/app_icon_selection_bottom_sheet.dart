@@ -8,8 +8,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snackbar.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
-import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/app_icon_cubit.dart';
 import '../cubit/app_icon_state.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
@@ -23,14 +21,6 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
   static Future<void> show(BuildContext context) {
     AppHaptics.selectionClick();
 
-    bool isPro = false;
-    try {
-      final authState = context.read<AuthCubit>().state;
-      if (authState is Authenticated) {
-        isPro = authState.user.isPro;
-      }
-    } catch (_) {}
-
     return showModalBottomSheet<void>(
       context: context,
       shape: AppBottomSheet.shape,
@@ -38,7 +28,7 @@ class AppIconSelectionBottomSheet extends StatelessWidget {
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider(
-        create: (_) => AppIconCubit(isProUser: isPro),
+        create: (_) => AppIconCubit(isProUser: true),
         child: const AppIconSelectionBottomSheet(),
       ),
     );
