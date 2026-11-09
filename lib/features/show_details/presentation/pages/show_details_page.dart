@@ -424,7 +424,7 @@ class _ShowDetailsViewState extends State<ShowDetailsView> {
                     tooltip: 'Back',
                     padding: EdgeInsets.zero,
                     icon: const Icon(
-                      Icons.arrow_back_ios_new,
+                      Icons.arrow_back_ios_new_rounded,
                       size: 18,
                       color: AppColors.textOnPrimary,
                     ),

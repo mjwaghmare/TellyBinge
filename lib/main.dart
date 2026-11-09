@@ -22,6 +22,7 @@ import 'core/services/widget_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/background_sync_service.dart';
 import 'core/services/quick_actions_service.dart';
+import 'core/widgets/app_snackbar.dart';
 import 'features/show_details/presentation/pages/show_details_page.dart';
 import 'features/explore/presentation/pages/movie_details_page.dart';
 import 'core/storage/settings_storage.dart';
@@ -462,22 +463,33 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               onGenerateRoute: (settings) {
                 final path = settings.name;
                 if (path != null && path.length > 1) {
-                  final parts = path.split('/');
-                  final showIdStr = parts.lastWhere(
-                    (e) => e.isNotEmpty,
-                    orElse: () => '',
-                  );
-                  final showId = int.tryParse(showIdStr);
-                  if (showId != null) {
-                    return MaterialPageRoute(
-                      settings: settings,
-                      builder: (context) => ShowDetailsPage(
-                        mediaId: showId,
-                        mediaType: 'tv',
-                        title: 'Show Details',
-                        initialTabIndex: 1,
-                      ),
-                    );
+                  final uri = Uri.tryParse(path);
+                  final segments = uri?.pathSegments ??
+                      path
+                          .split('/')
+                          .where((s) => s.isNotEmpty)
+                          .toList();
+                  if (segments.isNotEmpty) {
+                    final isMovie = segments.contains('movie');
+                    final idStr = segments.lastOrNull ?? '';
+                    final id = int.tryParse(idStr);
+                    if (id != null && id > 0) {
+                      if (isMovie) {
+                        return MaterialPageRoute(
+                          settings: settings,
+                          builder: (context) => MovieDetailsPage(movieId: id),
+                        );
+                      }
+                      return MaterialPageRoute(
+                        settings: settings,
+                        builder: (context) => ShowDetailsPage(
+                          mediaId: id,
+                          mediaType: 'tv',
+                          title: 'Show Details',
+                          initialTabIndex: 1,
+                        ),
+                      );
+                    }
                   }
                 }
                 return null;
@@ -568,6 +580,8 @@ class _AuthGateState extends State<AuthGate> {
           context.read<MovieWatchlistCubit>().clearWatchlist();
           context.read<TvShowWatchlistCubit>().clearWatchlist();
           context.read<CustomListsCubit>().clearLists();
+        } else if (state is AuthError && !state.isGuest) {
+          AppSnackbar.showError(context, state.message);
         }
       },
       builder: (context, state) {
@@ -580,7 +594,10 @@ class _AuthGateState extends State<AuthGate> {
         } else if (state is Unauthenticated || state is AuthLoginLoading) {
           return const OnboardingGate();
         } else if (state is AuthError) {
-          // If error occurs, fall back to the login page
+          // If the user still has an active session, retain the shell rather than evicting
+          if (FirebaseAuth.instance.currentUser != null) {
+            return const ShellNavigationPage(initialIndex: 0);
+          }
           return const OnboardingGate();
         } else {
           // Loading states: keep showing the splash screen UI seamlessly

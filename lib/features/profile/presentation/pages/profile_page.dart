@@ -819,7 +819,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           children: [
                             // Stats Section (Episodes watched & Movies watched)
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
                               child: Row(
                                 children: [
                                   Expanded(
@@ -837,7 +837,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   Container(
                                     height: 40,
                                     width: 1,
-                                    margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                                    margin: const EdgeInsets.symmetric(horizontal: 2),
                                     color: Theme.of(context).brightness == Brightness.light
                                         ? AppColors.borderLight
                                         : AppColors.borderDark,
@@ -857,7 +857,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   Container(
                                     height: 40,
                                     width: 1,
-                                    margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                                    margin: const EdgeInsets.symmetric(horizontal: 2),
                                     color: Theme.of(context).brightness == Brightness.light
                                         ? AppColors.borderLight
                                         : AppColors.borderDark,
@@ -1436,8 +1436,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: AppSpacing.xs),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -1489,23 +1490,33 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               ],
             ),
             const SizedBox(height: 2),
-            Text(
-              label,
-              style: AppTextStyles.xsMedium.copyWith(
-                color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                label,
+                style: AppTextStyles.xsMedium.copyWith(
+                  fontSize: 11.5,
+                  letterSpacing: -0.2,
+                  color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
+                ),
+                maxLines: 1,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
             if (timeSpent.isNotEmpty && timeSpent != '0m') ...[
               const SizedBox(height: 2),
-              Text(
-                timeSpent,
-                style: AppTextStyles.xsMedium.copyWith(
-                  color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  timeSpent,
+                  style: AppTextStyles.xsMedium.copyWith(
+                    fontSize: 11.5,
+                    letterSpacing: -0.2,
+                    color: isLight ? AppColors.lightTextSecondary : AppColors.textSecondary,
+                  ),
+                  maxLines: 1,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ],
