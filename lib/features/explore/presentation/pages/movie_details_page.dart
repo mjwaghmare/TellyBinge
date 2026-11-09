@@ -323,8 +323,8 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               leading: IconButton(
                 icon: Icon(
-                  Icons.arrow_back_ios_new,
-                  size: 22,
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 20,
                   color: context.textPrimary,
                 ),
                 onPressed: () => Navigator.pop(context),
@@ -1394,7 +1394,7 @@ class _MovieDetailsViewState extends State<MovieDetailsView> {
                         tooltip: 'Back',
                         padding: EdgeInsets.zero,
                         icon: const Icon(
-                          Icons.arrow_back_ios_new,
+                          Icons.arrow_back_ios_new_rounded,
                           size: 18,
                           color: AppColors.textOnPrimary,
                         ),

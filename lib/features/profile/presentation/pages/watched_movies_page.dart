@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 import 'profile_page.dart'; // For HorizontalItem
 import '../../../../features/explore/presentation/pages/movie_details_page.dart';
 
@@ -33,14 +34,25 @@ class WatchedMoviesPage extends StatelessWidget {
         ),
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back_ios,
+            Icons.arrow_back_ios_new_rounded,
             color: Theme.of(context).textTheme.bodyLarge?.color,
             size: 20,
           ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: GridView.builder(
+      body: watchedMovies.isEmpty
+          ? Center(
+              child: AppEmptyState(
+                icon: Icons.movie_filter_outlined,
+                title: 'No Watched Movies Yet',
+                body:
+                    'Movies you mark as watched in your library or search will appear here.',
+                primaryLabel: 'GO BACK',
+                onPrimary: () => Navigator.pop(context),
+              ),
+            )
+          : GridView.builder(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.sm,
           AppSpacing.sm,

@@ -17,7 +17,9 @@ import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../explore/presentation/pages/movie_details_page.dart';
 import '../cubit/movie_watchlist_cubit.dart';
 import '../cubit/movie_watchlist_state.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../core/widgets/app_error_view.dart';
 
 class MoviesPage extends StatefulWidget {
   final VoidCallback? onNavigateToExplore;
@@ -218,6 +220,19 @@ class MoviesPageState extends State<MoviesPage> {
             if (bDate == null) return -1;
             return aDate.compareTo(bDate);
           });
+        } else if (state is MovieWatchlistError) {
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: SafeArea(
+              child: AppErrorView(
+                failure: Failure.fromException(state.message),
+                onRetry: uid != null
+                    ? () =>
+                        context.read<MovieWatchlistCubit>().watchWatchlist(uid)
+                    : null,
+              ),
+            ),
+          );
         }
 
         if (state is MovieWatchlistSuccess && state.movies.isEmpty) {

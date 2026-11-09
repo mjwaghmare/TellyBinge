@@ -226,7 +226,7 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
               elevation: 0,
               leading: IconButton(
                 icon: Icon(
-                  Icons.arrow_back_ios,
+                  Icons.arrow_back_ios_new_rounded,
                   color: context.textPrimary,
                   size: 20,
                 ),
@@ -250,7 +250,7 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
               elevation: 0,
               leading: IconButton(
                 icon: Icon(
-                  Icons.arrow_back_ios,
+                  Icons.arrow_back_ios_new_rounded,
                   color: context.textPrimary,
                   size: 20,
                 ),
@@ -278,7 +278,7 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
               elevation: 0,
               leading: IconButton(
                 icon: Icon(
-                  Icons.arrow_back_ios,
+                  Icons.arrow_back_ios_new_rounded,
                   color: context.textPrimary,
                   size: 20,
                 ),
@@ -304,7 +304,7 @@ class _CustomListDetailsPageState extends State<CustomListDetailsPage> {
             elevation: 0,
             leading: IconButton(
               icon: Icon(
-                Icons.arrow_back_ios,
+                Icons.arrow_back_ios_new_rounded,
                 color: context.textPrimary,
                 size: 20,
               ),

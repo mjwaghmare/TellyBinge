@@ -24,7 +24,9 @@ import '../widgets/upcoming_episode_card.dart';
 import '../models/enriched_show.dart';
 import '../../domain/models/watch_history_item.dart';
 import '../../../../core/services/widget_service.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../core/widgets/app_error_view.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onNavigateToExplore;
@@ -124,11 +126,11 @@ class DashboardPageState extends State<DashboardPage> {
                   // Shimmer skeleton while Firestore is loading
                   return _buildShimmerSkeleton();
                 } else if (watchlistState is TvShowWatchlistError) {
-                  return Center(
-                    child: Text(
-                      'Error: ${watchlistState.message}',
-                      style: AppTextStyles.sm.copyWith(color: AppColors.error),
-                    ),
+                  return AppErrorView(
+                    failure: Failure.fromException(watchlistState.message),
+                    onRetry: () => context
+                        .read<TvShowWatchlistCubit>()
+                        .watchWatchlist(uid),
                   );
                 } else if (watchlistState is TvShowWatchlistSuccess) {
                   if (watchlistState.shows.isEmpty) {

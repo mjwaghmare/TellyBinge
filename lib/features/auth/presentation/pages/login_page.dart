@@ -1,7 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_assets.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -9,9 +11,19 @@ import '../../../../core/widgets/app_snackbar.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../widgets/login_poster_wall.dart';
+import '../../../profile/presentation/pages/privacy_policy_page.dart';
+import '../../../profile/presentation/pages/terms_and_conditions_page.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _privacyRecognizer;
 
   /// Fades the poster wall into the canvas so the copy and buttons in the lower
   /// half sit on solid colour rather than on artwork.
@@ -26,6 +38,40 @@ class LoginPage extends StatelessWidget {
     ],
     stops: const [0.0, 0.34, 0.58, 1.0],
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()..onTap = _openTerms;
+    _privacyRecognizer = TapGestureRecognizer()..onTap = _openPrivacy;
+  }
+
+  @override
+  void dispose() {
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
+    super.dispose();
+  }
+
+  void _openTerms() {
+    AppHaptics.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const TermsAndConditionsPage(),
+      ),
+    );
+  }
+
+  void _openPrivacy() {
+    AppHaptics.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PrivacyPolicyPage(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,12 +127,32 @@ class LoginPage extends StatelessWidget {
                     AppSpacing.gapH8,
                     SizedBox(
                       width: double.infinity,
-                      child: Text(
-                        'By continuing you agree to our Terms of Service.',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.xs.withColor(
-                          AppColors.textTertiary,
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'By continuing you agree to our ',
+                          style: AppTextStyles.xs.withColor(
+                            AppColors.textTertiary,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'Terms',
+                              recognizer: _termsRecognizer,
+                              style: AppTextStyles.xsBold.withColor(
+                                AppColors.primaryLight,
+                              ),
+                            ),
+                            const TextSpan(text: ' and '),
+                            TextSpan(
+                              text: 'Privacy Policy',
+                              recognizer: _privacyRecognizer,
+                              style: AppTextStyles.xsBold.withColor(
+                                AppColors.primaryLight,
+                              ),
+                            ),
+                            const TextSpan(text: '.'),
+                          ],
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     AppSpacing.gapH16,
