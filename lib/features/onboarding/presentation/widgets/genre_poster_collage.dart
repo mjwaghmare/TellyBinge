@@ -172,17 +172,17 @@ const List<PosterPlacement> kPosterPlacements = [
   PosterPlacement(index: 2, cx: 237.0, cy: 66.0, rotation: 0.008), // Sex Education
   PosterPlacement(index: 3, cx: 330.0, cy: 68.0, rotation: 0.025), // Chernobyl
 
-  // Row 1 (Middle row, ~16px subtle overlap with Row 0)
-  PosterPlacement(index: 4, cx: 48.0, cy: 180.0, rotation: -0.025), // Vincenzo
-  PosterPlacement(index: 5, cx: 142.0, cy: 178.0, rotation: -0.008), // From
-  PosterPlacement(index: 6, cx: 238.0, cy: 178.0, rotation: 0.008), // Dancer
-  PosterPlacement(index: 7, cx: 332.0, cy: 180.0, rotation: 0.025), // Reacher
+  // Row 1 (Middle row, clean ~4px separation from Row 0)
+  PosterPlacement(index: 4, cx: 48.0, cy: 200.0, rotation: -0.025), // Vincenzo
+  PosterPlacement(index: 5, cx: 142.0, cy: 198.0, rotation: -0.008), // From
+  PosterPlacement(index: 6, cx: 238.0, cy: 198.0, rotation: 0.008), // Dancer
+  PosterPlacement(index: 7, cx: 332.0, cy: 200.0, rotation: 0.025), // Reacher
 
-  // Row 2 (Bottom row, ~16px subtle overlap with Row 1)
-  PosterPlacement(index: 8, cx: 50.0, cy: 292.0, rotation: -0.025), // Berlin
-  PosterPlacement(index: 9, cx: 143.0, cy: 290.0, rotation: -0.008), // Tangerines
-  PosterPlacement(index: 10, cx: 237.0, cy: 290.0, rotation: 0.008), // Stranger Things
-  PosterPlacement(index: 11, cx: 330.0, cy: 292.0, rotation: 0.025), // My Name
+  // Row 2 (Bottom row, clean ~4px separation from Row 1)
+  PosterPlacement(index: 8, cx: 50.0, cy: 332.0, rotation: -0.025), // Berlin
+  PosterPlacement(index: 9, cx: 143.0, cy: 330.0, rotation: -0.008), // Tangerines
+  PosterPlacement(index: 10, cx: 237.0, cy: 330.0, rotation: 0.008), // Stranger Things
+  PosterPlacement(index: 11, cx: 330.0, cy: 332.0, rotation: 0.025), // My Name
 ];
 
 /// Painting order: Row 2 (back), then Row 1 (middle), then Row 0 (front).
@@ -211,7 +211,7 @@ class GenrePosterCollage extends StatelessWidget {
   final double maxScale;
 
   static const double referenceWidth = 380.0;
-  static const double referenceHeight = 360.0;
+  static const double referenceHeight = 398.0;
 
   @override
   Widget build(BuildContext context) {
@@ -230,12 +230,19 @@ class GenrePosterCollage extends StatelessWidget {
 
         final sortedIndices = List<int>.from(kBasePaintOrder)
           ..sort((a, b) {
+            final rowA = a ~/ 4;
+            final rowB = b ~/ 4;
+            // Always keep upper rows painted in front of lower rows so genre badges are never occluded
+            if (rowA != rowB) {
+              return rowB.compareTo(rowA);
+            }
+            // Within the same row, bring selected card forward so its glow/border is unobstructed
             final aSel = selectedIndices.contains(a);
             final bSel = selectedIndices.contains(b);
-            if (aSel == bSel) {
-              return kBasePaintOrder.indexOf(a).compareTo(kBasePaintOrder.indexOf(b));
+            if (aSel != bSel) {
+              return aSel ? 1 : -1;
             }
-            return aSel ? 1 : -1;
+            return a.compareTo(b);
           });
 
         return Center(
