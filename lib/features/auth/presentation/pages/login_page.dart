@@ -277,11 +277,11 @@ class _BrowseWithoutAccountButton extends StatelessWidget {
         onPressed: () => context.read<AuthCubit>().continueAsGuest(),
         style: TextButton.styleFrom(
           minimumSize: const Size.fromHeight(48.0),
-          foregroundColor: AppColors.textPrimary,
+          foregroundColor: AppColors.textSecondary,
         ),
         child: Text(
-          'Browse without an account',
-          style: AppTextStyles.mdMedium.withColor(AppColors.textPrimary),
+          'Continue as guest',
+          style: AppTextStyles.mdMedium.withColor(AppColors.textSecondary),
         ),
       ),
     );
