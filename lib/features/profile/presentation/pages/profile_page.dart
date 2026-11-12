@@ -655,16 +655,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   }
 
                   // Secondary: user-chosen sort option
-                  if (_movieSortOption == 'Alphabetical') {
+                  final movieSortMode = _movieSortOption.toLowerCase();
+                  if (movieSortMode == 'alphabetical') {
                     return a.title.toLowerCase().compareTo(b.title.toLowerCase());
-                  } else if (_movieSortOption == 'Last Added') {
+                  } else if (movieSortMode == 'last added') {
                     final dateA = _parseDate(a.addedAt ?? '');
                     final dateB = _parseDate(b.addedAt ?? '');
                     if (dateA == null && dateB == null) return 0;
                     if (dateA == null) return 1;
                     if (dateB == null) return -1;
                     return dateB.compareTo(dateA);
-                  } else if (_movieSortOption == 'Last Watched') {
+                  } else if (movieSortMode == 'last watched') {
                     final dateA = _parseDate(a.watchedAt ?? a.addedAt ?? '');
                     final dateB = _parseDate(b.watchedAt ?? b.addedAt ?? '');
                     if (dateA == null && dateB == null) return 0;
@@ -697,16 +698,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   }
 
                   // Secondary: user-chosen sort option
-                  if (_showSortOption == 'Alphabetical') {
+                  final showSortMode = _showSortOption.toLowerCase();
+                  if (showSortMode == 'alphabetical') {
                     return a.title.toLowerCase().compareTo(b.title.toLowerCase());
-                  } else if (_showSortOption == 'Last added') {
+                  } else if (showSortMode == 'last added') {
                     final dateA = _parseDate(a.addedAt ?? '');
                     final dateB = _parseDate(b.addedAt ?? '');
                     if (dateA == null && dateB == null) return 0;
                     if (dateA == null) return 1;
                     if (dateB == null) return -1;
                     return dateB.compareTo(dateA);
-                  } else if (_showSortOption == 'Last watched') {
+                  } else if (showSortMode == 'last watched') {
                     final dateA = _parseDate(a.watchedAt ?? a.addedAt ?? '');
                     final dateB = _parseDate(b.watchedAt ?? b.addedAt ?? '');
                     if (dateA == null && dateB == null) return 0;
@@ -997,7 +999,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               : Builder(
                                   builder: (context) {
                                     final isShowFilterActive =
-                                        _showSortOption != 'Last added' || _showProgressOption != 'All';
+                                        _showSortOption.toLowerCase() != 'last added' || _showProgressOption != 'All';
                                     final fabWidget = Container(
                                       margin: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
                                       height: 40,
@@ -1109,7 +1111,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               : Builder(
                                   builder: (context) {
                                     final isMovieFilterActive =
-                                        _movieSortOption != 'Last Added' || _movieProgressOption != 'All';
+                                        _movieSortOption.toLowerCase() != 'last added' || _movieProgressOption != 'All';
                                     final fabWidget = Container(
                                       margin: const EdgeInsets.only(bottom: AppSpacing.bottomTabPadding),
                                       height: 40,

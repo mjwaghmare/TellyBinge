@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -26,9 +27,19 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
   @override
   void initState() {
     super.initState();
-    _selectedSort = widget.initialSort;
+    final initial = widget.initialSort.trim().toLowerCase();
+    _selectedSort = _sortOptions.firstWhere(
+      (opt) => opt.toLowerCase() == initial,
+      orElse: () => _sortOptions.first,
+    );
     _selectedProgress = widget.initialProgress;
   }
+
+  static const List<String> _sortOptions = [
+    'Last Added',
+    'Alphabetical',
+    'Last Watched',
+  ];
 
   final List<String> _progressOptions = [
     'All',
@@ -38,10 +49,77 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
     'Favorites',
   ];
 
+  Widget _buildSortChip(String label) {
+    final isSelected = _selectedSort.toLowerCase() == label.toLowerCase();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        label: label,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppSpacing.xl),
+          child: InkWell(
+            onTap: () {
+              AppHaptics.selectionClick();
+              setState(() {
+                _selectedSort = label;
+              });
+            },
+            borderRadius: BorderRadius.circular(AppSpacing.xl),
+            focusColor: AppColors.primary.withValues(alpha: 0.25),
+            hoverColor: AppColors.primary.withValues(alpha: 0.1),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.sm,
+                horizontal: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark
+                        ? AppColors.surfaceElevated
+                        : AppColors.lightSurfaceElevated),
+                borderRadius: BorderRadius.circular(AppSpacing.xl),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary
+                      : context.adaptiveColor(
+                          light: AppColors.borderLight,
+                          dark: AppColors.borderDark,
+                        ),
+                  width: 1.0,
+                ),
+              ),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.xsBold.copyWith(
+                  color: isSelected
+                      ? AppColors.textOnPrimary
+                      : context.adaptiveColor(
+                          light: AppColors.lightTextPrimary,
+                          dark: AppColors.textPrimary,
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FractionallySizedBox(
-      heightFactor: 0.52,
+      heightFactor: 0.62,
       child: Material(
         color: AppBottomSheet.backgroundColor(context),
         borderRadius: AppBottomSheet.borderRadius,
@@ -52,6 +130,35 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
             const SizedBox(height: AppSpacing.sm),
             const AppSheetHandle(),
             const SizedBox(height: AppSpacing.md),
+
+            // Sort Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Text(
+                'Sort by',
+                style: AppTextStyles.mdBold.copyWith(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Row(
+                children: [
+                  for (int i = 0; i < _sortOptions.length; i++) ...[
+                    if (i > 0) const SizedBox(width: AppSpacing.xs),
+                    _buildSortChip(_sortOptions[i]),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Divider(
+              color: Theme.of(context).dividerColor,
+              height: 1,
+            ),
+            const SizedBox(height: AppSpacing.sm),
 
             // Progress Section
             Padding(
@@ -122,6 +229,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                             ),
                           ),
                     onTap: () {
+                      AppHaptics.selectionClick();
                       setState(() {
                         _selectedProgress = option;
                       });
@@ -142,6 +250,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
+                          AppHaptics.selectionClick();
                           setState(() {
                             _selectedSort = 'Last Added'; // Reset default
                             _selectedProgress = 'All';
@@ -179,6 +288,7 @@ class _MoviesFilterBottomSheetState extends State<MoviesFilterBottomSheet> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
+                          AppHaptics.selectionClick();
                           Navigator.pop(context, {
                             'sort': _selectedSort,
                             'progress': _selectedProgress,
