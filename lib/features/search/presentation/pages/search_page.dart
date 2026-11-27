@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/network/tmdb_client.dart';
 import '../../../../core/services/app_haptics.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -78,12 +79,13 @@ class _SearchPageState extends State<SearchPage>
     }
   }
 
-
   GenreOption? _topPersonalizedGenre() {
     final tvState = context.read<TvShowWatchlistCubit>().state;
     final movieState = context.read<MovieWatchlistCubit>().state;
     final tvShows = tvState is TvShowWatchlistSuccess ? tvState.shows : null;
-    final movies = movieState is MovieWatchlistSuccess ? movieState.movies : null;
+    final movies = movieState is MovieWatchlistSuccess
+        ? movieState.movies
+        : null;
     return resolveTopWatchlistGenre(tvShows: tvShows, movies: movies);
   }
 
@@ -206,8 +208,9 @@ class _SearchPageState extends State<SearchPage>
     final newPreferred = _preferredGenres();
     final feedCubit = context.read<ExploreFeedCubit>();
     final activeType = _typeOf(_tabController.index == 0);
-    final currentPreferred =
-        feedCubit.state.feedFor(activeType).preferredGenres;
+    final currentPreferred = feedCubit.state
+        .feedFor(activeType)
+        .preferredGenres;
 
     if (currentPreferred != newPreferred) {
       feedCubit.ensureLoaded(
@@ -276,15 +279,22 @@ class _SearchPageState extends State<SearchPage>
             final isSearching =
                 value.text.trim().length >= SearchCubit.minQueryLength;
             if (isSearching) return const SizedBox.shrink();
-            return BlocSelector<ExploreFeedCubit, ExploreFeedState, GenreOption>(
+            return BlocSelector<
+              ExploreFeedCubit,
+              ExploreFeedState,
+              GenreOption
+            >(
               selector: (state) =>
                   state.feedFor(type).genre ?? kExploreGenres.first,
               builder: (context, selectedGenre) => ExploreGenrePillsRow(
                 genres: kExploreGenres,
                 selectedGenre: selectedGenre,
                 onGenreSelected: (genre) {
-                  final current =
-                      context.read<ExploreFeedCubit>().state.feedFor(type).genre;
+                  final current = context
+                      .read<ExploreFeedCubit>()
+                      .state
+                      .feedFor(type)
+                      .genre;
                   final newGenre = (current == genre && !genre.isAll)
                       ? null
                       : (genre.isAll ? null : genre);
@@ -323,9 +333,7 @@ class _SearchPageState extends State<SearchPage>
                 color: AppColors.primary,
                 backgroundColor: Theme.of(context).cardColor,
                 onRefresh: () async {
-                  await context
-                      .read<ExploreFeedCubit>()
-                      .refresh(type);
+                  await context.read<ExploreFeedCubit>().refresh(type);
                 },
                 child: _buildFeed(isTv: isTv),
               );
@@ -625,21 +633,21 @@ class _SearchPageState extends State<SearchPage>
       if (items.isEmpty) continue;
 
       void onSeeAll() => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ExploreSeeAllPage(
-                type: type,
-                section: section,
-                language: feed.language,
-                genre: feed.genre,
-                personalizedGenre: feed.personalizedGenre,
-                preferredGenres: feed.preferredGenres,
-                excludedIds: section == ExploreSection.trending
-                    ? topWeekIds
-                    : const {},
-              ),
-            ),
-          );
+        context,
+        MaterialPageRoute(
+          builder: (context) => ExploreSeeAllPage(
+            type: type,
+            section: section,
+            language: feed.language,
+            genre: feed.genre,
+            personalizedGenre: feed.personalizedGenre,
+            preferredGenres: feed.preferredGenres,
+            excludedIds: section == ExploreSection.trending
+                ? topWeekIds
+                : const {},
+          ),
+        ),
+      );
 
       rows.add(
         isBackdropRow
@@ -718,8 +726,7 @@ class _SearchPageState extends State<SearchPage>
                   : AppEmptyState(
                       icon: Icons.tv_off_rounded,
                       title: 'Nothing to Show',
-                      body:
-                          'Nothing to show right now. Check your connection and try again.',
+                      body: 'Nothing to show right now. Check your connection and try again.',
                       primaryLabel: 'RETRY',
                       onPrimary: () =>
                           context.read<ExploreFeedCubit>().retry(type),
@@ -742,8 +749,7 @@ class _SearchPageState extends State<SearchPage>
     if (state is SearchError) {
       return AppErrorView(
         failure: state.failure,
-        onRetry: () =>
-            _searchCubitFor(isTv).executeSearch(_queryFor(isTv)),
+        onRetry: () => _searchCubitFor(isTv).executeSearch(_queryFor(isTv)),
       );
     }
 
