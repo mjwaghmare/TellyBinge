@@ -18,6 +18,11 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+  errors:
+    # flutter/material.dart and flutter/cupertino.dart are deprecated in Flutter
+    # 3.47+ in favour of material_ui/cupertino_ui, but those SDK packages are not
+    # yet available in this toolchain. Suppress until migration is possible.
+    deprecated_member_use: ignore
 
 linter:
   # The lint rules applied to this project can be customized in the
