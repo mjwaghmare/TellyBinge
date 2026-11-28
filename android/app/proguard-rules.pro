@@ -20,3 +20,6 @@
 
 # Keep Kotlin metadata
 -keep class kotlin.Metadata { *; }
+
+# Flutter Play Store deferred components (optional dependency not included)
+-dontwarn com.google.android.play.core.**
