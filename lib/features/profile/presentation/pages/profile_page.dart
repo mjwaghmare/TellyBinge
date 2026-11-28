@@ -37,11 +37,8 @@ import '../../../movies/presentation/cubit/movie_watchlist_state.dart';
 import '../../../show_details/presentation/pages/show_details_page.dart';
 import '../../domain/services/achievements_service.dart';
 import 'achievements_page.dart';
-// import '../../domain/models/cinema_passport.dart';
-// import '../../domain/services/cinema_passport_service.dart';
 import '../cubit/profile_heatmap_cubit.dart';
 import '../cubit/profile_heatmap_state.dart';
-// import '../widgets/cinema_passport_modal.dart';
 import '../widgets/movies_filter_bottom_sheet.dart';
 import '../widgets/profile_expiration_indicator.dart';
 import '../widgets/profile_quick_actions_sheet.dart';
@@ -152,9 +149,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   MovieWatchlistState? _statsMovieState;
   TvShowWatchlistState? _statsShowState;
   _ProfileStats? _stats;
-  // List<Map<String, dynamic>>? _passportMovies;
-  // List<Map<String, dynamic>>? _passportShows;
-  // CinemaPassportData? _passport;
   final Map<String, DateTime?> _parsedDates = {};
 
   _ProfileStats _calculateProfileStats(MovieWatchlistState watchlistState, TvShowWatchlistState showWatchlistState) {
@@ -172,15 +166,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return _stats = _computeProfileStats(watchlistState, showWatchlistState);
   }
 
-  // CinemaPassportData _evaluatePassport(List<Map<String, dynamic>> movies, List<Map<String, dynamic>> shows) {
-  //   final cached = _passport;
-  //   if (cached != null && identical(movies, _passportMovies) && identical(shows, _passportShows)) {
-  //     return cached;
-  //   }
-  //   _passportMovies = movies;
-  //   _passportShows = shows;
-  //   return _passport = CinemaPassportService.evaluate(movies: movies, shows: shows);
-  // }
+  // Returns cached stats if inputs haven't changed.
 
   static _ProfileStats _computeProfileStats(
     MovieWatchlistState watchlistState,
@@ -416,7 +402,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       rawMovies: rawMovies,
       rawShows: rawShows,
     );
-    // final passport = _evaluatePassport(rawMovies, rawShows);
 
     final username = generateUsername(displayName);
 
@@ -730,10 +715,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 final Widget showsEmptyWidget = hasNoShows
                     ? AppEmptyState(
                         icon: Icons.live_tv_outlined,
-                        title: 'No Shows Yet',
+                        title: 'No shows yet',
                         body:
-                            'Start tracking TV shows to see them here. Your collection will grow as you add and watch shows.',
-                        primaryLabel: 'BROWSE SHOWS',
+                            'Add a show you\'re watching and your collection will build from there.',
+                        primaryLabel: 'Browse shows',
                         onPrimary:
                             widget.onNavigateToShowsExplore ??
                             () {
@@ -746,9 +731,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     : (_showProgressOption == 'Favorites'
                           ? AppEmptyState(
                               icon: Icons.favorite_border_rounded,
-                              title: 'No Favorite Shows Yet',
-                              body: 'Mark shows as favorites to quickly find them here.',
-                              primaryLabel: 'CLEAR FILTERS',
+                              title: 'No favorite shows yet',
+                              body: 'Heart the shows you love to keep them pinned here.',
+                              primaryLabel: 'Reset filters',
                               onPrimary: () {
                                 setState(() {
                                   _showProgressOption = 'All';
@@ -757,8 +742,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               compact: true,
                             )
                           : AppEmptyState.noResults(
-                              title: 'No Shows Matched',
-                              body: 'Try adjusting your sort or progress filter to see more results.',
+                              title: 'No shows match',
+                              body: 'Try loosening your sort or progress filter.',
                               onClearFilters: () {
                                 setState(() {
                                   _showSortOption = 'Last added';
@@ -773,9 +758,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 final Widget moviesEmptyWidget = hasNoMovies
                     ? AppEmptyState(
                         icon: Icons.movie_creation_outlined,
-                        title: 'No Movies Yet',
-                        body: 'Start adding movies to your watchlist to see them here.',
-                        primaryLabel: 'BROWSE MOVIES',
+                        title: 'No movies yet',
+                        body: 'Save films to your watchlist and they\'ll show up here.',
+                        primaryLabel: 'Browse movies',
                         onPrimary:
                             widget.onNavigateToMoviesExplore ??
                             () {
@@ -788,9 +773,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     : (_movieProgressOption == 'Favorites'
                           ? AppEmptyState(
                               icon: Icons.favorite_border_rounded,
-                              title: 'No Favorite Movies Yet',
-                              body: 'Mark movies as favorites to quickly find them here.',
-                              primaryLabel: 'CLEAR FILTERS',
+                              title: 'No favorite movies yet',
+                              body: 'Heart the films you love to keep them pinned here.',
+                              primaryLabel: 'Reset filters',
                               onPrimary: () {
                                 setState(() {
                                   _movieProgressOption = 'All';
@@ -800,8 +785,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               compact: true,
                             )
                           : AppEmptyState.noResults(
-                              title: 'No Movies Matched',
-                              body: 'Try adjusting your sort or progress filter to see more results.',
+                              title: 'No movies match',
+                              body: 'Try loosening your sort or progress filter.',
                               onClearFilters: () {
                                 setState(() {
                                   _movieSortOption = 'Last Added';
@@ -918,7 +903,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   ? _buildHeatmapSection(
                                       context,
                                       user?.uid ?? '',
-                                      // passport: passport,
                                       username: username,
                                       rankTitle: profileTag.label,
                                     )
@@ -1233,101 +1217,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(tag.emoji, style: AppTextStyles.xs.copyWith(height: 1.1)),
+          Icon(tag.icon, size: 12, color: accentColor),
           AppSpacing.gapW4,
           Text(tag.label, style: AppTextStyles.xsBold.copyWith(color: accentColor, letterSpacing: 0.1, height: 1.1)),
         ],
       ),
     );
   }
-
-  // Widget _buildPassportBanner(
-  //   BuildContext context, {
-  //   required CinemaPassportData passport,
-  //   required String username,
-  //   required String rankTitle,
-  // }) {
-  //   final isLight = Theme.of(context).brightness == Brightness.light;
-  //
-  //   return InkWell(
-  //     onTap: () {
-  //       AppHaptics.selectionClick();
-  //       CinemaPassportModal.show(context, data: passport, username: username, rankTitle: rankTitle);
-  //     },
-  //     borderRadius: BorderRadius.circular(12),
-  //     child: Container(
-  //       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-  //       decoration: BoxDecoration(
-  //         color: isLight ? AppColors.lightSurface : AppColors.surface,
-  //         borderRadius: BorderRadius.circular(12),
-  //         border: Border.all(
-  //           color: isLight ? AppColors.gold.withValues(alpha: 0.35) : AppColors.gold.withValues(alpha: 0.25),
-  //           width: 1,
-  //         ),
-  //       ),
-  //       child: Row(
-  //         children: [
-  //           Container(
-  //             width: 34,
-  //             height: 34,
-  //             decoration: BoxDecoration(
-  //               color: AppColors.gold.withValues(alpha: 0.15),
-  //               borderRadius: BorderRadius.circular(8),
-  //             ),
-  //             child: const Center(child: Text('🌍', style: TextStyle(fontSize: 18))),
-  //           ),
-  //           AppSpacing.gapW12,
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Row(
-  //                   children: [
-  //                     Text(
-  //                       'Cinema Passport',
-  //                       style: AppTextStyles.smBold.copyWith(
-  //                         color: isLight ? AppColors.lightTextPrimary : AppColors.textPrimary,
-  //                       ),
-  //                     ),
-  //                     AppSpacing.gapW8,
-  //                     Container(
-  //                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.micro),
-  // decoration: BoxDecoration(
-  // color: AppColors.gold.withValues(alpha: 0.15),
-  // borderRadius: BorderRadius.circular(10),
-  // ),
-  // child: Text(
-  // '${passport.unlockedStampsCount}/${passport.totalStampsCount} Stamps',
-  // style: AppTextStyles.xsBold.copyWith(
-  // color: isLight ? AppColors.goldDark : AppColors.gold,
-  // fontSize: 8.5,
-  // ),
-  // ),
-  // ),
-  // ],
-  // ),
-  // AppSpacing.gapH4,
-  // Text(
-  // passport.totalCountries > 0
-  // ? '${passport.totalCountries} countries visited • Tap to open'
-  // : 'Explore your international film diary',
-  // style: AppTextStyles.xsMedium.copyWith(
-  // color: isLight ? AppColors.lightTextSecondary : AppColors.textTertiary,
-  // ),
-  // ),
-  // ],
-  // ),
-  // ),
-  // Icon(
-  // Icons.chevron_right_rounded,
-  // color: isLight ? AppColors.lightTextTertiary : AppColors.textTertiary,
-  // size: 20,
-  // ),
-  // ],
-  // ),
-  // ),
-  // );
-  // }
 
   ProfileTag _calculateProfileTag({
     required int watchedMoviesCount,
@@ -2137,7 +2033,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   Widget _buildHeatmapSection(
     BuildContext context,
     String uid, {
-    // required CinemaPassportData passport,
     required String username,
     required String rankTitle,
   }) {
@@ -2148,9 +2043,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
             child: AppEmptyState(
               icon: Icons.error_outline_rounded,
-              title: 'Could Not Load Activity',
-              body: 'Failed to load your watch history heatmap.',
-              primaryLabel: 'RETRY',
+              title: 'Couldn\'t load activity',
+              body: 'Your watch history heatmap didn\'t come through.',
+              primaryLabel: 'Try again',
               onPrimary: () => context.read<ProfileHeatmapCubit>().loadMonthActivity(uid, _heatmapMonth),
               compact: true,
             ),
@@ -2306,8 +2201,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   ],
                 ),
               ),
-              // AppSpacing.gapH12,
-              // _buildPassportBanner(context, passport: passport, username: username, rankTitle: rankTitle),
             ],
           ),
         );
@@ -2891,15 +2784,15 @@ class _RippleShimmerGridState extends State<_RippleShimmerGrid> with SingleTicke
 }
 
 enum ProfileTag {
-  freshWatcher(emoji: '🌱', label: 'Fresh Watcher'),
-  movieBuff(emoji: '🎬', label: 'Movie Buff'),
-  seriesExplorer(emoji: '📺', label: 'Series Explorer'),
-  screenExplorer(emoji: '🍿', label: 'Screen Explorer'),
-  onAStreak(emoji: '🔥', label: 'On a Streak'),
-  screenVeteran(emoji: '🏆', label: 'Screen Veteran');
+  freshWatcher(icon: Icons.eco_rounded, label: 'Fresh Watcher'),
+  movieBuff(icon: Icons.movie_outlined, label: 'Movie Buff'),
+  seriesExplorer(icon: Icons.tv_rounded, label: 'Series Explorer'),
+  screenExplorer(icon: Icons.local_movies_outlined, label: 'Screen Explorer'),
+  onAStreak(icon: Icons.local_fire_department_rounded, label: 'On a Streak'),
+  screenVeteran(icon: Icons.emoji_events_outlined, label: 'Screen Veteran');
 
-  final String emoji;
+  final IconData icon;
   final String label;
 
-  const ProfileTag({required this.emoji, required this.label});
+  const ProfileTag({required this.icon, required this.label});
 }

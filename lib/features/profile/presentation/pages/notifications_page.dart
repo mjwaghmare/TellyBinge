@@ -67,12 +67,12 @@ class CleanNotificationItem {
 }
 
 class SarcasticEmptyState {
-  final String emoji;
+  final IconData icon;
   final String title;
   final String subtitle;
 
   const SarcasticEmptyState({
-    required this.emoji,
+    required this.icon,
     required this.title,
     required this.subtitle,
   });
@@ -93,34 +93,34 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   static const List<SarcasticEmptyState> _emptyStates = [
     SarcasticEmptyState(
-      emoji: '🦗',
-      title: 'Crickets in here...',
+      icon: Icons.notifications_none_rounded,
+      title: 'All quiet for now',
       subtitle:
-          'No notifications yet. Either all your shows are on hiatus or you need to touch some grass.',
+          'No episode or premiere alerts yet. Either your shows are between seasons or your watchlist is waiting.',
     ),
     SarcasticEmptyState(
-      emoji: '🍿',
-      title: 'Your notifications are empty!',
+      icon: Icons.local_movies_outlined,
+      title: 'Nothing on the schedule',
       subtitle:
-          'Empty like your popcorn bucket 5 minutes into the movie. Add some shows to your watchlist!',
+          'Add a few airing shows or upcoming movies and we\'ll ping you right before they drop.',
     ),
     SarcasticEmptyState(
-      emoji: '😴',
+      icon: Icons.tv_off_rounded,
       title: 'Total radio silence',
       subtitle:
-          'No pushed episodes, no movie premieres, zero drama. Go rewatch The Office for the 14th time.',
+          'No new episodes, no premieres, zero cliffhangers. A rare night to catch up on your backlog.',
     ),
     SarcasticEmptyState(
-      emoji: '🛋️',
-      title: 'Suspiciously peaceful...',
+      icon: Icons.weekend_outlined,
+      title: 'Suspiciously peaceful',
       subtitle:
-          'No cliffhangers waiting to ruin your sleep tonight. Enjoy the quiet while it lasts!',
+          'Nothing airing tonight to ruin your sleep schedule. Enjoy the quiet while it lasts.',
     ),
     SarcasticEmptyState(
-      emoji: '😱',
-      title: 'Nothing to report! Go outside?',
+      icon: Icons.live_tv_rounded,
+      title: 'Tray is clear',
       subtitle:
-          'Your notification tray is clear. You could actually do something productive... or find new shows.',
+          'No upcoming drops on your radar. Explore something new to keep the queue moving.',
     ),
   ];
 
@@ -721,7 +721,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       children: [
         SizedBox(height: MediaQuery.of(context).size.height * 0.15),
         AppEmptyState(
-          emoji: _emptyState.emoji,
+          icon: _emptyState.icon,
           title: _emptyState.title,
           body: _emptyState.subtitle,
         ),

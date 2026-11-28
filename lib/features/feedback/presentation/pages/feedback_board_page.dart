@@ -565,7 +565,7 @@ class _FeedbackBoardPageState extends State<FeedbackBoardPage> {
                 body: _searchQuery.isNotEmpty
                     ? 'Try adjusting your search terms or filter.'
                     : 'There is no feedback in this category yet.',
-                primaryLabel: 'CLEAR FILTERS',
+                primaryLabel: 'Reset filters',
                 onPrimary: () {
                   setState(() {
                     _selectedFilter = 'All';

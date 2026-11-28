@@ -99,9 +99,9 @@ class DashboardPageState extends State<DashboardPage> {
             if (authState is! Authenticated) {
               return AppEmptyState(
                 icon: Icons.login_rounded,
-                title: 'Sign In Required',
-                body: 'Sign in to view and manage your watchlist.',
-                primaryLabel: 'SIGN IN',
+                title: 'Sign in to see your queue',
+                body: 'Keep your shows, episodes, and air-date alerts in sync.',
+                primaryLabel: 'Sign in',
                 onPrimary: () => context.read<AuthCubit>().signInWithGoogle(),
               );
             }
@@ -138,16 +138,16 @@ class DashboardPageState extends State<DashboardPage> {
                       children: [
                         AppEmptyState(
                           icon: Icons.tv_outlined,
-                          title: 'Your Watch List Is Empty',
-                          body: 'Add TV shows from the Explore tab to start tracking episodes, get countdowns, and manage your progress.',
-                          primaryLabel: 'BROWSE SHOWS',
+                          title: 'Nothing queued up',
+                          body: 'Add a show you\'re watching and we\'ll track what\'s next.',
+                          primaryLabel: 'Browse shows',
                           onPrimary: widget.onNavigateToExplore,
                         ),
                         AppEmptyState(
                           icon: Icons.calendar_today_outlined,
-                          title: 'No Upcoming Episodes',
-                          body: 'None of your tracked shows have new episodes scheduled. Check back later or add more shows.',
-                          primaryLabel: 'BROWSE SHOWS',
+                          title: 'Nothing airing soon',
+                          body: 'None of your tracked shows have upcoming episodes scheduled yet.',
+                          primaryLabel: 'Browse shows',
                           onPrimary: widget.onNavigateToExplore,
                         ),
                       ],
@@ -379,9 +379,9 @@ class DashboardPageState extends State<DashboardPage> {
             if (watchNext.isEmpty && haventStarted.isEmpty && history.isEmpty) {
               return AppEmptyState(
                 icon: Icons.tv_outlined,
-                title: 'Your Watch List Is Empty',
-                body: 'Add TV shows from the Explore tab to start tracking episodes, get countdowns, and manage your progress.',
-                primaryLabel: 'BROWSE SHOWS',
+                title: 'Nothing queued up',
+                body: 'Add a show you\'re watching and we\'ll track what\'s next.',
+                primaryLabel: 'Browse shows',
                 onPrimary: widget.onNavigateToExplore,
               );
             }
@@ -640,9 +640,9 @@ class DashboardPageState extends State<DashboardPage> {
     if (slivers.isEmpty) {
       return AppEmptyState(
         icon: Icons.calendar_today_outlined,
-        title: 'No Upcoming Episodes',
-        body: 'None of your tracked shows have new episodes scheduled. Check back later or add more shows.',
-        primaryLabel: 'BROWSE SHOWS',
+        title: 'Nothing airing soon',
+        body: 'None of your tracked shows have upcoming episodes scheduled yet.',
+        primaryLabel: 'Browse shows',
         onPrimary: widget.onNavigateToExplore,
       );
     }

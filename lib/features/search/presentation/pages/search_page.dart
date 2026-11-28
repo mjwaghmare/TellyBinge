@@ -715,19 +715,19 @@ class _SearchPageState extends State<SearchPage>
               child: isSpecificGenre
                   ? AppEmptyState(
                       icon: Icons.category_outlined,
-                      title: 'No Titles Found',
+                      title: 'Nothing in ${genre.displayName} right now',
                       body:
-                          'No ${genre.displayName} titles found right now. Try selecting another genre or checking your connection.',
-                      primaryLabel: 'RETRY',
+                          'Try another genre or check your connection.',
+                      primaryLabel: 'Try again',
                       onPrimary: () =>
                           context.read<ExploreFeedCubit>().retry(type),
                       compact: true,
                     )
                   : AppEmptyState(
                       icon: Icons.tv_off_rounded,
-                      title: 'Nothing to Show',
-                      body: 'Nothing to show right now. Check your connection and try again.',
-                      primaryLabel: 'RETRY',
+                      title: 'Couldn\'t load the feed',
+                      body: 'Check your connection and give it another shot.',
+                      primaryLabel: 'Try again',
                       onPrimary: () =>
                           context.read<ExploreFeedCubit>().retry(type),
                       compact: true,

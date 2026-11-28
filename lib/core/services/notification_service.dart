@@ -155,7 +155,7 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  /// Generates a funny, sarcastic, and varied notification title & body
+  /// Generates varied, human, film-lover notification copy
   /// for a TV show episode based on the show's ID.
   static (String title, String body) generateTvNotificationContent({
     required int showId,
@@ -165,32 +165,34 @@ class NotificationService {
     final epText = episodeCode.isNotEmpty
         ? 'Episode $episodeCode'
         : 'New episode';
-    final titles = [
-      '🍿 $showName',
-      '⏰ $showName',
-      '📺 $showName',
-      '🍿 $showName',
-      '📺 $showName',
+    final title = episodeCode.isNotEmpty ? '$showName · $episodeCode' : showName;
+    final bodies = [
+      '$epText drops {time}. Stay off social media.',
+      '$epText lands {time}. Clear your evening.',
+      '$epText airs {time}. Save your spot on the couch.',
+      '$epText is up {time}. Don\'t get spoiled.',
+      '$epText arrives {time}. One more reason to stay in.',
+      '$epText goes live {time}. Queue it up.',
     ];
-    final index = showId.abs() % titles.length;
-    return (titles[index], '$epText airs {time}.');
+    final index = showId.abs() % bodies.length;
+    return (title, bodies[index]);
   }
 
-  /// Generates a funny, sarcastic, and varied notification title & body
+  /// Generates varied, human, film-lover notification copy
   /// for a Movie release based on the movie's ID.
   static (String title, String body) generateMovieNotificationContent({
     required int movieId,
     required String movieTitle,
   }) {
-    final titles = [
-      '🎬 $movieTitle',
-      '🍿 $movieTitle',
-      '🎬 $movieTitle',
-      '🍿 $movieTitle',
-      '🌟 $movieTitle',
+    final bodies = [
+      'Premieres {time}. Lights down.',
+      'Drops {time}. Worth a proper watch.',
+      'Arrives {time}. Save a seat on the couch.',
+      'Out {time}. Don\'t let the internet spoil it.',
+      'Lands {time}. Tonight\'s feature is sorted.',
     ];
-    final index = movieId.abs() % titles.length;
-    return (titles[index], '$movieTitle premieres {time}.');
+    final index = movieId.abs() % bodies.length;
+    return (movieTitle, bodies[index]);
   }
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -354,9 +356,9 @@ class NotificationService {
           if (reminderDate48h.isAfter(now)) {
             final success = await _scheduleOne(
               id: _reinstallNotificationId,
-              title: "⏳ 2 Days Left on Free Profile",
+              title: "2 days left on your developer profile",
               body:
-                  "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
+                  "Your 7-day personal build expires in 48 hours. Rebuild with Xcode when you're near your Mac.",
               scheduledDate: reminderDate48h,
             );
             if (!success) allScheduled = false;
@@ -364,26 +366,26 @@ class NotificationService {
               reminderDate24h.isAfter(now)) {
             await _saveReceivedNotificationDirect(
               id: _reinstallNotificationId.toString(),
-              title: "⏳ 2 Days Left on Free Profile",
+              title: "2 days left on your developer profile",
               body:
-                  "Your 7-day personal developer profile expires in 48 hours. Rebuild soon with Xcode! 💻",
+                  "Your 7-day personal build expires in 48 hours. Rebuild with Xcode when you're near your Mac.",
             );
           }
 
           if (reminderDate24h.isAfter(now)) {
             final success = await _scheduleOne(
               id: _reinstallNotificationId24h,
-              title: "🚨 Profile Expires Tomorrow!",
+              title: "Developer profile expires tomorrow",
               body:
-                  "Free developer profile expires in 24 hours. Rebuild with Xcode today to keep the app working! 💻",
+                  "Your 7-day personal build expires in 24 hours. Rebuild with Xcode today to keep PopVerse running.",
               scheduledDate: reminderDate24h,
             );
             if (!success) allScheduled = false;
           } else {
             if (expirationDate.isAfter(now)) {
-              const title = "🚨 Profile Expires Very Soon!";
+              const title = "Developer profile expires soon";
               const body =
-                  "Free developer profile expires in less than 24 hours! Connect to Xcode and rebuild now. 💻";
+                  "Your personal build expires in under 24 hours. Connect to Xcode and rebuild to keep it working.";
               final success = await _scheduleOne(
                 id: _reinstallNotificationId24h,
                 title: title,
@@ -995,7 +997,7 @@ class NotificationService {
             id,
             () => ScheduledNotificationDisplayItem(
               id: id,
-              title: '${pending.title} (In 1 Hour)',
+              title: pending.title,
               body: pending.body.replaceAll('{time}', 'in 1 hour'),
               payload: _deepLinkFor(media, pending.mediaId),
               media: media,
@@ -1014,7 +1016,7 @@ class NotificationService {
               id,
               () => ScheduledNotificationDisplayItem(
                 id: id,
-                title: '${pending.title} (Tomorrow)',
+                title: pending.title,
                 body: pending.body.replaceAll('{time}', 'tomorrow'),
                 payload: _deepLinkFor(media, pending.mediaId),
                 media: media,
@@ -1217,7 +1219,7 @@ class NotificationService {
           alerts.add(
             _ScheduledAlert(
               id: hourBeforeId,
-              title: '${pending.title} (In 1 Hour)',
+              title: pending.title,
               body: pending.body.replaceAll('{time}', 'in 1 hour'),
               when: hourBefore,
               payload: _deepLinkFor(pending.media, pending.mediaId),
@@ -1238,7 +1240,7 @@ class NotificationService {
             alerts.add(
               _ScheduledAlert(
                 id: dayBeforeId,
-                title: '${pending.title} (Tomorrow)',
+                title: pending.title,
                 body: pending.body.replaceAll('{time}', 'tomorrow'),
                 when: dayBefore,
                 payload: _deepLinkFor(pending.media, pending.mediaId),

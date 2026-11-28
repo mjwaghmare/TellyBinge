@@ -30,10 +30,10 @@ class AppErrorView extends StatelessWidget {
 
     final errorTitle = title ??
         (failure is NetworkFailure
-            ? 'Connection Error'
+            ? 'You seem to be offline'
             : (failure is ServerFailure && failure.code == '404')
-                ? 'Item Not Found'
-                : 'Oops! Something went wrong');
+                ? 'Nothing here'
+                : 'Couldn\'t load this');
 
     return Center(
       child: SingleChildScrollView(
@@ -88,9 +88,9 @@ class AppErrorView extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  retryLabel ?? 'RETRY',
+                  retryLabel ?? 'Try again',
                   style: AppTextStyles.smBold.copyWith(
-                    letterSpacing: 1.2,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ),

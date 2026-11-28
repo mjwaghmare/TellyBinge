@@ -60,9 +60,9 @@ class AppEmptyState extends StatelessWidget {
   factory AppEmptyState.noResults({
     Key? key,
     IconData icon = Icons.filter_alt_off_rounded,
-    String title = 'No Results Matched',
-    String? body = 'Try adjusting your filters or search terms.',
-    String primaryLabel = 'CLEAR FILTERS',
+    String title = 'Nothing fits those filters',
+    String? body = 'Try loosening a filter or searching something else.',
+    String primaryLabel = 'Reset filters',
     VoidCallback? onClearFilters,
     bool compact = false,
   }) {

@@ -45,10 +45,10 @@ class WatchedMoviesPage extends StatelessWidget {
           ? Center(
               child: AppEmptyState(
                 icon: Icons.movie_filter_outlined,
-                title: 'No Watched Movies Yet',
+                title: 'No watched films yet',
                 body:
-                    'Movies you mark as watched in your library or search will appear here.',
-                primaryLabel: 'GO BACK',
+                    'Films you finish will collect here as your personal log.',
+                primaryLabel: 'Go back',
                 onPrimary: () => Navigator.pop(context),
               ),
             )

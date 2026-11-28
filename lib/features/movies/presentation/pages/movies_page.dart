@@ -253,18 +253,18 @@ class MoviesPageState extends State<MoviesPage> {
                 children: [
                   AppEmptyState(
                     icon: Icons.movie_filter_outlined,
-                    title: 'Your Movie Watchlist Is Empty',
+                    title: 'Your movie list is empty',
                     body:
-                        'Discover movies on the Explore tab and add them to your watchlist to track what you want to see.',
-                    primaryLabel: 'BROWSE MOVIES',
+                        'Save films from Explore to keep track of what you want to watch next.',
+                    primaryLabel: 'Browse movies',
                     onPrimary: widget.onNavigateToExplore,
                   ),
                   AppEmptyState(
                     icon: Icons.event_outlined,
-                    title: 'No Upcoming Movies',
+                    title: 'No upcoming premieres',
                     body:
-                        'You haven\'t added any unreleased movies yet. Browse the Explore tab to add movies you\'re waiting for.',
-                    primaryLabel: 'BROWSE MOVIES',
+                        'Add an unreleased film from Explore and we\'ll count down to opening day.',
+                    primaryLabel: 'Browse movies',
                     onPrimary: widget.onNavigateToExplore,
                   ),
                 ],
@@ -333,9 +333,9 @@ class MoviesPageState extends State<MoviesPage> {
     if (!isLoading && items.isEmpty) {
       return AppEmptyState(
         icon: Icons.movie_filter_outlined,
-        title: 'Your Movie Watchlist Is Empty',
-        body: 'Discover movies on the Explore tab and add them to your watchlist to track what you want to see.',
-        primaryLabel: 'BROWSE MOVIES',
+        title: 'Your movie list is empty',
+        body: 'Save films from Explore to keep track of what you want to watch next.',
+        primaryLabel: 'Browse movies',
         onPrimary: widget.onNavigateToExplore,
       );
     }
@@ -561,9 +561,9 @@ class MoviesPageState extends State<MoviesPage> {
     if (!isLoading && items.isEmpty) {
       return AppEmptyState(
         icon: Icons.event_outlined,
-        title: 'No Upcoming Movies',
-        body: 'You haven\'t added any unreleased movies yet. Browse the Explore tab to add movies you\'re waiting for.',
-        primaryLabel: 'BROWSE MOVIES',
+        title: 'No upcoming premieres',
+        body: 'Add an unreleased film from Explore and we\'ll count down to opening day.',
+        primaryLabel: 'Browse movies',
         onPrimary: widget.onNavigateToExplore,
       );
     }
